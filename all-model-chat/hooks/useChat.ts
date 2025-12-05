@@ -40,6 +40,9 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         fileDraftsRef
     } = chatState;
 
+    // Ref to track which API key was last used for a session (for sticky affinity)
+    const sessionKeyMapRef = useRef<Map<string, string>>(new Map());
+
     // 2. Chat Client Initialization
     const { chat } = useChatClient({
         activeSessionId,
@@ -96,11 +99,12 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         aspectRatio, userScrolledUp, ttsMessageId, setTtsMessageId, activeSessionId, 
         setActiveSessionId, setCommandedInput, activeJobs, loadingSessionIds, 
         setLoadingSessionIds, updateAndPersistSessions, language, 
-        scrollContainerRef: scrollHandler.scrollContainerRef, chat 
+        scrollContainerRef: scrollHandler.scrollContainerRef, chat,
+        sessionKeyMapRef // Pass ref to message handler
     });
 
-    useAutoTitling({ appSettings, savedSessions, updateAndPersistSessions, language, generatingTitleSessionIds, setGeneratingTitleSessionIds });
-    useSuggestions({ appSettings, activeChat, isLoading, updateAndPersistSessions, language });
+    useAutoTitling({ appSettings, savedSessions, updateAndPersistSessions, language, generatingTitleSessionIds, setGeneratingTitleSessionIds, sessionKeyMapRef });
+    useSuggestions({ appSettings, activeChat, isLoading, updateAndPersistSessions, language, sessionKeyMapRef });
 
     // 4. Actions & Handlers
     const { loadChatSession, startNewChat, handleDeleteChatHistorySession } = historyHandler;
@@ -183,6 +187,22 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
     }, [isModelsLoading, apiModels, activeChat, activeSessionId, updateAndPersistSessions]);
 
     useEffect(() => { if (isSwitchingModel) { const timer = setTimeout(() => setIsSwitchingModel(false), 0); return () => clearTimeout(timer); } }, [isSwitchingModel]);
+
+    // Auto-set default aspect ratio for specific image models
+    const prevModelIdRef = useRef(currentChatSettings.modelId);
+    useEffect(() => {
+        if (prevModelIdRef.current !== currentChatSettings.modelId) {
+            const modelId = currentChatSettings.modelId;
+            const isBananaModel = modelId.includes('gemini-2.5-flash-image') || modelId.includes('gemini-3-pro-image');
+            
+            if (isBananaModel) {
+                setAspectRatio('Auto');
+            } else if (aspectRatio === 'Auto') {
+                setAspectRatio('1:1');
+            }
+            prevModelIdRef.current = modelId;
+        }
+    }, [currentChatSettings.modelId, aspectRatio, setAspectRatio]);
 
     return {
         // State
