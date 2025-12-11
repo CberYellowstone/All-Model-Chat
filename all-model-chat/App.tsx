@@ -153,6 +153,7 @@ const App: React.FC = () => {
     if (activeSessionId && setCurrentChatSettings) {
       setCurrentChatSettings(prevChatSettings => ({
         ...prevChatSettings,
+        modelId: newSettings.modelId, // Sync model change to active session
         temperature: newSettings.temperature,
         topP: newSettings.topP,
         systemInstruction: newSettings.systemInstruction,
@@ -163,14 +164,6 @@ const App: React.FC = () => {
         lockedApiKey: null,
       }));
     }
-  };
-
-  const handleSetDefaultModel = (modelId: string) => {
-    logService.info(`Setting new default model: ${modelId}`);
-    const newThinkingBudget = THINKING_BUDGET_RANGES[modelId]
-      ? THINKING_BUDGET_RANGES[modelId].max
-      : DEFAULT_APP_SETTINGS.thinkingBudget;
-    setAppSettings(prev => ({ ...prev, modelId, thinkingBudget: newThinkingBudget }));
   };
 
   const handleLoadCanvasPromptAndSave = () => {
@@ -283,8 +276,6 @@ const App: React.FC = () => {
     onLoadCanvasPrompt: handleLoadCanvasPromptAndSave,
     isCanvasPromptActive,
     isKeyLocked: !!currentChatSettings.lockedApiKey,
-    defaultModelId: appSettings.modelId,
-    onSetDefaultModel: handleSetDefaultModel,
     themeId: currentTheme.id,
     modelsLoadingError: null,
     messages,

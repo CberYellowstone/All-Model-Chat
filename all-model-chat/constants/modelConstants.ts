@@ -10,7 +10,10 @@ export const TAB_CYCLE_MODELS: string[] = [
     'models/gemini-flash-lite-latest',
 ];
 
-export const GEMINI_3_RO_MODELS: string[] = ['gemini-3-pro-preview', 'models/gemini-3-pro-preview'];
+export const GEMINI_3_RO_MODELS: string[] = [
+    'gemini-3-pro-preview', 
+    'models/gemini-3-pro-preview',
+];
 
 export const MODELS_MANDATORY_THINKING = [
     'gemini-3-pro-preview',
