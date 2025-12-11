@@ -57,7 +57,7 @@ const App: React.FC = () => {
       scrollToPrevTurn, scrollToNextTurn, toggleGoogleSearch,
       toggleCodeExecution, toggleUrlContext, toggleDeepSearch,
       updateAndPersistSessions, updateAndPersistGroups,
-      imageSize, setImageSize, handleUpdateMessageContent
+      imageSize, setImageSize, handleUpdateMessageContent, handleUpdateMessageFile
   } = chatState;
 
   const {
@@ -162,6 +162,7 @@ const App: React.FC = () => {
         thinkingBudget: newSettings.thinkingBudget,
         thinkingLevel: newSettings.thinkingLevel,
         lockedApiKey: null,
+        mediaResolution: newSettings.mediaResolution,
       }));
     }
   };
@@ -286,6 +287,7 @@ const App: React.FC = () => {
     onDeleteMessage: handleDeleteMessage,
     onRetryMessage: handleRetryMessage,
     onEditMessageContent: setEditingContentMessage,
+    onUpdateMessageFile: handleUpdateMessageFile, // Added this prop
     showThoughts: currentChatSettings.showThoughts,
     themeColors: currentTheme.colors,
     baseFontSize: appSettings.baseFontSize,
@@ -369,7 +371,8 @@ const App: React.FC = () => {
             isCodeExecutionEnabled,
             isUrlContextEnabled,
             isDeepSearchEnabled,
-            safetySettings
+            safetySettings,
+            mediaResolution
         } = currentChatSettings;
 
         return { 
@@ -388,7 +391,8 @@ const App: React.FC = () => {
             isCodeExecutionEnabled,
             isUrlContextEnabled,
             isDeepSearchEnabled,
-            safetySettings
+            safetySettings,
+            mediaResolution
         };
     }
     return appSettings;
@@ -429,7 +433,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className={`relative flex h-full bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] theme-${currentTheme.id} overflow-hidden`}
+      className={`relative flex h-[100dvh] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] theme-${currentTheme.id} overflow-hidden`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

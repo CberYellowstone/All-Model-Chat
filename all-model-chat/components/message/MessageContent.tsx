@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, ChevronDown, Sparkles, Languages } from 'lucide-react';
+import { Loader2, ChevronDown, Languages } from 'lucide-react';
 
 import { ChatMessage, UploadedFile, AppSettings, SideViewContent } from '../../types';
 import { FileDisplay } from './FileDisplay';
@@ -27,9 +27,11 @@ interface MessageContentProps {
     appSettings: AppSettings;
     themeId: string;
     onOpenSidePanel: (content: SideViewContent) => void;
+    onConfigureFile?: (file: UploadedFile, messageId: string) => void;
+    isGemini3?: boolean;
 }
 
-export const MessageContent: React.FC<MessageContentProps> = React.memo(({ message, onImageClick, onOpenHtmlPreview, showThoughts, baseFontSize, expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, onSuggestionClick, t, appSettings, themeId, onOpenSidePanel }) => {
+export const MessageContent: React.FC<MessageContentProps> = React.memo(({ message, onImageClick, onOpenHtmlPreview, showThoughts, baseFontSize, expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, onSuggestionClick, t, appSettings, themeId, onOpenSidePanel, onConfigureFile, isGemini3 }) => {
     const { content, files, isLoading, thoughts, generationStartTime, audioSrc, groundingMetadata, urlContextMetadata, suggestions, isGeneratingSuggestions } = message;
     
     const showPrimaryThinkingIndicator = isLoading && !content && !audioSrc && (!showThoughts || !thoughts);
@@ -99,18 +101,35 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(({ messa
             {files && files.length > 0 && (
                 isQuadImageView ? (
                     <div className={`grid grid-cols-2 gap-2 ${content || audioSrc ? 'mb-1.5 sm:mb-2' : ''}`}>
-                        {files.map((file) => <FileDisplay key={file.id} file={file} onFileClick={onImageClick} isFromMessageList={true} isGridView={true} />)}
+                        {files.map((file) => (
+                            <FileDisplay 
+                                key={file.id} 
+                                file={file} 
+                                onFileClick={onImageClick} 
+                                isFromMessageList={true} 
+                                isGridView={true} 
+                            />
+                        ))}
                     </div>
                 ) : (
                     <div className={`space-y-2 ${content || audioSrc ? 'mb-1.5 sm:mb-2' : ''}`}>
-                        {files.map((file) => <FileDisplay key={file.id} file={file} onFileClick={onImageClick} isFromMessageList={true} />)}
+                        {files.map((file) => (
+                            <FileDisplay 
+                                key={file.id} 
+                                file={file} 
+                                onFileClick={onImageClick} 
+                                isFromMessageList={true}
+                                onConfigure={onConfigureFile ? () => onConfigureFile(file, message.id) : undefined}
+                                isGemini3={isGemini3}
+                            />
+                        ))}
                     </div>
                 )
             )}
             
             {areThoughtsVisible && (
                 <div className="mb-2 mt-1">
-                    <details className="group rounded-lg bg-[var(--theme-bg-tertiary)]/20 overflow-hidden transition-all duration-200 open:bg-[var(--theme-bg-tertiary)]/30 open:shadow-sm">
+                    <details className="group rounded-xl bg-[var(--theme-bg-tertiary)]/20 overflow-hidden transition-all duration-200 open:bg-[var(--theme-bg-tertiary)]/30 open:shadow-sm">
                         <summary className="list-none flex select-none items-center gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[var(--theme-bg-tertiary)]/40 focus:outline-none">
                             <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                                 {/* Icon Area */}
@@ -290,10 +309,7 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(({ messa
                                 active:scale-95
                             "
                         >
-                            <div className="flex items-center gap-1.5">
-                                <Sparkles size={12} className="text-[var(--theme-text-tertiary)] group-hover:text-[var(--theme-text-link)] opacity-50 group-hover:opacity-100 transition-opacity" />
-                                <span className="line-clamp-2">{suggestion}</span>
-                            </div>
+                            <span className="line-clamp-2">{suggestion}</span>
                         </button>
                     ))}
                 </div>

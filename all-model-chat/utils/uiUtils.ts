@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ThemeColors } from '../constants/themeConstants';
-import { AppSettings } from '../types';
+import { AppSettings, MediaResolution } from '../types';
 import { Theme, AVAILABLE_THEMES } from '../constants/themeConstants';
 import { 
   SUPPORTED_IMAGE_MIME_TYPES, 
@@ -42,6 +42,14 @@ export const applyThemeToDocument = (doc: Document, theme: Theme, settings: AppS
   const bodyClassList = doc.body.classList;
   AVAILABLE_THEMES.forEach(t => bodyClassList.remove(`theme-${t.id}`));
   bodyClassList.add(`theme-${theme.id}`, 'antialiased');
+
+  // Dynamic Status Bar Color (Meta Theme Color)
+  // Matches the logic in Header.tsx: Pearl uses bgPrimary, others (Onyx) use bgSecondary
+  const metaThemeColor = doc.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+      const headerColor = theme.id === 'pearl' ? theme.colors.bgPrimary : theme.colors.bgSecondary;
+      metaThemeColor.setAttribute('content', headerColor);
+  }
 
   const markdownDarkTheme = doc.getElementById('markdown-dark-theme') as HTMLLinkElement;
   const markdownLightTheme = doc.getElementById('markdown-light-theme') as HTMLLinkElement;
@@ -164,4 +172,19 @@ export const extractTextFromNode = (node: React.ReactNode): string => {
     if (Array.isArray(node)) return node.map(extractTextFromNode).join('');
     if (React.isValidElement(node)) return extractTextFromNode(node.props.children);
     return '';
+};
+
+export const getResolutionColor = (resolution?: MediaResolution): string => {
+    switch (resolution) {
+        case MediaResolution.MEDIA_RESOLUTION_LOW:
+            return 'text-emerald-400 hover:text-emerald-300';
+        case MediaResolution.MEDIA_RESOLUTION_MEDIUM:
+            return 'text-sky-400 hover:text-sky-300';
+        case MediaResolution.MEDIA_RESOLUTION_HIGH:
+            return 'text-violet-400 hover:text-violet-300';
+        case MediaResolution.MEDIA_RESOLUTION_ULTRA_HIGH:
+            return 'text-amber-400 hover:text-amber-300';
+        default:
+            return 'text-white/80 hover:text-white';
+    }
 };
