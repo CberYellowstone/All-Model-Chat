@@ -17,7 +17,7 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain("event.key === 'Escape'");
   });
 
-  it('injects a restrictive preview CSP while allowing inline artifact scripts and HTTPS images', () => {
+  it('injects a sandboxed preview CSP while allowing inline scripts and HTTPS assets', () => {
     const srcDoc = buildHtmlPreviewSrcDoc(
       '<html><head><title>Demo</title><script src="https://cdn.example/app.js"></script></head><body><img src="https://example.com/demo.png" alt="Demo"></body></html>',
     );
@@ -26,8 +26,23 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain("default-src 'none'");
     expect(srcDoc).toContain("script-src 'unsafe-inline'");
     expect(srcDoc).toContain('img-src https: data: blob:');
-    expect(srcDoc).toContain("connect-src 'none'");
+    expect(srcDoc).toContain('connect-src https: data: blob:');
+    expect(srcDoc).toContain("frame-src 'none'");
+    expect(srcDoc).toContain("object-src 'none'");
+    expect(srcDoc).toContain("base-uri 'none'");
     expect(srcDoc.indexOf('http-equiv="Content-Security-Policy"')).toBeLessThan(srcDoc.indexOf('cdn.example/app.js'));
+  });
+
+  it('allows sandboxed artifact previews to load HTTPS runtime assets', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      '<html><head><script type="module" src="https://cdn.example/app.js"></script><link rel="stylesheet" href="https://cdn.example/app.css"></head><body></body></html>',
+    );
+
+    expect(srcDoc).toContain("script-src 'unsafe-inline' https: blob:");
+    expect(srcDoc).toContain("style-src 'unsafe-inline' https:");
+    expect(srcDoc).toContain('font-src https: data:');
+    expect(srcDoc).toContain('connect-src https: data: blob:');
+    expect(srcDoc).toContain('worker-src blob:');
   });
 
   it('injects the preview CSP into fragment wrappers before bridge scripts', () => {

@@ -9,6 +9,8 @@ import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/modelSort
 import { dbService } from '@/services/db/dbService';
 import { normalizeLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
 
+const LEGACY_DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-3-flash-preview';
+
 interface SettingsState {
   appSettings: AppSettings;
   currentTheme: Theme;
@@ -114,9 +116,14 @@ function buildLoadedAppSettings(
   storedSettings: AppSettings | null | undefined,
   preloadOverrides: Partial<AppSettings> | null,
 ) {
+  const defaultSettings = getDefaultAppSettings();
+  const shouldMigrateLegacyTranscriptionDefault =
+    storedSettings?.transcriptionModelId === LEGACY_DEFAULT_TRANSCRIPTION_MODEL_ID &&
+    preloadOverrides?.transcriptionModelId === undefined;
   const appSettings = sanitizeAppSettings({
-    ...getDefaultAppSettings(),
+    ...defaultSettings,
     ...(storedSettings ?? {}),
+    ...(shouldMigrateLegacyTranscriptionDefault ? { transcriptionModelId: defaultSettings.transcriptionModelId } : {}),
     ...(preloadOverrides ?? {}),
   });
 

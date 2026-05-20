@@ -132,6 +132,18 @@ describe('settingsStore', () => {
       expect(useSettingsStore.getState().appSettings.translationTargetLanguage).toBe('English');
     });
 
+    it('migrates the previous speech-to-text default to Gemini 3.5 Flash', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          transcriptionModelId: 'gemini-3-flash-preview',
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.5-flash');
+    });
+
     it('preserves user edits made before settings finish loading', async () => {
       const liveArtifactsPrompt = '[Live Artifacts Protocol - zh]\nLive Artifacts prompt';
       vi.mocked(dbService.getAppSettings).mockResolvedValue(
