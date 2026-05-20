@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act } from 'react';
 import type { ChatMessage } from '@/types';
 import { createChatAreaProviderValue, renderWithChatAreaProviders } from '@/test/chatAreaFixtures';
 import { MessageList } from './MessageList';
 import type { VirtuosoMockProps } from '@/test/messageListTestDoubles';
+import { AVAILABLE_THEMES } from '@/constants/themeConstants';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 const virtuosoPropsSpy = vi.hoisted(() => vi.fn());
 
@@ -24,7 +27,7 @@ vi.mock('@/components/modals/FileConfigurationModal', async () => {
   return createNullComponentMock('FileConfigurationModal');
 });
 
-vi.mock('@/hooks/useMessageListUi', async () => {
+vi.mock('./message-list/hooks/useMessageListUi', async () => {
   const { createMessageListUiMock } = await import('@/test/messageListTestDoubles');
 
   return createMessageListUiMock();
@@ -111,5 +114,20 @@ describe('MessageList scroll configuration', () => {
     expect(props.followOutput?.(true)).toBe('auto');
     expect(props.followOutput?.(false)).toBe(false);
     expect(props.className).toContain('chat-message-list-scroller');
+  });
+
+  it('keeps Virtuoso structural props stable across unrelated rerenders', () => {
+    ({ unmount } = renderWithChatAreaProviders(<MessageList />, { value: createProviderValue() }));
+
+    const initialProps = virtuosoPropsSpy.mock.calls[0]?.[0] as VirtuosoMockProps<ChatMessage>;
+
+    act(() => {
+      useSettingsStore.setState({ currentTheme: AVAILABLE_THEMES.find((theme) => theme.id !== 'pearl') });
+    });
+
+    const latestProps = virtuosoPropsSpy.mock.calls.at(-1)?.[0] as VirtuosoMockProps<ChatMessage>;
+
+    expect(latestProps.components).toBe(initialProps.components);
+    expect(latestProps.itemContent).toBe(initialProps.itemContent);
   });
 });

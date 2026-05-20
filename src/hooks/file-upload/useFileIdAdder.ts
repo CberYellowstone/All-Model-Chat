@@ -7,7 +7,7 @@ import {
 } from '@/types';
 import { ALL_SUPPORTED_MIME_TYPES } from '@/constants/fileConstants';
 import { logService } from '@/services/logService';
-import { getApiKeyErrorTranslationKey, getGeminiKeyForRequest } from '@/utils/apiUtils';
+import { getApiKeyErrorTranslationKey, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { getFileMetadataApi } from '@/services/api/fileApi';
 import {
@@ -15,7 +15,7 @@ import {
   getUploadLifecycleForGeminiState,
 } from '@/utils/file-upload/fileUploadPolicy';
 import { useI18n } from '@/contexts/I18nContext';
-import { isVideoMimeType } from '@/utils/fileTypeUtils';
+import { isVideoMimeType } from '@/utils/fileTypeClassification';
 import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
 
 interface UseFileIdAdderProps {

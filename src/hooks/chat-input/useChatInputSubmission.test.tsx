@@ -1,4 +1,4 @@
-import { act, type FormEvent } from 'react';
+import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createChatSettings } from '@/test/factories';
 import { renderHook } from '@/test/testUtils';
@@ -60,7 +60,7 @@ describe('useChatInputSubmission', () => {
     const { result, unmount } = renderHook(() => useChatInputSubmission(params));
 
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      result.current.handleSubmit();
     });
 
     expect(params.submissionState.startSendAnimation).toHaveBeenCalledTimes(1);

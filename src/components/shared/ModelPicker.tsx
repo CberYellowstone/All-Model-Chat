@@ -9,7 +9,7 @@ import {
   filterModelCatalog,
   getModelProviderSectionLabelKey,
 } from '@/utils/modelCatalog';
-import { getModelIcon } from './modelIcons';
+import { getModelIcon } from './ModelIcon';
 
 interface ModelPickerProps {
   models: ModelOption[];

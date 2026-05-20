@@ -13,7 +13,7 @@ vi.mock('@/services/api/generation/textApi', () => ({
   generateTitleApi: generateTitleApiMock,
 }));
 
-vi.mock('@/utils/apiUtils', () => ({
+vi.mock('@/utils/apiKeySelection', () => ({
   getGeminiKeyForRequest: getGeminiKeyForRequestMock,
 }));
 
@@ -23,7 +23,7 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-const createSession = (): SavedChatSession => ({
+const createSession = (overrides: Partial<SavedChatSession> = {}): SavedChatSession => ({
   id: 'session-1',
   title: 'New Chat',
   timestamp: 1,
@@ -45,6 +45,7 @@ const createSession = (): SavedChatSession => ({
       timestamp: new Date('2026-05-09T00:00:01.000Z'),
     },
   ],
+  ...overrides,
 });
 
 describe('useAutoTitling', () => {
@@ -87,6 +88,54 @@ describe('useAutoTitling', () => {
       );
     });
     expect(getGeminiKeyForRequestMock).toHaveBeenCalled();
+    unmount();
+  });
+
+  it('does not repeatedly retry an unchanged placeholder title when a Gemini key is unavailable', async () => {
+    const prompt = '请使用LiveArtifacts将提供的信息整理成结构化响应式HTML产物';
+    const activeChat = createSession({
+      title: prompt,
+      messages: [
+        {
+          id: 'message-user',
+          role: 'user',
+          content: prompt,
+          timestamp: new Date('2026-05-09T00:00:00.000Z'),
+        },
+        {
+          id: 'message-model',
+          role: 'model',
+          content: 'Done.',
+          timestamp: new Date('2026-05-09T00:00:01.000Z'),
+        },
+      ],
+    });
+    let generatingTitleSessionIds = new Set<string>();
+    const setGeneratingTitleSessionIds = vi.fn((updater: React.SetStateAction<Set<string>>) => {
+      generatingTitleSessionIds = typeof updater === 'function' ? updater(generatingTitleSessionIds) : updater;
+    });
+
+    getGeminiKeyForRequestMock.mockReturnValue({ error: 'API Key not configured.' });
+
+    const { rerender, unmount } = renderHook(() =>
+      useAutoTitling({
+        appSettings: DEFAULT_APP_SETTINGS,
+        activeChat,
+        updateAndPersistSessions: vi.fn(),
+        language: 'zh',
+        generatingTitleSessionIds,
+        setGeneratingTitleSessionIds,
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(getGeminiKeyForRequestMock).toHaveBeenCalledTimes(1);
+    });
+
+    rerender();
+
+    expect(getGeminiKeyForRequestMock).toHaveBeenCalledTimes(1);
+    expect(generateTitleApiMock).not.toHaveBeenCalled();
     unmount();
   });
 });

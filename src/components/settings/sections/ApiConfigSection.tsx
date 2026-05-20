@@ -8,7 +8,11 @@ import { CONNECTION_TEST_MODELS } from '@/constants/settingsModelOptions';
 import { getClient } from '@/services/api/apiClient';
 import { sendOpenAICompatibleMessageNonStream } from '@/services/api/openaiCompatibleApi';
 import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL } from '@/utils/apiProxyUrl';
-import { isServerManagedApiEnabledForProxyRequests, parseApiKeys, SERVER_MANAGED_API_KEY } from '@/utils/apiUtils';
+import {
+  isServerManagedApiEnabledForProxyRequests,
+  parseApiKeys,
+  SERVER_MANAGED_API_KEY,
+} from '@/utils/apiKeySelection';
 import { ApiConfigToggle } from './api-config/ApiConfigToggle';
 import { ApiKeyInput } from './api-config/ApiKeyInput';
 import { ApiProxySettings } from './api-config/ApiProxySettings';

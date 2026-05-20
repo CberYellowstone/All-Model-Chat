@@ -2,9 +2,9 @@ import React, { type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { type UploadedFile } from '@/types';
 import { Plus, X, Image as ImageIcon, FileText } from 'lucide-react';
-import { formatFileSize } from '@/utils/fileHelpers';
+import { formatFileSize } from '@/utils/fileSize';
 import { ALL_SUPPORTED_MIME_TYPES } from '@/constants/fileConstants';
-import { isImageMimeType } from '@/utils/fileTypeUtils';
+import { isImageMimeType } from '@/utils/fileTypeClassification';
 
 interface TokenCountFilesProps {
   files: UploadedFile[];

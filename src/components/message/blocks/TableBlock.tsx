@@ -197,14 +197,12 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
     );
   }
 
-  // Default inline view - Enclosed container with floating top-right actions
   return (
     <div
       className={inlineContainerClassName}
       data-rich-html-table-container={isRichHtmlTable || undefined}
       data-table-actions-scope="true"
     >
-      {/* Scrollable Table Container */}
       <div className="overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full">
         <table ref={tableRef} className={tableClassName} {...props}>
           {children}

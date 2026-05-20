@@ -4,8 +4,8 @@ import { type UploadedFile } from '@/types';
 import { Check, Copy, Download, SlidersHorizontal, Scissors } from 'lucide-react';
 import { triggerDownload } from '@/utils/export/core';
 import { CATEGORY_STYLES, getResolutionColor } from '@/utils/fileDisplayStyles';
-import { formatFileSize } from '@/utils/fileHelpers';
-import { getFileCardMeta } from '@/utils/fileCardUtils';
+import { formatFileSize } from '@/utils/fileSize';
+import { getFileCardMeta } from '@/components/shared/file-preview/fileCardMeta';
 import { useI18n } from '@/contexts/I18nContext';
 import { FileThumbnail } from '@/components/chat/input/FileThumbnail';
 

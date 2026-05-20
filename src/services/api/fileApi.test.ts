@@ -178,6 +178,7 @@ describe('uploadFileApi', () => {
     };
     getConfiguredApiClientContextMock.mockResolvedValue({
       client,
+      uploadApiClient: client.apiClient,
       apiBaseUrl: 'https://generativelanguage.googleapis.com',
       proxyBaseUrl: null,
     });
@@ -231,10 +232,12 @@ describe('uploadFileApi', () => {
   });
 
   it('rewrites the upload session through the configured proxy base path', async () => {
+    const client = {
+      apiClient: createInternalApiClient(),
+    };
     getConfiguredApiClientContextMock.mockResolvedValue({
-      client: {
-        apiClient: createInternalApiClient(),
-      },
+      client,
+      uploadApiClient: client.apiClient,
       apiBaseUrl: 'https://proxy.example.com/gemini',
       proxyBaseUrl: 'https://proxy.example.com/gemini',
     });

@@ -1,7 +1,7 @@
 import type { GenerateContentConfig, Part, ThinkingConfig, ThinkingLevel, UsageMetadata } from '@google/genai';
 import { executeConfiguredApiRequest } from '@/services/api/apiExecutor';
 import { logService } from '@/services/logService';
-import { blobToBase64 } from '@/utils/fileHelpers';
+import { blobToBase64 } from '@/utils/fileEncoding';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
 import { calculateTokenStats } from '@/utils/modelUsageStats';
 import { buildExactPricingFromUsageMetadata } from '@/utils/usagePricingTelemetry';

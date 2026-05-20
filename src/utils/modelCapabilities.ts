@@ -1,11 +1,11 @@
-import { GEMINI_3_RO_MODELS, MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConstants';
+import { GEMINI_3_REQUIRED_THINKING_MODEL_IDS, MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConstants';
 import type { ThinkingLevel } from '@/types';
 
 export const isGemini3Model = (modelId: string): boolean => {
   if (!modelId) return false;
   const lowerId = modelId.toLowerCase();
   return (
-    GEMINI_3_RO_MODELS.some((model) => lowerId.includes(model)) ||
+    GEMINI_3_REQUIRED_THINKING_MODEL_IDS.some((model) => lowerId.includes(model)) ||
     lowerId.includes('gemini-3-pro') ||
     lowerId.includes('gemini-3.1-flash')
   );
@@ -44,7 +44,7 @@ export const isImageModel = (modelId: string): boolean =>
   isGemini3ImageModel(modelId) ||
   (modelId.toLowerCase().includes('image') && !modelId.toLowerCase().includes('imagen'));
 
-interface ModelInteractionPermissions {
+export interface ModelInteractionPermissions {
   canAcceptAttachments: boolean;
   canUseTools: boolean;
   canUseGoogleSearch: boolean;
@@ -60,7 +60,31 @@ interface ModelInteractionPermissions {
   requiresTextPrompt: boolean;
 }
 
-export const getModelCapabilities = (modelId: string) => {
+export interface ModelCapabilities {
+  isGemini3: boolean;
+  supportsRawReasoningPrefill: boolean;
+  supportsThinkingLevel: boolean;
+  supportsThinkingBudgetConfig: boolean;
+  isGemmaModel: boolean;
+  isFlashModel: boolean;
+  isGemini25Model: boolean;
+  isGemini3FlashModel: boolean;
+  isGemini31FlashLiveModel: boolean;
+  isGemini31FlashImageModel: boolean;
+  isGeminiRoboticsModel: boolean;
+  isGemini3ImageModel: boolean;
+  isFlashImageModel: boolean;
+  isRealImagenModel: boolean;
+  isImagenModel: boolean;
+  isTtsModel: boolean;
+  isNativeAudioModel: boolean;
+  supportsBuiltInCustomToolCombination: boolean;
+  permissions: ModelInteractionPermissions;
+  supportedAspectRatios?: string[];
+  supportedImageSizes?: string[];
+}
+
+export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   const lowerId = modelId.toLowerCase();
   const isGemini3 = isGemini3Model(modelId);
   const supportsThinkingLevelSelection = supportsThinkingLevel(modelId);

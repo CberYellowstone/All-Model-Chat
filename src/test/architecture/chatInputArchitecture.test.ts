@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-
-const projectRoot = path.resolve(__dirname, '../../..');
-
-const readProjectFile = (relativePath: string) => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+import { projectRoot, readProjectFile } from './architectureTestUtils';
 
 describe('chat input architecture guardrails', () => {
   it('avoids writing input text twice in the chat input change handler', () => {
@@ -20,7 +17,7 @@ describe('chat input architecture guardrails', () => {
     const submissionSource = readProjectFile('src/hooks/chat-input/useChatInputSubmission.ts');
     const chatInputProviderSource = readProjectFile('src/components/chat/input/ChatInputProvider.tsx');
     const chatTextAreaSource = readProjectFile('src/components/chat/input/area/ChatTextArea.tsx');
-    const chatAreaSource = readProjectFile('src/components/layout/chat-area/useChatArea.ts');
+    const chatAreaSource = readProjectFile('src/components/layout/useChatArea.ts');
 
     expect(source).toContain('useChatInputCore');
     expect(source).toContain('useChatInputFile');
@@ -31,8 +28,8 @@ describe('chat input architecture guardrails', () => {
     expect(source).not.toContain('isComposingRef.current =');
     expect(source.length).toBeLessThan(10000);
     expect(chatInputProviderSource).toContain("from '@/hooks/chat-input/useChatInput'");
-    expect(chatInputProviderSource).toContain("from '@/hooks/chat-input/useChatInputState'");
-    expect(chatTextAreaSource).toContain("from '@/hooks/chat-input/useChatInputState'");
+    expect(chatInputProviderSource).toContain("from './chatInputLayoutConstants'");
+    expect(chatTextAreaSource).toContain("from '@/components/chat/input/chatInputLayoutConstants'");
     expect(chatAreaSource).toContain("from '@/hooks/chat-input/useChatInputHeight'");
   });
 
@@ -58,7 +55,7 @@ describe('chat input architecture guardrails', () => {
     const chatTypesSource = readProjectFile('src/types/chat.ts');
     const chatInputActionsSource = readProjectFile('src/components/chat/input/ChatInputActions.tsx');
     const toolsMenuSource = readProjectFile('src/components/chat/input/ToolsMenu.tsx');
-    const slashCommandsSource = readProjectFile('src/hooks/useSlashCommands.ts');
+    const slashCommandsSource = readProjectFile('src/hooks/chat-input/useSlashCommands.ts');
     const mainContentViewModelSource = readProjectFile('src/components/layout/useMainContentViewModel.ts');
     const chatAreaSource = readProjectFile('src/components/layout/ChatArea.tsx');
     const chatInputCoreSource = readProjectFile('src/hooks/chat-input/useChatInputCore.ts');

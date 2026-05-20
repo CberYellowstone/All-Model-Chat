@@ -1,20 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-
-const projectRoot = path.resolve(__dirname, '../../..');
-
-const readProjectFile = (relativePath: string) => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
-const listProjectSourceFiles = (relativeDir: string): string[] => {
-  const absoluteDir = path.join(projectRoot, relativeDir);
-  return fs.readdirSync(absoluteDir, { withFileTypes: true }).flatMap((entry) => {
-    const entryPath = path.join(relativeDir, entry.name);
-    if (entry.isDirectory()) {
-      return listProjectSourceFiles(entryPath);
-    }
-    return /\.(ts|tsx)$/.test(entry.name) ? [entryPath] : [];
-  });
-};
+import { describe, expect, it } from 'vitest';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
 
 describe('codebase maintainability guardrails', () => {
   it('does not keep identity wrapper exports in mainContentModels', () => {
@@ -38,6 +25,17 @@ describe('codebase maintainability guardrails', () => {
       .filter((relativePath) => readProjectFile(relativePath).includes('modelHelpers'));
 
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps model capability types tied to the pure capability module', () => {
+    const modelCapabilitiesStoreSource = readProjectFile('src/stores/modelCapabilitiesStore.ts');
+    const toolRegistrySource = readProjectFile('src/features/chat-tools/toolRegistry.ts');
+
+    expect(toolRegistrySource).toContain("from '@/utils/modelCapabilities'");
+    expect(toolRegistrySource).not.toContain("from '@/stores/modelCapabilitiesStore'");
+    expect(modelCapabilitiesStoreSource).not.toContain(
+      'export type ModelCapabilities = ReturnType<typeof getModelCapabilities>',
+    );
   });
 
   it('does not expose test-only implementation helpers from production modules', () => {
@@ -77,6 +75,7 @@ describe('codebase maintainability guardrails', () => {
     expect(apiConfigSource).not.toContain('serverManagedApi?: boolean;');
     expect(apiConfigSource).not.toContain('setLiveApiEphemeralTokenEndpoint?:');
     expect(iconsIndexSource).not.toContain("export * from './iconUtils';");
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/icons/iconUtils.ts'))).toBe(false);
   });
 
   it('keeps the history sidebar out of the initial main-content chunk', () => {
@@ -106,14 +105,17 @@ describe('codebase maintainability guardrails', () => {
     expect(fs.existsSync(path.join(projectRoot, 'src/components/layout/chat-area/ChatAreaContext.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/components/layout/chat-area/ChatAreaProps.ts'))).toBe(false);
     expect(messageListSource).not.toContain('onScrollContainerScroll');
+    expect(messageListSource).toContain("from './message-list/MessageListModals'");
+    expect(messageListSource).not.toContain('LazyHtmlPreviewModal');
+    expect(messageListSource).not.toContain('LazyFilePreviewModal');
   });
 
   it('routes preview and export plumbing through shared helpers', () => {
-    const messageListUiSource = readProjectFile('src/hooks/useMessageListUi.ts');
+    const messageListUiSource = readProjectFile('src/components/chat/message-list/hooks/useMessageListUi.ts');
     const chatInputFileSource = readProjectFile('src/hooks/chat-input/useChatInputFile.ts');
     const useAppSource = readProjectFile('src/hooks/app/useApp.ts');
     const useAppPromptModesSource = readProjectFile('src/hooks/app/useAppPromptModes.ts');
-    const messageExportSource = readProjectFile('src/hooks/useMessageExport.ts');
+    const messageExportSource = readProjectFile('src/components/message/buttons/export/useMessageExport.ts');
     const chatSessionExportSource = readProjectFile('src/hooks/data-management/useChatSessionExport.ts');
 
     expect(messageListUiSource).toContain('useFileModalState');
@@ -182,7 +184,8 @@ describe('codebase maintainability guardrails', () => {
   it('keeps senders on the shared optimistic message pipeline', () => {
     for (const relativePath of [
       'src/features/message-sender/standardChatStrategy.ts',
-      'src/features/message-sender/ttsImagenStrategy.ts',
+      'src/features/message-sender/ttsStrategy.ts',
+      'src/features/message-sender/imageGenerationStrategy.ts',
       'src/features/message-sender/imageEditStrategy.ts',
     ]) {
       const source = readProjectFile(relativePath);
@@ -406,12 +409,12 @@ describe('codebase maintainability guardrails', () => {
     );
     const tokenCountModalSource = readProjectFile('src/components/modals/TokenCountModal.tsx');
 
-    expect(fs.existsSync(path.join(projectRoot, 'src/components/shared/modelIcons.tsx'))).toBe(true);
-    expect(modelPickerSource).toContain("from './modelIcons'");
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/shared/ModelIcon.tsx'))).toBe(true);
+    expect(modelPickerSource).toContain("from './ModelIcon'");
     expect(modelPickerSource).not.toContain('export const getModelIcon =');
-    expect(modelListViewSource).toContain("from '@/components/shared/modelIcons'");
-    expect(modelListEditorRowSource).toContain("from '@/components/shared/modelIcons'");
-    expect(tokenCountModalSource).toContain("from '@/components/shared/modelIcons'");
+    expect(modelListViewSource).toContain("from '@/components/shared/ModelIcon'");
+    expect(modelListEditorRowSource).toContain("from '@/components/shared/ModelIcon'");
+    expect(tokenCountModalSource).toContain("from '@/components/shared/ModelIcon'");
   });
 
   it('keeps PNG export color sanitizing separate from DOM export orchestration', () => {

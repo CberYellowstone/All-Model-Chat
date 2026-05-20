@@ -40,7 +40,7 @@ vi.mock('@/utils/chat/session', () => ({
   rehydrateSessionFiles: mockRehydrateSessionFiles,
 }));
 
-vi.mock('@/utils/fileHelpers', () => ({
+vi.mock('@/utils/filePreviewUrls', () => ({
   cleanupFilePreviewUrls: mockCleanupFilePreviewUrls,
 }));
 

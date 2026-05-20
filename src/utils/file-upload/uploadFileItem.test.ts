@@ -16,12 +16,9 @@ vi.mock('@/utils/chat/ids', () => ({
   generateUniqueId: generateUniqueIdMock,
 }));
 
-vi.mock('@/utils/fileHelpers', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/fileHelpers')>();
+vi.mock('@/utils/filePreviewUrls', () => {
   return {
-    ...actual,
     fileToBlobUrl: fileToBlobUrlMock,
-    isTextFile: vi.fn(() => false),
   };
 });
 

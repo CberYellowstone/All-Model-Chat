@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { type UploadedFile, type ChatSettings } from '@/types';
-import { areFilesStillProcessing, buildPendingChatInputSubmission } from '@/utils/chat-input/pendingSubmissionUtils';
+import { areFilesStillProcessing, buildPendingChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
 import { useLiveModeHandler, type LiveModeApi } from './useLiveModeHandler';
 import { useMessageQueue } from './useMessageQueue';
 
@@ -239,13 +239,9 @@ export const useChatInputSubmission = ({
     ],
   );
 
-  const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      performSubmit(false);
-    },
-    [performSubmit],
-  );
+  const handleSubmit = useCallback(() => {
+    performSubmit(false);
+  }, [performSubmit]);
 
   const handleFastSubmit = useCallback(() => {
     performSubmit(true);

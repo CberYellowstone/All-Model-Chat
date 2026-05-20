@@ -42,7 +42,7 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-vi.mock('@/utils/apiUtils', () => ({
+vi.mock('@/utils/apiKeySelection', () => ({
   getKeyForRequest: mockGetKeyForRequest,
 }));
 

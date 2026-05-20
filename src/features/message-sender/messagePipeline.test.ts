@@ -6,7 +6,7 @@ const { playCompletionSoundMock } = vi.hoisted(() => ({
   playCompletionSoundMock: vi.fn(),
 }));
 
-vi.mock('@/utils/completionFeedback', () => ({
+vi.mock('@/utils/browserCompletionFeedback', () => ({
   playCompletionSound: playCompletionSoundMock,
   showNotification: vi.fn(),
 }));

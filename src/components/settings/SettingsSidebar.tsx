@@ -93,7 +93,6 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         >
           <X size={20} strokeWidth={2} />
         </button>
-        {/* Mobile Title */}
         <span className="md:hidden font-semibold text-[var(--theme-text-primary)]">{t('settingsTitle')}</span>
         <div className="w-8 md:hidden"></div>
       </div>

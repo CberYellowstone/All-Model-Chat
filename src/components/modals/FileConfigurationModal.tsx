@@ -5,7 +5,7 @@ import { FileConfigHeader } from './file-config/FileConfigHeader';
 import { ResolutionConfig } from './file-config/ResolutionConfig';
 import { VideoConfig } from './file-config/VideoConfig';
 import { FileConfigFooter } from './file-config/FileConfigFooter';
-import { getFileKindFlags } from '@/utils/fileTypeUtils';
+import { getFileKindFlags } from '@/utils/fileTypeClassification';
 
 interface FileConfigurationModalProps {
   isOpen: boolean;

@@ -8,8 +8,10 @@ const { mockLoadLiveArtifactsSystemPrompt } = vi.hoisted(() => ({
   mockLoadLiveArtifactsSystemPrompt: vi.fn(),
 }));
 
-vi.mock('@/constants/promptHelpers', async () => {
-  const actual = await vi.importActual<typeof import('@/constants/promptHelpers')>('@/constants/promptHelpers');
+vi.mock('@/features/prompts/promptRegistry', async () => {
+  const actual = await vi.importActual<typeof import('@/features/prompts/promptRegistry')>(
+    '@/features/prompts/promptRegistry',
+  );
 
   return {
     ...actual,

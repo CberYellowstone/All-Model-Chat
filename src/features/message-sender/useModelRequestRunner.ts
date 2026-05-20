@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { AppSettings, ChatSettings as IndividualChatSettings, UploadedFile } from '@/types';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
 import { logService } from '@/services/logService';
-import { getKeyForRequest } from '@/utils/apiUtils';
+import { getKeyForRequest } from '@/utils/apiKeySelection';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { usesRemoteFileReference } from '@/utils/chat/fileTransferStrategy';
 import { createMessage, createNewSession } from '@/utils/chat/session';

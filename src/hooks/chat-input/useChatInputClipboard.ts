@@ -1,6 +1,6 @@
 import { useCallback, type MutableRefObject, type RefObject } from 'react';
 import type { AppSettings, UploadedFile } from '@/types';
-import { processClipboardData } from '@/utils/clipboardUtils';
+import { processChatInputClipboardData } from '@/utils/chat-input/clipboardData';
 import { useI18n } from '@/contexts/I18nContext';
 import { MIME_TO_EXTENSION_MAP, SUPPORTED_IMAGE_MIME_TYPES } from '@/constants/fileConstants';
 
@@ -148,7 +148,7 @@ export const useChatInputClipboard = ({
         return false;
       }
 
-      const result = await processClipboardData(clipboardData, {
+      const result = await processChatInputClipboardData(clipboardData, {
         isPasteRichTextAsMarkdownEnabled: appSettings.isPasteRichTextAsMarkdownEnabled ?? true,
         isPasteAsTextFileEnabled: appSettings.isPasteAsTextFileEnabled ?? true,
       });

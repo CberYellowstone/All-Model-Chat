@@ -66,15 +66,9 @@ export const SendControls: React.FC = () => {
     bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)]';
   }
 
-  // Determine shape class for morphing
-  // Stop button is squarer (rounded-xl) to match stop icon metaphor
-  // Others are circular (rounded-full)
-  // Using explicit pixel radius or consistent scale ensures smoother transition than mixed units
   const shapeClass = isStop ? '!rounded-[10px]' : '!rounded-full';
 
-  // Handlers
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Create ripple if button is interactive
     if (!isDisabled) {
       createRipple(e);
     }
@@ -90,7 +84,6 @@ export const SendControls: React.FC = () => {
     } else if (isDisabled) {
       e.preventDefault();
     }
-    // For submit (send/edit), we let the form handler take over unless blocked
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -101,7 +94,6 @@ export const SendControls: React.FC = () => {
     }
   };
 
-  // Text & Tooltips
   let label = t('sendMessage_aria');
   let title = t('sendMessage_title');
 
@@ -115,7 +107,7 @@ export const SendControls: React.FC = () => {
     label = t('cancelPendingUploadSend_aria');
     title = t('cancelPendingUploadSend_title');
   } else if (isSend && !isDisabled) {
-    title = t('sendMessage_title') + t('sendMessage_fast_suffix', ' (Right-click for Fast Mode ⚡)');
+    title = t('sendMessage_title') + t('sendMessage_fast_suffix');
   }
 
   const renderIcon = (
@@ -153,7 +145,6 @@ export const SendControls: React.FC = () => {
         </button>
       </div>
 
-      {/* Cancel Edit Button - Animates in/out */}
       <div
         className={`transition-all duration-300 ease-[cubic-bezier(0.19,1,0.22,1)] overflow-hidden flex items-center ${isEditing ? 'max-w-[50px] opacity-100 mr-2' : 'max-w-0 opacity-0 mr-0'}`}
       >
@@ -174,7 +165,6 @@ export const SendControls: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Action Button */}
       <button
         type={isStop || isUpload ? 'button' : 'submit'}
         onClick={handleClick}
@@ -184,7 +174,6 @@ export const SendControls: React.FC = () => {
         aria-label={label}
         title={title}
       >
-        {/* Ripples */}
         {ripples.map((ripple) => (
           <span
             key={ripple.id}
@@ -198,7 +187,6 @@ export const SendControls: React.FC = () => {
           />
         ))}
 
-        {/* Icons stack on top of each other and fade/rotate in/out */}
         {renderIcon(isStop, IconStop, { size: 10 })}
         {renderIcon(isUpload, Ban, { size: iconSize - 1, strokeWidth: 2 })}
         {renderIcon(isEdit, editMode === 'update' ? Save : Edit2, { size: iconSize, strokeWidth: 2 })}

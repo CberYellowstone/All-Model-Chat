@@ -97,6 +97,7 @@ export default tseslint.config(
       'server/**/*.ts',
       'src/services/logService.ts',
       'src/services/db/dbService.ts',
+      'src/services/db/idbUtils.ts',
       'src/features/local-python/pyodideWorkerTemplate.ts',
       'src/utils/chat/session.ts',
       'src/utils/htmlPreviewScripts.ts',

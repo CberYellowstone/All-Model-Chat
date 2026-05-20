@@ -4,7 +4,7 @@ import { ChevronDown, Shield } from 'lucide-react';
 import { type ApiMode, type AppSettings, type ModelOption } from '@/types';
 import { ModelSelector } from '@/components/settings/controls/ModelSelector';
 import { fetchOpenAICompatibleModels } from '@/services/api/openaiCompatibleApi';
-import { parseApiKeys } from '@/utils/apiUtils';
+import { parseApiKeys } from '@/utils/apiKeySelection';
 import { sanitizeModelOptions } from '@/utils/modelSorting';
 import { LiveArtifactsSection } from './LiveArtifactsSection';
 import { GenerationSection } from './GenerationSection';

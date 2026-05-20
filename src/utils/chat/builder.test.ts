@@ -3,19 +3,9 @@ import { Language, Outcome } from '@google/genai';
 import { buildContentParts, createChatHistoryForApi } from './builder';
 import { type UploadedFile, type ChatMessage, MediaResolution } from '@/types';
 
-vi.mock('@/utils/fileHelpers', () => ({
+vi.mock('@/utils/fileEncoding', () => ({
   blobToBase64: vi.fn().mockResolvedValue('base64data'),
   fileToString: vi.fn().mockResolvedValue('file text content'),
-  isTextFile: vi.fn((file: { name: string; type: string }) => {
-    return (
-      file.type === 'text/plain' || file.type === 'text/csv' || file.name.endsWith('.txt') || file.name.endsWith('.csv')
-    );
-  }),
-  getExtensionFromMimeType: vi.fn((mimeType: string) => {
-    const map: Record<string, string> = { 'image/png': '.png', 'audio/mp3': '.mp3' };
-    return map[mimeType] || '.bin';
-  }),
-  base64ToBlob: vi.fn(() => new Blob(['data'])),
 }));
 
 vi.mock('@/services/logService', async () => {

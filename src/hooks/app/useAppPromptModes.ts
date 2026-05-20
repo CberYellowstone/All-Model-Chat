@@ -7,7 +7,7 @@ import {
   loadBboxSystemPrompt,
   loadLiveArtifactsSystemPrompt,
   loadHdGuideSystemPrompt,
-} from '@/constants/promptHelpers';
+} from '@/features/prompts/promptRegistry';
 import { DEFAULT_SYSTEM_INSTRUCTION } from '@/constants/appConstants';
 import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/storageKeys';
 import { getLiveArtifactsSystemPromptOverride } from '@/utils/liveArtifactsPromptSettings';

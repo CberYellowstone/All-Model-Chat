@@ -9,19 +9,20 @@ import {
 } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { logService } from '@/services/logService';
-import { getApiKeyErrorTranslationKey } from '@/utils/apiUtils';
+import { getApiKeyErrorTranslationKey } from '@/utils/apiKeySelection';
 import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES, isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/fileTypeUtils';
+import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/fileTypeClassification';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
 import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
 
 import { ensureFilesApiReferences } from './fileApiReference';
 import { formatMessageSenderText } from './i18nFormat';
+import { sendImageGenerationMessage } from './imageGenerationStrategy';
 import { sendImageEditMessage } from './imageEditStrategy';
 import { prepareFilesForOpenAICompatibleMode } from './openaiCompatibleFiles';
 import { createSenderStoreActions } from './senderStoreActions';
 import { sendStandardMessage } from './standardChatStrategy';
-import { sendTtsImagenMessage } from './ttsImagenStrategy';
+import { sendTtsMessage } from './ttsStrategy';
 import { useChatStreamHandler } from './useChatStreamHandler';
 import { useMessageLifecycle } from './useMessageLifecycle';
 import { useModelRequestRunner } from './useModelRequestRunner';
@@ -261,8 +262,27 @@ export const useMessageSender = (props: MessageSenderProps) => {
       }
       if (overrideOptions?.files === undefined) setSelectedFiles([]);
 
-      if (isTtsModel || isImagenModel) {
-        await sendTtsImagenMessage({
+      if (isTtsModel) {
+        await sendTtsMessage({
+          keyToUse,
+          activeSessionId,
+          generationId,
+          abortController: newAbortController,
+          appSettings,
+          currentChatSettings: sessionToUpdate,
+          text: textToUse.trim(),
+          shouldLockKey,
+          updateAndPersistSessions,
+          setActiveSessionId,
+          runMessageLifecycle,
+          t,
+        });
+        if (editingMessageId) setEditingMessageId(null);
+        return;
+      }
+
+      if (isImagenModel) {
+        await sendImageGenerationMessage({
           keyToUse,
           activeSessionId,
           generationId,

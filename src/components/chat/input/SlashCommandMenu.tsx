@@ -90,7 +90,6 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--theme-bg-accent)] rounded-r-full" />
                     )}
 
-                    {/* Icon Container */}
                     <div
                       className={`
                                         flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-colors duration-200

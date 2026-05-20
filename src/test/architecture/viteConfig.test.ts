@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { projectRoot } from './architectureTestUtils';
 
-const projectRoot = path.resolve(__dirname, '../../..');
 const viteConfigPath = path.join(projectRoot, 'vite.config.ts');
 const viteChunksPath = path.join(projectRoot, 'vite/chunks.ts');
 const viteStaticAssetsPath = path.join(projectRoot, 'vite/staticAssets.ts');
@@ -24,12 +24,12 @@ const ttsVoiceSelectorPath = path.join(projectRoot, 'src/components/chat/input/t
 const markdownPdfExportPath = path.join(projectRoot, 'src/utils/export/markdownPdf.ts');
 const chatInputModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputModals.tsx');
 const chatInputFileModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputFileModals.tsx');
-const useCreateFileEditorPath = path.join(projectRoot, 'src/hooks/useCreateFileEditor.ts');
-const clipboardUtilsPath = path.join(projectRoot, 'src/utils/clipboardUtils.ts');
+const useCreateFileEditorPath = path.join(projectRoot, 'src/components/modals/create-file/useCreateFileEditor.ts');
+const clipboardDataPath = path.join(projectRoot, 'src/utils/chat-input/clipboardData.ts');
 const useChatInputClipboardPath = path.join(projectRoot, 'src/hooks/chat-input/useChatInputClipboard.ts');
 const useSelectionPositionPath = path.join(projectRoot, 'src/hooks/text-selection/useSelectionPosition.ts');
 const tableBlockPath = path.join(projectRoot, 'src/components/message/blocks/TableBlock.tsx');
-const folderImportUtilsPath = path.join(projectRoot, 'src/utils/folderImportUtils.ts');
+const importContextLoadersPath = path.join(projectRoot, 'src/utils/importContextLoaders.ts');
 const useFileDragDropPath = path.join(projectRoot, 'src/hooks/file-upload/useFileDragDrop.ts');
 const useFilePreProcessingPath = path.join(projectRoot, 'src/hooks/file-upload/useFilePreProcessing.ts');
 const useFilePreProcessingEffectsPath = path.join(projectRoot, 'src/hooks/chat-input/useFilePreProcessingEffects.ts');
@@ -187,43 +187,47 @@ describe('vite.config runtime ownership', () => {
   });
 
   it('keeps HTML-to-Markdown conversion out of the initial chat and message interaction bundles', () => {
-    const clipboardUtilsSource = fs.readFileSync(clipboardUtilsPath, 'utf8');
+    const clipboardDataSource = fs.readFileSync(clipboardDataPath, 'utf8');
     const useChatInputClipboardSource = fs.readFileSync(useChatInputClipboardPath, 'utf8');
     const useSelectionPositionSource = fs.readFileSync(useSelectionPositionPath, 'utf8');
     const tableBlockSource = fs.readFileSync(tableBlockPath, 'utf8');
     const useCreateFileEditorSource = fs.readFileSync(useCreateFileEditorPath, 'utf8');
 
-    expect(clipboardUtilsSource).not.toContain("from './htmlToMarkdown'");
+    expect(clipboardDataSource).not.toContain("from '@/utils/htmlToMarkdown'");
     expect(useChatInputClipboardSource).not.toContain("from '@/utils/htmlToMarkdown'");
     expect(useSelectionPositionSource).not.toContain("from '@/utils/htmlToMarkdown'");
     expect(tableBlockSource).not.toContain("from '@/utils/htmlToMarkdown'");
     expect(useCreateFileEditorSource).not.toContain("from '@/utils/htmlToMarkdown'");
 
-    expect(clipboardUtilsSource).toContain("import('./htmlToMarkdown')");
+    expect(clipboardDataSource).toContain("import('@/utils/htmlToMarkdown')");
     expect(useSelectionPositionSource).toContain("import('@/utils/htmlToMarkdown')");
     expect(tableBlockSource).toContain("import('@/utils/htmlToMarkdown')");
     expect(useCreateFileEditorSource).toContain("import('@/utils/htmlToMarkdown')");
   });
 
   it('keeps ZIP and folder import builders out of the initial file upload bundles', () => {
-    const folderImportUtilsSource = fs.readFileSync(folderImportUtilsPath, 'utf8');
+    const importContextLoadersSource = fs.readFileSync(importContextLoadersPath, 'utf8');
     const useFileDragDropSource = fs.readFileSync(useFileDragDropPath, 'utf8');
     const useFilePreProcessingSource = fs.readFileSync(useFilePreProcessingPath, 'utf8');
     const useFilePreProcessingEffectsSource = fs.readFileSync(useFilePreProcessingEffectsPath, 'utf8');
 
-    expect(folderImportUtilsSource).not.toMatch(
+    expect(fs.existsSync(importContextLoadersPath)).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/folderImportUtils.ts'))).toBe(false);
+    expect(importContextLoadersSource).not.toMatch(
       /import\s+(?!type)[\s\S]*from '\.\/import-context\/importContextBuilder'/,
     );
     expect(useFileDragDropSource).not.toContain("from '@/utils/import-context/importContextBuilder'");
     expect(useFileDragDropSource).not.toContain("from '@/utils/import-context/droppedItems'");
     expect(useFilePreProcessingSource).not.toContain("from '@/utils/folderImportUtils'");
     expect(useFilePreProcessingEffectsSource).not.toContain("from '@/utils/folderImportUtils'");
+    expect(useFilePreProcessingSource).not.toContain("import('@/utils/folderImportUtils')");
+    expect(useFilePreProcessingEffectsSource).not.toContain("import('@/utils/folderImportUtils')");
 
-    expect(folderImportUtilsSource).toContain("import('./import-context/importContextBuilder')");
+    expect(importContextLoadersSource).toContain("import('./import-context/importContextBuilder')");
     expect(useFileDragDropSource).toContain("import('@/utils/import-context/droppedItems')");
     expect(useFileDragDropSource).toContain("import('@/utils/import-context/importContextBuilder')");
-    expect(useFilePreProcessingSource).toContain("import('@/utils/folderImportUtils')");
-    expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/folderImportUtils')");
+    expect(useFilePreProcessingSource).toContain("import('@/utils/importContextLoaders')");
+    expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/importContextLoaders')");
   });
 });
 

@@ -138,7 +138,7 @@ vi.mock('@/contexts/WindowContext', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useVoiceInput', () => ({
+vi.mock('@/hooks/chat-input/useVoiceInput', () => ({
   useVoiceInput: () => ({
     isRecording: false,
     isMicInitializing: false,
@@ -148,11 +148,11 @@ vi.mock('@/hooks/useVoiceInput', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useLiveApi', () => ({
+vi.mock('@/hooks/live-api/useLiveApi', () => ({
   useLiveApi: () => mockLiveApiState,
 }));
 
-vi.mock('@/utils/apiUtils', () => ({
+vi.mock('@/utils/apiKeySelection', () => ({
   getKeyForRequest: mockApiUtils.getKeyForRequest,
   getGeminiKeyForRequest: mockApiUtils.getKeyForRequest,
 }));
@@ -236,7 +236,12 @@ vi.mock('@/components/chat/input/ChatInputArea', async () => {
     } = useChatInputContext();
 
     return (
-      <form onSubmit={handlers.handleSubmit}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          handlers.handleSubmit();
+        }}
+      >
         <div data-testid="chat-input-value">{inputState.inputText}</div>
         {queuedSubmissionView ? (
           <div data-testid="queued-card">
@@ -263,7 +268,7 @@ vi.mock('@/components/chat/input/ChatInputArea', async () => {
           onKeyDown={handlers.handleKeyDown}
           onPaste={handlers.handlePaste}
           onCompositionStart={handlers.onCompositionStart}
-          onCompositionEnd={handlers.onCompositionEnd}
+          onCompositionEnd={(event) => handlers.onCompositionEnd(event.currentTarget.value)}
           disabled={inputDisabled}
         />
         <button

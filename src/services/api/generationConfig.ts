@@ -5,7 +5,7 @@ import {
   type GenerateContentConfig,
   type Tool,
 } from '@google/genai';
-import { loadDeepSearchSystemPrompt, loadLocalPythonSystemPrompt } from '@/constants/promptHelpers';
+import { loadDeepSearchSystemPrompt, loadLocalPythonSystemPrompt } from '@/features/prompts/promptRegistry';
 import {
   MediaResolution,
   type ChatSettings,

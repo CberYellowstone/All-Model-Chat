@@ -3,11 +3,15 @@ import { ChevronDown, Check } from 'lucide-react';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useI18n } from '@/contexts/I18nContext';
 
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+interface SelectProps {
+  id?: string;
   label: string;
   children: React.ReactNode;
   labelContent?: React.ReactNode;
-  onChange: (e: { target: { value: string } }) => void;
+  value?: string | number;
+  onChange: (event: { target: { value: string } }) => void;
+  disabled?: boolean;
+  className?: string;
   layout?: 'vertical' | 'horizontal';
   hideLabel?: boolean;
   wrapperClassName?: string;
@@ -35,7 +39,6 @@ export const Select: React.FC<SelectProps> = ({
   wrapperClassName,
   dropdownClassName,
   direction = 'down',
-  ...rest
 }) => {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
@@ -78,12 +81,6 @@ export const Select: React.FC<SelectProps> = ({
     layout === 'horizontal'
       ? 'text-sm font-medium text-[var(--theme-text-primary)] mr-4 flex-shrink-0'
       : 'block text-xs font-medium text-[var(--theme-text-secondary)] mb-1.5';
-  const buttonProps = rest as unknown as Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    'onChange' | 'children' | 'value' | 'defaultValue'
-  >;
-
-  // Default wrapper classes, overridable by prop
   const defaultWrapperClasses = layout === 'horizontal' ? 'relative w-full sm:w-64' : 'relative';
 
   const finalWrapperClasses = wrapperClassName || defaultWrapperClasses;
@@ -109,7 +106,6 @@ export const Select: React.FC<SelectProps> = ({
           onClick={handleToggle}
           disabled={disabled}
           className={`w-full p-2.5 text-left border rounded-lg flex items-center justify-between transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${disabled ? 'opacity-60 cursor-not-allowed bg-[var(--theme-bg-secondary)]' : 'cursor-pointer bg-[var(--theme-bg-input)] hover:border-[var(--theme-border-focus)]'} border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] text-sm`}
-          {...buttonProps}
         >
           <div className="truncate mr-2 flex-grow text-left">
             {selectedOption ? (

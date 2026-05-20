@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import { decodeBase64ToArrayBuffer } from '@/utils/fileHelpers';
+import { decodeBase64ToArrayBuffer } from '@/utils/fileEncoding';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 
 export { decodeBase64ToArrayBuffer };

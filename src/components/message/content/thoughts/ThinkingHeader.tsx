@@ -3,7 +3,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { ChevronDown } from 'lucide-react';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { ThinkingTimer } from '@/components/message/ThinkingTimer';
-import { formatDuration } from '@/utils/dateHelpers';
+import { formatDuration } from '@/utils/durationFormat';
 
 interface ThinkingHeaderProps {
   isLoading: boolean;

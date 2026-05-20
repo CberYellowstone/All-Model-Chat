@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { projectRoot } from './architectureTestUtils';
 
-const projectRoot = path.resolve(__dirname, '../../..');
 const indexHtmlPath = path.join(projectRoot, 'index.html');
 
 describe('index.html runtime bootstrapping', () => {

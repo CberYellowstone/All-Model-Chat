@@ -1,0 +1,15 @@
+export const SUPPORTED_EXTENSIONS = [
+  '.md',
+  '.pdf',
+  '.txt',
+  '.json',
+  '.js',
+  '.ts',
+  '.py',
+  '.html',
+  '.css',
+  '.csv',
+  '.xml',
+  '.yaml',
+  '.sql',
+];

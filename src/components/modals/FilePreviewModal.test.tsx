@@ -72,8 +72,11 @@ vi.mock('@/components/shared/file-preview/TextFileViewer', () => ({
   TextFileViewer: mockTextFileViewer,
 }));
 
-vi.mock('@/utils/fileHelpers', () => ({
+vi.mock('@/utils/fileClipboard', () => ({
   copyFileToClipboard: mockCopyFileToClipboard,
+}));
+
+vi.mock('@/utils/filePreviewUrls', () => ({
   cleanupFilePreviewUrl: (file: { dataUrl?: string }) => {
     if (file.dataUrl) mockRevokedObjectUrls.push(file.dataUrl);
   },
@@ -82,6 +85,20 @@ vi.mock('@/utils/fileHelpers', () => ({
     mockCreatedObjectUrls.push(url);
     return url;
   },
+}));
+
+vi.mock('@/utils/fileTypeClassification', () => ({
+  getFileKindFlags: (file: { name: string; type: string }) => ({
+    isImage: file.type.startsWith('image/'),
+    isAudio: file.type.startsWith('audio/'),
+    isVideo: file.type.startsWith('video/'),
+    isPdf: file.type === 'application/pdf',
+    isText: file.type.startsWith('text/') || /\.(md|markdown|txt|json|js|ts|tsx|jsx|css|html)$/i.test(file.name),
+    isMarkdown:
+      file.type === 'text/markdown' ||
+      file.name.toLowerCase().endsWith('.md') ||
+      file.name.toLowerCase().endsWith('.markdown'),
+  }),
   isMarkdownFile: (file: { name: string; type: string }) =>
     file.type === 'text/markdown' ||
     file.name.toLowerCase().endsWith('.md') ||

@@ -12,7 +12,7 @@ import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
 import { ACTIVE_CHAT_SESSION_ID_KEY, CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
 import { createNewSession, rehydrateSessionFiles } from '@/utils/chat/session';
-import { cleanupFilePreviewUrls } from '@/utils/fileHelpers';
+import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
 import { resolveSupportedModelId } from '@/utils/modelSorting';
 import { dbService } from '@/services/db/dbService';
 import { useChatStore, type SetActiveSessionOptions } from '@/stores/chatStore';

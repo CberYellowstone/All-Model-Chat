@@ -8,11 +8,12 @@ import { FilePreviewHeader, type FilePreviewHeaderHandle } from '@/components/sh
 import { ImageViewer } from '@/components/shared/file-preview/ImageViewer';
 import { TextFileViewer } from '@/components/shared/file-preview/TextFileViewer';
 import { IconYoutube } from '@/components/icons';
-import { cleanupFilePreviewUrl, copyFileToClipboard, fileToBlobUrl } from '@/utils/fileHelpers';
+import { copyFileToClipboard } from '@/utils/fileClipboard';
+import { cleanupFilePreviewUrl, fileToBlobUrl } from '@/utils/filePreviewUrls';
 import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { isShortcutPressed } from '@/utils/shortcutUtils';
-import { getFileKindFlags, isMarkdownFile, isTextFile } from '@/utils/fileTypeUtils';
+import { isShortcutPressed } from '@/utils/keyboardShortcuts';
+import { getFileKindFlags, isMarkdownFile, isTextFile } from '@/utils/fileTypeClassification';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 
 const LazyPdfViewer = lazyNamedComponent(() => import('@/components/shared/file-preview/PdfViewerEntry'), 'PdfViewer');

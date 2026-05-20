@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { setupStoreStateReset } from '@/test/storeTestUtils';
 import type { AppSettings } from '@/types';
-import { SERVER_MANAGED_API_KEY } from '@/utils/apiUtils';
+import { SERVER_MANAGED_API_KEY } from '@/utils/apiKeySelection';
 import { ApiConfigSection } from './ApiConfigSection';
 
 const { getClientMock, generateContentMock, sendOpenAICompatibleMessageNonStreamMock } = vi.hoisted(() => ({

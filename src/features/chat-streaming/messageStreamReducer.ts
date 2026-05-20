@@ -3,7 +3,7 @@ import type { UploadedFile } from '@/types';
 import { SUPPORTED_GENERATED_MIME_TYPES } from '@/constants/fileConstants';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
 import { generateUniqueId } from '@/utils/chat/ids';
-import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/fileTypeUtils';
+import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/fileTypeClassification';
 
 type MessageStreamEvent =
   | { type: 'part'; part: Part; receivedAt?: Date }

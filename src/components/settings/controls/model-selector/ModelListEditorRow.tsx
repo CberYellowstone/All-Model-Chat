@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pin, PinOff, Trash2 } from 'lucide-react';
 import { type ApiMode, type ModelOption } from '@/types';
-import { getModelIcon } from '@/components/shared/modelIcons';
+import { getModelIcon } from '@/components/shared/ModelIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { SMALL_ICON_DANGER_BUTTON_CLASS } from '@/constants/styleClasses';
 

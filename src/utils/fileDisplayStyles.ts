@@ -12,7 +12,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { MediaResolution } from '@/types';
-import type { FileCategory } from './fileTypeUtils';
+import type { FileCategory } from './fileTypeClassification';
 
 export const CATEGORY_STYLES: Record<FileCategory, { Icon: ElementType; colorClass: string; bgClass: string }> = {
   image: {

@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockSendStandardMessage,
-  mockSendTtsImagenMessage,
+  mockSendImageGenerationMessage,
+  mockSendTtsMessage,
   mockSendImageEditMessage,
   mockGetModelCapabilities,
   mockCreateMessage,
@@ -14,7 +15,8 @@ const {
   mockUploadFileApi,
 } = vi.hoisted(() => ({
   mockSendStandardMessage: vi.fn(),
-  mockSendTtsImagenMessage: vi.fn(),
+  mockSendImageGenerationMessage: vi.fn(),
+  mockSendTtsMessage: vi.fn(),
   mockSendImageEditMessage: vi.fn(),
   mockGetModelCapabilities: vi.fn(),
   mockCreateMessage: vi.fn((role: string, content: string, options?: Record<string, unknown>) => ({
@@ -45,8 +47,12 @@ vi.mock('./standardChatStrategy', () => ({
   sendStandardMessage: mockSendStandardMessage,
 }));
 
-vi.mock('./ttsImagenStrategy', () => ({
-  sendTtsImagenMessage: mockSendTtsImagenMessage,
+vi.mock('./imageGenerationStrategy', () => ({
+  sendImageGenerationMessage: mockSendImageGenerationMessage,
+}));
+
+vi.mock('./ttsStrategy', () => ({
+  sendTtsMessage: mockSendTtsMessage,
 }));
 
 vi.mock('./imageEditStrategy', () => ({
@@ -65,7 +71,7 @@ vi.mock('@/utils/chat/ids', () => ({
   generateUniqueId: vi.fn(() => 'generation-id'),
 }));
 
-vi.mock('@/utils/apiUtils', () => ({
+vi.mock('@/utils/apiKeySelection', () => ({
   getKeyForRequest: vi.fn(() => ({ key: 'api-key', isNewKey: false })),
   getApiKeyErrorTranslationKey: vi.fn((error: string) => {
     if (error === 'API Key not configured.') return 'apiRuntime_keyNotConfigured';
@@ -142,7 +148,8 @@ describe('useMessageSender', () => {
     });
 
     expect(setAppFileError).toHaveBeenCalledWith('Imagen 模型仅支持文本提示词。');
-    expect(mockSendTtsImagenMessage).not.toHaveBeenCalled();
+    expect(mockSendImageGenerationMessage).not.toHaveBeenCalled();
+    expect(mockSendTtsMessage).not.toHaveBeenCalled();
     expect(mockSendStandardMessage).not.toHaveBeenCalled();
     expect(mockSendImageEditMessage).not.toHaveBeenCalled();
     unmount();
@@ -180,7 +187,8 @@ describe('useMessageSender', () => {
     });
 
     expect(setAppFileError).toHaveBeenCalledWith('Gemini 3 图片模型每次请求最多支持 14 张参考图。');
-    expect(mockSendTtsImagenMessage).not.toHaveBeenCalled();
+    expect(mockSendImageGenerationMessage).not.toHaveBeenCalled();
+    expect(mockSendTtsMessage).not.toHaveBeenCalled();
     expect(mockSendStandardMessage).not.toHaveBeenCalled();
     expect(mockSendImageEditMessage).not.toHaveBeenCalled();
     unmount();

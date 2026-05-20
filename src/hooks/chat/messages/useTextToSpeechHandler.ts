@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { type AppSettings, type ChatSettings as IndividualChatSettings } from '@/types';
 import { logService } from '@/services/logService';
-import { getGeminiKeyForRequest } from '@/utils/apiUtils';
+import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { pcmBase64ToWavUrl } from '@/features/audio/audioProcessing';
 import { generateSpeechApi } from '@/services/api/generation/audioApi';
 import { DEFAULT_TTS_MODEL_ID } from '@/constants/modelConstants';

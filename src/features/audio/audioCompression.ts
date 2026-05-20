@@ -44,6 +44,14 @@ self.onmessage = function(e) {
 };
 `;
 
+const BYTES_PER_KIB = 1024;
+const MIN_COMPRESSIBLE_AUDIO_BYTES = 50 * BYTES_PER_KIB;
+const MIN_COMPRESSIBLE_DURATION_SECONDS = 1.5;
+const LOW_BITRATE_AUDIO_BPS = 80_000;
+const MP3_TARGET_SAMPLE_RATE = 16_000;
+const MP3_TARGET_CHANNELS = 1;
+const MP3_TARGET_KBPS = 64;
+
 interface EncodeMp3WithWorkerOptions {
   pcmData: Float32Array;
   sampleRate: number;
@@ -122,8 +130,7 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   };
 
-  // 优化：如果文件极其微小 (小于 50KB)，很有可能是极短的语音，直接返回原始文件
-  if (file.size < 50 * 1024) {
+  if (file.size < MIN_COMPRESSIBLE_AUDIO_BYTES) {
     if (file instanceof File) return file;
     return new File([file], `recording-${Date.now()}.webm`, { type: file.type || 'audio/webm' });
   }
@@ -139,8 +146,7 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     checkAbort();
 
-    // 优化：如果时长小于 1.5 秒，没必要压缩
-    if (audioBuffer.duration < 1.5) {
+    if (audioBuffer.duration < MIN_COMPRESSIBLE_DURATION_SECONDS) {
       if (file instanceof File) return file;
       return new File([file], `recording-${Date.now()}.webm`, { type: file.type || 'audio/webm' });
     }
@@ -154,16 +160,14 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
       file.type === 'audio/mp3' ||
       ('name' in file && (file as File).name.toLowerCase().endsWith('.mp3'));
 
-    if (isMp3 && bitrate > 0 && bitrate < 80000) {
+    if (isMp3 && bitrate > 0 && bitrate < LOW_BITRATE_AUDIO_BPS) {
       if (file instanceof File) return file;
       return new File([file], `audio-${Date.now()}.mp3`, { type: 'audio/mpeg' });
     }
 
-    const targetSampleRate = 16000;
-    const targetChannels = 1;
-    const frameCount = Math.ceil(audioBuffer.duration * targetSampleRate);
+    const frameCount = Math.ceil(audioBuffer.duration * MP3_TARGET_SAMPLE_RATE);
 
-    const offlineCtx = new OfflineAudioContext(targetChannels, frameCount, targetSampleRate);
+    const offlineCtx = new OfflineAudioContext(MP3_TARGET_CHANNELS, frameCount, MP3_TARGET_SAMPLE_RATE);
     const source = offlineCtx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(offlineCtx.destination);
@@ -175,8 +179,8 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
 
     return encodeMp3WithWorker({
       pcmData,
-      sampleRate: targetSampleRate,
-      kbps: 64,
+      sampleRate: MP3_TARGET_SAMPLE_RATE,
+      kbps: MP3_TARGET_KBPS,
       file,
       signal,
     });

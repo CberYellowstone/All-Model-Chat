@@ -18,8 +18,9 @@ import { type UploadedFile } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
-import { copyFileToClipboard, formatFileSize } from '@/utils/fileHelpers';
-import { getFileKindFlags } from '@/utils/fileTypeUtils';
+import { copyFileToClipboard } from '@/utils/fileClipboard';
+import { formatFileSize } from '@/utils/fileSize';
+import { getFileKindFlags } from '@/utils/fileTypeClassification';
 import { FloatingToolbar, ToolbarButton, ToolbarDivider } from './FloatingToolbar';
 
 interface FilePreviewHeaderProps {

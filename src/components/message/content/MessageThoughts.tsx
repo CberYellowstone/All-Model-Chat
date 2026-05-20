@@ -1,7 +1,7 @@
 import { logService } from '@/services/logService';
 import React, { useMemo, useState } from 'react';
 import { type ChatMessage, type AppSettings, type SideViewContent, type UploadedFile } from '@/types';
-import { getGeminiKeyForRequest } from '@/utils/apiUtils';
+import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { parseThoughtProcess } from '@/utils/chat/parsing';
 import { translateTextApi } from '@/services/api/generation/textApi';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';

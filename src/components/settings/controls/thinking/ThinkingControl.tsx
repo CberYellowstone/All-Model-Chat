@@ -179,9 +179,7 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
 
   return (
     <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-      {/* Container Card */}
       <div className="rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)]/30 p-4">
-        {/* Header */}
         <div className="flex items-center">
           <label className="text-sm font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
             <Lightbulb size={16} className="text-[var(--theme-text-link)]" strokeWidth={1.5} />

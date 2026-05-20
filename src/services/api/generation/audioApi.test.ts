@@ -10,7 +10,7 @@ vi.mock('@/services/api/apiClient', () => ({
   getConfiguredApiClient: getConfiguredApiClientMock,
 }));
 
-vi.mock('@/utils/fileHelpers', () => ({
+vi.mock('@/utils/fileEncoding', () => ({
   blobToBase64: blobToBase64Mock,
 }));
 

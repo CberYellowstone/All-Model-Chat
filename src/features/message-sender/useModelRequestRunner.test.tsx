@@ -9,7 +9,7 @@ const { mockGetKeyForRequest, mockGenerateUniqueId } = vi.hoisted(() => ({
   mockGenerateUniqueId: vi.fn(),
 }));
 
-vi.mock('@/utils/apiUtils', () => ({
+vi.mock('@/utils/apiKeySelection', () => ({
   getKeyForRequest: mockGetKeyForRequest,
 }));
 

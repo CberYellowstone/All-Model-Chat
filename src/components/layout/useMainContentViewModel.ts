@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import type { AppViewModel } from '@/hooks/app/useApp';
 import { useUIStore } from '@/stores/uiStore';
-import { getShortcutDisplay } from '@/utils/shortcutUtils';
+import { getShortcutDisplay } from '@/utils/keyboardShortcuts';
 import { buildSidePanelKey } from './mainContentModels';
 
 interface UseMainContentViewModelOptions {

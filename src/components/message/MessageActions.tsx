@@ -145,7 +145,6 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
         )}
       </div>
 
-      {/* Container for actions - Fades in on group hover with a subtle slide effect */}
       <div
         className={`message-actions flex flex-col items-center gap-1 mt-1 transition-all duration-300 ease-in-out ${actionsVisibilityClasses}`}
       >

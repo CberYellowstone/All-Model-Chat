@@ -97,7 +97,7 @@ vi.mock('@/hooks/chat/useChat', () => ({
   }),
 }));
 
-vi.mock('@/constants/promptHelpers', () => ({
+vi.mock('@/features/prompts/promptRegistry', () => ({
   isLiveArtifactsSystemInstruction: (instruction?: string | null) =>
     !!instruction && instruction.includes('[Live Artifacts Protocol - zh]'),
   isBboxSystemInstruction: () => false,
