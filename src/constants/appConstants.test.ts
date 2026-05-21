@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_APP_SETTINGS } from './appConstants';
+import { DEFAULT_APP_SETTINGS, DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE } from './appConstants';
 import { AVAILABLE_TRANSCRIPTION_MODELS } from './settingsModelOptions';
 
 describe('DEFAULT_APP_SETTINGS', () => {
@@ -22,6 +22,11 @@ describe('DEFAULT_APP_SETTINGS', () => {
       full: '',
       fullHtml: '',
     });
+  });
+
+  it('reuses the shared default thought translation language', () => {
+    expect(DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE).toBe('Simplified Chinese');
+    expect(DEFAULT_APP_SETTINGS.thoughtTranslationTargetLanguage).toBe(DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE);
   });
 
   it('defaults speech-to-text to Gemini 3.5 Flash', () => {

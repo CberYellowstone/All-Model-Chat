@@ -118,7 +118,9 @@ describe('chat input architecture guardrails', () => {
 
   it('shares composer auxiliary action descriptors between inline controls and overflow menu', () => {
     const chatInputActionsSource = readProjectFile('src/components/chat/input/ChatInputActions.tsx');
-    const utilityControlsSource = readProjectFile('src/components/chat/input/actions/UtilityControls.tsx');
+    const composerAuxiliaryButtonsSource = readProjectFile(
+      'src/components/chat/input/actions/ComposerAuxiliaryButtons.tsx',
+    );
     const composerMoreMenuSource = readProjectFile('src/components/chat/input/actions/ComposerMoreMenu.tsx');
 
     expect(
@@ -127,7 +129,7 @@ describe('chat input architecture guardrails', () => {
     expect(chatInputActionsSource).toContain('useComposerAuxiliaryActions');
 
     for (const [relativePath, source] of [
-      ['src/components/chat/input/actions/UtilityControls.tsx', utilityControlsSource],
+      ['src/components/chat/input/actions/ComposerAuxiliaryButtons.tsx', composerAuxiliaryButtonsSource],
       ['src/components/chat/input/actions/ComposerMoreMenu.tsx', composerMoreMenuSource],
     ] as const) {
       expect(source, relativePath).not.toContain("from '../../../../stores/settingsStore'");

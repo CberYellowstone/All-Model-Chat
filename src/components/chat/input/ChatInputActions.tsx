@@ -4,7 +4,7 @@ import { ToolsMenu } from './ToolsMenu';
 import { WebSearchToggle } from './actions/WebSearchToggle';
 import { LiveControls } from './actions/LiveControls';
 import { RecordControls } from './actions/RecordControls';
-import { UtilityControls } from './actions/UtilityControls';
+import { ComposerAuxiliaryButtons } from './actions/ComposerAuxiliaryButtons';
 import { SendControls } from './actions/SendControls';
 import { ComposerMoreMenu } from './actions/ComposerMoreMenu';
 import { useComposerAuxiliaryActions } from './actions/useComposerAuxiliaryActions';
@@ -142,7 +142,7 @@ const ChatInputActionsComponent: React.FC = () => {
 
         {!showAuxiliaryActionsInMenu && auxiliaryActions.length > 0 && (
           <div className="flex items-center gap-2 sm:gap-3">
-            <UtilityControls actions={auxiliaryActions} />
+            <ComposerAuxiliaryButtons actions={auxiliaryActions} />
           </div>
         )}
 

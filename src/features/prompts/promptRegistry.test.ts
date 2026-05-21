@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isLiveArtifactsSystemInstruction, loadLiveArtifactsSystemPrompt } from './promptRegistry';
+import {
+  isLiveArtifactsSystemInstruction,
+  loadDeepSearchSystemPrompt,
+  loadLiveArtifactsSystemPrompt,
+} from './promptRegistry';
 
 describe('promptRegistry', () => {
   it('recognizes current Live Artifacts markers and legacy Canvas markers', () => {
@@ -13,6 +17,12 @@ describe('promptRegistry', () => {
     expect(isLiveArtifactsSystemInstruction('[Canvas Artifact Protocol]')).toBe(true);
     expect(isLiveArtifactsSystemInstruction('<title>Canvas 助手：响应式视觉指南</title>')).toBe(true);
     expect(isLiveArtifactsSystemInstruction('<title>Canvas Assistant: Responsive Visual Guide</title>')).toBe(true);
+  });
+
+  it('does not force Markdown formatting in the Deep Search prompt', async () => {
+    const prompt = await loadDeepSearchSystemPrompt();
+
+    expect(prompt).not.toMatch(/markdown/i);
   });
 
   it('defaults to inline-only Chinese and English Live Artifacts prompts', async () => {

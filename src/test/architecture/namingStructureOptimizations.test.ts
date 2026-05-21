@@ -57,6 +57,17 @@ describe('naming and structure optimization guardrails', () => {
     expect(useMessageSenderSource).not.toContain('sendTtsImagenMessage');
   });
 
+  it('names composer auxiliary action buttons after their role', () => {
+    const chatInputActionsSource = readProjectFile('src/components/chat/input/ChatInputActions.tsx');
+
+    expect(
+      fs.existsSync(path.join(projectRoot, 'src/components/chat/input/actions/ComposerAuxiliaryButtons.tsx')),
+    ).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/actions/UtilityControls.tsx'))).toBe(false);
+    expect(chatInputActionsSource).toContain("from './actions/ComposerAuxiliaryButtons'");
+    expect(chatInputActionsSource).not.toContain("from './actions/UtilityControls'");
+  });
+
   it('names audio compression tuning values instead of leaving inline thresholds', () => {
     const audioCompressionSource = readProjectFile('src/features/audio/audioCompression.ts');
 
@@ -131,6 +142,13 @@ describe('naming and structure optimization guardrails', () => {
       expect(source, relativePath).not.toContain('@/utils/mediaUtils');
       expect(source, relativePath).not.toContain('@/components/icons/iconUtils');
     }
+  });
+
+  it('uses shared unique ids for newly created scenarios', () => {
+    const scenarioManagerSource = readProjectFile('src/hooks/scenarios/useScenarioManager.ts');
+
+    expect(scenarioManagerSource).toContain('id: generateUniqueId()');
+    expect(scenarioManagerSource).not.toContain('Date.now().toString()');
   });
 
   it('keeps upload API internals behind the configured API client boundary', () => {

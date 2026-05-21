@@ -201,7 +201,6 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
         </ActionRow>
       </DataCard>
 
-      {/* DANGER ZONE */}
       <div className="p-5 rounded-xl bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg border border-red-800/50">
         <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
           <AlertTriangle size={16} strokeWidth={2} className="text-white" />

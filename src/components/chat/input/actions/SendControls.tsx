@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Edit2, ArrowUp, CornerDownLeft, Ban } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconStop } from '@/components/icons';
@@ -27,6 +27,7 @@ export const SendControls: React.FC = () => {
   const { t } = useI18n();
   const iconSize = 18;
   const [ripples, setRipples] = useState<Ripple[]>([]);
+  const rippleIdRef = useRef(0);
   const mainButtonSizeClass = '!h-10 !w-10';
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export const SendControls: React.FC = () => {
     const size = Math.max(rect.width, rect.height);
     const x = e.clientX - rect.left - size / 2;
     const y = e.clientY - rect.top - size / 2;
-    setRipples((prev) => [...prev, { x, y, id: Date.now(), size }]);
+    setRipples((prev) => [...prev, { x, y, id: rippleIdRef.current++, size }]);
   };
 
   const isStop = isLoading;
@@ -51,7 +52,6 @@ export const SendControls: React.FC = () => {
   const isEdit = !isLoading && isEditing;
   const isSend = !isLoading && !isEditing && !isWaitingForUpload;
 
-  // Note: Stop button is never disabled by canSend.
   const isDisabled = !isLoading && !isUpload && !canSend;
 
   let bgClass = 'bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)]';

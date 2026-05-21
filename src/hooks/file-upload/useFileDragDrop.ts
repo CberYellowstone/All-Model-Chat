@@ -11,6 +11,35 @@ interface UseFileDragDropProps {
   onRemoveTempFile: (id: string) => void;
 }
 
+interface DroppedItemsSnapshot {
+  entries: FileSystemEntry[];
+  files: File[];
+}
+
+const snapshotDroppedItems = (items: DataTransferItemList): DroppedItemsSnapshot => {
+  const entries: FileSystemEntry[] = [];
+  const files: File[] = [];
+
+  for (const item of Array.from(items)) {
+    if (item.kind !== 'file') {
+      continue;
+    }
+
+    const entry = item.webkitGetAsEntry?.();
+    if (entry) {
+      entries.push(entry);
+      continue;
+    }
+
+    const file = item.getAsFile();
+    if (file) {
+      files.push(file);
+    }
+  }
+
+  return { entries, files };
+};
+
 export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFile }: UseFileDragDropProps) => {
   const { t } = useI18n();
   const [isAppDraggingOver, setIsAppDraggingOver] = useState<boolean>(false);
@@ -57,21 +86,8 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
 
       try {
         const items = e.dataTransfer.items;
-        let hasDirectory = false;
-
-        // Check if any dropped item is a directory
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.kind === 'file' && typeof item.webkitGetAsEntry === 'function') {
-              const entry = item.webkitGetAsEntry();
-              if (entry && entry.isDirectory) {
-                hasDirectory = true;
-                break;
-              }
-            }
-          }
-        }
+        const droppedSnapshot = items ? snapshotDroppedItems(items) : { entries: [], files: [] };
+        const hasDirectory = droppedSnapshot.entries.some((entry) => entry.isDirectory);
 
         if (hasDirectory) {
           const tempId = generateUniqueId();
@@ -84,11 +100,11 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
             }),
           );
 
-          const [{ processDroppedItems }, { buildImportContextFile }] = await Promise.all([
+          const [{ processDroppedItemsSnapshot }, { buildImportContextFile }] = await Promise.all([
             import('@/utils/import-context/droppedItems'),
             import('@/utils/import-context/importContextBuilder'),
           ]);
-          const dropped = await processDroppedItems(items);
+          const dropped = await processDroppedItemsSnapshot(droppedSnapshot);
 
           if (dropped.files.length > 0 || dropped.emptyDirectoryPaths.length > 0) {
             const contextFile = await buildImportContextFile(dropped.files, {

@@ -10,14 +10,14 @@ interface ProcessDroppedItemsOptions {
   skipDefaultIgnoredDirectories?: boolean;
 }
 
-export async function processDroppedItems(
-  items: DataTransferItemList,
-  signal?: AbortSignal,
-  options: ProcessDroppedItemsOptions = {},
-): Promise<DroppedItemsResult> {
-  const allFiles: File[] = [];
-  const emptyDirectoryPaths: string[] = [];
+interface DroppedItemsSnapshot {
+  entries: FileSystemEntry[];
+  files: File[];
+}
+
+export function snapshotDroppedItems(items: DataTransferItemList): DroppedItemsSnapshot {
   const entries: FileSystemEntry[] = [];
+  const files: File[] = [];
 
   for (const item of Array.from(items)) {
     if (item.kind !== 'file') {
@@ -32,9 +32,20 @@ export async function processDroppedItems(
 
     const file = item.getAsFile();
     if (file) {
-      allFiles.push(file);
+      files.push(file);
     }
   }
+
+  return { entries, files };
+}
+
+export async function processDroppedItemsSnapshot(
+  snapshot: DroppedItemsSnapshot,
+  signal?: AbortSignal,
+  options: ProcessDroppedItemsOptions = {},
+): Promise<DroppedItemsResult> {
+  const allFiles = [...snapshot.files];
+  const emptyDirectoryPaths: string[] = [];
 
   const readEntries = async (entry: FileSystemEntry): Promise<DroppedItemsResult> => {
     if (signal?.aborted) {
@@ -101,7 +112,7 @@ export async function processDroppedItems(
     return { files: [], emptyDirectoryPaths: [] };
   };
 
-  const filesFromEntries = await Promise.all(entries.map(readEntries));
+  const filesFromEntries = await Promise.all(snapshot.entries.map(readEntries));
   allFiles.push(...filesFromEntries.flatMap((result) => result.files));
   emptyDirectoryPaths.push(...filesFromEntries.flatMap((result) => result.emptyDirectoryPaths));
 
@@ -109,4 +120,12 @@ export async function processDroppedItems(
     files: allFiles,
     emptyDirectoryPaths,
   };
+}
+
+export async function processDroppedItems(
+  items: DataTransferItemList,
+  signal?: AbortSignal,
+  options: ProcessDroppedItemsOptions = {},
+): Promise<DroppedItemsResult> {
+  return processDroppedItemsSnapshot(snapshotDroppedItems(items), signal, options);
 }

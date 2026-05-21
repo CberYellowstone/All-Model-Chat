@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 
 import { fileToString } from '@/utils/fileEncoding';
+import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { attachRelativePath, getFilePath } from './filePath';
 import { buildRootGitignoreMatchers, isIgnoredByGitignore, type IgnoreMatcher } from './ignoreMatcher';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
@@ -89,6 +90,18 @@ async function readTextFileWithMetrics(file: File): Promise<ReadTextFileResult> 
     content,
     lineCount: countLines(content),
   };
+}
+
+async function readImportFileWithMetrics(file: File): Promise<ReadTextFileResult> {
+  if (isDocxFile(file)) {
+    const { text } = await extractDocxText(file);
+    return {
+      content: text,
+      lineCount: countLines(text),
+    };
+  }
+
+  return readTextFileWithMetrics(file);
 }
 
 function ensurePathNodes(
@@ -230,14 +243,14 @@ async function processImportFiles(
     }
 
     const extension = `.${file.name.split('.').pop()?.toLowerCase()}`;
-    if (IGNORED_EXTENSIONS.has(extension)) {
+    if (!isDocxFile(file) && IGNORED_EXTENSIONS.has(extension)) {
       fileNode.status = 'skipped';
       fileNode.chars = file.size;
       continue;
     }
 
     try {
-      const { content, lineCount } = await readTextFileWithMetrics(file);
+      const { content, lineCount } = await readImportFileWithMetrics(file);
       fileContents.push({
         path,
         content,

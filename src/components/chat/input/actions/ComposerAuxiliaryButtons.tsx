@@ -2,7 +2,7 @@ import React from 'react';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/styleClasses';
 import type { ComposerAuxiliaryAction } from './useComposerAuxiliaryActions';
 
-export const UtilityControls: React.FC<{ actions: ComposerAuxiliaryAction[] }> = ({ actions }) => {
+export const ComposerAuxiliaryButtons: React.FC<{ actions: ComposerAuxiliaryAction[] }> = ({ actions }) => {
   return (
     <>
       {actions.map((action) => (

@@ -45,6 +45,9 @@ describe('source readability boundaries', () => {
   it('keeps UI comments from narrating obvious markup sections', () => {
     const sendControlsSource = readProjectFile('src/components/chat/input/actions/SendControls.tsx');
     const codeBlockSource = readProjectFile('src/components/message/blocks/CodeBlock.tsx');
+    const pdfMainContentSource = readProjectFile('src/components/shared/file-preview/pdf-viewer/PdfMainContent.tsx');
+    const preloadedMessagesModalSource = readProjectFile('src/components/scenarios/PreloadedMessagesModal.tsx');
+    const dataManagementSectionSource = readProjectFile('src/components/settings/sections/DataManagementSection.tsx');
 
     for (const phrase of ['{/* Cancel Edit Button', '{/* Main Action Button', '{/* Ripples */}', '{/* Icons stack']) {
       expect(sendControlsSource).not.toContain(phrase);
@@ -53,6 +56,13 @@ describe('source readability boundaries', () => {
     expect(codeBlockSource).not.toContain('Extract raw code for execution');
     expect(codeBlockSource).not.toContain('Execution Props');
     expect(codeBlockSource).not.toContain('Execution Console');
+    expect(pdfMainContentSource).not.toContain('PDF Content');
+    expect(pdfMainContentSource).not.toContain('Loading Indicator');
+    expect(pdfMainContentSource).not.toContain('Error Indicator');
+    expect(preloadedMessagesModalSource).not.toContain('Modal Header');
+    expect(preloadedMessagesModalSource).not.toContain('Feedback Toast');
+    expect(preloadedMessagesModalSource).not.toContain('Content Area');
+    expect(dataManagementSectionSource).not.toContain('DANGER ZONE');
   });
 
   it('does not pass literal fallbacks for translation keys that already exist', () => {
