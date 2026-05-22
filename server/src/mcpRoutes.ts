@@ -3,8 +3,8 @@ import net from 'node:net';
 import { sendJson } from './cors.js';
 import type { McpClientBridge, McpServerConfig, McpTool } from './mcpTypes.js';
 
-export const MCP_TOOLS_PATH = '/api/mcp/tools';
-export const MCP_CALL_PATH = '/api/mcp/call';
+const MCP_TOOLS_PATH = '/api/mcp/tools';
+const MCP_CALL_PATH = '/api/mcp/call';
 
 const MAX_MCP_REQUEST_BYTES = 1024 * 1024;
 

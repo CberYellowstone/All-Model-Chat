@@ -262,11 +262,10 @@ export const performStandardChatApiCall = async ({
     personGeneration,
   });
 
-  const requestConfig = appendFunctionDeclarationsToTools(
-    apiModelId,
-    config,
-    [...(isLocalPythonEnabledForTurn ? localPythonFunctionDeclarations : []), ...mcpFunctionDeclarations],
-  );
+  const requestConfig = appendFunctionDeclarationsToTools(apiModelId, config, [
+    ...(isLocalPythonEnabledForTurn ? localPythonFunctionDeclarations : []),
+    ...mcpFunctionDeclarations,
+  ]);
   const hasFunctionDeclarationsInRequest = !!requestConfig.tools?.some((tool) => 'functionDeclarations' in tool);
 
   if (hasFunctionDeclarationsInRequest) {

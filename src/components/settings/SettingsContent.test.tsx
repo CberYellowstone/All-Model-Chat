@@ -27,7 +27,10 @@ const mockShortcutsSection = vi.hoisted(() => ({
 }));
 
 const mockMcpSection = vi.hoisted(() => ({
-  lastProps: null as { settings: typeof DEFAULT_APP_SETTINGS; onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'] } | null,
+  lastProps: null as {
+    settings: typeof DEFAULT_APP_SETTINGS;
+    onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'];
+  } | null,
 }));
 
 vi.mock('./sections/UsageSection', () => ({
@@ -97,7 +100,10 @@ vi.mock('./sections/ShortcutsSection', () => ({
 }));
 
 vi.mock('./sections/McpSection', () => ({
-  McpSection: (props: { settings: typeof DEFAULT_APP_SETTINGS; onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'] }) => {
+  McpSection: (props: {
+    settings: typeof DEFAULT_APP_SETTINGS;
+    onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'];
+  }) => {
     mockMcpSection.lastProps = props;
     return (
       <button

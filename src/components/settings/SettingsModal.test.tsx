@@ -83,7 +83,11 @@ describe('SettingsModal', () => {
       Array.from(group.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent?.trim()),
     );
 
-    expect(groups).toEqual([['Models', 'API', 'MCP', 'Interface & Interaction', 'Data & App'], ['Shortcuts'], ['About']]);
+    expect(groups).toEqual([
+      ['Models', 'API', 'MCP', 'Interface & Interaction', 'Data & App'],
+      ['Shortcuts'],
+      ['About'],
+    ]);
 
     for (const group of document.querySelectorAll('[data-settings-group]')) {
       expect(group.className).not.toContain('border-l');

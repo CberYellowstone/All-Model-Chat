@@ -1,10 +1,10 @@
 // @vitest-environment node
-import http from 'node:http';
+import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createServer } from './createServer';
 
-async function startHttpServer(server: http.Server): Promise<{ baseUrl: string; close: () => Promise<void> }> {
+async function startHttpServer(server: Server): Promise<{ baseUrl: string; close: () => Promise<void> }> {
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => resolve());

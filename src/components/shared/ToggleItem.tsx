@@ -46,8 +46,8 @@ export const ToggleItem: React.FC<ToggleItemProps> = ({ label, checked, onChange
         </div>
       )}
     </div>
-    <div className="flex-shrink-0">
-      <Toggle checked={checked} onChange={onChange} interactive={false} />
+    <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      <Toggle checked={checked} onChange={onChange} />
     </div>
   </div>
 );
