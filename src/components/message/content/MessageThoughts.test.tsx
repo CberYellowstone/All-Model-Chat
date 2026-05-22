@@ -197,4 +197,39 @@ describe('MessageThoughts', () => {
       'Drafting the answer',
     );
   });
+
+  it('expands and collapses the thought panel from keyboard activation', () => {
+    act(() => {
+      renderer.render(
+        <MessageThoughts
+          message={{
+            id: 'message-keyboard-thoughts',
+            role: 'model',
+            content: '',
+            thoughts: 'Plan carefully.',
+            timestamp: new Date('2026-04-21T00:00:00.000Z'),
+          }}
+          showThoughts={true}
+          appSettings={createAppSettings()}
+          themeId="pearl"
+          onImageClick={vi.fn()}
+          onOpenHtmlPreview={vi.fn()}
+          expandCodeBlocksByDefault={false}
+          isMermaidRenderingEnabled={true}
+          isGraphvizRenderingEnabled={true}
+          onOpenSidePanel={vi.fn()}
+        />,
+      );
+    });
+
+    const thoughtToggle = renderer.container.querySelector<HTMLElement>('[role="button"][aria-expanded="false"]');
+    expect(thoughtToggle).not.toBeNull();
+    expect(thoughtToggle?.getAttribute('tabindex')).toBe('0');
+
+    act(() => {
+      thoughtToggle?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+
+    expect(thoughtToggle?.getAttribute('aria-expanded')).toBe('true');
+  });
 });

@@ -26,6 +26,10 @@ const mockShortcutsSection = vi.hoisted(() => ({
   lastProps: null as ShortcutsSectionProps | null,
 }));
 
+const mockMcpSection = vi.hoisted(() => ({
+  lastProps: null as { settings: typeof DEFAULT_APP_SETTINGS; onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'] } | null,
+}));
+
 vi.mock('./sections/UsageSection', () => ({
   UsageSection: () => <div data-testid="usage-section">Usage Section</div>,
 }));
@@ -92,6 +96,30 @@ vi.mock('./sections/ShortcutsSection', () => ({
   },
 }));
 
+vi.mock('./sections/McpSection', () => ({
+  McpSection: (props: { settings: typeof DEFAULT_APP_SETTINGS; onUpdate: ComponentProps<typeof SettingsContent>['updateSetting'] }) => {
+    mockMcpSection.lastProps = props;
+    return (
+      <button
+        data-testid="mcp-section"
+        onClick={() =>
+          props.onUpdate('mcpServers', [
+            {
+              id: 'filesystem',
+              name: 'Filesystem',
+              enabled: true,
+              transport: 'stdio',
+              command: 'npx',
+            },
+          ])
+        }
+      >
+        mcp
+      </button>
+    );
+  },
+}));
+
 describe('SettingsContent', () => {
   const renderer = setupTestRenderer();
 
@@ -99,6 +127,7 @@ describe('SettingsContent', () => {
     mockModelsSection.lastProps = null;
     mockGenerationSection.lastProps = null;
     mockShortcutsSection.lastProps = null;
+    mockMcpSection.lastProps = null;
   });
 
   it('does not render the obsolete usage section when the removed tab is requested', () => {
@@ -590,6 +619,55 @@ describe('SettingsContent', () => {
     expect(renderer.container.querySelector('[data-testid="shortcuts-section"]')).not.toBeNull();
     expect(mockShortcutsSection.lastProps!.availableModels).toEqual([
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', apiMode: 'gemini-native' },
+    ]);
+  });
+
+  it('renders MCP settings inside the MCP tab and updates MCP servers', () => {
+    const updateSetting = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <SettingsContent
+          activeTab="mcp"
+          currentSettings={DEFAULT_APP_SETTINGS}
+          availableModels={[]}
+          updateSetting={updateSetting}
+          handleModelChange={vi.fn()}
+          setAvailableModels={vi.fn()}
+          onClearHistory={vi.fn()}
+          onClearCache={vi.fn()}
+          onOpenLogViewer={vi.fn()}
+          onClearLogs={vi.fn()}
+          onReset={vi.fn()}
+          onInstallPwa={vi.fn()}
+          installState="installed"
+          onImportSettings={vi.fn()}
+          onExportSettings={vi.fn()}
+          onImportHistory={vi.fn()}
+          onExportHistory={vi.fn()}
+          onImportScenarios={vi.fn()}
+          onExportScenarios={vi.fn()}
+        />,
+      );
+    });
+
+    expect(renderer.container.querySelector('[data-testid="mcp-section"]')).not.toBeNull();
+    expect(mockMcpSection.lastProps!.settings).toBe(DEFAULT_APP_SETTINGS);
+
+    act(() => {
+      renderer.container
+        .querySelector('[data-testid="mcp-section"]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(updateSetting).toHaveBeenCalledWith('mcpServers', [
+      {
+        id: 'filesystem',
+        name: 'Filesystem',
+        enabled: true,
+        transport: 'stdio',
+        command: 'npx',
+      },
     ]);
   });
 });

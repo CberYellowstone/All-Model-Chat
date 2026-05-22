@@ -92,7 +92,6 @@ export const useApp = (): AppViewModel => {
     messages,
     savedGroups,
     savedScenarios,
-    scrollContainerRef,
     setCommandedInput,
     setCurrentChatSettings,
     startNewChat,
@@ -174,7 +173,6 @@ export const useApp = (): AppViewModel => {
 
   const { exportChatLogic } = useChatSessionExport({
     activeChat,
-    scrollContainerRef,
     currentTheme,
     language,
     t,

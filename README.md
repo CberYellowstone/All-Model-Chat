@@ -255,6 +255,8 @@ docker compose up -d --build
 | `PORT`                          | `api` 服务监听端口                                            | 仅服务端           | `3001`                                      |
 | `GEMINI_API_BASE`               | Gemini 上游地址（代理目标）                                   | 仅服务端           | `https://generativelanguage.googleapis.com` |
 | `ALLOWED_ORIGINS`               | 逗号分隔 CORS 白名单（跨域部署时使用）                        | 仅服务端           | 空                                          |
+| `ENABLE_MCP_STDIO`              | 启用 `stdio` MCP 服务调用能力                                 | 仅服务端           | `false`                                     |
+| `ENABLE_MCP_PRIVATE_HTTP`       | 允许 API 服务访问内网/本机 HTTP MCP 地址                      | 仅服务端           | `false`                                     |
 | `RUNTIME_SERVER_MANAGED_API`    | 前端默认启用服务端托管 API                                    | **公开运行时配置** | `false`                                     |
 | `RUNTIME_USE_CUSTOM_API_CONFIG` | 前端默认启用“自定义 API 配置”                                 | 公开运行时配置     | `true`                                      |
 | `RUNTIME_USE_API_PROXY`         | 前端默认启用 API 代理                                         | 公开运行时配置     | `true`                                      |
@@ -269,6 +271,7 @@ docker compose up -d --build
 - PWA 预缓存默认排除 `pyodide/` 大体积产物，首次执行本地 Python 时仍会按上述地址按需加载。
 - 默认 BYOK 模式只需要在设置界面填写 API Key：普通 Gemini 代理会使用浏览器请求携带的 key；Live API 会使用浏览器本地 key 直接建立官方 Live WebSocket 连接，不再经过 AMC 后端换取临时 token。
 - 如需服务端统一托管普通 Gemini 请求的 key，可配置 `GEMINI_API_KEY` 并将 `RUNTIME_SERVER_MANAGED_API=true`；Live API 仍需要浏览器中可用的 API Key。
+- MCP 的 `stdio` 与内网/本机 HTTP 访问默认关闭；仅在可信自托管环境中按需设置 `ENABLE_MCP_STDIO=true` 或 `ENABLE_MCP_PRIVATE_HTTP=true`。
 - OpenAI 兼容模式当前不读取 `RUNTIME_API_PROXY_URL`、`RUNTIME_USE_API_PROXY` 或 `RUNTIME_SERVER_MANAGED_API`；它会直接使用设置里的 OpenAI 兼容 Base URL 和独立 Key 发起 `chat/completions` 请求。如需走你自己的网关，请直接把该网关地址填为 OpenAI 兼容 Base URL。
 - 浏览器本地 key 适合自用/可信部署。它不会因为“保存在本地”而变成服务器密钥，同一浏览器上下文中的脚本、扩展、XSS 或设备风险仍可能读取它。
 - 前端在部署时默认只依赖后端端点：`/api/gemini/*`；Live API 从浏览器直连官方 Live 服务。

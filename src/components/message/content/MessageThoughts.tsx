@@ -108,6 +108,15 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
       copyToClipboard(textToCopy);
     }
   };
+  const toggleExpanded = () => setIsExpanded((value) => !value);
+  const handleToggleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Enter' && e.key !== ' ') {
+      return;
+    }
+
+    e.preventDefault();
+    toggleExpanded();
+  };
 
   const hasFiles = message.files && message.files.length > 0;
 
@@ -117,8 +126,12 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
         className={`group rounded-xl bg-[var(--theme-bg-tertiary)]/20 overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-[var(--theme-bg-tertiary)]/30 shadow-sm' : ''}`}
       >
         <div
-          className="flex select-none items-center justify-between gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[var(--theme-bg-tertiary)]/40 focus:outline-none"
-          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex select-none items-center justify-between gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[var(--theme-bg-tertiary)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-border-focus)]"
+          onClick={toggleExpanded}
+          onKeyDown={handleToggleKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
         >
           <ThinkingHeader
             isLoading={!!isLoading}

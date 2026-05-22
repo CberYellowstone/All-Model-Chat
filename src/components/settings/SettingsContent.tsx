@@ -6,6 +6,7 @@ import { ApiConfigSection } from './sections/ApiConfigSection';
 import { AppearanceSection } from './sections/AppearanceSection';
 import { DataManagementSection } from './sections/DataManagementSection';
 import { ModelsSection } from './sections/ModelsSection';
+import { McpSection } from './sections/McpSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
 import { AboutSection } from './sections/AboutSection';
 import { type SettingsTransferProps } from './settingsTypes';
@@ -157,6 +158,12 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             settings={currentSettings}
             onUpdate={updateSetting}
           />
+        </div>
+      )}
+
+      {activeTab === 'mcp' && (
+        <div className={animClass}>
+          <McpSection settings={currentSettings} onUpdate={updateSetting} />
         </div>
       )}
 

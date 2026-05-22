@@ -233,6 +233,39 @@ describe('useMessageSender', () => {
     unmount();
   });
 
+  it('blocks audio attachments for hosted Gemma 4 large models', async () => {
+    mockGetModelCapabilities.mockReturnValue({
+      isTtsModel: false,
+      isRealImagenModel: false,
+      isFlashImageModel: false,
+      isGemini3ImageModel: false,
+      isGemmaModel: true,
+    });
+
+    const setAppFileError = vi.fn();
+
+    const { result, unmount } = renderMessageSender({
+      currentChatSettings: {
+        modelId: 'gemma-4-31b-it',
+      },
+      selectedFiles: [
+        createUploadedFile({
+          name: 'voice-note.mp3',
+          type: 'audio/mpeg',
+        }),
+      ],
+      setAppFileError,
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage({ text: 'transcribe this' });
+    });
+
+    expect(setAppFileError).toHaveBeenCalledWith('Gemma 4 31B/26B 模型仅支持文本和图片附件。');
+    expect(mockSendStandardMessage).not.toHaveBeenCalled();
+    unmount();
+  });
+
   it('blocks manual sends while failed attachments are still selected', async () => {
     mockGetModelCapabilities.mockReturnValue({
       isTtsModel: false,

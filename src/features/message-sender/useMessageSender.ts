@@ -10,8 +10,7 @@ import {
 import { useI18n } from '@/contexts/I18nContext';
 import { logService } from '@/services/logService';
 import { getApiKeyErrorTranslationKey } from '@/utils/apiKeySelection';
-import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES, isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/fileTypeClassification';
+import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
 import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
 
@@ -20,6 +19,7 @@ import { formatMessageSenderText } from './i18nFormat';
 import { sendImageGenerationMessage } from './imageGenerationStrategy';
 import { sendImageEditMessage } from './imageEditStrategy';
 import { prepareFilesForOpenAICompatibleMode } from './openaiCompatibleFiles';
+import { validateMessageBeforeSend } from './sendMessageValidation';
 import { createSenderStoreActions } from './senderStoreActions';
 import { sendStandardMessage } from './standardChatStrategy';
 import { sendTtsMessage } from './ttsStrategy';
@@ -133,80 +133,22 @@ export const useMessageSender = (props: MessageSenderProps) => {
         isFastMode,
       });
 
-      if (
-        !textToUse.trim() &&
-        !permissions.requiresTextPrompt &&
-        !isContinueMode &&
-        filesToUse.filter((file) => file.uploadState === 'active').length === 0
-      )
-        return;
-      if (permissions.requiresTextPrompt && !textToUse.trim()) return;
-      if (filesToUse.some((file) => file.isProcessing || (file.uploadState !== 'active' && !file.error))) {
-        logService.warn('Send message blocked: files are still processing.');
-        setAppFileError(t('messageSender_waitForFiles'));
-        return;
-      }
-
-      if (
-        filesToUse.some((file) => file.uploadState === 'failed' || file.uploadState === 'cancelled' || !!file.error)
-      ) {
-        logService.warn('Send message blocked: failed or cancelled attachments are still selected.');
-        setAppFileError(t('messageSender_fileUploadFailedBeforeSend'));
-        return;
-      }
-
       const isServerCodeExecutionEnabled = isServerCodeExecutionMode(sessionToUpdate);
-      if (isServerCodeExecutionEnabled) {
-        const oversizedTextFile = filesToUse.find(
-          (file) =>
-            file.uploadState === 'active' && isTextFile(file) && file.size > CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES,
-        );
-
-        if (oversizedTextFile) {
-          logService.warn('Send message blocked: code execution text file is too large.', {
-            fileName: oversizedTextFile.name,
-            fileSize: oversizedTextFile.size,
-          });
-          setAppFileError(t('messageSender_codeExecutionTextFileTooLarge'));
-          return;
+      const validation = validateMessageBeforeSend({
+        text: textToUse,
+        files: filesToUse,
+        permissions,
+        isContinueMode,
+        isServerCodeExecutionEnabled,
+        isImageEditModel,
+        isGemini3Image,
+        activeModelId,
+        t,
+      });
+      if (!validation.ok) {
+        if (validation.fileError !== undefined) {
+          setAppFileError(validation.fileError);
         }
-      }
-
-      if (isImageEditModel || isGemini3Image) {
-        const allowsPdfReferences = activeModelId === 'gemini-3.1-flash-image-preview';
-        const hasUnsupportedAttachments = filesToUse.some((file) => {
-          if (isImageMimeType(file.type)) return false;
-          if (allowsPdfReferences && isPdfMimeType(file.type)) return false;
-          return true;
-        });
-
-        if (hasUnsupportedAttachments) {
-          logService.warn('Send message blocked: image model received unsupported attachment types.', {
-            activeModelId,
-            attachmentTypes: filesToUse.map((file) => file.type),
-          });
-          setAppFileError(
-            allowsPdfReferences
-              ? t('messageSender_imageModelSupportsImageAndPdfOnly')
-              : t('messageSender_imageModelSupportsImageOnly'),
-          );
-          return;
-        }
-      }
-
-      const imageReferenceCount = filesToUse.filter((file) => isImageMimeType(file.type)).length;
-      if (isGemini3Image && imageReferenceCount > 14) {
-        logService.warn('Send message blocked: Gemini 3 image model reference image limit exceeded.', {
-          imageReferenceCount,
-          activeModelId,
-        });
-        setAppFileError(t('messageSender_imageReferenceLimit'));
-        return;
-      }
-
-      if (!permissions.canAcceptAttachments && filesToUse.length > 0) {
-        logService.warn('Send message blocked: Imagen models do not support file attachments.');
-        setAppFileError(t('messageSender_imagenTextOnly'));
         return;
       }
 

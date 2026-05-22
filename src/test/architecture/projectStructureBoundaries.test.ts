@@ -8,6 +8,18 @@ const extractConstNumber = (source: string, constName: string): number | null =>
   return match ? Number(match[1]) : null;
 };
 
+const listEmptyDirectories = (relativeDir: string): string[] => {
+  const absoluteDir = path.join(projectRoot, relativeDir);
+  const entries = fs
+    .readdirSync(absoluteDir, { withFileTypes: true })
+    .sort((left, right) => left.name.localeCompare(right.name));
+  const nestedEmptyDirs = entries
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => listEmptyDirectories(path.join(relativeDir, entry.name)));
+
+  return entries.length === 0 ? [relativeDir] : nestedEmptyDirs;
+};
+
 describe('project structure boundaries', () => {
   it('keeps legacy preference hydration inside effect boundaries', () => {
     const settingsLogicSource = readProjectFile('src/hooks/settings/useSettingsLogic.ts');
@@ -125,6 +137,10 @@ describe('project structure boundaries', () => {
       .filter(({ lines }) => lines > 1000);
 
     expect(oversizedComponentTestFiles).toEqual([]);
+  });
+
+  it('keeps source directories from lingering after files move away', () => {
+    expect(listEmptyDirectories('src')).toEqual([]);
   });
 
   it('keeps OpenAI-compatible file names and imports on the same lower-camel spelling', () => {

@@ -15,10 +15,10 @@ import { updateFileInMessage, updateMessageInSession, updateSessionById } from '
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
 import {
   createMessageStreamState,
-  mergeUniqueFiles,
   reduceMessageStreamEvent,
   type MessageStreamState,
 } from '@/features/chat-streaming/messageStreamReducer';
+import { mergeUniqueFiles } from '@/features/chat-streaming/messageStreamParts';
 
 interface UseMessageUpdatesProps {
   activeSessionId: string | null;

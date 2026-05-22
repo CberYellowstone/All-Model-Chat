@@ -5,7 +5,7 @@ import { generateUniqueId } from '@/utils/chat/ids';
 import { readDirectoryHandle } from '@/utils/import-context/directoryHandleReader';
 import { captureScreenImage } from '@/utils/screenCapture';
 import { useI18n } from '@/contexts/I18nContext';
-import { createProcessingPlaceholderFile } from '@/utils/file-upload/fileUploadPolicy';
+import { createProcessingPlaceholderFile, DIRECTORY_PLACEHOLDER_MIME_TYPE } from '@/utils/file-upload/fileUploadPolicy';
 
 type SetSelectedFiles = (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
 
@@ -80,7 +80,7 @@ export const useFilePreProcessingEffects = ({
         createProcessingPlaceholderFile({
           id: tempId,
           name: t('folder_processing'),
-          type: 'application/x-directory',
+          type: DIRECTORY_PLACEHOLDER_MIME_TYPE,
           size: 0,
         }),
       ]);

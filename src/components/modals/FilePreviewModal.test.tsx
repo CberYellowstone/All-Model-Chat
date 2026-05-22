@@ -139,6 +139,15 @@ describe('FilePreviewModal', () => {
     uploadState: 'active',
   });
 
+  const createAudioFile = (): UploadedFile => ({
+    id: 'audio-1',
+    name: 'clip.mp3',
+    type: 'audio/mpeg',
+    size: 1024,
+    dataUrl: 'blob:audio-preview',
+    uploadState: 'active',
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreatedObjectUrls.length = 0;
@@ -301,5 +310,18 @@ describe('FilePreviewModal', () => {
         'true',
       );
     });
+  });
+
+  it('keeps audio previews constrained on narrow screens', async () => {
+    await act(async () => {
+      renderer.root.render(<FilePreviewModal file={createAudioFile()} onClose={() => {}} />);
+    });
+
+    const audio = document.querySelector('audio');
+    const shell = audio?.parentElement;
+
+    expect(audio?.className).toContain('max-w-full');
+    expect(audio?.className).not.toContain('w-[300px]');
+    expect(shell?.className).toContain('max-w-[calc(100vw-2rem)]');
   });
 });

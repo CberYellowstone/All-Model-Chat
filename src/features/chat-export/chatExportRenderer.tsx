@@ -96,7 +96,6 @@ export const createChatExportElement = async (
     );
   });
 
-  // Allow lazy markdown renderers and image layout to settle before cloning.
   await new Promise((resolve) => window.setTimeout(resolve, 100));
 
   const element = host.querySelector('.export-chat-transcript') as HTMLElement | null;

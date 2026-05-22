@@ -3,42 +3,13 @@ import { type DragEvent, useState, useCallback } from 'react';
 import { type UploadedFile } from '@/types';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { useI18n } from '@/contexts/I18nContext';
-import { createProcessingPlaceholderFile } from '@/utils/file-upload/fileUploadPolicy';
+import { createProcessingPlaceholderFile, DIRECTORY_PLACEHOLDER_MIME_TYPE } from '@/utils/file-upload/fileUploadPolicy';
 
 interface UseFileDragDropProps {
   onFilesDropped: (files: FileList | File[]) => Promise<void>;
   onAddTempFile: (file: UploadedFile) => void;
   onRemoveTempFile: (id: string) => void;
 }
-
-interface DroppedItemsSnapshot {
-  entries: FileSystemEntry[];
-  files: File[];
-}
-
-const snapshotDroppedItems = (items: DataTransferItemList): DroppedItemsSnapshot => {
-  const entries: FileSystemEntry[] = [];
-  const files: File[] = [];
-
-  for (const item of Array.from(items)) {
-    if (item.kind !== 'file') {
-      continue;
-    }
-
-    const entry = item.webkitGetAsEntry?.();
-    if (entry) {
-      entries.push(entry);
-      continue;
-    }
-
-    const file = item.getAsFile();
-    if (file) {
-      files.push(file);
-    }
-  }
-
-  return { entries, files };
-};
 
 export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFile }: UseFileDragDropProps) => {
   const { t } = useI18n();
@@ -86,7 +57,9 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
 
       try {
         const items = e.dataTransfer.items;
-        const droppedSnapshot = items ? snapshotDroppedItems(items) : { entries: [], files: [] };
+        const droppedSnapshot = items
+          ? (await import('@/utils/import-context/droppedItems')).snapshotDroppedItems(items)
+          : { entries: [], files: [] };
         const hasDirectory = droppedSnapshot.entries.some((entry) => entry.isDirectory);
 
         if (hasDirectory) {
@@ -95,7 +68,7 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
             createProcessingPlaceholderFile({
               id: tempId,
               name: t('fileProcessing_dropped'),
-              type: 'application/x-directory', // Dummy type for icon
+              type: DIRECTORY_PLACEHOLDER_MIME_TYPE,
               size: 0,
             }),
           );
@@ -115,7 +88,6 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
 
           onRemoveTempFile(tempId);
         } else {
-          // Standard file drop
           const files = e.dataTransfer.files;
           if (files?.length) {
             await onFilesDropped(files);

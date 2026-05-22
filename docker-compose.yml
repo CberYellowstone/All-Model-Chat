@@ -8,6 +8,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_API_BASE: ${GEMINI_API_BASE:-https://generativelanguage.googleapis.com}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      ENABLE_MCP_STDIO: ${ENABLE_MCP_STDIO:-false}
+      ENABLE_MCP_PRIVATE_HTTP: ${ENABLE_MCP_PRIVATE_HTTP:-false}
     expose:
       - '3001'
     restart: unless-stopped

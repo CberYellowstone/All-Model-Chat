@@ -43,11 +43,17 @@ describe('source readability boundaries', () => {
   });
 
   it('keeps UI comments from narrating obvious markup sections', () => {
+    const appEntrySource = readProjectFile('src/index.tsx');
     const sendControlsSource = readProjectFile('src/components/chat/input/actions/SendControls.tsx');
     const codeBlockSource = readProjectFile('src/components/message/blocks/CodeBlock.tsx');
+    const consoleTabSource = readProjectFile('src/components/log-viewer/ConsoleTab.tsx');
+    const modelPickerSource = readProjectFile('src/components/shared/ModelPicker.tsx');
+    const groupItemSource = readProjectFile('src/components/sidebar/GroupItem.tsx');
     const pdfMainContentSource = readProjectFile('src/components/shared/file-preview/pdf-viewer/PdfMainContent.tsx');
     const preloadedMessagesModalSource = readProjectFile('src/components/scenarios/PreloadedMessagesModal.tsx');
     const dataManagementSectionSource = readProjectFile('src/components/settings/sections/DataManagementSection.tsx');
+
+    expect(appEntrySource).not.toContain('Import Global Styles');
 
     for (const phrase of ['{/* Cancel Edit Button', '{/* Main Action Button', '{/* Ripples */}', '{/* Icons stack']) {
       expect(sendControlsSource).not.toContain(phrase);
@@ -56,6 +62,10 @@ describe('source readability boundaries', () => {
     expect(codeBlockSource).not.toContain('Extract raw code for execution');
     expect(codeBlockSource).not.toContain('Execution Props');
     expect(codeBlockSource).not.toContain('Execution Console');
+    expect(consoleTabSource).not.toContain('{/* List */}');
+    expect(consoleTabSource).not.toContain('{/* Load More Trigger */}');
+    expect(modelPickerSource).not.toContain('Render props for the trigger button');
+    expect(groupItemSource).not.toContain('Define a type for the props that are passed down to SessionItem');
     expect(pdfMainContentSource).not.toContain('PDF Content');
     expect(pdfMainContentSource).not.toContain('Loading Indicator');
     expect(pdfMainContentSource).not.toContain('Error Indicator');
@@ -69,5 +79,33 @@ describe('source readability boundaries', () => {
     const sendControlsSource = readProjectFile('src/components/chat/input/actions/SendControls.tsx');
 
     expect(sendControlsSource).not.toContain("t('sendMessage_fast_suffix',");
+  });
+
+  it('names shared error boundary contracts after the component', () => {
+    const errorBoundarySource = readProjectFile('src/components/shared/ErrorBoundary.tsx');
+
+    expect(errorBoundarySource).toContain('interface ErrorBoundaryProps');
+    expect(errorBoundarySource).toContain('interface ErrorBoundaryState');
+    expect(errorBoundarySource).not.toContain('interface Props');
+    expect(errorBoundarySource).not.toContain('interface State');
+  });
+
+  it('keeps session loading comments focused on why instead of narrating steps', () => {
+    const sessionLoaderSource = readProjectFile('src/hooks/chat/history/useSessionLoader.ts');
+
+    for (const phrase of [
+      'Set Active Messages and ID',
+      'Ensure metadata list contains this session',
+      'Update metadata if needed',
+      'Restore files from draft',
+      'Fetch metadata only for the list',
+      'Determine Active Session ID',
+      'Set List State',
+      'MEMORY OPTIMIZATION',
+      'Fallback: New Chat',
+      'Pass the top session',
+    ]) {
+      expect(sessionLoaderSource).not.toContain(phrase);
+    }
   });
 });

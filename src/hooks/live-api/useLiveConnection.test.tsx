@@ -156,7 +156,7 @@ describe('useLiveConnection', () => {
     unmount();
   });
 
-  it('passes a browser API key through for BYOK live token creation', async () => {
+  it('uses the SDK default API version when connecting Live with a browser API key', async () => {
     const sendRealtimeInput = vi.fn();
 
     mockGetLiveApiClient.mockResolvedValue({
@@ -195,7 +195,7 @@ describe('useLiveConnection', () => {
 
     expect(mockGetLiveApiClient).toHaveBeenCalledWith(
       expect.objectContaining({ apiKey: 'api-key' }),
-      { apiVersion: 'v1alpha' },
+      undefined,
       'browser-key',
     );
     unmount();

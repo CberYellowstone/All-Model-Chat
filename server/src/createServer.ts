@@ -9,29 +9,39 @@ import {
 import { getCorsHeaders, sendJson } from './cors.js';
 import { GEMINI_PROXY_PREFIX, proxyGeminiRequest, type GeminiProxyConfig } from './geminiProxy.js';
 import { IMAGE_PROXY_PATH, proxyExternalImage } from './imageProxy.js';
+import { createMcpClientBridge } from './mcpClient.js';
+import { handleMcpRequest } from './mcpRoutes.js';
+import type { McpClientBridge } from './mcpTypes.js';
 
 export { readMacOsClipboardPng } from './clipboardImage.js';
 
 interface CreateServerDependencies {
   fetchImpl?: typeof fetch;
   readLocalClipboardImage?: () => Promise<LocalClipboardImage | null>;
+  mcpClient?: McpClientBridge;
 }
 
 type CreateServerConfig = Pick<ApiServerConfig, 'geminiApiBase' | 'geminiApiKey'> &
-  Partial<Pick<ApiServerConfig, 'allowedOrigins'>>;
+  Partial<Pick<ApiServerConfig, 'allowedOrigins' | 'enableMcpStdio' | 'enableMcpPrivateHttp'>>;
 
-interface ResolvedServerConfig extends CreateServerConfig, GeminiProxyConfig {
+interface ResolvedServerConfig
+  extends Omit<CreateServerConfig, 'allowedOrigins' | 'enableMcpStdio' | 'enableMcpPrivateHttp'>, GeminiProxyConfig {
   allowedOrigins: string[];
+  enableMcpStdio: boolean;
+  enableMcpPrivateHttp: boolean;
 }
 
 export function createServer(config: CreateServerConfig, dependencies: CreateServerDependencies = {}): http.Server {
   const resolvedConfig: ResolvedServerConfig = {
     ...config,
     allowedOrigins: config.allowedOrigins ?? [],
+    enableMcpStdio: config.enableMcpStdio ?? false,
+    enableMcpPrivateHttp: config.enableMcpPrivateHttp ?? false,
   };
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const readLocalClipboardImage = dependencies.readLocalClipboardImage ?? readMacOsClipboardPng;
+  const mcpClient = dependencies.mcpClient ?? createMcpClientBridge();
 
   return http.createServer(async (request, response) => {
     try {
@@ -78,6 +88,15 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
           resolvedConfig.allowedOrigins,
           readLocalClipboardImage,
         );
+        return;
+      }
+
+      if (
+        await handleMcpRequest(request, response, path, resolvedConfig.allowedOrigins, mcpClient, {
+          enableStdio: resolvedConfig.enableMcpStdio,
+          enablePrivateHttp: resolvedConfig.enableMcpPrivateHttp,
+        })
+      ) {
         return;
       }
 

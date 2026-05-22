@@ -17,6 +17,8 @@ const INLINE_MAX_REQUEST_PAYLOAD_BYTES = 100 * 1024 * 1024;
 const INLINE_MAX_PDF_PAYLOAD_BYTES = 50 * 1024 * 1024;
 const INLINE_PART_JSON_OVERHEAD_BYTES = 512;
 
+export const DIRECTORY_PLACEHOLDER_MIME_TYPE = 'application/x-directory';
+
 const getFileSignature = (file: Pick<File, 'name' | 'size'>) => `${file.name.toLowerCase()}::${file.size}`;
 
 type ProcessingPlaceholderFileInput = Pick<UploadedFile, 'id' | 'name' | 'type' | 'size'> &

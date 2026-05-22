@@ -137,6 +137,7 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   showInputClearButton: true,
   isCopySelectionFormattingEnabled: true,
   isSystemAudioRecordingEnabled: false,
+  mcpServers: [],
   customShortcuts: {},
   tabModelCycleIds: undefined,
 };

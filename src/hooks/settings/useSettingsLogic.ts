@@ -157,6 +157,7 @@ export const useSettingsLogic = ({
       { id: 'models', labelKey: 'settingsTabModels' },
       { id: 'interface', labelKey: 'settingsTabInterface' },
       { id: 'api', labelKey: 'settingsTabApi' },
+      { id: 'mcp', labelKey: 'settingsTabMcp' },
       { id: 'data', labelKey: 'settingsTabData' },
       { id: 'shortcuts', labelKey: 'settingsTabShortcuts' },
       { id: 'about', labelKey: 'settingsTabAbout' },

@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createChatSettings } from '@/test/factories';
+import { createAppSettings, createChatSettings } from '@/test/factories';
 import { renderHook } from '@/test/testUtils';
 import { useChatInputSubmission } from './useChatInputSubmission';
 
@@ -9,6 +9,7 @@ const createSubmissionParams = () => {
 
   return {
     activeSessionId: 'session-1',
+    appSettings: createAppSettings(),
     currentChatSettings: createChatSettings(),
     selectedFiles: [],
     setSelectedFiles: vi.fn(),

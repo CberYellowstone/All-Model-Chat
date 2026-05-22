@@ -235,4 +235,22 @@ describe('MessageActions', () => {
     expect(assistantAvatar?.className).not.toContain('rounded-full');
     expect(renderer.container.querySelectorAll('img[alt="Assistant avatar"]')).toHaveLength(1);
   });
+
+  it('exposes message avatars as keyboard-focusable edit buttons', () => {
+    const onEditMessage = vi.fn();
+
+    act(() => {
+      renderMessageActions({ onEditMessage });
+    });
+
+    const avatarButton = renderer.container.querySelector<HTMLButtonElement>('button[aria-label="Edit"]');
+    expect(avatarButton).not.toBeNull();
+    expect(avatarButton?.querySelector('img[alt="Assistant avatar"]')).not.toBeNull();
+
+    act(() => {
+      avatarButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onEditMessage).toHaveBeenCalledWith('message-1', 'update');
+  });
 });

@@ -75,6 +75,7 @@ export const createAppSettings = (overrides: Partial<AppSettings> = {}): AppSett
   },
   isPasteRichTextAsMarkdownEnabled: true,
   isSystemAudioRecordingEnabled: false,
+  mcpServers: [],
   customShortcuts: {},
   ...overrides,
 });

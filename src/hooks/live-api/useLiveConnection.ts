@@ -160,8 +160,7 @@ export const useLiveConnection = ({
     const shouldAbortConnect = () => isUserDisconnectRef.current || !isConnectingRef.current;
 
     try {
-      // Specify API version v1alpha for Live API support
-      const ai = await getLiveApiClient(appSettings, { apiVersion: 'v1alpha' }, liveApiKeyForConnection);
+      const ai = await getLiveApiClient(appSettings, undefined, liveApiKeyForConnection);
       if (shouldAbortConnect()) {
         return false;
       }

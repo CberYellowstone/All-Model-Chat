@@ -128,4 +128,35 @@ describe('ToolsMenu', () => {
       "This model can't combine built-in tools with Pyodide in one request.",
     );
   });
+
+  it('renders enabled tool badges as native buttons', () => {
+    const onToggleGoogleSearch = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <ToolsMenu
+          currentModelId="gemini-3.1-pro-preview"
+          toolStates={{
+            ...createChatToolToggleStatesFromFlags({ googleSearch: true }),
+            googleSearch: {
+              isEnabled: true,
+              onToggle: onToggleGoogleSearch,
+            },
+          }}
+          toolUtilityActions={toolUtilityActions}
+          disabled={false}
+        />,
+      );
+    });
+
+    const activeBadge = document.body.querySelector<HTMLButtonElement>('button[aria-label="Disable Web Search"]');
+    expect(activeBadge).not.toBeNull();
+    expect(document.body.querySelector('[role="button"][aria-label="Disable Web Search"]')).toBeNull();
+
+    act(() => {
+      activeBadge?.click();
+    });
+
+    expect(onToggleGoogleSearch).toHaveBeenCalledTimes(1);
+  });
 });

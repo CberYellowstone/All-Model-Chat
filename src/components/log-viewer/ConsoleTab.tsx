@@ -111,7 +111,6 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
         </button>
       </div>
 
-      {/* List */}
       <div className="flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar bg-[var(--theme-bg-primary)]">
         {filteredLogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-[var(--theme-text-tertiary)] opacity-50">
@@ -122,7 +121,6 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
           filteredLogs.map((log) => <LogRow key={log.id || log.timestamp.toISOString()} log={log} />)
         )}
 
-        {/* Load More Trigger */}
         {hasMore && filteredLogs.length > 0 && (
           <div className="p-4 flex justify-center border-t border-[var(--theme-border-secondary)]">
             <button

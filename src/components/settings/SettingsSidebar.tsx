@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { KeyRound, LayoutPanelLeft, SlidersHorizontal, X } from 'lucide-react';
+import { KeyRound, LayoutPanelLeft, Network, SlidersHorizontal, X } from 'lucide-react';
 import { type SettingsTab, type SettingsTabDescriptor } from '@/stores/settingsUiStore';
 import { IconAbout, IconData, IconKeyboard } from '@/components/icons';
 
@@ -8,6 +8,7 @@ const SETTINGS_TAB_ICONS: Record<SettingsTab, React.ElementType> = {
   models: SlidersHorizontal,
   interface: LayoutPanelLeft,
   api: KeyRound,
+  mcp: Network,
   data: IconData,
   shortcuts: IconKeyboard,
   about: IconAbout,
@@ -24,7 +25,7 @@ interface SettingsSidebarProps {
 const SIDEBAR_GROUPS: Array<{ id: string; tabIds: SettingsTab[] }> = [
   {
     id: 'primary',
-    tabIds: ['models', 'api', 'interface', 'data'],
+    tabIds: ['models', 'api', 'mcp', 'interface', 'data'],
   },
   {
     id: 'shortcuts',

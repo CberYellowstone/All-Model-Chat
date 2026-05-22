@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from 'react';
-import { type UploadedFile, type ChatSettings } from '@/types';
+import { type AppSettings, type UploadedFile, type ChatSettings } from '@/types';
 import { areFilesStillProcessing, buildPendingChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
 import { useLiveModeHandler, type LiveModeApi } from './useLiveModeHandler';
 import { useMessageQueue } from './useMessageQueue';
@@ -23,6 +23,7 @@ interface ChatInputSubmissionState {
 
 interface UseChatInputSubmissionParams {
   activeSessionId: string | null;
+  appSettings: AppSettings;
   currentChatSettings: ChatSettings;
   selectedFiles: UploadedFile[];
   setSelectedFiles: SetSelectedFiles;
@@ -46,6 +47,7 @@ interface UseChatInputSubmissionParams {
 
 export const useChatInputSubmission = ({
   activeSessionId,
+  appSettings,
   currentChatSettings,
   selectedFiles,
   setSelectedFiles,
@@ -86,6 +88,9 @@ export const useChatInputSubmission = ({
     isNativeAudioModel,
     selectedFiles,
     setSelectedFiles,
+    setAppFileError,
+    appSettings,
+    currentChatSettings,
     currentModelId: currentChatSettings.modelId,
     mediaResolution: currentChatSettings.mediaResolution,
     liveApi,

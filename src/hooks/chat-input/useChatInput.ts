@@ -127,6 +127,7 @@ export const useChatInput = () => {
     handleSmartSendMessage,
   } = useChatInputSubmission({
     activeSessionId,
+    appSettings,
     currentChatSettings,
     selectedFiles,
     setSelectedFiles,

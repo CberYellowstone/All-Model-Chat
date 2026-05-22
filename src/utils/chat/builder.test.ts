@@ -549,6 +549,24 @@ describe('createChatHistoryForApi', () => {
     });
   });
 
+  it('blocks Gemini image turns when generated media cannot be rehydrated', async () => {
+    const msgs = [
+      makeMessage('model', '', {
+        apiParts: [
+          { text: 'Here is an updated result.', thoughtSignature: 'sig-text' },
+          {
+            inlineData: { mimeType: 'image/png', data: '' },
+            thoughtSignature: 'sig-image',
+          },
+        ],
+      }),
+    ];
+
+    await expect(createChatHistoryForApi(msgs, false, 'gemini-3.1-flash-image-preview')).rejects.toThrow(
+      'Please reattach the image',
+    );
+  });
+
   it('rebuilds prior user text files as file inputs when code execution file I/O is preferred', async () => {
     const msgs = [
       makeMessage('user', 'Please analyze the attached CSV', {

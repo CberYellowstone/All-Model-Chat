@@ -99,4 +99,30 @@ describe('UI clarity regressions', () => {
     expect(codeBlock).not.toContain("transition: 'max-height");
     expect(codeBlock).not.toContain('transition: max-height');
   });
+
+  it('uses valid Tailwind focus-visible variants for keyboard focus rings', () => {
+    const files = [
+      'components/header/HeaderModelSelector.tsx',
+      'components/sidebar/sidebarStyles.ts',
+      'components/modals/FilePreviewModal.tsx',
+    ];
+
+    for (const relativePath of files) {
+      expect(readSourceFile(relativePath)).not.toContain('focus:visible');
+    }
+  });
+
+  it('keeps faux clickable controls on native buttons or explicit keyboard semantics', () => {
+    const messageActions = readSourceFile('components/message/MessageActions.tsx');
+    const toolsMenu = readSourceFile('components/chat/input/ToolsMenu.tsx');
+    const toggleItem = readSourceFile('components/shared/ToggleItem.tsx');
+    const apiConfigToggle = readSourceFile('components/settings/sections/api-config/ApiConfigToggle.tsx');
+
+    expect(messageActions).not.toContain('group/avatar cursor-pointer" onClick=');
+    expect(messageActions).toContain('<button');
+    expect(toolsMenu).not.toContain('role="button"');
+    expect(toolsMenu).toContain('<button');
+    expect(toggleItem).toContain('onKeyDown');
+    expect(apiConfigToggle).toContain('onKeyDown');
+  });
 });

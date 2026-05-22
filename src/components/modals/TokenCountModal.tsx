@@ -73,10 +73,15 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
             selectedId={selectedModelId}
             onSelect={handleModelSelect}
             dropdownClassName="w-full max-h-60"
-            renderTrigger={({ isOpen, setIsOpen, selectedModel }) => (
+            renderTrigger={({ isOpen, setIsOpen, selectedModel, listboxId, activeDescendantId }) => (
               <button
+                type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between gap-3 px-3 py-2.5 bg-[var(--theme-bg-input)] border border-[var(--theme-border-secondary)] rounded-lg text-sm text-[var(--theme-text-primary)] hover:border-[var(--theme-border-focus)] transition-colors focus:ring-2 focus:ring-[var(--theme-border-focus)] outline-none"
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+                aria-controls={isOpen ? listboxId : undefined}
+                aria-activedescendant={isOpen ? activeDescendantId : undefined}
               >
                 <div className="flex items-start gap-2.5 min-w-0 text-left">
                   <div className="mt-0.5 flex-shrink-0">{getModelIcon(selectedModel)}</div>

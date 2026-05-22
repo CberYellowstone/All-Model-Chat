@@ -13,6 +13,7 @@ const {
   mockAppendFunctionDeclarationsToTools,
   mockRunStandardToolLoop,
   mockCreateStandardClientFunctions,
+  mockCreateMcpClientFunctions,
   mockSendMessageStream,
   mockSendMessageNonStream,
   mockSendOpenAICompatibleMessageStream,
@@ -26,6 +27,7 @@ const {
   mockAppendFunctionDeclarationsToTools: vi.fn(),
   mockRunStandardToolLoop: vi.fn(),
   mockCreateStandardClientFunctions: vi.fn(),
+  mockCreateMcpClientFunctions: vi.fn(),
   mockSendMessageStream: vi.fn(),
   mockSendMessageNonStream: vi.fn(),
   mockSendOpenAICompatibleMessageStream: vi.fn(),
@@ -101,6 +103,10 @@ vi.mock('@/services/api/openaiCompatibleApi', () => ({
 
 vi.mock('@/features/standard-chat/standardClientFunctions', () => ({
   createStandardClientFunctions: mockCreateStandardClientFunctions,
+}));
+
+vi.mock('@/features/mcp/mcpClientFunctions', () => ({
+  createMcpClientFunctions: mockCreateMcpClientFunctions,
 }));
 
 vi.mock('@/features/standard-chat/standardToolLoop', () => ({
@@ -196,6 +202,7 @@ describe('standardChatStrategy', () => {
           }
         : {},
     );
+    mockCreateMcpClientFunctions.mockResolvedValue({});
     mockRunStandardToolLoop.mockResolvedValue({
       finalTurn: {
         parts: [{ text: 'done' }],
@@ -396,6 +403,7 @@ describe('standardChatStrategy', () => {
 
     expect(mockBuildGenerationConfig).not.toHaveBeenCalled();
     expect(mockCreateStandardClientFunctions).not.toHaveBeenCalled();
+    expect(mockCreateMcpClientFunctions).not.toHaveBeenCalled();
     expect(mockSendMessageStream).not.toHaveBeenCalled();
     expect(mockSendOpenAICompatibleMessageStream).toHaveBeenCalledWith(
       'api-key',
@@ -808,6 +816,75 @@ describe('standardChatStrategy', () => {
     });
 
     expect(streamOnComplete).toHaveBeenCalledWith(undefined, undefined, undefined, [generatedFile]);
+
+    unmount();
+  });
+
+  it('adds enabled MCP server tools to the standard Gemini tool loop', async () => {
+    const getStreamHandlers = vi.fn(() => ({
+      streamOnError: vi.fn(),
+      streamOnComplete: vi.fn(),
+      streamOnPart: vi.fn(),
+      onThoughtChunk: vi.fn(),
+    }));
+    const mcpServer = {
+      id: 'filesystem',
+      name: 'Filesystem',
+      enabled: true,
+      transport: 'stdio' as const,
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
+    };
+    const mcpHandler = vi.fn();
+    const mcpFunction = {
+      declaration: {
+        name: 'mcp_filesystem_read_file',
+        description: 'Read a file.',
+      },
+      handler: mcpHandler,
+    };
+
+    mockCreateMcpClientFunctions.mockResolvedValue({
+      mcp_filesystem_read_file: mcpFunction,
+    });
+    mockAppendFunctionDeclarationsToTools.mockImplementation((_modelId, config, declarations) => ({
+      ...config,
+      tools: [{ functionDeclarations: declarations }],
+    }));
+
+    const { result, unmount } = renderStandardChat({
+      appSettings: {
+        mcpServers: [mcpServer],
+      },
+      getStreamHandlers,
+    });
+
+    await act(async () => {
+      await result.current.sendStandardMessage({
+        text: 'read a file through MCP',
+        files: [],
+        editingMessageId: null,
+        activeModelId: 'gemini-3-flash-preview',
+        request: createPreparedRequest(),
+      });
+    });
+
+    expect(mockCreateMcpClientFunctions).toHaveBeenCalledWith({
+      servers: [mcpServer],
+      abortSignal: expect.any(AbortSignal),
+    });
+    expect(mockAppendFunctionDeclarationsToTools).toHaveBeenCalledWith(
+      'gemini-3-flash-preview',
+      expect.any(Object),
+      [mcpFunction.declaration],
+    );
+    expect(mockRunStandardToolLoop).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientFunctions: {
+          mcp_filesystem_read_file: mcpFunction,
+        },
+      }),
+    );
 
     unmount();
   });

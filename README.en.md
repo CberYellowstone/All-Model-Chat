@@ -231,6 +231,8 @@ Notes:
 | `PORT`                          | Port used by the API service                                                                     | Server only           | `3001`                                      |
 | `GEMINI_API_BASE`               | Upstream Gemini API base URL                                                                     | Server only           | `https://generativelanguage.googleapis.com` |
 | `ALLOWED_ORIGINS`               | Comma-separated CORS allowlist for cross-origin deployments                                      | Server only           | Empty                                       |
+| `ENABLE_MCP_STDIO`              | Enables `stdio` MCP server calls                                                                 | Server only           | `false`                                     |
+| `ENABLE_MCP_PRIVATE_HTTP`       | Allows the API service to call private or local HTTP MCP URLs                                    | Server only           | `false`                                     |
 | `RUNTIME_SERVER_MANAGED_API`    | Enables server-managed API mode by default in the frontend                                       | Public runtime config | `false`                                     |
 | `RUNTIME_USE_CUSTOM_API_CONFIG` | Enables custom API configuration by default                                                      | Public runtime config | `true`                                      |
 | `RUNTIME_USE_API_PROXY`         | Enables API proxy mode by default                                                                | Public runtime config | `true`                                      |
@@ -238,6 +240,8 @@ Notes:
 | `RUNTIME_PYODIDE_BASE_URL`      | Optional Pyodide runtime asset URL; when blank, same-origin `/pyodide/` is used                  | Public runtime config | Empty                                       |
 
 The `RUNTIME_*` values are written into `runtime-config.js` at container startup and are readable by the browser. Only put public configuration there. The public/runtime-config.js template is used for static builds and keeps custom API configuration and proxy mode disabled by default; Docker overwrites it through `docker/web-entrypoint.sh` using the defaults above.
+
+MCP `stdio` and private/local HTTP access are disabled by default. Enable `ENABLE_MCP_STDIO=true` or `ENABLE_MCP_PRIVATE_HTTP=true` only for trusted self-hosted deployments.
 
 Pyodide assets are copied to `dist/pyodide/` during production builds and load from same-origin `/pyodide/` by default. To use a CDN or a separate static host, set `RUNTIME_PYODIDE_BASE_URL` to a full directory URL such as `https://cdn.jsdelivr.net/pyodide/v0.25.1/full/`. The PWA precache excludes large `pyodide/` assets by default, so local Python loads them on demand the first time it runs.
 

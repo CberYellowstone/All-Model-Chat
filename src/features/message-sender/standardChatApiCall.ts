@@ -12,6 +12,7 @@ import {
   sendOpenAICompatibleMessageNonStream,
   sendOpenAICompatibleMessageStream,
 } from '@/services/api/openaiCompatibleApi';
+import { createMcpClientFunctions } from '@/features/mcp/mcpClientFunctions';
 import { createStandardClientFunctions } from '@/features/standard-chat/standardClientFunctions';
 import { runStandardToolLoop } from '@/features/standard-chat/standardToolLoop';
 import { collectLocalPythonInputFiles } from '@/features/local-python/executionFiles';
@@ -229,13 +230,26 @@ export const performStandardChatApiCall = async ({
       return pyodideService.runPython(code, options);
     },
   });
-  const standardFunctionDeclarations = Object.values(standardClientFunctions).map(({ declaration }) => declaration);
+  const isMcpEnabledForTurn =
+    finalRole === 'user' && !isRawMode && !isImageModel(apiModelId) && (appSettings.mcpServers?.length ?? 0) > 0;
+  const mcpClientFunctions = isMcpEnabledForTurn
+    ? await createMcpClientFunctions({
+        servers: appSettings.mcpServers ?? [],
+        abortSignal: newAbortController.signal,
+      })
+    : {};
+  const combinedClientFunctions = {
+    ...standardClientFunctions,
+    ...mcpClientFunctions,
+  };
+  const localPythonFunctionDeclarations = Object.values(standardClientFunctions).map(({ declaration }) => declaration);
+  const mcpFunctionDeclarations = Object.values(mcpClientFunctions).map(({ declaration }) => declaration);
   const hasRequestedServerSideToolThatNeedsCombination =
     !!sessionToUpdate.isGoogleSearchEnabled ||
     !!sessionToUpdate.isDeepSearchEnabled ||
     !!sessionToUpdate.isUrlContextEnabled;
   const isLocalPythonEnabledForTurn =
-    standardFunctionDeclarations.length > 0 &&
+    localPythonFunctionDeclarations.length > 0 &&
     (isGemini3Model(apiModelId) || !hasRequestedServerSideToolThatNeedsCombination);
 
   const config = await buildGenerationConfig({
@@ -251,7 +265,7 @@ export const performStandardChatApiCall = async ({
   const requestConfig = appendFunctionDeclarationsToTools(
     apiModelId,
     config,
-    isLocalPythonEnabledForTurn ? standardFunctionDeclarations : [],
+    [...(isLocalPythonEnabledForTurn ? localPythonFunctionDeclarations : []), ...mcpFunctionDeclarations],
   );
   const hasFunctionDeclarationsInRequest = !!requestConfig.tools?.some((tool) => 'functionDeclarations' in tool);
 
@@ -259,7 +273,7 @@ export const performStandardChatApiCall = async ({
     try {
       const toolLoopResult = await runStandardToolLoop({
         initialContents: [...historyForChat, { role: finalRole, parts: finalParts }],
-        clientFunctions: standardClientFunctions,
+        clientFunctions: combinedClientFunctions,
         abortSignal: newAbortController.signal,
         runTurn: (contents) =>
           generateContentTurnApi(keyToUse, apiModelId, contents, requestConfig, newAbortController.signal),
