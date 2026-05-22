@@ -21,6 +21,7 @@ describe('useAppUi', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.clear();
+    window.history.replaceState({}, '', '/');
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 375,
@@ -143,6 +144,26 @@ describe('useAppUi', () => {
 
     flushRafCallbacks();
     expect(useUIStore.getState().isHistorySidebarOpen).toBe(true);
+
+    unmount();
+  });
+
+  it('closes mobile settings when the browser back button is pressed', () => {
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    useUIStore.setState({ isSettingsModalOpen: true });
+    const { unmount } = renderHook(() => useAppUi());
+
+    expect(pushStateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ amcModal: 'settings' }),
+      '',
+      expect.any(String),
+    );
+
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    });
+
+    expect(useUIStore.getState().isSettingsModalOpen).toBe(false);
 
     unmount();
   });
