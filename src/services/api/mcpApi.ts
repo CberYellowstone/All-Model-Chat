@@ -44,7 +44,7 @@ export interface McpToolsResponse {
   }>;
 }
 
-export interface McpResourcesResponse {
+interface McpResourcesResponse {
   servers: Array<{
     serverId: string;
     serverName: string;
@@ -58,7 +58,7 @@ export interface McpResourcesResponse {
   }>;
 }
 
-export interface McpPromptsResponse {
+interface McpPromptsResponse {
   servers: Array<{
     serverId: string;
     serverName: string;

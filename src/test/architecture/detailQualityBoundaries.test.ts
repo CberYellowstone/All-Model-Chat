@@ -7,8 +7,11 @@ describe('detail quality boundaries', () => {
   it('reuses dropped-item snapshotting without pulling folder import code into the initial bundle', () => {
     const useFileDragDropSource = readProjectFile('src/hooks/file-upload/useFileDragDrop.ts');
     const droppedItemsSource = readProjectFile('src/utils/import-context/droppedItems.ts');
+    const droppedItemsSnapshotSource = readProjectFile('src/utils/import-context/droppedItemsSnapshot.ts');
 
-    expect(droppedItemsSource).toContain('export function snapshotDroppedItems');
+    expect(droppedItemsSnapshotSource).toContain('export function snapshotDroppedItems');
+    expect(droppedItemsSource).toContain("from './droppedItemsSnapshot'");
+    expect(useFileDragDropSource).toContain("from '@/utils/import-context/droppedItemsSnapshot'");
     expect(useFileDragDropSource).toContain("import('@/utils/import-context/droppedItems')");
     expect(useFileDragDropSource).not.toContain("from '@/utils/import-context/droppedItems'");
     expect(useFileDragDropSource).not.toContain('const snapshotDroppedItems =');

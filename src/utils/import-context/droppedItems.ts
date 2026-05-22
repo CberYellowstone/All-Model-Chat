@@ -1,6 +1,7 @@
 import { attachRelativePath, normalizeRelativePath } from './filePath';
 import { readDirectoryHandle } from './directoryHandleReader';
 import { IGNORED_DIRS } from './shared';
+import { snapshotDroppedItems, type DroppedItemsSnapshot } from './droppedItemsSnapshot';
 
 interface DroppedItemsResult {
   files: File[];
@@ -11,46 +12,10 @@ interface ProcessDroppedItemsOptions {
   skipDefaultIgnoredDirectories?: boolean;
 }
 
-interface DroppedItemsSnapshot {
-  entries: FileSystemEntry[];
-  handles?: FileSystemHandle[];
-  handlePromises?: Promise<FileSystemHandle | null>[];
-  files: File[];
-}
-
-export function snapshotDroppedItems(items: DataTransferItemList): DroppedItemsSnapshot {
-  const entries: FileSystemEntry[] = [];
-  const handlePromises: Promise<FileSystemHandle | null>[] = [];
-  const files: File[] = [];
-
-  for (const item of Array.from(items)) {
-    if (item.kind !== 'file') {
-      continue;
-    }
-
-    const entry = item.webkitGetAsEntry?.();
-    if (entry) {
-      entries.push(entry);
-      continue;
-    }
-
-    const handlePromise = item.getAsFileSystemHandle?.();
-    if (handlePromise) {
-      handlePromises.push(handlePromise);
-      continue;
-    }
-
-    const file = item.getAsFile();
-    if (file) {
-      files.push(file);
-    }
-  }
-
-  return { entries, handlePromises, files };
-}
+export { snapshotDroppedItems } from './droppedItemsSnapshot';
 
 export async function processDroppedItemsSnapshot(
-  snapshot: DroppedItemsSnapshot,
+  snapshot: DroppedItemsSnapshot & { handles?: FileSystemHandle[] },
   signal?: AbortSignal,
   options: ProcessDroppedItemsOptions = {},
 ): Promise<DroppedItemsResult> {
