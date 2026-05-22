@@ -11,6 +11,43 @@ interface UseFileDragDropProps {
   onRemoveTempFile: (id: string) => void;
 }
 
+interface DroppedItemsSnapshot {
+  entries: FileSystemEntry[];
+  handlePromises: Promise<FileSystemHandle | null>[];
+  files: File[];
+}
+
+const snapshotDroppedItems = (items: DataTransferItemList): DroppedItemsSnapshot => {
+  const entries: FileSystemEntry[] = [];
+  const handlePromises: Promise<FileSystemHandle | null>[] = [];
+  const files: File[] = [];
+
+  for (const item of Array.from(items)) {
+    if (item.kind !== 'file') {
+      continue;
+    }
+
+    const entry = item.webkitGetAsEntry?.();
+    if (entry) {
+      entries.push(entry);
+      continue;
+    }
+
+    const handlePromise = item.getAsFileSystemHandle?.();
+    if (handlePromise) {
+      handlePromises.push(handlePromise);
+      continue;
+    }
+
+    const file = item.getAsFile();
+    if (file) {
+      files.push(file);
+    }
+  }
+
+  return { entries, handlePromises, files };
+};
+
 export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFile }: UseFileDragDropProps) => {
   const { t } = useI18n();
   const [isAppDraggingOver, setIsAppDraggingOver] = useState<boolean>(false);
@@ -57,10 +94,21 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
 
       try {
         const items = e.dataTransfer.items;
-        const droppedSnapshot = items
-          ? (await import('@/utils/import-context/droppedItems')).snapshotDroppedItems(items)
-          : { entries: [], files: [] };
-        const hasDirectory = droppedSnapshot.entries.some((entry) => entry.isDirectory);
+        const droppedSnapshot = items ? snapshotDroppedItems(items) : { entries: [], handlePromises: [], files: [] };
+        const hasSnapshotData =
+          droppedSnapshot.entries.length > 0 ||
+          droppedSnapshot.handlePromises.length > 0 ||
+          droppedSnapshot.files.length > 0;
+        if (!hasSnapshotData && e.dataTransfer.files?.length) {
+          await onFilesDropped(e.dataTransfer.files);
+          return;
+        }
+
+        const handles = await Promise.all(droppedSnapshot.handlePromises);
+        const droppedHandles = handles.filter((handle): handle is FileSystemHandle => handle !== null);
+        const hasDirectory =
+          droppedSnapshot.entries.some((entry) => entry.isDirectory) ||
+          droppedHandles.some((handle) => handle.kind === 'directory');
 
         if (hasDirectory) {
           const tempId = generateUniqueId();
@@ -77,7 +125,11 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
             import('@/utils/import-context/droppedItems'),
             import('@/utils/import-context/importContextBuilder'),
           ]);
-          const dropped = await processDroppedItemsSnapshot(droppedSnapshot);
+          const dropped = await processDroppedItemsSnapshot({
+            entries: droppedSnapshot.entries,
+            handles: droppedHandles,
+            files: droppedSnapshot.files,
+          });
 
           if (dropped.files.length > 0 || dropped.emptyDirectoryPaths.length > 0) {
             const contextFile = await buildImportContextFile(dropped.files, {
@@ -88,9 +140,16 @@ export const useFileDragDrop = ({ onFilesDropped, onAddTempFile, onRemoveTempFil
 
           onRemoveTempFile(tempId);
         } else {
-          const files = e.dataTransfer.files;
-          if (files?.length) {
-            await onFilesDropped(files);
+          const dropped = await import('@/utils/import-context/droppedItems').then(({ processDroppedItemsSnapshot }) =>
+            processDroppedItemsSnapshot({
+              entries: droppedSnapshot.entries,
+              handles: droppedHandles,
+              files: droppedSnapshot.files,
+            }),
+          );
+
+          if (dropped.files.length) {
+            await onFilesDropped(dropped.files);
           }
         }
       } catch (error) {

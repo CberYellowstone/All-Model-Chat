@@ -125,6 +125,19 @@ export const useAppUi = () => {
     }
   }, [isSettingsModalOpen]);
 
+  useEffect(() => {
+    const handleHomeRoutePopState = () => {
+      if (window.innerWidth >= DESKTOP_BREAKPOINT_PX || window.location.pathname !== '/') {
+        return;
+      }
+
+      setIsHistorySidebarOpenTransient(false);
+    };
+
+    window.addEventListener('popstate', handleHomeRoutePopState);
+    return () => window.removeEventListener('popstate', handleHomeRoutePopState);
+  }, [setIsHistorySidebarOpenTransient]);
+
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
       return;

@@ -166,6 +166,26 @@ const sanitizeStringRecord = (value: unknown): Record<string, string> | undefine
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
+const sanitizeMcpAuth = (value: unknown): McpServerConfig['auth'] | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (value.type === 'none' || value.type === 'customHeaders') {
+    return { type: value.type };
+  }
+
+  if (value.type === 'bearer') {
+    const token = typeof value.token === 'string' ? value.token.trim() : '';
+    return {
+      type: 'bearer',
+      ...(token ? { token } : {}),
+    };
+  }
+
+  return undefined;
+};
+
 const sanitizeStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {
     return undefined;
@@ -229,7 +249,9 @@ const sanitizeMcpServers = (value: unknown, fallback: McpServerConfig[]): McpSer
 
       server.url = url;
       const headers = sanitizeStringRecord(item.headers);
+      const auth = sanitizeMcpAuth(item.auth);
       if (headers) server.headers = headers;
+      if (auth) server.auth = auth;
     }
 
     return [server];

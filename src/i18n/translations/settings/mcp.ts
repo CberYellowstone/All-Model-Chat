@@ -21,6 +21,16 @@ const mcpSettings = {
   settingsMcpArgs: { en: 'Arguments', zh: '参数' },
   settingsMcpEnv: { en: 'Environment', zh: '环境变量' },
   settingsMcpHeaders: { en: 'Headers', zh: '请求头' },
+  settingsMcpAuth: { en: 'Auth', zh: '授权' },
+  settingsMcpAuthNone: { en: 'None', zh: '无' },
+  settingsMcpAuthBearer: { en: 'Bearer token', zh: 'Bearer 令牌' },
+  settingsMcpAuthCustomHeaders: { en: 'Custom headers', zh: '自定义请求头' },
+  settingsMcpBearerToken: { en: 'Bearer Token', zh: 'Bearer 令牌' },
+  settingsMcpTestServer: { en: 'Test', zh: '测试' },
+  settingsMcpTesting: { en: 'Testing...', zh: '测试中…' },
+  settingsMcpCapabilityTools: { en: 'Tools', zh: '工具' },
+  settingsMcpCapabilityResources: { en: 'Resources', zh: '资源' },
+  settingsMcpCapabilityPrompts: { en: 'Prompts', zh: '提示' },
 };
 
 export default mcpSettings;

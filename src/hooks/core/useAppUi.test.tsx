@@ -167,4 +167,18 @@ describe('useAppUi', () => {
 
     unmount();
   });
+
+  it('collapses the mobile sidebar when browser history returns to the home page', () => {
+    useUIStore.setState({ isHistorySidebarOpen: true });
+    const { unmount } = renderHook(() => useAppUi());
+
+    act(() => {
+      window.history.replaceState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    });
+
+    expect(useUIStore.getState().isHistorySidebarOpen).toBe(false);
+
+    unmount();
+  });
 });

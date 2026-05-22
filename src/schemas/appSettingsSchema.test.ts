@@ -86,6 +86,10 @@ describe('appSettingsSchema', () => {
           headers: {
             authorization: 'Bearer token',
           },
+          auth: {
+            type: 'bearer',
+            token: 'remote-token',
+          },
         },
       ],
     });
@@ -110,6 +114,10 @@ describe('appSettingsSchema', () => {
         url: 'https://mcp.example.com/mcp',
         headers: {
           authorization: 'Bearer token',
+        },
+        auth: {
+          type: 'bearer',
+          token: 'remote-token',
         },
       },
     ]);

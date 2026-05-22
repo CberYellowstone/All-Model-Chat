@@ -443,4 +443,186 @@ describe('MCP routes', () => {
       },
     });
   });
+
+  it('lists MCP resources and prompts for enabled HTTP servers', async () => {
+    const listResources = vi.fn(async () => [
+      {
+        uri: 'file:///tmp/readme.md',
+        name: 'README',
+        description: 'Project notes',
+        mimeType: 'text/markdown',
+      },
+    ]);
+    const listResourceTemplates = vi.fn(async () => [
+      {
+        uriTemplate: 'file:///{path}',
+        name: 'Workspace file',
+        description: 'Read a workspace file by path',
+      },
+    ]);
+    const listPrompts = vi.fn(async () => [
+      {
+        name: 'summarize',
+        description: 'Summarize a topic',
+        arguments: [{ name: 'topic', required: true }],
+      },
+    ]);
+    const app = createServer(
+      {
+        geminiApiBase: 'https://example.test',
+        geminiApiKey: 'server-key',
+      },
+      {
+        mcpClient: {
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+          listResources,
+          listResourceTemplates,
+          listPrompts,
+          readResource: vi.fn(),
+          getPrompt: vi.fn(),
+        },
+      },
+    );
+    const started = await startHttpServer(app);
+    cleanupCallbacks.push(started.close);
+
+    const server = {
+      id: 'remote',
+      name: 'Remote',
+      enabled: true,
+      transport: 'http',
+      url: 'https://mcp.example.com/mcp',
+    };
+
+    const resourcesResponse = await fetch(`${started.baseUrl}/api/mcp/resources`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ servers: [server] }),
+    });
+    const resourcesBody = (await resourcesResponse.json()) as Record<string, unknown>;
+
+    expect(resourcesResponse.status).toBe(200);
+    expect(listResources).toHaveBeenCalledWith(server);
+    expect(listResourceTemplates).toHaveBeenCalledWith(server);
+    expect(resourcesBody).toEqual({
+      servers: [
+        {
+          serverId: 'remote',
+          serverName: 'Remote',
+          resources: [
+            {
+              uri: 'file:///tmp/readme.md',
+              name: 'README',
+              description: 'Project notes',
+              mimeType: 'text/markdown',
+            },
+          ],
+          resourceTemplates: [
+            {
+              uriTemplate: 'file:///{path}',
+              name: 'Workspace file',
+              description: 'Read a workspace file by path',
+            },
+          ],
+        },
+      ],
+      errors: [],
+    });
+
+    const promptsResponse = await fetch(`${started.baseUrl}/api/mcp/prompts`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ servers: [server] }),
+    });
+    const promptsBody = (await promptsResponse.json()) as Record<string, unknown>;
+
+    expect(promptsResponse.status).toBe(200);
+    expect(listPrompts).toHaveBeenCalledWith(server);
+    expect(promptsBody).toEqual({
+      servers: [
+        {
+          serverId: 'remote',
+          serverName: 'Remote',
+          prompts: [
+            {
+              name: 'summarize',
+              description: 'Summarize a topic',
+              arguments: [{ name: 'topic', required: true }],
+            },
+          ],
+        },
+      ],
+      errors: [],
+    });
+  });
+
+  it('reads MCP resources and gets prompts from the selected server', async () => {
+    const readResource = vi.fn(async () => ({
+      contents: [{ uri: 'file:///tmp/readme.md', text: 'hello', mimeType: 'text/markdown' }],
+    }));
+    const getPrompt = vi.fn(async () => ({
+      description: 'Summarize a topic',
+      messages: [{ role: 'user', content: { type: 'text', text: 'Summarize MCP' } }],
+    }));
+    const app = createServer(
+      {
+        geminiApiBase: 'https://example.test',
+        geminiApiKey: 'server-key',
+      },
+      {
+        mcpClient: {
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+          listResources: vi.fn(),
+          listResourceTemplates: vi.fn(),
+          listPrompts: vi.fn(),
+          readResource,
+          getPrompt,
+        },
+      },
+    );
+    const started = await startHttpServer(app);
+    cleanupCallbacks.push(started.close);
+
+    const server = {
+      id: 'remote',
+      name: 'Remote',
+      enabled: true,
+      transport: 'http',
+      url: 'https://mcp.example.com/mcp',
+    };
+
+    const resourceResponse = await fetch(`${started.baseUrl}/api/mcp/resource`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ server, uri: 'file:///tmp/readme.md' }),
+    });
+    const resourceBody = (await resourceResponse.json()) as Record<string, unknown>;
+
+    expect(resourceResponse.status).toBe(200);
+    expect(readResource).toHaveBeenCalledWith(server, 'file:///tmp/readme.md');
+    expect(resourceBody).toEqual({
+      result: {
+        contents: [{ uri: 'file:///tmp/readme.md', text: 'hello', mimeType: 'text/markdown' }],
+      },
+    });
+
+    const promptArgs = { topic: 'MCP' };
+    const promptResponse = await fetch(`${started.baseUrl}/api/mcp/prompt`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ server, promptName: 'summarize', args: promptArgs }),
+    });
+    const promptBody = (await promptResponse.json()) as Record<string, unknown>;
+
+    expect(promptResponse.status).toBe(200);
+    expect(getPrompt).toHaveBeenCalledWith(server, 'summarize', promptArgs);
+    expect(promptBody).toEqual({
+      result: {
+        description: 'Summarize a topic',
+        messages: [{ role: 'user', content: { type: 'text', text: 'Summarize MCP' } }],
+      },
+    });
+  });
 });
