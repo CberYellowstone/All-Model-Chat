@@ -57,29 +57,29 @@ const getAudioContext = () => {
 
 export const playCompletionSound = () => {
   try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
+    const audioContext = getAudioContext();
+    if (!audioContext) return;
 
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
     }
 
     const playNote = (frequency: number, startTime: number, duration: number) => {
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, ctx.currentTime + startTime);
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + startTime);
 
-      gainNode.gain.setValueAtTime(0, ctx.currentTime + startTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, ctx.currentTime + startTime + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startTime + duration);
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + startTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + startTime + duration);
 
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(audioContext.destination);
 
-      oscillator.start(ctx.currentTime + startTime);
-      oscillator.stop(ctx.currentTime + startTime + duration);
+      oscillator.start(audioContext.currentTime + startTime);
+      oscillator.stop(audioContext.currentTime + startTime + duration);
     };
 
     playNote(659.25, 0, 0.15);

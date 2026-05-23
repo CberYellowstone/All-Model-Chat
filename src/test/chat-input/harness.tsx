@@ -64,7 +64,7 @@ const mockChatStoreState = vi.hoisted(() => ({
 
 const mockModelCapabilities = vi.hoisted(() => ({
   value: {
-    isImagenModel: false,
+    isImageGenerationModel: false,
     isGemini3ImageModel: false,
     isTtsModel: false,
     isNativeAudioModel: false,
@@ -368,7 +368,7 @@ export const resetChatInputHarnessState = () => {
   mockChatStoreState.loadingSessionIds = new Set();
   mockChatStoreSubscribers.clear();
   mockModelCapabilities.value = {
-    isImagenModel: false,
+    isImageGenerationModel: false,
     isGemini3ImageModel: false,
     isTtsModel: false,
     isNativeAudioModel: false,

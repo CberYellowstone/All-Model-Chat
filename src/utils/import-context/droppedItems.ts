@@ -1,6 +1,6 @@
 import { attachRelativePath, normalizeRelativePath } from './filePath';
 import { readDirectoryHandle } from './directoryHandleReader';
-import { IGNORED_DIRS } from './shared';
+import { IGNORED_DIRS } from './defaultIgnorePatterns';
 import { snapshotDroppedItems, type DroppedItemsSnapshot } from './droppedItemsSnapshot';
 
 interface DroppedItemsResult {

@@ -34,11 +34,14 @@ export const useAudioRecorder = () => {
     replaceAudioUrl(null);
   }, [replaceAudioUrl]);
 
-  const handleRecordingComplete = useCallback((blob: Blob) => {
-    const nextAudioUrl = createManagedObjectUrl(blob);
-    setAudioBlob(blob);
-    replaceAudioUrl(nextAudioUrl);
-  }, [replaceAudioUrl]);
+  const handleRecordingComplete = useCallback(
+    (blob: Blob) => {
+      const nextAudioUrl = createManagedObjectUrl(blob);
+      setAudioBlob(blob);
+      replaceAudioUrl(nextAudioUrl);
+    },
+    [replaceAudioUrl],
+  );
 
   const {
     status,

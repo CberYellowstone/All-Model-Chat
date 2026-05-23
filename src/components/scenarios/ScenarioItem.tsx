@@ -46,7 +46,6 @@ export const ScenarioItem: React.FC<ScenarioItemProps> = ({
       "
       onClick={() => onLoad(scenario)}
     >
-      {/* Header: Icon & Title */}
       <div className="flex items-center gap-3 mb-3">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColorClass}`}>
           <Icon size={16} strokeWidth={2} />
@@ -69,7 +68,6 @@ export const ScenarioItem: React.FC<ScenarioItemProps> = ({
         </div>
       </div>
 
-      {/* Content Preview */}
       <div className="flex-grow mb-4">
         <p className="text-xs text-[var(--theme-text-secondary)] leading-relaxed line-clamp-3 opacity-80 group-hover:opacity-100 transition-opacity">
           {scenario.systemInstruction ||

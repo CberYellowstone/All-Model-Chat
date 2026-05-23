@@ -148,10 +148,6 @@ export const TEXT_BASED_EXTENSIONS = [
   '.vtt',
 ];
 
-export const ALL_SUPPORTED_MIME_TYPES = [
-  ...SUPPORTED_UPLOAD_MIME_TYPES,
-];
-
 export const SUPPORTED_GENERATED_MIME_TYPES = new Set([
   // Images
   'image/jpeg',

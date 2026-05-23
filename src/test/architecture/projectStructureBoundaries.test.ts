@@ -131,7 +131,7 @@ describe('project structure boundaries', () => {
   it('keeps broad component regression suites split into focused files', () => {
     const oversizedComponentTestFiles = [
       'src/components/chat/input/ChatInput.test.tsx',
-      'src/components/message/BaseMarkdownRendererEntry.test.tsx',
+      'src/components/message/BasicMarkdownRenderer.test.tsx',
     ]
       .map((relativePath) => ({ relativePath, lines: countLines(readProjectFile(relativePath)) }))
       .filter(({ lines }) => lines > 1000);

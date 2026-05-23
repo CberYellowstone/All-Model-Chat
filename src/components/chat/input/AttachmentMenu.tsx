@@ -23,7 +23,7 @@ const attachIconSize = 20;
 const menuIconSize = 18;
 
 export const AttachmentMenu: React.FC = () => {
-  const { onAttachmentAction, disabled, isImageModel, isRealImagenModel, canAddYouTubeVideo } =
+  const { onAttachmentAction, disabled, isImageGenerationModel, isRealImagenModel, canAddYouTubeVideo } =
     useChatInputActionsContext();
   const { t } = useI18n();
   const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
@@ -50,7 +50,7 @@ export const AttachmentMenu: React.FC = () => {
     { labelKey: 'attachMenu_createText', icon: <IconFileEdit size={menuIconSize} />, action: 'text' },
   ] as const;
 
-  const filteredMenuItems = isImageModel
+  const filteredMenuItems = isImageGenerationModel
     ? menuItems.filter(
         (item) =>
           item.action === 'upload' ||

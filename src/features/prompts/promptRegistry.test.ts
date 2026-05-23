@@ -78,6 +78,18 @@ describe('promptRegistry', () => {
     expect(enPrompt).not.toContain('inline HTML fragment');
   });
 
+  it('adds Live Artifacts theme guidance from the current page theme', async () => {
+    const zhDarkPrompt = await loadLiveArtifactsSystemPrompt('zh', 'inline', 'dark');
+    const enLightPrompt = await loadLiveArtifactsSystemPrompt('en', 'inline', 'light');
+
+    expect(zhDarkPrompt).toContain('当前页面主题');
+    expect(zhDarkPrompt).toContain('深色主题');
+    expect(zhDarkPrompt).toContain('color-scheme: dark');
+    expect(enLightPrompt).toContain('Current Page Theme');
+    expect(enLightPrompt).toContain('light theme');
+    expect(enLightPrompt).toContain('color-scheme: light');
+  });
+
   it('emphasizes HTML artifacts instead of traditional Markdown output', async () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');

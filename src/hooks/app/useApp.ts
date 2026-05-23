@@ -239,6 +239,7 @@ export const useApp = (): AppViewModel => {
     isLiveArtifactsPromptBusy,
   } = useAppPromptModes({
     appSettings,
+    currentThemeId: currentTheme.id,
     setAppSettings,
     activeChat,
     activeSessionId,

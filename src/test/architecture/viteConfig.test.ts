@@ -7,8 +7,8 @@ const viteConfigPath = path.join(projectRoot, 'vite.config.ts');
 const viteChunksPath = path.join(projectRoot, 'vite/chunks.ts');
 const viteStaticAssetsPath = path.join(projectRoot, 'vite/staticAssets.ts');
 const lazyMarkdownRendererPath = path.join(projectRoot, 'src/components/message/LazyMarkdownRenderer.tsx');
-const markdownRendererPath = path.join(projectRoot, 'src/components/message/MarkdownRenderer.tsx');
-const baseMarkdownRendererEntryPath = path.join(projectRoot, 'src/components/message/BaseMarkdownRendererEntry.tsx');
+const mathMarkdownRendererPath = path.join(projectRoot, 'src/components/message/MathMarkdownRenderer.tsx');
+const basicMarkdownRendererPath = path.join(projectRoot, 'src/components/message/BasicMarkdownRenderer.tsx');
 const i18nContextPath = path.join(projectRoot, 'src/contexts/I18nContext.tsx');
 const i18nTranslationsPath = path.join(projectRoot, 'src/i18n/translations.ts');
 const i18nFeatureTranslationsPath = path.join(projectRoot, 'src/i18n/featureTranslations.ts');
@@ -32,6 +32,9 @@ const clipboardDataPath = path.join(projectRoot, 'src/utils/chat-input/clipboard
 const useChatInputClipboardPath = path.join(projectRoot, 'src/hooks/chat-input/useChatInputClipboard.ts');
 const useSelectionPositionPath = path.join(projectRoot, 'src/hooks/text-selection/useSelectionPosition.ts');
 const tableBlockPath = path.join(projectRoot, 'src/components/message/blocks/TableBlock.tsx');
+const pdfRuntimePath = path.join(projectRoot, 'src/utils/pdfRuntime.ts');
+const pdfFileThumbnailPath = path.join(projectRoot, 'src/components/chat/input/PdfFileThumbnail.tsx');
+const usePdfViewerPath = path.join(projectRoot, 'src/hooks/ui/usePdfViewer.ts');
 const importContextLoadersPath = path.join(projectRoot, 'src/utils/import-context/loaders.ts');
 const useFileDragDropPath = path.join(projectRoot, 'src/hooks/file-upload/useFileDragDrop.ts');
 const useFilePreProcessingPath = path.join(projectRoot, 'src/hooks/file-upload/useFilePreProcessing.ts');
@@ -88,6 +91,20 @@ describe('vite.config runtime ownership', () => {
     );
     expect(config).toContain('src: PDF_WORKER_COPY_SOURCE');
     expect(staticAssets).not.toContain("src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'");
+  });
+
+  it('centralizes PDF worker runtime configuration', () => {
+    const pdfRuntimeSource = fs.readFileSync(pdfRuntimePath, 'utf8');
+    const thumbnailSource = fs.readFileSync(pdfFileThumbnailPath, 'utf8');
+    const usePdfViewerSource = fs.readFileSync(usePdfViewerPath, 'utf8');
+
+    expect(pdfRuntimeSource).toContain("import { pdfjs } from 'react-pdf'");
+    expect(pdfRuntimeSource).toContain('configurePdfWorker(pdfjs)');
+    expect(pdfRuntimeSource).toContain('pdfWorkerConfigured');
+    expect(thumbnailSource).toContain("from '@/utils/pdfRuntime'");
+    expect(usePdfViewerSource).toContain("from '@/utils/pdfRuntime'");
+    expect(thumbnailSource).not.toContain('pdfjs');
+    expect(usePdfViewerSource).not.toContain('pdfjs');
   });
 
   it('copies the lamejs encoder asset used by the audio compression worker', () => {
@@ -272,14 +289,19 @@ describe('Runtime loading boundaries', () => {
   it('loads both base markdown and math markdown renderers lazily', () => {
     const lazyMarkdownSource = fs.readFileSync(lazyMarkdownRendererPath, 'utf8');
 
-    expect(fs.existsSync(baseMarkdownRendererEntryPath)).toBe(true);
-    expect(lazyMarkdownSource).toContain("import('./BaseMarkdownRendererEntry')");
-    expect(lazyMarkdownSource).toContain("import('./MarkdownRenderer')");
+    expect(fs.existsSync(basicMarkdownRendererPath)).toBe(true);
+    expect(fs.existsSync(mathMarkdownRendererPath)).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/message/BaseMarkdownRendererEntry.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/message/MarkdownRenderer.tsx'))).toBe(false);
+    expect(lazyMarkdownSource).toContain("import('./BasicMarkdownRenderer')");
+    expect(lazyMarkdownSource).toContain("import('./MathMarkdownRenderer')");
+    expect(lazyMarkdownSource).not.toContain("import('./BaseMarkdownRendererEntry')");
+    expect(lazyMarkdownSource).not.toContain("import('./MarkdownRenderer')");
   });
 
   it('moves KaTeX and PDF viewer CSS ownership out of the global app entry', () => {
     const indexSource = fs.readFileSync(indexEntryPath, 'utf8');
-    const markdownRendererSource = fs.readFileSync(markdownRendererPath, 'utf8');
+    const markdownRendererSource = fs.readFileSync(mathMarkdownRendererPath, 'utf8');
 
     expect(indexSource).not.toContain("import 'katex/dist/katex.min.css'");
     expect(indexSource).not.toContain("import 'react-pdf/dist/Page/AnnotationLayer.css'");

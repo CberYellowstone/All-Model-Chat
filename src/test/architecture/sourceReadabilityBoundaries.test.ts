@@ -111,4 +111,197 @@ describe('source readability boundaries', () => {
       expect(sessionLoaderSource).not.toContain(phrase);
     }
   });
+
+  it('keeps byte-buffer code readable through descriptive locals', () => {
+    const byteBufferSources = [
+      'src/features/audio/audioProcessing.ts',
+      'src/utils/fileEncoding.ts',
+      'src/hooks/chat-input/useChatInputGlobalEffects.ts',
+      'src/components/modals/create-file/useCreateFileEditor.ts',
+    ];
+
+    for (const relativePath of byteBufferSources) {
+      const source = readProjectFile(relativePath);
+      for (const vagueLocalName of ['const l =', 'const len =', 'const dv =', 'let p =']) {
+        expect(source, relativePath).not.toContain(vagueLocalName);
+      }
+    }
+
+    const audioProcessingSource = readProjectFile('src/features/audio/audioProcessing.ts');
+    expect(audioProcessingSource).toContain('sampleCount');
+    expect(audioProcessingSource).toContain('wavView');
+    expect(audioProcessingSource).toContain('writeOffset');
+  });
+
+  it('keeps inline worker templates readable despite living inside strings', () => {
+    const audioCompressionWorkerTemplate = readProjectFile('src/features/audio/audioCompressionWorkerTemplate.ts');
+    const audioCompressionSource = readProjectFile('src/features/audio/audioCompression.ts');
+
+    expect(audioCompressionSource).not.toContain('createAudioCompressionWorkerCode');
+    expect(audioCompressionSource).not.toContain('createWorker?:');
+    expect(audioCompressionSource).not.toContain('createObjectUrl?:');
+    expect(audioCompressionSource).not.toContain('revokeObjectUrl?:');
+    expect(audioCompressionSource).not.toContain('createWorker ??');
+    expect(audioCompressionSource).not.toContain('worker.onmessage = (e)');
+    for (const unclearFragment of [
+      'function(e)',
+      'const s =',
+      'mp3encoder',
+      'mp3buf',
+      'catch (err)',
+      'sampleBlockSize = 1152; ',
+    ]) {
+      expect(audioCompressionWorkerTemplate).not.toContain(unclearFragment);
+    }
+
+    expect(audioCompressionWorkerTemplate).toContain('function(event)');
+    expect(audioCompressionWorkerTemplate).toContain('clampedSample');
+    expect(audioCompressionWorkerTemplate).toContain('mp3Encoder');
+    expect(audioCompressionWorkerTemplate).toContain('encodedChunk');
+  });
+
+  it('names audio stream composition locals after their runtime role', () => {
+    const audioProcessingSource = readProjectFile('src/features/audio/audioProcessing.ts');
+
+    for (const vagueLocalName of ['const ctx =', 'const dest =', 'const micSource =', 'const sysSource =']) {
+      expect(audioProcessingSource).not.toContain(vagueLocalName);
+    }
+
+    expect(audioProcessingSource).toContain('const audioContext =');
+    expect(audioProcessingSource).toContain('const mixedDestination =');
+    expect(audioProcessingSource).toContain('const microphoneSource =');
+    expect(audioProcessingSource).toContain('const systemAudioSource =');
+  });
+
+  it('keeps compact UI helpers readable through domain names', () => {
+    const durationFormatSource = readProjectFile('src/utils/durationFormat.ts');
+    const contextUrlsSource = readProjectFile('src/components/message/grounded-response/ContextUrls.tsx');
+    const sendControlsSource = readProjectFile('src/components/chat/input/actions/SendControls.tsx');
+
+    expect(durationFormatSource).not.toContain('const m =');
+    expect(durationFormatSource).not.toContain('const s =');
+    expect(durationFormatSource).toContain('const minutes =');
+    expect(durationFormatSource).toContain('const remainingSeconds =');
+
+    expect(contextUrlsSource).not.toContain('const s = status?.toUpperCase()');
+    expect(contextUrlsSource).not.toContain('(item, i) =>');
+    expect(contextUrlsSource).toContain('const normalizedStatus =');
+    expect(contextUrlsSource).toContain('(item, itemIndex) =>');
+
+    expect(sendControlsSource).not.toContain('const x = e.clientX');
+    expect(sendControlsSource).not.toContain('const y = e.clientY');
+    expect(sendControlsSource).toContain('const rippleX =');
+    expect(sendControlsSource).toContain('const rippleY =');
+  });
+
+  it('keeps JSX comments from restating obvious component sections', () => {
+    const headerModelSelectorSource = readProjectFile('src/components/header/HeaderModelSelector.tsx');
+    const logViewerSource = readProjectFile('src/components/log-viewer/LogViewer.tsx');
+    const consoleTabSource = readProjectFile('src/components/log-viewer/ConsoleTab.tsx');
+    const helpModalSource = readProjectFile('src/components/modals/HelpModal.tsx');
+    const audioRecorderSource = readProjectFile('src/components/modals/AudioRecorder.tsx');
+    const tokenCountModalSource = readProjectFile('src/components/modals/TokenCountModal.tsx');
+    const filePreviewHeaderSource = readProjectFile('src/components/shared/file-preview/FilePreviewHeader.tsx');
+    const imageViewerSource = readProjectFile('src/components/shared/file-preview/ImageViewer.tsx');
+    const apiConnectionTesterSource = readProjectFile(
+      'src/components/settings/sections/api-config/ApiConnectionTester.tsx',
+    );
+    const themeLanguageSelectorSource = readProjectFile(
+      'src/components/settings/sections/appearance/ThemeLanguageSelector.tsx',
+    );
+    const graphvizBlockSource = readProjectFile('src/components/message/blocks/GraphvizBlock.tsx');
+
+    expect(headerModelSelectorSource).not.toContain('Thinking Level Toggle');
+    expect(consoleTabSource).not.toContain('{/* Toolbar */}');
+
+    for (const phrase of ['{/* Header */}', '{/* Tabs */}', '{/* Content */}']) {
+      expect(logViewerSource).not.toContain(phrase);
+    }
+
+    for (const phrase of [
+      '{/* Header */}',
+      '{/* Search Bar */}',
+      '{/* Content */}',
+      '{/* Icon */}',
+      '{/* Text Info */}',
+    ]) {
+      expect(helpModalSource).not.toContain(phrase);
+    }
+
+    for (const phrase of [
+      '{/* Header */}',
+      '{/* Content Body */}',
+      '{/* State: Idle / Initializing */}',
+      '{/* State: Recording */}',
+      '{/* State: Review */}',
+      '{/* Controls */}',
+    ]) {
+      expect(audioRecorderSource).not.toContain(phrase);
+    }
+
+    for (const phrase of ['{/* Header */}', '{/* Model Selection */}', '{/* Error Display */}']) {
+      expect(tokenCountModalSource).not.toContain(phrase);
+    }
+
+    expect(filePreviewHeaderSource).not.toContain('{/* Top Actions */}');
+    expect(imageViewerSource).not.toContain('{/* Bottom Controls */}');
+    expect(apiConnectionTesterSource).not.toContain('Optional Model Selector for Testing');
+    expect(apiConnectionTesterSource).not.toContain('{/* Test Results */}');
+    expect(themeLanguageSelectorSource).not.toContain('{/* Theme Selector */}');
+    expect(themeLanguageSelectorSource).not.toContain('{/* Language Selector */}');
+    expect(graphvizBlockSource).not.toContain('修复关键点');
+  });
+
+  it('keeps remaining JSX comments focused on behavior or layout constraints', () => {
+    const allowedJsxComments = new Set([
+      'Stop propagation to prevent toggling when clicking actions',
+      'Syntax Highlight Layer',
+      'Input Layer',
+      'Shadow Textarea for Height Calculation',
+      'Insert BBox and Guide Buttons after "Smart Board" (organize action) if available',
+      'Wrap toolbar in z-indexed container to ensure dropdowns render above status banner',
+    ]);
+    const jsxCommentPattern = /\{\/\*\s*([^*]+?)\s*\*\/\}/g;
+    const unexpectedComments = listProjectSourceFiles('src')
+      .filter((relativePath) => relativePath.endsWith('.tsx'))
+      .filter((relativePath) => !relativePath.includes('.test.'))
+      .flatMap((relativePath) =>
+        [...readProjectFile(relativePath).matchAll(jsxCommentPattern)]
+          .map((match) => match[1].trim())
+          .filter((comment) => !allowedJsxComments.has(comment))
+          .map((comment) => `${relativePath}: ${comment}`),
+      );
+
+    expect(unexpectedComments).toEqual([]);
+  });
+
+  it('names live media and canvas contexts after the resource they wrap', () => {
+    const liveAudioSource = readProjectFile('src/hooks/live-api/useLiveAudio.ts');
+    const liveVideoSource = readProjectFile('src/hooks/live-api/useLiveVideo.ts');
+    const audioVisualizerSource = readProjectFile('src/components/recorder/AudioVisualizer.tsx');
+    const imageExportSource = readProjectFile('src/utils/export/image.ts');
+    const backgroundKeepAliveSource = readProjectFile('src/hooks/core/useBackgroundKeepAlive.ts');
+    const completionFeedbackSource = readProjectFile('src/utils/browserCompletionFeedback.ts');
+
+    expect(liveAudioSource).not.toContain('const ctx = audioContextRef.current');
+    expect(liveAudioSource).not.toContain('sourcesRef.current.forEach((s)');
+    expect(liveAudioSource).toContain('const audioContext = audioContextRef.current');
+    expect(liveAudioSource).toContain('sourcesRef.current.forEach((source)');
+
+    for (const source of [liveVideoSource, audioVisualizerSource, imageExportSource]) {
+      expect(source).not.toContain('const ctx = canvas.getContext');
+      expect(source).toContain('const canvasContext = canvas.getContext');
+    }
+
+    expect(audioVisualizerSource).not.toContain('let x = (width');
+    expect(audioVisualizerSource).toContain('let barX =');
+    expect(imageExportSource).not.toContain('Draw at 1:1 of the scaled image');
+    expect(backgroundKeepAliveSource).not.toContain('audioCtxRef');
+    expect(backgroundKeepAliveSource).not.toContain('const ctx = new AudioContextClass');
+    expect(backgroundKeepAliveSource).not.toContain('const osc =');
+    expect(backgroundKeepAliveSource).toContain('const audioContextRef =');
+    expect(backgroundKeepAliveSource).toContain('const oscillator =');
+    expect(completionFeedbackSource).not.toContain('const ctx = getAudioContext');
+    expect(completionFeedbackSource).toContain('const audioContext = getAudioContext');
+  });
 });

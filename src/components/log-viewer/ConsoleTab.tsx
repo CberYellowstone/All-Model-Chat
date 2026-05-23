@@ -49,7 +49,6 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
 
   return (
     <>
-      {/* Toolbar */}
       <div className="p-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex flex-wrap items-center gap-3">
         <input
           type="text"

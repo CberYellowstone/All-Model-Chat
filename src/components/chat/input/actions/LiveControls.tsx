@@ -69,7 +69,6 @@ export const LiveControls: React.FC = () => {
         </button>
       )}
 
-      {/* Live Session Mute Button */}
       {isLiveConnected && onToggleLiveMute && (
         <button
           type="button"
@@ -83,7 +82,6 @@ export const LiveControls: React.FC = () => {
         </button>
       )}
 
-      {/* Live Session Button */}
       {!isRecording && !isTranscribing && (
         <button
           type="button"

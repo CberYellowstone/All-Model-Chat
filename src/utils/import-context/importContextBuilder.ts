@@ -6,15 +6,10 @@ import { attachRelativePath, getFilePath } from './filePath';
 import { buildRootGitignoreMatchers, isIgnoredByGitignore, type IgnoreMatcher } from './ignoreMatcher';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
 import { scanSensitiveContent } from './securityScan';
-import {
-  compareFilePaths,
-  countLines,
-  estimateTokens,
-  IGNORED_DIRS,
-  IGNORED_EXTENSIONS,
-  LANG_MAP,
-  sortTreeNodes,
-} from './shared';
+import { IGNORED_DIRS, IGNORED_EXTENSIONS } from './defaultIgnorePatterns';
+import { IMPORT_CONTEXT_LANGUAGE_MAP } from './languageMap';
+import { compareFilePaths, sortTreeNodes } from './treeSorting';
+import { countLines, estimateTokens } from './textStats';
 import type { AnalysisSummary, FileContent, FileNode, ProcessedFiles, SecurityFinding } from './types';
 
 export interface ImportContextBuildOptions {
@@ -39,7 +34,7 @@ interface ZipExtractionResult {
 
 function getLanguage(fileName: string): string {
   const extension = fileName.split('.').pop()?.toLowerCase() || '';
-  return LANG_MAP[extension] || 'plaintext';
+  return IMPORT_CONTEXT_LANGUAGE_MAP[extension] || 'plaintext';
 }
 
 function shouldExpandZipFile(file: File): boolean {

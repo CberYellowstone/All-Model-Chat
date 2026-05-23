@@ -1,7 +1,7 @@
 import { createChatHistoryForApi } from '@/utils/chat/builder';
 import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isGemini3Model, isImageModel, shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
+import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
 import { appendFunctionDeclarationsToTools, buildGenerationConfig } from '@/services/api/generationConfig';
 import {
   generateContentTurnApi,
@@ -212,7 +212,10 @@ export const performStandardChatApiCall = async ({
       : baseMessagesForApi;
   const standardClientFunctions = createStandardClientFunctions({
     isLocalPythonEnabled:
-      !!sessionToUpdate.isLocalPythonEnabled && finalRole === 'user' && !isRawMode && !isImageModel(apiModelId),
+      !!sessionToUpdate.isLocalPythonEnabled &&
+      finalRole === 'user' &&
+      !isRawMode &&
+      !isImageGenerationModel(apiModelId),
     inputFiles: collectLocalPythonInputFiles(
       [
         ...localPythonContextMessages,
@@ -231,7 +234,10 @@ export const performStandardChatApiCall = async ({
     },
   });
   const isMcpEnabledForTurn =
-    finalRole === 'user' && !isRawMode && !isImageModel(apiModelId) && (appSettings.mcpServers?.length ?? 0) > 0;
+    finalRole === 'user' &&
+    !isRawMode &&
+    !isImageGenerationModel(apiModelId) &&
+    (appSettings.mcpServers?.length ?? 0) > 0;
   const mcpClientFunctions = isMcpEnabledForTurn
     ? await createMcpClientFunctions({
         servers: appSettings.mcpServers ?? [],

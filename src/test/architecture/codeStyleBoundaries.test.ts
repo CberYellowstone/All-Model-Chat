@@ -259,8 +259,7 @@ describe('code style boundaries', () => {
 
   it('does not keep tautological ternaries in production sources', () => {
     const tautologicalLiteralTernaryPattern = /\?\s*(['"`][^'"`]+['"`])\s*:\s*\1/;
-    const tautologicalExtensionFallbackPattern =
-      /CREATE_FILE_EXTENSION_OPTIONS\.includes\(ext\)\s*\?\s*ext\s*:\s*ext/;
+    const tautologicalExtensionFallbackPattern = /CREATE_FILE_EXTENSION_OPTIONS\.includes\(ext\)\s*\?\s*ext\s*:\s*ext/;
     const offenders = listProjectSourceFiles('src')
       .filter((relativePath) => !relativePath.includes('.test.'))
       .filter((relativePath) => relativePath !== 'src/test/architecture/codeStyleBoundaries.test.ts')

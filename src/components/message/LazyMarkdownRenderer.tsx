@@ -2,11 +2,8 @@ import React, { Suspense } from 'react';
 import type { MarkdownRendererProps } from './BaseMarkdownRenderer';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 
-const LazyBaseMarkdownRenderer = lazyNamedComponent(
-  () => import('./BaseMarkdownRendererEntry'),
-  'BaseMarkdownRendererEntry',
-);
-const LazyMarkdownRendererMath = lazyNamedComponent(() => import('./MarkdownRenderer'), 'MarkdownRenderer');
+const LazyBasicMarkdownRenderer = lazyNamedComponent(() => import('./BasicMarkdownRenderer'), 'BasicMarkdownRenderer');
+const LazyMathMarkdownRenderer = lazyNamedComponent(() => import('./MathMarkdownRenderer'), 'MathMarkdownRenderer');
 
 interface LazyMarkdownRendererProps extends MarkdownRendererProps {
   fallbackMode?: 'raw' | 'none';
@@ -30,14 +27,14 @@ export const LazyMarkdownRenderer: React.FC<LazyMarkdownRendererProps> = ({
   if (!shouldLoadMathRenderer) {
     return (
       <Suspense fallback={fallback}>
-        <LazyBaseMarkdownRenderer {...props} content={content} />
+        <LazyBasicMarkdownRenderer {...props} content={content} />
       </Suspense>
     );
   }
 
   return (
     <Suspense fallback={fallback}>
-      <LazyMarkdownRendererMath content={content} {...props} />
+      <LazyMathMarkdownRenderer content={content} {...props} />
     </Suspense>
   );
 };

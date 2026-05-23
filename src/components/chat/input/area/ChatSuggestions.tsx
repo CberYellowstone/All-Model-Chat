@@ -147,7 +147,6 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
         ))}
       </div>
 
-      {/* Navigation Arrows (Visible on Hover) */}
       {showLeftArrow && (
         <button
           type="button"

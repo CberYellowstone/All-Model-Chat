@@ -48,6 +48,7 @@ const lowInformationLineCommentFragments = [
   'Helper to extract stack traces',
   'Helper to register page refs',
   'Helper to match types',
+  'Helper to write WAV header and data to an ArrayBuffer',
   'Pass data to callback',
   'Only fire callback if we have data',
   'Filter and read files that have raw data',
@@ -57,7 +58,9 @@ const lowInformationLineCommentFragments = [
   'Determine state priorities',
   'Determine disabled state',
   'Determine background class',
+  'Request minimal video size as we only need audio',
   'Find the code element',
+  'Check if audio track exists',
   'Synchronously resolve content string',
   'Scroll handler',
   'Check if title is generic or a placeholder',
@@ -73,11 +76,14 @@ const lowInformationLineCommentFragments = [
   'Input Context',
   'Apply initial mute state',
   'AudioWorklet Setup',
+  'Auto-scroll logic state',
   'Handle Worklet Messages',
   'Calculate Volume',
+  'Floating Action Buttons',
   'Stop Microphone',
   'Disconnect Input Nodes',
   'Close Contexts',
+  'Send a copy of the buffer',
   'Pass progress callback',
   'Mark active immediately',
   'Sanitize the session before export',
@@ -87,8 +93,19 @@ const lowInformationLineCommentFragments = [
   'Use blobToBase64 which is efficient and handles Blobs\\/Files',
   'Use configured media resolution',
   'Save if any changes were made',
+  'Fallback to mic only',
+  '\\d+\\.\\s*(?:Calculate total length|Merge chunks|Create WAV Buffer using shared helper|Create Blob and URL)',
 ];
-const lowInformationBlockCommentFragments = ['\\{\\/\\*\\s*Text Content\\s*\\*\\/\\}'];
+const lowInformationBlockCommentFragments = [
+  '\\{\\/\\*\\s*Content Area\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*Main Content\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*Scrollable Content\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*Segmented Control \\(Tabs\\)\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*\\d+\\.\\s*(?:Custom Budget Slider & Input|Gemini 3\\.0 Preset Level Selector|Off State Message)\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*Text Content\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*Floating Action Buttons\\s*\\*\\/\\}',
+  '\\{\\/\\*\\s*(?:Sources List \\(Search Grounding\\)|URL Context Metadata)\\s*\\*\\/\\}',
+];
 
 const buildSourceLinePattern = (
   lineCommentFragments: string[],

@@ -248,8 +248,8 @@ export const useCreateFileEditor = ({
         if (textareaRef.current && textareaRef.current.offsetParent !== null) {
           textareaRef.current.focus();
           if (isEditing) {
-            const len = textareaRef.current.value.length;
-            textareaRef.current.setSelectionRange(len, len);
+            const textLength = textareaRef.current.value.length;
+            textareaRef.current.setSelectionRange(textLength, textLength);
           }
         }
       }, 100);

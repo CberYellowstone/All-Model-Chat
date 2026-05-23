@@ -38,7 +38,7 @@ const isFlashImageModel = (modelId: string): boolean => modelId.toLowerCase().in
 
 const isRealImagenModel = (modelId: string): boolean => modelId.toLowerCase().includes('imagen');
 
-export const isImageModel = (modelId: string): boolean =>
+export const isImageGenerationModel = (modelId: string): boolean =>
   isRealImagenModel(modelId) ||
   isFlashImageModel(modelId) ||
   isGemini3ImageModel(modelId) ||
@@ -75,7 +75,7 @@ export interface ModelCapabilities {
   isGemini3ImageModel: boolean;
   isFlashImageModel: boolean;
   isRealImagenModel: boolean;
-  isImagenModel: boolean;
+  isImageGenerationModel: boolean;
   isTtsModel: boolean;
   isNativeAudioModel: boolean;
   supportsBuiltInCustomToolCombination: boolean;
@@ -98,11 +98,11 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   const gemini3FlashModel = isGemini3 && flashModel;
   const gemini31FlashLiveModel = isGemini31FlashLiveModel(modelId);
   const roboticsModel = isGeminiRoboticsModel(modelId);
-  const imageModel = realImagenModel || flashImageModel || gemini3ImageModel;
-  const canUseTextChatTools = !nativeAudioModel && !imageModel && !ttsModel;
+  const imageGenerationModel = realImagenModel || flashImageModel || gemini3ImageModel;
+  const canUseTextChatTools = !nativeAudioModel && !imageGenerationModel && !ttsModel;
   const permissions: ModelInteractionPermissions = {
     canAcceptAttachments: !realImagenModel && !ttsModel && !nativeAudioModel,
-    canUseTools: canUseTextChatTools || nativeAudioModel || gemini3ImageModel || imageModel,
+    canUseTools: canUseTextChatTools || nativeAudioModel || gemini3ImageModel || imageGenerationModel,
     canUseGoogleSearch: canUseTextChatTools || nativeAudioModel || gemini3ImageModel,
     canUseDeepSearch: canUseTextChatTools,
     canUseCodeExecution: canUseTextChatTools && !isGemmaModel(modelId),
@@ -111,9 +111,9 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     canUseTokenCount: !nativeAudioModel,
     canUseYouTubeUrl: canUseTextChatTools,
     canGenerateSuggestions: canUseTextChatTools,
-    canUseVoiceInput: !nativeAudioModel && !imageModel && !ttsModel,
+    canUseVoiceInput: !nativeAudioModel && !imageGenerationModel && !ttsModel,
     canUseLiveControls: nativeAudioModel,
-    requiresTextPrompt: ttsModel || imageModel,
+    requiresTextPrompt: ttsModel || imageGenerationModel,
   };
 
   let supportedAspectRatios: string[] | undefined;
@@ -165,7 +165,7 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     isGemini3ImageModel: gemini3ImageModel,
     isFlashImageModel: flashImageModel,
     isRealImagenModel: realImagenModel,
-    isImagenModel: imageModel,
+    isImageGenerationModel: imageGenerationModel,
     isTtsModel: ttsModel,
     isNativeAudioModel: nativeAudioModel,
     supportsBuiltInCustomToolCombination: isGemini3,

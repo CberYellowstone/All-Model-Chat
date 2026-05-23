@@ -2,6 +2,7 @@ import { LOCAL_PYTHON_SYSTEM_PROMPT } from './localPython';
 import type { LiveArtifactsPromptMode } from '@/types';
 
 type PromptLanguage = 'en' | 'zh';
+export type LiveArtifactsPromptTheme = 'dark' | 'light';
 
 const LIVE_ARTIFACTS_PROMPT_MARKERS = [
   '[Live Artifacts Protocol]',
@@ -33,24 +34,59 @@ export const isBboxSystemInstruction = (instruction?: string | null) =>
 export const isHdGuideSystemInstruction = (instruction?: string | null) =>
   !!instruction && instruction.includes(HD_GUIDE_PROMPT_MARKER);
 
+export const resolveLiveArtifactsPromptTheme = (themeId?: string | null): LiveArtifactsPromptTheme | undefined => {
+  if (themeId === 'onyx') {
+    return 'dark';
+  }
+
+  if (themeId === 'pearl') {
+    return 'light';
+  }
+
+  return undefined;
+};
+
+const getLiveArtifactsThemeGuidance = (language: PromptLanguage, theme: LiveArtifactsPromptTheme) => {
+  if (language === 'en') {
+    return theme === 'dark'
+      ? '## Current Page Theme\n\nThe current AMC-WebUI page uses a dark theme. Default artifacts to a dark UI: dark backgrounds, light text, subdued borders/shadows, and color-scheme: dark; unless the user explicitly asks for a light artifact, do not create large white surfaces.\n'
+      : '## Current Page Theme\n\nThe current AMC-WebUI page uses a light theme. Default artifacts to a light UI: light backgrounds, dark text, clear borders/shadows, and color-scheme: light; unless the user explicitly asks for a dark artifact, do not create large black surfaces.\n';
+  }
+
+  return theme === 'dark'
+    ? '## 当前页面主题\n\n当前 AMC-WebUI 页面使用深色主题。产物默认采用深色界面：深背景、浅文字、低亮度边框/阴影，并设置 color-scheme: dark；除非用户明确要求浅色产物，不要生成大面积白底。\n'
+    : '## 当前页面主题\n\n当前 AMC-WebUI 页面使用浅色主题。产物默认采用浅色界面：浅背景、深文字、清晰边框/阴影，并设置 color-scheme: light；除非用户明确要求深色产物，不要生成大面积黑底。\n';
+};
+
+const appendLiveArtifactsThemeGuidance = (
+  prompt: string,
+  language: PromptLanguage,
+  theme?: LiveArtifactsPromptTheme,
+) => (theme ? `${prompt.trimEnd()}\n\n${getLiveArtifactsThemeGuidance(language, theme)}` : prompt);
+
 export const loadLiveArtifactsSystemPrompt = async (
   language: PromptLanguage = 'zh',
   mode: LiveArtifactsPromptMode = 'inline',
+  theme?: LiveArtifactsPromptTheme,
 ) => {
   const prompts = await import('./liveArtifacts');
   if (mode === 'fullHtml') {
-    return language === 'en'
-      ? prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_EN
-      : prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_ZH;
+    const prompt =
+      language === 'en'
+        ? prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_EN
+        : prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_ZH;
+    return appendLiveArtifactsThemeGuidance(prompt, language, theme);
   }
 
   if (mode === 'full') {
-    return language === 'en' ? prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_EN : prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_ZH;
+    const prompt =
+      language === 'en' ? prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_EN : prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_ZH;
+    return appendLiveArtifactsThemeGuidance(prompt, language, theme);
   }
 
-  return language === 'en'
-    ? prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN
-    : prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH;
+  const prompt =
+    language === 'en' ? prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN : prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH;
+  return appendLiveArtifactsThemeGuidance(prompt, language, theme);
 };
 
 export const loadDeepSearchSystemPrompt = async () => (await import('./deepSearch')).DEEP_SEARCH_SYSTEM_PROMPT;

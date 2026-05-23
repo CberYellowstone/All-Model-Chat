@@ -4,7 +4,7 @@ import { baseRemarkPlugins, getBaseRehypePlugins } from '@/utils/markdownConfigB
 import { mathRemarkPlugins, getMathRehypePlugins } from '@/utils/markdownMathConfig';
 import 'katex/dist/katex.min.css';
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo((props) => {
+export const MathMarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo((props) => {
   const rehypePlugins = useMemo(
     () => [
       ...getBaseRehypePlugins(props.allowHtml ?? false, { syntaxHighlighting: !props.isLoading }),

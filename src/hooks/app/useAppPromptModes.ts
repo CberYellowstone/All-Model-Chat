@@ -7,6 +7,7 @@ import {
   loadBboxSystemPrompt,
   loadLiveArtifactsSystemPrompt,
   loadHdGuideSystemPrompt,
+  resolveLiveArtifactsPromptTheme,
 } from '@/features/prompts/promptRegistry';
 import { DEFAULT_SYSTEM_INSTRUCTION } from '@/constants/settingsDefaults';
 import { focusChatInput } from '@/utils/chat-input/focus';
@@ -31,6 +32,7 @@ interface UseAppPromptModesOptions {
     liveArtifactsSystemPrompt?: string | null;
     liveArtifactsSystemPrompts?: AppSettings['liveArtifactsSystemPrompts'];
   };
+  currentThemeId?: string;
   setAppSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   activeChat: SavedChatSession | undefined;
   activeSessionId: string | null;
@@ -43,6 +45,7 @@ interface UseAppPromptModesOptions {
 export const useAppPromptModes = ({
   language = 'zh',
   appSettings,
+  currentThemeId,
   setAppSettings,
   activeChat,
   activeSessionId,
@@ -57,6 +60,7 @@ export const useAppPromptModes = ({
   const [liveArtifactsPromptOverrideState, setLiveArtifactsPromptOverrideState] =
     useState<LiveArtifactsPromptOverrideState | null>(null);
   const liveArtifactsPromptMode = appSettings.liveArtifactsPromptMode ?? 'inline';
+  const liveArtifactsPromptTheme = resolveLiveArtifactsPromptTheme(currentThemeId);
   const configuredLiveArtifactsSystemPrompt = getLiveArtifactsSystemPromptOverride(
     appSettings,
     liveArtifactsPromptMode,
@@ -79,6 +83,73 @@ export const useAppPromptModes = ({
     isConfiguredLiveArtifactsSystemInstruction(appSettings.systemInstruction);
 
   const isLiveArtifactsPromptActive = liveArtifactsPromptOverrideActive ?? persistedLiveArtifactsPromptActive;
+  const loadBuiltInLiveArtifactsPrompt = useCallback(
+    () =>
+      liveArtifactsPromptTheme
+        ? loadLiveArtifactsSystemPrompt(language, liveArtifactsPromptMode, liveArtifactsPromptTheme)
+        : loadLiveArtifactsSystemPrompt(language, liveArtifactsPromptMode),
+    [language, liveArtifactsPromptMode, liveArtifactsPromptTheme],
+  );
+
+  useEffect(() => {
+    if (!currentThemeId || configuredLiveArtifactsSystemPrompt) {
+      return;
+    }
+
+    const hasBuiltInLiveArtifactsPrompt =
+      isLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) ||
+      isLiveArtifactsSystemInstruction(appSettings.systemInstruction);
+
+    if (!hasBuiltInLiveArtifactsPrompt) {
+      return;
+    }
+
+    let isStale = false;
+
+    loadBuiltInLiveArtifactsPrompt()
+      .then((systemInstruction) => {
+        if (isStale) {
+          return;
+        }
+
+        if (
+          isLiveArtifactsSystemInstruction(appSettings.systemInstruction) &&
+          appSettings.systemInstruction !== systemInstruction
+        ) {
+          setAppSettings((prev) =>
+            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
+              ? { ...prev, systemInstruction }
+              : prev,
+          );
+        }
+
+        if (
+          activeSessionId &&
+          isLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) &&
+          currentChatSettings.systemInstruction !== systemInstruction
+        ) {
+          setCurrentChatSettings((prev) =>
+            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
+              ? { ...prev, systemInstruction }
+              : prev,
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isStale = true;
+    };
+  }, [
+    activeSessionId,
+    appSettings.systemInstruction,
+    configuredLiveArtifactsSystemPrompt,
+    currentChatSettings.systemInstruction,
+    currentThemeId,
+    loadBuiltInLiveArtifactsPrompt,
+    setAppSettings,
+    setCurrentChatSettings,
+  ]);
 
   useEffect(() => {
     if (!pendingLiveArtifactsPromptActivation) {
@@ -162,8 +233,7 @@ export const useAppPromptModes = ({
 
   const activateLiveArtifactsPrompt = useCallback(
     async (targetSessionId: string | null) => {
-      const newSystemInstruction =
-        configuredLiveArtifactsSystemPrompt || (await loadLiveArtifactsSystemPrompt(language, liveArtifactsPromptMode));
+      const newSystemInstruction = configuredLiveArtifactsSystemPrompt || (await loadBuiltInLiveArtifactsPrompt());
 
       setPendingLiveArtifactsPromptActivation({
         systemInstruction: newSystemInstruction,
@@ -173,7 +243,7 @@ export const useAppPromptModes = ({
 
       return newSystemInstruction;
     },
-    [configuredLiveArtifactsSystemPrompt, language, liveArtifactsPromptMode, setAppSettings],
+    [configuredLiveArtifactsSystemPrompt, loadBuiltInLiveArtifactsPrompt, setAppSettings],
   );
 
   const handleLoadLiveArtifactsPromptAndSave = useCallback(async () => {

@@ -18,6 +18,10 @@ vi.mock('react-pdf', () => ({
   },
 }));
 
+vi.mock('@/utils/pdfRuntime', () => ({
+  ensurePdfWorkerConfigured: vi.fn(),
+}));
+
 const createImageFile = () =>
   createUploadedFile({
     id: 'image-1',

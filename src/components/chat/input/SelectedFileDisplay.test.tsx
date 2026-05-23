@@ -1,7 +1,6 @@
 import { act } from 'react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pdfjs } from 'react-pdf';
 import { SelectedFileDisplay } from './SelectedFileDisplay';
 import type { UploadedFile } from '@/types';
 import { createUploadedFile } from '@/test/data/factories';
@@ -11,6 +10,12 @@ vi.mock('@/hooks/useCopyToClipboard', () => ({
     isCopied: false,
     copyToClipboard: vi.fn(),
   }),
+}));
+
+const ensurePdfWorkerConfiguredMock = vi.fn();
+
+vi.mock('@/utils/pdfRuntime', () => ({
+  ensurePdfWorkerConfigured: ensurePdfWorkerConfiguredMock,
 }));
 
 vi.mock('react-pdf', () => ({
@@ -240,7 +245,7 @@ describe('SelectedFileDisplay', () => {
       );
     });
     await vi.waitFor(() => {
-      expect(pdfjs.GlobalWorkerOptions.workerSrc).toBe('/pdf.worker.min.mjs');
+      expect(ensurePdfWorkerConfiguredMock).toHaveBeenCalled();
     });
   });
 

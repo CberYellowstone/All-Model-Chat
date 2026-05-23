@@ -47,10 +47,9 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
 
   const isSelectorDisabled = availableModels.length === 0 || isLoading || isSwitchingModel;
 
-  // Check for Gemini 3 models (ignoring case) but exclude image models
-  const { supportsThinkingLevel, isImagenModel, isGemmaModel, isFlashModel, isGeminiRoboticsModel } =
+  const { supportsThinkingLevel, isImageGenerationModel, isGemmaModel, isFlashModel, isGeminiRoboticsModel } =
     getCachedModelCapabilities(selectedModelId);
-  const supportsThinkingToggle = (supportsThinkingLevel && !isImagenModel) || isGemmaModel;
+  const supportsThinkingToggle = (supportsThinkingLevel && !isImageGenerationModel) || isGemmaModel;
 
   // Determine the target "Fast" level based on model capabilities
   // Gemini 3 Flash models support MINIMAL thinking for maximum speed
@@ -97,7 +96,6 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
             <span className="truncate max-w-[180px] font-semibold sm:max-w-[220px]">{abbreviatedModelName}</span>
           </button>
 
-          {/* Thinking Level Toggle */}
           {supportsThinkingToggle && (
             <button
               onClick={(e) => {

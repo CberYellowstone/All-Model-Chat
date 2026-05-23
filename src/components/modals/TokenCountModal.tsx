@@ -51,7 +51,6 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
       contentClassName="w-full max-w-2xl bg-[var(--theme-bg-primary)] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-[var(--theme-border-primary)] max-h-[85vh]"
       noPadding
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/50">
         <h2 className="text-lg font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
           <Calculator size={20} className="text-[var(--theme-text-link)]" />
@@ -63,7 +62,6 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
       </div>
 
       <div className="flex-grow flex flex-col min-h-0 overflow-y-auto custom-scrollbar p-5 space-y-5">
-        {/* Model Selection */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)] tracking-wider">
             {t('tokenModal_model')}
@@ -117,7 +115,6 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
           onRemoveFile={removeFile}
         />
 
-        {/* Error Display */}
         {error && (
           <div className="p-3 rounded-lg bg-[var(--theme-bg-danger)]/10 border border-[var(--theme-bg-danger)]/20 text-sm text-[var(--theme-text-danger)] animate-in fade-in slide-in-from-top-1">
             {error}

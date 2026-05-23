@@ -102,7 +102,6 @@ export const FileDisplay: React.FC<FileDisplayProps> = ({
         />
         {isFromMessageList && (
           <div className="absolute top-2 right-2 flex gap-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-            {/* Resolution / Configuration Control (Merged to prevent duplicates) */}
             {canConfigure ? (
               <button
                 type="button"
@@ -203,7 +202,6 @@ export const FileDisplay: React.FC<FileDisplayProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons for Card View */}
       <div className="flex items-center gap-1">
         {canConfigure && (
           <button

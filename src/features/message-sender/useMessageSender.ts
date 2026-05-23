@@ -116,12 +116,12 @@ export const useMessageSender = (props: MessageSenderProps) => {
       const activeModelId = isOpenAICompatibleMode ? appSettings.openaiCompatibleModelId : sessionToUpdate.modelId;
       const capabilities = getModelCapabilities(activeModelId);
       const isTtsModel = capabilities.isTtsModel;
-      const isImagenModel = capabilities.isRealImagenModel;
+      const isRealImagenModel = capabilities.isRealImagenModel;
       const isImageEditModel = capabilities.isFlashImageModel;
       const isGemini3Image = capabilities.isGemini3ImageModel;
       const permissions = capabilities.permissions ?? {
-        canAcceptAttachments: !isImagenModel,
-        requiresTextPrompt: isTtsModel || isImagenModel || isImageEditModel || isGemini3Image,
+        canAcceptAttachments: !isRealImagenModel,
+        requiresTextPrompt: isTtsModel || isRealImagenModel || isImageEditModel || isGemini3Image,
       };
 
       logService.info(`Sending message with model ${activeModelId}`, {
@@ -223,7 +223,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
         return;
       }
 
-      if (isImagenModel) {
+      if (isRealImagenModel) {
         await sendImageGenerationMessage({
           keyToUse,
           activeSessionId,

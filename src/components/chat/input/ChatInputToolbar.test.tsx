@@ -8,7 +8,7 @@ import { getModelCapabilities } from '@/utils/modelCapabilities';
 const personGenerationSelectorMock = vi.fn();
 const mockCapabilities = vi.hoisted(() => ({
   value: {
-    isImagenModel: false,
+    isImageGenerationModel: false,
     isGemini3ImageModel: false,
     isRealImagenModel: false,
     isTtsModel: false,
@@ -64,7 +64,7 @@ describe('ChatInputToolbar', () => {
       personGeneration: 'ALLOW_ADULT',
     });
     mockCapabilities.value = {
-      isImagenModel: false,
+      isImageGenerationModel: false,
       isGemini3ImageModel: false,
       isRealImagenModel: false,
       isTtsModel: false,
@@ -77,7 +77,7 @@ describe('ChatInputToolbar', () => {
   it('shows person generation selector for real Imagen models', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
-      isImagenModel: true,
+      isImageGenerationModel: true,
       isRealImagenModel: true,
     };
 
@@ -91,7 +91,7 @@ describe('ChatInputToolbar', () => {
   it('hides person generation selector for Gemini image models', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
-      isImagenModel: true,
+      isImageGenerationModel: true,
       isRealImagenModel: false,
     };
 

@@ -209,7 +209,6 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         </table>
       </div>
 
-      {/* Floating Action Buttons */}
       <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 pointer-events-none transition-opacity duration-200 group-hover/table:opacity-100 group-hover/table:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
         <button
           onClick={handleCopyMarkdown}

@@ -161,6 +161,74 @@ describe('useAppPromptModes', () => {
     unmount();
   });
 
+  it('passes the current page theme to the built-in Live Artifacts prompt loader', async () => {
+    mockLoadLiveArtifactsSystemPrompt.mockResolvedValue(`${LIVE_ARTIFACTS_PROMPT_EN}\nCurrent Page Theme: dark`);
+
+    const setAppSettings = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useAppPromptModes({
+        appSettings: createAppSettings(),
+        currentThemeId: 'onyx',
+        setAppSettings,
+        activeChat: createLiveArtifactsSession(),
+        activeSessionId: 'session-1',
+        currentChatSettings: createLiveArtifactsChatSettings(),
+        setCurrentChatSettings: vi.fn(),
+        handleSendMessage: vi.fn(),
+        setCommandedInput: vi.fn() as unknown as (command: InputCommand) => void,
+        language: 'en',
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleLoadLiveArtifactsPromptAndSave();
+    });
+
+    expect(mockLoadLiveArtifactsSystemPrompt).toHaveBeenCalledWith('en', 'inline', 'dark');
+    const appSettingsUpdater = setAppSettings.mock.calls.at(-1)?.[0] as (prev: AppSettings) => AppSettings;
+    expect(appSettingsUpdater(createAppSettings()).systemInstruction).toContain('Current Page Theme: dark');
+
+    unmount();
+  });
+
+  it('refreshes an active built-in Live Artifacts prompt for the current page theme', async () => {
+    const themedPrompt = `${LIVE_ARTIFACTS_PROMPT_EN}\nCurrent Page Theme: light`;
+    mockLoadLiveArtifactsSystemPrompt.mockResolvedValue(themedPrompt);
+
+    const setAppSettings = vi.fn();
+    const setCurrentChatSettings = vi.fn();
+    const { unmount } = renderHook(() =>
+      useAppPromptModes({
+        appSettings: createAppSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT_EN }),
+        currentThemeId: 'pearl',
+        setAppSettings,
+        activeChat: createLiveArtifactsSession({ title: 'Session 1' }, { systemInstruction: LIVE_ARTIFACTS_PROMPT_EN }),
+        activeSessionId: 'session-1',
+        currentChatSettings: createLiveArtifactsChatSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT_EN }),
+        setCurrentChatSettings,
+        handleSendMessage: vi.fn(),
+        setCommandedInput: vi.fn() as unknown as (command: InputCommand) => void,
+        language: 'en',
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(mockLoadLiveArtifactsSystemPrompt).toHaveBeenCalledWith('en', 'inline', 'light');
+    });
+
+    const appSettingsUpdater = setAppSettings.mock.calls.at(-1)?.[0] as (prev: AppSettings) => AppSettings;
+    const chatSettingsUpdater = setCurrentChatSettings.mock.calls.at(-1)?.[0] as (prev: ChatSettings) => ChatSettings;
+    expect(
+      appSettingsUpdater(createAppSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT_EN })).systemInstruction,
+    ).toBe(themedPrompt);
+    expect(
+      chatSettingsUpdater(createLiveArtifactsChatSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT_EN }))
+        .systemInstruction,
+    ).toBe(themedPrompt);
+
+    unmount();
+  });
+
   it('uses the configured custom Live Artifacts prompt for prompt-mode activation', async () => {
     const customPrompt = 'Custom Live Artifacts prompt without built-in marker';
     const setAppSettings = vi.fn();

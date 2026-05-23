@@ -285,9 +285,10 @@ describe('ModelsSection', () => {
     });
 
     await vi.waitFor(() => {
-      expect(renderer.container.querySelector<HTMLTextAreaElement>('#live-artifacts-prompt-input')?.value).toContain(
-        '[Live Artifacts Inline Protocol - en]',
-      );
+      const promptValue = renderer.container.querySelector<HTMLTextAreaElement>('#live-artifacts-prompt-input')?.value;
+      expect(promptValue).toContain('[Live Artifacts Inline Protocol - en]');
+      expect(promptValue).toContain('Current Page Theme');
+      expect(promptValue).toContain('light theme');
     });
   });
 

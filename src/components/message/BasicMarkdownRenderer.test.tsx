@@ -1,14 +1,14 @@
 import { act, type ComponentProps } from 'react';
 import { setupTestRenderer } from '@/test/render/renderer';
 import { describe, expect, it, vi } from 'vitest';
-import { BaseMarkdownRendererEntry } from './BaseMarkdownRendererEntry';
+import { BasicMarkdownRenderer } from './BasicMarkdownRenderer';
 
-describe('BaseMarkdownRendererEntry', () => {
+describe('BasicMarkdownRenderer', () => {
   const renderer = setupTestRenderer();
-  const renderMarkdown = (props: Partial<ComponentProps<typeof BaseMarkdownRendererEntry>> & { content: string }) => {
+  const renderMarkdown = (props: Partial<ComponentProps<typeof BasicMarkdownRenderer>> & { content: string }) => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           isLoading={false}
           onImageClick={vi.fn()}
           onOpenHtmlPreview={vi.fn()}
@@ -91,7 +91,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('preserves html table captions when raw html is allowed', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             'Inline raw HTML:\n\n<table><caption>Monthly totals</caption><thead><tr><th>Name</th><th>Total</th></tr></thead><tbody><tr><td>Alice</td><td>42</td></tr></tbody></table>'
           }
@@ -117,7 +117,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('renders generated files inside sanitized tool result blocks', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             '<div class="tool-result outcome-ok"><strong>Execution Result (OK):</strong><pre><code>plot saved</code></pre></div>'
           }
@@ -154,7 +154,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('preserves safe inline styles in allowed raw html', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             'Inline raw HTML:\n\n' +
             '<div style="display:flex;gap:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:20px 16px">' +
@@ -195,7 +195,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('preserves richer safe controls and svg primitives in allowed raw html', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             'Inline raw HTML:\n\n' +
             '<section style="display:grid;grid-template-columns:1fr auto;align-content:center;justify-items:start;aspect-ratio:2/1">' +
@@ -244,7 +244,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('marks styled raw html tables as rich tables so inline styles can win', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             'Inline raw HTML:\n\n' +
             '<table style="width:100%;border-collapse:collapse;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)">' +
@@ -277,7 +277,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('keeps markdown tables on the standard table styling path', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'| Name | Total |\n|---|---:|\n| Alice | 42 |'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -302,7 +302,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('strips raw html positioning attributes that can escape the markdown surface', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             'Inline raw HTML:\n\n<section id="danger-zone" class="fixed inset-0 z-[9999]" style="position:fixed;inset:0">Safe text</section>'
           }
@@ -332,7 +332,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('keeps escaped dollar delimiters literal in prose', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'Price is \\$5\\$ today.'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -353,7 +353,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('keeps thinking tags literal inside inline code examples', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'示例：`<thinking>secret</thinking>`'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -377,7 +377,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('keeps thinking tags literal inside fenced code blocks', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'```html\n<thinking>secret</thinking>\n```'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -399,7 +399,7 @@ describe('BaseMarkdownRendererEntry', () => {
   it('keeps all raw html pre children when html is allowed', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'<pre><span>alpha</span>beta</pre>'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -423,7 +423,7 @@ describe('BaseMarkdownRendererEntry', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content="![Diagram](data:image/png;base64,ZmFrZQ==)"
           isLoading={false}
           onImageClick={handleImageClick}

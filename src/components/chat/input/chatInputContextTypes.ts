@@ -324,7 +324,7 @@ export interface ChatInputActionsContextValue {
   liveVideoSource: 'camera' | 'screen' | null;
   onToggleToolAndFocus: (toggleFunc: () => void) => void;
   onCountTokens: () => void;
-  isImageModel: boolean;
+  isImageGenerationModel: boolean;
   isRealImagenModel: boolean;
   isNativeAudioModel: boolean;
   canAddYouTubeVideo: boolean;

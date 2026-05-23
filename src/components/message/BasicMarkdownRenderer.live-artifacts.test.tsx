@@ -3,14 +3,14 @@ import { fireEvent } from '@testing-library/react';
 import { setupTestRenderer } from '@/test/render/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { BaseMarkdownRendererEntry } from './BaseMarkdownRendererEntry';
+import { BasicMarkdownRenderer } from './BasicMarkdownRenderer';
 
-describe('BaseMarkdownRendererEntry Live Artifacts', () => {
+describe('BasicMarkdownRenderer Live Artifacts', () => {
   const renderer = setupTestRenderer();
-  const renderMarkdown = (props: Partial<ComponentProps<typeof BaseMarkdownRendererEntry>> & { content: string }) => {
+  const renderMarkdown = (props: Partial<ComponentProps<typeof BasicMarkdownRenderer>> & { content: string }) => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           isLoading={false}
           onImageClick={vi.fn()}
           onOpenHtmlPreview={vi.fn()}
@@ -28,7 +28,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('renders standalone multiline raw html fragments without accidental code blocks', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`<div style="padding:24px;background:#f8f9fa">
   <section style="background:white">
     <p>Transformer summary</p>
@@ -63,7 +63,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('renders streaming raw html fragments inside stable artifact frames before they close', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`<div style="padding:24px;background:#f8f9fa">
     <section style="background:white">
         <p>Transformer summary</p>
@@ -99,7 +99,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={partialDocument}
           isLoading={true}
           onImageClick={vi.fn()}
@@ -125,7 +125,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('shows a stable pending frame for streaming interaction JSON before it parses', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'```amc-live-artifact-interaction\n{"instruction":"Collect","schema":{'}
           isLoading={true}
           onImageClick={vi.fn()}
@@ -147,7 +147,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('hides markdown preview affordances when interactive mode is disabled', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'```html\n<html><body>Hello</body></html>\n```'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -173,7 +173,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`\`\`\`html\n${document}\n\`\`\``}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -211,7 +211,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('renders standalone raw html fragments inside artifact frames instead of the message dom', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'<section style="display:grid"><strong>Inline Artifact</strong></section>'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -237,7 +237,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('does not show inline action buttons over Live Artifact frames', () => {
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={'<section style="display:grid"><strong>Inline Artifact</strong></section>'}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -264,7 +264,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={
             '<section><button data-amc-followup="{&quot;instruction&quot;:&quot;Continue&quot;}">Continue</button></section>'
           }
@@ -359,7 +359,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`\`\`\`amc-live-artifact-interaction\n${JSON.stringify(interaction, null, 2)}\n\`\`\``}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -436,7 +436,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
     };
     const renderInteraction = (interaction: object) => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`\`\`\`amc-live-artifact-interaction\n${JSON.stringify(interaction, null, 2)}\n\`\`\``}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -490,7 +490,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={`\`\`\`amc-live-artifact-interaction\n${JSON.stringify(interaction, null, 2)}\n\`\`\``}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -528,7 +528,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
     try {
       act(() => {
         renderer.root.render(
-          <BaseMarkdownRendererEntry
+          <BasicMarkdownRenderer
             content={`\`\`\`amc-live-artifact-interaction\n${JSON.stringify(interaction, null, 2)}\n\`\`\``}
             isLoading={false}
             onImageClick={vi.fn()}
@@ -560,7 +560,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
 
     act(() => {
       renderer.root.render(
-        <BaseMarkdownRendererEntry
+        <BasicMarkdownRenderer
           content={document}
           isLoading={false}
           onImageClick={vi.fn()}
@@ -596,7 +596,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('preserves measured artifact height when the same message remounts during list scrolling', () => {
     const document = '<!DOCTYPE html><html><body><main style="height:960px">Stable</main></body></html>';
     const renderArtifact = () => (
-      <BaseMarkdownRendererEntry
+      <BasicMarkdownRenderer
         content={document}
         messageId="artifact-message-1"
         isLoading={false}
@@ -646,7 +646,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
     const firstDocument = '<!DOCTYPE html><html><body><main>First</main></body></html>';
     const secondDocument = '<!DOCTYPE html><html><body><main>Second</main></body></html>';
     const renderArtifact = (document: string) => (
-      <BaseMarkdownRendererEntry
+      <BasicMarkdownRenderer
         content={document}
         isLoading={false}
         onImageClick={vi.fn()}
@@ -692,7 +692,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
     const secondDocument =
       '<!DOCTYPE html><html><body><main><section>Streaming second</section><section>More content</section></main></body></html>';
     const renderArtifact = (document: string) => (
-      <BaseMarkdownRendererEntry
+      <BasicMarkdownRenderer
         content={document}
         messageId="streaming-artifact-message"
         isLoading={true}
@@ -735,7 +735,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
     const secondDocument =
       '<!DOCTYPE html><html><body><main><section>Streaming second</section><section>More content</section></main></body></html>';
     const renderArtifact = (document: string) => (
-      <BaseMarkdownRendererEntry
+      <BasicMarkdownRenderer
         content={document}
         messageId="streaming-artifact-identity-message"
         isLoading={true}
@@ -769,7 +769,7 @@ describe('BaseMarkdownRendererEntry Live Artifacts', () => {
   it('keeps the measured artifact frame height when streaming completes with the final html content', () => {
     const document = '<!DOCTYPE html><html><body><main>Streaming final</main></body></html>';
     const renderArtifact = (isLoading: boolean) => (
-      <BaseMarkdownRendererEntry
+      <BasicMarkdownRenderer
         content={document}
         messageId="completed-streaming-artifact-message"
         isLoading={isLoading}

@@ -75,7 +75,6 @@ export const HtmlPreviewHeader: React.FC<HtmlPreviewHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Zoom Controls */}
         <div className="hidden sm:flex items-center">
           <button
             onClick={onZoomOut}
@@ -100,7 +99,6 @@ export const HtmlPreviewHeader: React.FC<HtmlPreviewHeaderProps> = ({
 
         <div className="hidden sm:block w-px h-4 bg-[var(--theme-border-secondary)] mx-2" />
 
-        {/* Action Controls */}
         <button onClick={onRefresh} className={iconBtnClass} title={t('htmlPreview_reload')}>
           <RotateCw size={18} strokeWidth={1.5} />
         </button>
@@ -122,7 +120,6 @@ export const HtmlPreviewHeader: React.FC<HtmlPreviewHeaderProps> = ({
 
         <div className="w-px h-4 bg-[var(--theme-border-secondary)] mx-2" />
 
-        {/* Screen Mode Controls */}
         <button
           onClick={onToggleFullscreen}
           className={iconBtnClass}

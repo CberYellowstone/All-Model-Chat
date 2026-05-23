@@ -13,7 +13,7 @@ const auxiliaryButtonsMock = vi.fn();
 const sendControlsMock = vi.fn();
 const mockCapabilities = vi.hoisted(() => ({
   value: {
-    isImagenModel: false,
+    isImageGenerationModel: false,
     isRealImagenModel: false,
     isNativeAudioModel: false,
   },
@@ -145,7 +145,7 @@ describe('ChatInputActions', () => {
   const renderActions = (props: ActionRenderOverrides = {}) => {
     const { actionOverrides, composerOverrides } = splitRenderOverrides(props);
     const actionsValue = createChatInputActionsContextValue({
-      isImageModel: mockCapabilities.value.isImagenModel,
+      isImageGenerationModel: mockCapabilities.value.isImageGenerationModel,
       isRealImagenModel: mockCapabilities.value.isRealImagenModel,
       isNativeAudioModel: mockCapabilities.value.isNativeAudioModel,
       ...actionOverrides,
@@ -208,7 +208,7 @@ describe('ChatInputActions', () => {
 
   beforeEach(() => {
     mockCapabilities.value = {
-      isImagenModel: false,
+      isImageGenerationModel: false,
       isRealImagenModel: false,
       isNativeAudioModel: false,
     };
@@ -228,7 +228,7 @@ describe('ChatInputActions', () => {
   it('disables attachments for Imagen models', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
-      isImagenModel: true,
+      isImageGenerationModel: true,
       isRealImagenModel: true,
     };
 
@@ -240,7 +240,7 @@ describe('ChatInputActions', () => {
   it('keeps attachments enabled for Gemini image models that support reference images', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
-      isImagenModel: true,
+      isImageGenerationModel: true,
       isRealImagenModel: false,
     };
 

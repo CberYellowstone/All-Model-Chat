@@ -71,7 +71,7 @@ vi.mock('@/utils/chat/session', () => ({
 
 vi.mock('@/utils/modelCapabilities', () => ({
   isGemini3Model: vi.fn((id: string) => id.includes('gemini-3')),
-  isImageModel: vi.fn((id: string) => id.includes('image')),
+  isImageGenerationModel: vi.fn((id: string) => id.includes('image')),
   shouldStripThinkingFromContext: vi.fn(() => false),
   getModelCapabilities: mockModelCapabilities,
 }));

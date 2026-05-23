@@ -190,7 +190,6 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
           </label>
         </div>
 
-        {/* Segmented Control (Tabs) */}
         {!isImageThinkingLevelOnly && (
           <ThinkingModeSelector
             mode={mode}
@@ -200,10 +199,8 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
           />
         )}
 
-        {/* Content Area */}
         {(showContent || isImageThinkingLevelOnly) && (
           <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-            {/* 1. Gemini 3.0 Preset Level Selector */}
             {((supportsThinkingLevel && mode === 'auto') || isImageThinkingLevelOnly) && setThinkingLevel && (
               <ThinkingLevelSelector
                 thinkingLevel={thinkingLevel}
@@ -212,7 +209,6 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
               />
             )}
 
-            {/* 2. Custom Budget Slider & Input */}
             {!isImageThinkingLevelOnly && mode === 'custom' && (
               <ThinkingBudgetSlider
                 minBudget={minBudget}
@@ -222,7 +218,6 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
               />
             )}
 
-            {/* 3. Off State Message */}
             {!isImageThinkingLevelOnly && mode === 'off' && (
               <div className="flex items-center justify-center py-1">
                 <p className="text-xs text-[var(--theme-text-tertiary)] italic flex items-center gap-2">

@@ -42,9 +42,9 @@ export const SendControls: React.FC = () => {
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    setRipples((prev) => [...prev, { x, y, id: rippleIdRef.current++, size }]);
+    const rippleX = e.clientX - rect.left - size / 2;
+    const rippleY = e.clientY - rect.top - size / 2;
+    setRipples((prev) => [...prev, { x: rippleX, y: rippleY, id: rippleIdRef.current++, size }]);
   };
 
   const isStop = isLoading;

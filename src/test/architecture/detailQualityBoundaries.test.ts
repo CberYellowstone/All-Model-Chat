@@ -149,6 +149,37 @@ describe('detail quality boundaries', () => {
     expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/import-context/loaders')");
   });
 
+  it('keeps import-context shared details split into named helper modules', () => {
+    const expectedHelperFiles = [
+      'src/utils/import-context/defaultIgnorePatterns.ts',
+      'src/utils/import-context/languageMap.ts',
+      'src/utils/import-context/textStats.ts',
+      'src/utils/import-context/treeSorting.ts',
+    ];
+    const importContextFiles = listProjectSourceFiles('src/utils/import-context');
+
+    for (const relativePath of expectedHelperFiles) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
+    }
+
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/import-context/shared.ts'))).toBe(false);
+
+    for (const relativePath of importContextFiles) {
+      const source = readProjectFile(relativePath);
+      expect(source, relativePath).not.toContain("from './shared'");
+    }
+  });
+
+  it('keeps audio compression worker source in its own template module', () => {
+    const audioCompressionSource = readProjectFile('src/features/audio/audioCompression.ts');
+    const workerTemplateSource = readProjectFile('src/features/audio/audioCompressionWorkerTemplate.ts');
+
+    expect(workerTemplateSource).toContain('export const audioCompressionWorkerCode');
+    expect(audioCompressionSource).toContain("from './audioCompressionWorkerTemplate'");
+    expect(audioCompressionSource).not.toContain('const WORKER_CODE');
+    expect(audioCompressionSource).not.toContain('importScripts(');
+  });
+
   it('keeps broad constants split into named domain modules', () => {
     const expectedConstantModules = [
       'src/constants/settingsDefaults.ts',

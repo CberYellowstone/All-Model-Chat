@@ -111,12 +111,9 @@ export const getFileTypeCategory = (mimeType: string, error?: string): FileCateg
   )
     return 'spreadsheet';
 
-  if (SUPPORTED_DOC_MIME_TYPES.includes(normalized))
-    return 'doc';
-  if (SUPPORTED_PRESENTATION_MIME_TYPES.includes(normalized))
-    return 'presentation';
-  if (SUPPORTED_ARCHIVE_MIME_TYPES.includes(normalized))
-    return 'archive';
+  if (SUPPORTED_DOC_MIME_TYPES.includes(normalized)) return 'doc';
+  if (SUPPORTED_PRESENTATION_MIME_TYPES.includes(normalized)) return 'presentation';
+  if (SUPPORTED_ARCHIVE_MIME_TYPES.includes(normalized)) return 'archive';
 
   return 'text';
 };

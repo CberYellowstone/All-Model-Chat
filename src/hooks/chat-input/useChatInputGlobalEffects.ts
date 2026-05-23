@@ -107,8 +107,8 @@ export const useChatInputGlobalEffects = ({
 
       textarea.focus();
       setTimeout(() => {
-        const len = textarea.value.length;
-        textarea.setSelectionRange(len, len);
+        const textLength = textarea.value.length;
+        textarea.setSelectionRange(textLength, textLength);
         textarea.scrollTop = textarea.scrollHeight;
       }, 0);
     };
@@ -157,8 +157,8 @@ export const useChatInputGlobalEffects = ({
       textarea.focus();
       setInputText((prev) => prev + event.key);
       setTimeout(() => {
-        const len = textarea.value.length;
-        textarea.setSelectionRange(len, len);
+        const textLength = textarea.value.length;
+        textarea.setSelectionRange(textLength, textLength);
         textarea.scrollTop = textarea.scrollHeight;
       }, 0);
     };
