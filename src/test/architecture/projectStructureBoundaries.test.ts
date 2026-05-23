@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { countLines, listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { countLines, listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 const extractConstNumber = (source: string, constName: string): number | null => {
   const match = source.match(new RegExp(`const\\s+${constName}\\s*=\\s*(\\d+)`));
@@ -208,12 +208,13 @@ describe('project structure boundaries', () => {
   });
 
   it('names Gemini 3 required-thinking model constants by their actual role', () => {
-    const modelConstantsSource = readProjectFile('src/constants/modelConstants.ts');
+    const modelConfigurationSource = readProjectFile('src/constants/modelConfiguration.ts');
     const modelCapabilitiesSource = readProjectFile('src/utils/modelCapabilities.ts');
 
-    expect(modelConstantsSource).toContain('export const GEMINI_3_REQUIRED_THINKING_MODEL_IDS');
-    expect(modelConstantsSource).not.toContain('GEMINI_3_RO_MODELS');
-    expect(modelCapabilitiesSource).toContain('GEMINI_3_REQUIRED_THINKING_MODEL_IDS');
+    expect(modelConfigurationSource).toContain('export const REQUIRED_THINKING_MODEL_IDS');
+    expect(modelConfigurationSource).not.toContain('GEMINI_3_RO_MODELS');
+    expect(modelConfigurationSource).not.toContain('MODELS_MANDATORY_THINKING');
+    expect(modelCapabilitiesSource).toContain('REQUIRED_THINKING_MODEL_IDS');
     expect(modelCapabilitiesSource).not.toContain('GEMINI_3_RO_MODELS');
   });
 
@@ -380,7 +381,8 @@ describe('project structure boundaries', () => {
 
     expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/chatInputAreaLayout.ts'))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/useChatInputAreaLayout.ts'))).toBe(false);
-    expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/chatInputLayoutConstants.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/chatInputTextAreaMetrics.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/chat/input/chatInputLayoutConstants.ts'))).toBe(false);
     expect(chatInputAreaSource).toContain("import { getChatInputAreaLayout } from './chatInputAreaLayout'");
     expect(chatInputAreaSource).not.toContain('useChatInputAreaLayout');
     expect(chatTextAreaSource).not.toContain('@/hooks/chat-input/useChatInputState');

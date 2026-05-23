@@ -1,10 +1,10 @@
 import { act } from 'react';
-import { setupProviderTestRenderer } from '@/test/providerTestUtils';
+import { setupProviderTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createChatInputActionsContextValue,
   createChatInputComposerStatusContextValue,
-} from '@/test/chatInputContextFixtures';
+} from '@/test/chat-input/contextFixtures';
 
 const attachmentMenuMock = vi.fn();
 const toolsMenuMock = vi.fn();

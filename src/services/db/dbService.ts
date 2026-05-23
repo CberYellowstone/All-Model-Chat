@@ -2,7 +2,15 @@ import type { AppSettings, ChatGroup, SavedScenario } from '@/types';
 import { DB_STORE_NAMES, GROUPS_STORE, SCENARIOS_STORE } from './dbSchema';
 import { estimateAppDataSize } from './appDataSize';
 import { addApiUsageRecord, clearApiUsage, getApiUsageByTimeRange } from './apiUsageRecords';
-import { getAll, getDb, getKeyValue, setAll, setKeyValue, transactionToPromise, withWriteLock } from './idbUtils';
+import {
+  getAll,
+  getDb,
+  getKeyValue,
+  setAll,
+  setKeyValue,
+  transactionToPromise,
+  withWriteLock,
+} from './indexedDbAccess';
 import { addLogs, clearLogs, getLogs, pruneLogs } from './logRecords';
 import {
   deleteSession,

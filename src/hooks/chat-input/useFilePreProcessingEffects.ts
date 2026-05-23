@@ -87,7 +87,7 @@ export const useFilePreProcessingEffects = ({
 
       try {
         justInitiatedFileOpRef.current = true;
-        const { generateFolderContext } = await import('@/utils/importContextLoaders');
+        const { generateFolderContext } = await import('@/utils/import-context/loaders');
         const contextFile = await generateFolderContext(files, {
           emptyDirectoryPaths,
         });

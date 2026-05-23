@@ -1,7 +1,7 @@
 import { logService } from '@/services/logService';
 import React, { type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { buildHtmlPreviewSrcDoc } from '@/utils/htmlPreview';
+import { buildHtmlPreviewSrcDoc } from '@/utils/html-preview/previewDocument';
 
 interface HtmlPreviewContentProps {
   iframeRef: RefObject<HTMLIFrameElement>;

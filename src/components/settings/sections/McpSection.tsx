@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { AppSettings, McpServerAuthType, McpServerConfig, McpServerTransport } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
-import { SETTINGS_INPUT_CLASS } from '@/constants/styleClasses';
+import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
 import { fetchMcpServerCapabilities, type McpServerCapabilities } from '@/services/api/mcpApi';
 
 interface McpSectionProps {
@@ -14,16 +14,16 @@ const inputBaseClasses =
   'w-full rounded-lg border p-2.5 text-sm transition-all duration-200 focus:ring-2 focus:ring-offset-0';
 const labelClasses = 'text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
 const secondaryButtonClass =
-  'inline-flex items-center gap-1.5 rounded-lg border border-[var(--theme-border-secondary)] px-3 py-1.5 text-xs font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]';
+  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--theme-border-secondary)] px-3 py-1.5 text-xs font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]';
 
 type CapabilityTestState =
   | { status: 'loading' }
   | { status: 'success'; capabilities: McpServerCapabilities }
   | { status: 'error'; error: string };
 
-const createMcpServer = (): McpServerConfig => ({
+const createMcpServer = (name: string): McpServerConfig => ({
   id: `mcp-${Date.now()}`,
-  name: 'New MCP Server',
+  name,
   enabled: false,
   transport: 'stdio',
   command: '',
@@ -84,7 +84,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
   };
 
   const addServer = () => {
-    updateServers([...servers, createMcpServer()]);
+    updateServers([...servers, createMcpServer(t('settingsMcpNewServer'))]);
   };
 
   const handleTransportChange = (serverIndex: number, server: McpServerConfig, transport: McpServerTransport) => {
@@ -132,8 +132,8 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1">
           <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('settingsMcpTitle')}</h3>
           <p className="text-sm leading-relaxed text-[var(--theme-text-tertiary)]">{t('settingsMcpDescription')}</p>
         </div>
@@ -155,29 +155,36 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
             const capabilities = capabilityState?.status === 'success' ? capabilityState.capabilities : undefined;
             const capabilityErrors = capabilities?.errors ?? [];
             const resourceCount = (capabilities?.resources.length ?? 0) + (capabilities?.resourceTemplates.length ?? 0);
+            const enabledInputId = `mcp-enabled-${stateKey}`;
 
             return (
               <section
                 key={stateKey}
                 className="rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] p-4 shadow-sm"
               >
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
+                <div
+                  data-mcp-server-card-header
+                  className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
                     <input
-                      id={`mcp-enabled-${server.id}`}
+                      id={enabledInputId}
                       type="checkbox"
                       checked={server.enabled}
                       onChange={(event) => updateServer(index, { enabled: event.target.checked })}
-                      className="h-4 w-4 rounded border-[var(--theme-border-secondary)] text-[var(--theme-text-link)] focus:ring-[var(--theme-border-focus)]"
+                      className="h-4 w-4 shrink-0 rounded border-[var(--theme-border-secondary)] text-[var(--theme-text-link)] focus:ring-[var(--theme-border-focus)]"
                     />
                     <label
-                      htmlFor={`mcp-enabled-${server.id}`}
-                      className="text-sm font-medium text-[var(--theme-text-primary)]"
+                      htmlFor={enabledInputId}
+                      className="min-w-0 truncate text-sm font-medium text-[var(--theme-text-primary)]"
                     >
                       {server.name || t('settingsMcpUnnamedServer').replace('{index}', String(index + 1))}
                     </label>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div
+                    data-mcp-server-card-actions
+                    className="flex shrink-0 items-center gap-2 self-start sm:self-auto"
+                  >
                     <button
                       type="button"
                       onClick={() => testServerCapabilities(server, index)}

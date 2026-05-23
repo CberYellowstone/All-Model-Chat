@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getTranslator } from '@/i18n/translations';
-import { createAppSettings, createChatSettings } from '@/test/factories';
+import { createAppSettings, createChatSettings } from '@/test/data/factories';
 
 const {
   handleApiErrorMock,
@@ -42,7 +42,7 @@ vi.mock('@/utils/chat/builder', () => ({
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });

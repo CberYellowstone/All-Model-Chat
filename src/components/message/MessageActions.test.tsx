@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { renderWithProviders, setupProviderTestRenderer as setupTestRenderer } from '@/test/providerTestUtils';
+import { renderWithProviders, setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MessageActions } from './MessageActions';
 import type { ChatMessage } from '@/types';

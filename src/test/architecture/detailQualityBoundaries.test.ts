@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 describe('detail quality boundaries', () => {
   it('reuses dropped-item snapshotting without pulling folder import code into the initial bundle', () => {
@@ -110,8 +110,8 @@ describe('detail quality boundaries', () => {
   });
 
   it('keeps HTML preview runtime scripts split by responsibility', () => {
-    const barrelSource = readProjectFile('src/utils/htmlPreviewScripts.ts');
     const expectedFiles = [
+      'src/utils/html-preview/previewDocument.ts',
       'src/utils/html-preview/previewMessageProtocol.ts',
       'src/utils/html-preview/previewSanitizer.ts',
       'src/utils/html-preview/previewBridgeScript.ts',
@@ -122,9 +122,122 @@ describe('detail quality boundaries', () => {
       expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
     }
 
-    expect(barrelSource).toContain("export * from './html-preview/previewMessageProtocol';");
-    expect(barrelSource).not.toContain('export const PREVIEW_BRIDGE_SCRIPT = `<script>');
-    expect(barrelSource).not.toContain('export const STREAMING_PREVIEW_RUNNER_SCRIPT = `<script>');
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/htmlPreview.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/htmlPreviewScripts.ts'))).toBe(false);
+
+    const sourceFiles = listProjectSourceFiles('src').filter(
+      (relativePath) => relativePath !== 'src/test/architecture/detailQualityBoundaries.test.ts',
+    );
+    const oldImportOffenders = sourceFiles.filter((relativePath) => {
+      const source = readProjectFile(relativePath);
+      return source.includes('@/utils/htmlPreview') || source.includes('./htmlPreview');
+    });
+
+    expect(oldImportOffenders).toEqual([]);
+  });
+
+  it('keeps import context lazy loaders with the import-context feature modules', () => {
+    const loaderPath = 'src/utils/import-context/loaders.ts';
+    const loaderSource = readProjectFile(loaderPath);
+    const useFilePreProcessingSource = readProjectFile('src/hooks/file-upload/useFilePreProcessing.ts');
+    const useFilePreProcessingEffectsSource = readProjectFile('src/hooks/chat-input/useFilePreProcessingEffects.ts');
+
+    expect(fs.existsSync(path.join(projectRoot, loaderPath))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/importContextLoaders.ts'))).toBe(false);
+    expect(loaderSource).toContain("import('./importContextBuilder')");
+    expect(useFilePreProcessingSource).toContain("import('@/utils/import-context/loaders')");
+    expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/import-context/loaders')");
+  });
+
+  it('keeps broad constants split into named domain modules', () => {
+    const expectedConstantModules = [
+      'src/constants/settingsDefaults.ts',
+      'src/constants/safetySettings.ts',
+      'src/constants/translationOptions.ts',
+      'src/constants/welcomeSuggestions.ts',
+      'src/constants/focusClasses.ts',
+      'src/constants/buttonClasses.ts',
+      'src/constants/menuClasses.ts',
+      'src/constants/formClasses.ts',
+    ];
+
+    for (const relativePath of expectedConstantModules) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
+    }
+
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/appConstants.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/styleClasses.ts'))).toBe(false);
+
+    const sourceFiles = listProjectSourceFiles('src').filter(
+      (relativePath) => relativePath !== 'src/test/architecture/detailQualityBoundaries.test.ts',
+    );
+    const broadConstantImportOffenders = sourceFiles.filter((relativePath) => {
+      const source = readProjectFile(relativePath);
+      return source.includes('@/constants/appConstants') || source.includes('@/constants/styleClasses');
+    });
+
+    expect(broadConstantImportOffenders).toEqual([]);
+  });
+
+  it('keeps focused test helpers in named subdirectories', () => {
+    const expectedHelperFiles = [
+      'src/test/browser/environment.ts',
+      'src/test/chat-area/fixtures.tsx',
+      'src/test/chat-input/contextFixtures.ts',
+      'src/test/chat-input/harness.tsx',
+      'src/test/chat-tools/fixtures.ts',
+      'src/test/data/factories.ts',
+      'src/test/doubles/moduleMocks.ts',
+      'src/test/doubles/services.ts',
+      'src/test/doubles/i18n.ts',
+      'src/test/hooks/factories.ts',
+      'src/test/live-api/fixtures.ts',
+      'src/test/message-list/doubles.tsx',
+      'src/test/render/providerRenderer.tsx',
+      'src/test/render/renderer.tsx',
+      'src/test/stores/reset.ts',
+    ];
+    const retiredRootHelpers = [
+      'src/test/browserEnvironment.ts',
+      'src/test/chatAreaFixtures.tsx',
+      'src/test/chatInputContextFixtures.ts',
+      'src/test/chatInputHarness.tsx',
+      'src/test/chatToolFixtures.ts',
+      'src/test/factories.ts',
+      'src/test/hookFactories.ts',
+      'src/test/i18nTestDoubles.ts',
+      'src/test/liveApiFixtures.ts',
+      'src/test/messageListTestDoubles.tsx',
+      'src/test/moduleMockDoubles.ts',
+      'src/test/providerTestUtils.tsx',
+      'src/test/render/providerTestUtils.tsx',
+      'src/test/render/testUtils.tsx',
+      'src/test/serviceTestDoubles.ts',
+      'src/test/storeTestUtils.ts',
+      'src/test/testUtils.tsx',
+    ];
+
+    for (const relativePath of expectedHelperFiles) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
+    }
+
+    for (const relativePath of retiredRootHelpers) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(false);
+    }
+
+    const sourceFiles = listProjectSourceFiles('src').filter(
+      (relativePath) => relativePath !== 'src/test/architecture/detailQualityBoundaries.test.ts',
+    );
+    const retiredHelperImportOffenders = sourceFiles.filter((relativePath) => {
+      const source = readProjectFile(relativePath);
+      return (
+        /@\/test\/(?:browserEnvironment|chatAreaFixtures|chatInputContextFixtures|chatInputHarness|chatToolFixtures|factories|hookFactories|i18nTestDoubles|liveApiFixtures|messageListTestDoubles|moduleMockDoubles|providerTestUtils|serviceTestDoubles|storeTestUtils|testUtils)\b/.test(
+          source,
+        ) || /@\/test\/render\/(?:providerTestUtils|testUtils)\b/.test(source)
+      );
+    });
+
+    expect(retiredHelperImportOffenders).toEqual([]);
   });
 
   it('keeps log usage tracking out of the core log service', () => {

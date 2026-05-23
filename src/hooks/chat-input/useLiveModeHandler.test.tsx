@@ -2,8 +2,8 @@ import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type UploadedFile, MediaResolution } from '@/types';
 import { useLiveModeHandler } from './useLiveModeHandler';
-import { renderHook } from '@/test/testUtils';
-import { createAppSettings, createChatSettings } from '@/test/factories';
+import { renderHook } from '@/test/render/renderer';
+import { createAppSettings, createChatSettings } from '@/test/data/factories';
 
 const { mockBuildContentParts, mockEnsureFilesApiReferences } = vi.hoisted(() => ({
   mockBuildContentParts: vi.fn(),

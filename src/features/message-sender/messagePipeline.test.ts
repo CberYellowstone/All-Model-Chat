@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SavedChatSession } from '@/types';
-import { createAppSettings, createChatSettings, createUploadedFile } from '@/test/factories';
+import { createAppSettings, createChatSettings, createUploadedFile } from '@/test/data/factories';
 
 const { playCompletionSoundMock } = vi.hoisted(() => ({
   playCompletionSoundMock: vi.fn(),

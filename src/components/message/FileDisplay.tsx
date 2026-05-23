@@ -156,7 +156,7 @@ export const FileDisplay: React.FC<FileDisplayProps> = ({
     );
   }
 
-  const { Icon, colorClass, bgClass } = CATEGORY_STYLES[category] || CATEGORY_STYLES['code'];
+  const { Icon, colorClass, bgClass } = CATEGORY_STYLES[category] || CATEGORY_STYLES['text'];
 
   return (
     <div

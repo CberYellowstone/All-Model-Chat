@@ -1,6 +1,6 @@
 import { act, type ComponentProps } from 'react';
 import { fireEvent } from '@testing-library/react';
-import { setupTestRenderer } from '@/test/testUtils';
+import { setupTestRenderer } from '@/test/render/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { BaseMarkdownRendererEntry } from './BaseMarkdownRendererEntry';

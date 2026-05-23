@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readProjectFile } from './architectureTestUtils';
+import { readProjectFile } from './projectFiles';
 
 describe('file preview state boundaries', () => {
   it('keeps copy state local to FilePreviewHeader', () => {

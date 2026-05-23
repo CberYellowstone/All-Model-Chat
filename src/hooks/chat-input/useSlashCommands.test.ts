@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSlashCommands } from './useSlashCommands';
-import { renderHook } from '@/test/testUtils';
+import { renderHook } from '@/test/render/renderer';
 
 const createProps = (overrides: Partial<Parameters<typeof useSlashCommands>[0]> = {}) => {
   const textarea = document.createElement('textarea');

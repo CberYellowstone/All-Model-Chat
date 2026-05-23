@@ -1,6 +1,6 @@
 import type { MutableRefObject } from 'react';
 import { type AppSettings, type UploadedFile, type MediaResolution } from '@/types';
-import { ALL_SUPPORTED_MIME_TYPES } from '@/constants/fileConstants';
+import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { logService } from '@/services/logService';
 import { releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { generateUniqueId } from '@/utils/chat/ids';
@@ -41,7 +41,7 @@ export const uploadFileItem = async ({
   const fileId = generateUniqueId();
   const effectiveMimeType = getEffectiveMimeType(file);
 
-  if (!ALL_SUPPORTED_MIME_TYPES.includes(effectiveMimeType)) {
+  if (!SUPPORTED_UPLOAD_MIME_TYPES.includes(effectiveMimeType)) {
     logService.warn(`Unsupported file type skipped: ${file.name}`, {
       type: file.type,
       effectiveType: effectiveMimeType,

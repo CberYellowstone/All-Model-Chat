@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 describe('codebase maintainability guardrails', () => {
   it('does not keep identity wrapper exports in mainContentModels', () => {
@@ -90,11 +90,15 @@ describe('codebase maintainability guardrails', () => {
     const mainContentSource = readProjectFile('src/components/layout/MainContent.tsx');
     const mainContentViewModelSource = readProjectFile('src/components/layout/useMainContentViewModel.ts');
     const runtimeContextSource = readProjectFile('src/components/layout/chat-runtime/ChatRuntimeContext.tsx');
+    const runtimeValuesSource = readProjectFile('src/components/layout/chat-runtime/chatRuntimeValues.ts');
+    const headerRuntimeValuesSource = readProjectFile('src/components/layout/chat-runtime/headerRuntimeValues.ts');
 
-    expect(runtimeContextSource).toContain('isPipSupported: pipState.isPipSupported,');
+    expect(headerRuntimeValuesSource).toContain('isPipSupported: pipState.isPipSupported,');
     expect(mainContentSource).not.toContain('pipState.isPipSupported && appSettings.useCustomApiConfig');
     expect(mainContentViewModelSource).not.toContain('pipState.isPipSupported && appSettings.useCustomApiConfig');
     expect(runtimeContextSource).not.toContain('pipState.isPipSupported && appSettings.useCustomApiConfig');
+    expect(runtimeValuesSource).not.toContain('pipState.isPipSupported && appSettings.useCustomApiConfig');
+    expect(headerRuntimeValuesSource).not.toContain('pipState.isPipSupported && appSettings.useCustomApiConfig');
   });
 
   it('keeps message-list scroll ownership local instead of routing scroll events back through chat state', () => {
@@ -334,10 +338,10 @@ describe('codebase maintainability guardrails', () => {
   });
 
   it('reuses the shared chat settings updater type for store-backed chat area contracts', () => {
-    const chatRuntimeContextSource = readProjectFile('src/components/layout/chat-runtime/ChatRuntimeContext.tsx');
+    const chatRuntimeTypesSource = readProjectFile('src/components/layout/chat-runtime/chatRuntimeTypes.ts');
     const chatStoreSource = readProjectFile('src/stores/chatStore.ts');
 
-    for (const source of [chatRuntimeContextSource, chatStoreSource]) {
+    for (const source of [chatRuntimeTypesSource, chatStoreSource]) {
       expect(source).toContain('ChatSettingsUpdater');
       expect(source).not.toContain('(updater: (prevSettings: ChatSettings) => ChatSettings) => void;');
       expect(source).not.toContain('(updater: (prev: ChatSettings) => ChatSettings) => void;');
@@ -389,6 +393,8 @@ describe('codebase maintainability guardrails', () => {
     const helperSource = readProjectFile('src/utils/lazyNamedComponent.ts');
     expect(helperSource).toContain('loadNamedComponent');
     expect(helperSource).toContain('lazyNamedComponent');
+    expect(helperSource).not.toContain('@typescript-eslint/no-explicit-any');
+    expect(helperSource).not.toContain('ComponentType<any>');
 
     const sourceFiles = listProjectSourceFiles('src').filter(
       (relativePath) => relativePath !== 'src/test/architecture/codebaseMaintainability.test.ts',

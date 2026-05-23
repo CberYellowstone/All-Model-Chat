@@ -35,7 +35,7 @@ export const getFileCardMeta = (
   const isVideo = category === 'video' || category === 'youtube';
   const isImage = category === 'image';
   const isPdf = category === 'pdf';
-  const isText = category === 'code';
+  const isText = category === 'text';
 
   const supportsConfiguration = isVideo || (isGemini3 && (isImage || isPdf)) || (includeTextEditing && isText);
 

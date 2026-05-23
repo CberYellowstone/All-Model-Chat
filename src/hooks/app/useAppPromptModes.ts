@@ -8,8 +8,8 @@ import {
   loadLiveArtifactsSystemPrompt,
   loadHdGuideSystemPrompt,
 } from '@/features/prompts/promptRegistry';
-import { DEFAULT_SYSTEM_INSTRUCTION } from '@/constants/appConstants';
-import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/storageKeys';
+import { DEFAULT_SYSTEM_INSTRUCTION } from '@/constants/settingsDefaults';
+import { focusChatInput } from '@/utils/chat-input/focus';
 import { getLiveArtifactsSystemPromptOverride } from '@/utils/liveArtifactsPromptSettings';
 import type { AppSettings, ChatSettings, InputCommand, SavedChatSession } from '@/types';
 
@@ -39,17 +39,6 @@ interface UseAppPromptModesOptions {
   handleSendMessage: (args: { text: string }) => void;
   setCommandedInput: (command: InputCommand) => void;
 }
-
-export const focusChatInput = (delayMs = 50) => {
-  setTimeout(() => {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    const textarea = document.querySelector(CHAT_INPUT_TEXTAREA_SELECTOR) as HTMLTextAreaElement | null;
-    textarea?.focus();
-  }, delayMs);
-};
 
 export const useAppPromptModes = ({
   language = 'zh',

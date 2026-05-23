@@ -1,4 +1,4 @@
-import { MODELS_MANDATORY_THINKING, THINKING_BUDGET_RANGES } from '@/constants/modelConstants';
+import { REQUIRED_THINKING_MODEL_IDS, THINKING_BUDGET_RANGES } from '@/constants/modelConfiguration';
 import { useModelPreferencesStore, type CachedModelSettings } from '@/stores/modelPreferencesStore';
 import { MediaResolution } from '@/types';
 
@@ -26,7 +26,7 @@ const adjustThinkingBudget = (modelId: string, currentBudget: number): number =>
 
   if (range) {
     const isGemini3 = isGemini3Model(modelId);
-    const isMandatory = MODELS_MANDATORY_THINKING.includes(modelId);
+    const isMandatory = REQUIRED_THINKING_MODEL_IDS.includes(modelId);
 
     if (isMandatory && newBudget === 0) {
       newBudget = isGemini3 ? -1 : range.max;

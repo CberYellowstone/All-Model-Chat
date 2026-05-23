@@ -1,24 +1,24 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 describe('refactor boundary guardrails', () => {
   it('keeps constants imports tied to focused constant modules', () => {
-    const appConstantsSource = readProjectFile('src/constants/appConstants.ts');
-
-    for (const reExport of [
-      "export * from './modelConstants';",
-      "export * from './shortcuts';",
-      "export * from './storageKeys';",
-      "export * from './styleClasses';",
-    ]) {
-      expect(appConstantsSource).not.toContain(reExport);
-    }
-
-    expect(fs.existsSync(path.join(projectRoot, 'src/constants/modelConstants.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/appConstants.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/styleClasses.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/settingsDefaults.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/buttonClasses.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/focusClasses.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/menuClasses.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/formClasses.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/fileTypeSupport.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/modelConfiguration.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/themeRegistry.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/fileConstants.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/modelConstants.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/constants/themeConstants.ts'))).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/constants/storageKeys.ts'))).toBe(true);
-    expect(fs.existsSync(path.join(projectRoot, 'src/constants/styleClasses.ts'))).toBe(true);
   });
 
   it('imports shared settings types through the central types barrel', () => {

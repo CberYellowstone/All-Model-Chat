@@ -1,8 +1,8 @@
 import { act } from 'react';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { renderHookWithProviders } from '@/test/providerTestUtils';
-import { createAppSettings, createChatSettings, createUploadedFile } from '@/test/factories';
-import { flushPromises } from '@/test/testUtils';
+import { renderHookWithProviders } from '@/test/render/providerRenderer';
+import { createAppSettings, createChatSettings, createUploadedFile } from '@/test/data/factories';
+import { flushPromises } from '@/test/render/renderer';
 import { useFilePolling } from './useFilePolling';
 
 const { getFileMetadataApiMock, getGeminiKeyForRequestMock } = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ vi.mock('@/utils/apiKeySelection', () => ({
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });

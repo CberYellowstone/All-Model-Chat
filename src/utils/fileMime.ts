@@ -1,4 +1,4 @@
-import { MIME_TO_EXTENSION_MAP } from '@/constants/fileConstants';
+import { MIME_TO_EXTENSION_MAP } from '@/constants/fileTypeSupport';
 import { isAudioMimeType, isImageMimeType, isVideoMimeType } from './fileTypeClassification';
 
 export const getExtensionFromMimeType = (mimeType: string): string => {

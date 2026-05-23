@@ -4,13 +4,13 @@ import type { SavedChatSession, UploadedFile } from '@/types';
 import { extractPersistedSessionFileRecords } from '@/utils/chat/session';
 import { useDataExport } from './useDataExport';
 import { useDataImport } from './useDataImport';
-import { renderHook } from '@/test/testUtils';
-import { createAppSettings, createChatSettings } from '@/test/factories';
+import { renderHook } from '@/test/render/renderer';
+import { createAppSettings, createChatSettings } from '@/test/data/factories';
 
 const mockGetAllSessions = vi.fn();
 
 vi.mock('@/services/db/dbService', async () => {
-  const { createDbServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createDbServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createDbServiceMockModule({
     getAllSessions: vi.fn((...args: unknown[]) => mockGetAllSessions(...args)),

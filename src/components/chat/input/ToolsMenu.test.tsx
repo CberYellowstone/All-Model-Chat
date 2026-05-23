@@ -1,12 +1,12 @@
 import { act } from 'react';
-import { setupProviderTestRenderer as setupTestRenderer } from '@/test/providerTestUtils';
+import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { describe, expect, it, vi } from 'vitest';
-import { setupStoreStateReset } from '@/test/storeTestUtils';
+import { setupStoreStateReset } from '@/test/stores/reset';
 import { ToolsMenu } from './ToolsMenu';
-import { createChatToolToggleStatesFromFlags } from '@/test/chatToolFixtures';
+import { createChatToolToggleStatesFromFlags } from '@/test/chat-tools/fixtures';
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });

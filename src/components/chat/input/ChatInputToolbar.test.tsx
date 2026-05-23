@@ -1,8 +1,8 @@
 import { act } from 'react';
-import { setupTestRenderer } from '@/test/testUtils';
+import { setupTestRenderer } from '@/test/render/renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
-import { createChatInputToolbarContextValue } from '@/test/chatInputContextFixtures';
+import { createChatInputToolbarContextValue } from '@/test/chat-input/contextFixtures';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
 
 const personGenerationSelectorMock = vi.fn();

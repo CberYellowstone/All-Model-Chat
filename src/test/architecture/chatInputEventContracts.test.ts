@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readProjectFile } from './architectureTestUtils';
+import { readProjectFile } from './projectFiles';
 
 describe('chat input event contracts', () => {
   it('keeps chat input event handlers on explicit command contracts instead of double-casting events', () => {

@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { renderHookWithProviders } from '@/test/providerTestUtils';
+import { renderHookWithProviders } from '@/test/render/providerRenderer';
 import { useFileDragDrop } from './useFileDragDrop';
 
 function createFileEntry(fullPath: string, file: File): FileSystemFileEntry {

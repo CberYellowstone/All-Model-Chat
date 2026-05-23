@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SavedChatSession } from '@/types';
-import { createChatSettings } from '@/test/factories';
-import { renderHook } from '@/test/testUtils';
+import { createChatSettings } from '@/test/data/factories';
+import { renderHook } from '@/test/render/renderer';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useHistorySidebarLogic } from './useHistorySidebarLogic';
 

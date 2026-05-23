@@ -1,5 +1,5 @@
 import { API_USAGE_STORE } from './dbSchema';
-import { getDb, transactionToPromise, withWriteLock } from './idbUtils';
+import { getDb, transactionToPromise, withWriteLock } from './indexedDbAccess';
 
 export interface ApiUsageRecord {
   id?: number;

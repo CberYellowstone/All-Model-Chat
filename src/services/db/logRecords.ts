@@ -1,6 +1,6 @@
 import type { LogEntry } from '@/types/logging';
 import { LOGS_STORE } from './dbSchema';
-import { getDb, transactionToPromise, withWriteLock } from './idbUtils';
+import { getDb, transactionToPromise, withWriteLock } from './indexedDbAccess';
 
 export const addLogs = (logs: LogEntry[]) =>
   withWriteLock(async () => {

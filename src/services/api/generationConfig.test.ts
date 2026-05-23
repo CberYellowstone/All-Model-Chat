@@ -4,11 +4,11 @@ import {
   buildGenerationConfig as buildGenerationConfigFromSettings,
   toCountTokensConfig,
 } from './generationConfig';
-import { DEFAULT_APP_SETTINGS } from '@/constants/appConstants';
+import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { MediaResolution, type ThinkingLevel } from '@/types';
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });

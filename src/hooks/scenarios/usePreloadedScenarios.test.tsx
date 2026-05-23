@@ -1,11 +1,11 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_APP_SETTINGS } from '@/constants/appConstants';
+import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { SYSTEM_SCENARIO_IDS } from '@/features/scenarios/scenarioLibrary';
 import type { SavedChatSession } from '@/types';
 import { createNewSession } from '@/utils/chat/session';
 import { usePreloadedScenarios } from './usePreloadedScenarios';
-import { renderHook } from '@/test/testUtils';
+import { renderHook } from '@/test/render/renderer';
 
 const { localStorageMock } = vi.hoisted(() => {
   const store = new Map<string, string>();
@@ -31,7 +31,7 @@ const { localStorageMock } = vi.hoisted(() => {
 });
 
 vi.mock('@/services/db/dbService', async () => {
-  const { createDbServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createDbServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createDbServiceMockModule();
 });
@@ -52,7 +52,7 @@ vi.mock('@/utils/chat/session', () => ({
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });

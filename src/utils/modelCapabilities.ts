@@ -1,11 +1,11 @@
-import { GEMINI_3_REQUIRED_THINKING_MODEL_IDS, MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConstants';
+import { REQUIRED_THINKING_MODEL_IDS, MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConfiguration';
 import type { ThinkingLevel } from '@/types';
 
 export const isGemini3Model = (modelId: string): boolean => {
   if (!modelId) return false;
   const lowerId = modelId.toLowerCase();
   return (
-    GEMINI_3_REQUIRED_THINKING_MODEL_IDS.some((model) => lowerId.includes(model)) ||
+    REQUIRED_THINKING_MODEL_IDS.some((model) => lowerId.includes(model)) ||
     lowerId.includes('gemini-3-pro') ||
     lowerId.includes('gemini-3.1-flash')
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render } from '@/test/testUtils';
+import { render } from '@/test/render/renderer';
 import { IconSidebarToggle } from './GeneralIcons';
 
 describe('GeneralIcons', () => {

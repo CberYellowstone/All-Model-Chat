@@ -9,6 +9,7 @@ const mcpSettings = {
     en: 'No MCP servers configured yet.',
     zh: '尚未配置 MCP 服务器。',
   },
+  settingsMcpNewServer: { en: 'New MCP Server', zh: '新 MCP 服务器' },
   settingsMcpUnnamedServer: { en: 'MCP Server {index}', zh: 'MCP 服务器 {index}' },
   settingsMcpRemoveServer: { en: 'Remove MCP server', zh: '移除 MCP 服务器' },
   settingsMcpServerName: { en: 'Name', zh: '名称' },

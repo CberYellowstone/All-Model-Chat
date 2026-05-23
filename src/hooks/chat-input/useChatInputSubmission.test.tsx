@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAppSettings, createChatSettings } from '@/test/factories';
-import { renderHook } from '@/test/testUtils';
+import { createAppSettings, createChatSettings } from '@/test/data/factories';
+import { renderHook } from '@/test/render/renderer';
 import { useChatInputSubmission } from './useChatInputSubmission';
 
 const createSubmissionParams = () => {

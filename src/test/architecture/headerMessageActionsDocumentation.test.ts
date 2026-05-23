@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readProjectFile } from './architectureTestUtils';
+import { readProjectFile } from './projectFiles';
 
 describe('header, message actions, and documentation guardrails', () => {
   it('removes dead Header prop references', () => {

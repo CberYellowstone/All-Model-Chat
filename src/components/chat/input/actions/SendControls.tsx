@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Edit2, ArrowUp, CornerDownLeft, Ban } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconStop } from '@/components/icons';
-import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/styleClasses';
+import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { useChatInputRuntime } from '@/components/layout/chat-runtime/ChatRuntimeContext';
 import { useChatStore } from '@/stores/chatStore';
 import {

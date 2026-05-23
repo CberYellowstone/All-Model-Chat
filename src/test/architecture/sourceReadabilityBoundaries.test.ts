@@ -1,5 +1,7 @@
+import fs from 'fs';
+import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 describe('source readability boundaries', () => {
   it('keeps chat input context type contracts out of the context runtime module', () => {
@@ -24,7 +26,7 @@ describe('source readability boundaries', () => {
   });
 
   it('keeps architecture guard tests on the shared filesystem helpers', () => {
-    const utilitySource = readProjectFile('src/test/architecture/architectureTestUtils.ts');
+    const utilitySource = readProjectFile('src/test/architecture/projectFiles.ts');
     const architectureTests = listProjectSourceFiles('src/test/architecture').filter(
       (relativePath) =>
         relativePath.endsWith('.test.ts') &&
@@ -38,6 +40,7 @@ describe('source readability boundaries', () => {
       );
     });
 
+    expect(fs.existsSync(path.join(projectRoot, 'src/test/architecture/architectureTestUtils.ts'))).toBe(false);
     expect(utilitySource).toContain('.sort(');
     expect(localHelperOffenders).toEqual([]);
   });

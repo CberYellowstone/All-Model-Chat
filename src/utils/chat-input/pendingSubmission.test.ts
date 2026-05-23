@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createUploadedFile } from '@/test/factories';
+import { createUploadedFile } from '@/test/data/factories';
 import type { UploadedFile } from '@/types';
 import {
   getBlockingFileUploadFailure,

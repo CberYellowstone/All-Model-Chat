@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { type translations } from '@/i18n/translations';
-import { renderHook } from '@/test/testUtils';
+import { renderHook } from '@/test/render/renderer';
 import { useScenarioManager } from './useScenarioManager';
 
 const createHookProps = () => ({

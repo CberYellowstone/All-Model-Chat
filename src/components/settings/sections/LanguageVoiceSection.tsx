@@ -4,8 +4,8 @@ import { Languages } from 'lucide-react';
 import {
   DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE,
   TRANSLATION_TARGET_LANGUAGE_OPTIONS,
-} from '@/constants/appConstants';
-import { DEFAULT_THOUGHT_TRANSLATION_MODEL_ID } from '@/constants/modelConstants';
+} from '@/constants/translationOptions';
+import { DEFAULT_THOUGHT_TRANSLATION_MODEL_ID } from '@/constants/modelConfiguration';
 import { type AppSettings, type ModelOption, type TranslationTargetLanguage } from '@/types';
 import { Select } from '@/components/shared/Select';
 import { VoiceControl } from '@/components/settings/controls/VoiceControl';

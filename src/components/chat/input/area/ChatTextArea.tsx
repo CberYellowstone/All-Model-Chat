@@ -1,6 +1,6 @@
 import React, { useRef, useLayoutEffect, type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { MAX_TEXTAREA_HEIGHT_PX } from '@/components/chat/input/chatInputLayoutConstants';
+import { MAX_TEXTAREA_HEIGHT_PX } from '@/components/chat/input/chatInputTextAreaMetrics';
 
 interface ChatTextAreaProps {
   textareaRef: RefObject<HTMLTextAreaElement>;

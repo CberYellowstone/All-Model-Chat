@@ -7,12 +7,12 @@ import { useWindowContext } from '@/contexts/WindowContext';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import {
-  FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS,
   MENU_ITEM_BUTTON_CLASS,
   MENU_ITEM_COMPACT_BUTTON_CLASS,
   MENU_ITEM_DEFAULT_STATE_CLASS,
-} from '@/constants/styleClasses';
+} from '@/constants/menuClasses';
 
 type HastElementLike = {
   properties?: Record<string, unknown>;

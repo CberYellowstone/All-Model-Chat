@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sendStandardMessage } from './standardChatStrategy';
-import { createStandardChatProps, type StandardChatPropsOverrides } from '@/test/hookFactories';
+import { createStandardChatProps, type StandardChatPropsOverrides } from '@/test/hooks/factories';
 import { MediaResolution } from '@/types';
 import type { PreparedModelRequest } from './useModelRequestRunner';
 
@@ -39,7 +39,7 @@ const {
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });
@@ -76,8 +76,8 @@ vi.mock('@/utils/modelCapabilities', () => ({
   getModelCapabilities: mockModelCapabilities,
 }));
 
-vi.mock('@/constants/appConstants', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/constants/appConstants')>();
+vi.mock('@/constants/settingsDefaults', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/constants/settingsDefaults')>();
 
   return {
     ...actual,

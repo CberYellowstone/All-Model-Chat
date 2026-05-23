@@ -5,7 +5,7 @@ import {
   type UploadedFile,
   MediaResolution,
 } from '@/types';
-import { ALL_SUPPORTED_MIME_TYPES } from '@/constants/fileConstants';
+import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { logService } from '@/services/logService';
 import { getApiKeyErrorTranslationKey, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { generateUniqueId } from '@/utils/chat/ids';
@@ -103,7 +103,7 @@ export const useFileIdAdder = ({
 
           // Allow known video types or generic octet-stream (often used for arbitrary files)
           // But strictly validate if it is a supported type if it's not generic
-          const isValidType = ALL_SUPPORTED_MIME_TYPES.includes(mimeType) || isVideoMimeType(mimeType);
+          const isValidType = SUPPORTED_UPLOAD_MIME_TYPES.includes(mimeType) || isVideoMimeType(mimeType);
 
           if (!isValidType) {
             logService.warn(`Unsupported file type for file ID ${fileApiId}`, { type: mimeType });

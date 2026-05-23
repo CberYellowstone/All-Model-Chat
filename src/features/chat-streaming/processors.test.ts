@@ -15,7 +15,7 @@ vi.mock('@/i18n/translations', () => ({
   getTranslator: () => (key: string) => key,
 }));
 
-import { createChatSettings } from '@/test/factories';
+import { createChatSettings } from '@/test/data/factories';
 import { finalizeMessages } from './processors';
 
 describe('finalizeMessages', () => {

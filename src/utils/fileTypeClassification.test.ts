@@ -44,7 +44,11 @@ describe('fileTypeClassification', () => {
   it('keeps getFileTypeCategory compatible with existing UI categories', () => {
     expect(getFileTypeCategory('video/youtube-link')).toBe('youtube');
     expect(getFileTypeCategory('application/pdf')).toBe('pdf');
-    expect(getFileTypeCategory('text/plain')).toBe('code');
+    expect(getFileTypeCategory('text/plain')).toBe('text');
+    expect(getFileTypeCategory('application/vnd.openxmlformats-officedocument.wordprocessingml.document')).toBe('doc');
+    expect(getFileTypeCategory('application/vnd.ms-powerpoint')).toBe('presentation');
+    expect(getFileTypeCategory('application/zip')).toBe('archive');
+    expect(getFileTypeCategory('application/x-unknown')).toBe('text');
     expect(getFileTypeCategory('image/png', 'upload failed')).toBe('error');
   });
 

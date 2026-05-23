@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { setupProviderTestRenderer } from '@/test/providerTestUtils';
+import { setupProviderTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ChatInputTestProvider,
@@ -9,7 +9,7 @@ import {
   type ChatAreaProviderValue,
   resetChatInputHarnessState,
   setTextareaValue,
-} from '@/test/chatInputHarness';
+} from '@/test/chat-input/harness';
 import { type UploadedFile } from '@/types';
 import { ChatInput } from './ChatInput';
 

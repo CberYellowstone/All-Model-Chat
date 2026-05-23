@@ -8,7 +8,7 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import {
   FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS,
   FOCUS_VISIBLE_RING_SECONDARY_OFFSET_CLASS,
-} from '@/constants/styleClasses';
+} from '@/constants/focusClasses';
 
 interface HelpModalProps {
   isOpen: boolean;

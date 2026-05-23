@@ -9,7 +9,7 @@ import { useTokenCountLogic } from '@/hooks/token-count/useTokenCountLogic';
 import { TokenCountInput } from './token-count/TokenCountInput';
 import { TokenCountFiles } from './token-count/TokenCountFiles';
 import { TokenCountFooter } from './token-count/TokenCountFooter';
-import { MODAL_CLOSE_BUTTON_CLASS } from '@/constants/styleClasses';
+import { MODAL_CLOSE_BUTTON_CLASS } from '@/constants/buttonClasses';
 
 interface TokenCountModalProps {
   isOpen: boolean;

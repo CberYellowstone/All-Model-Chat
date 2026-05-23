@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { projectRoot } from './architectureTestUtils';
+import { projectRoot } from './projectFiles';
 
 const animationsPath = path.join(projectRoot, 'src/styles/animations.css');
 const mainCssPath = path.join(projectRoot, 'src/styles/main.css');

@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@/test/testUtils';
+import { renderHook } from '@/test/render/renderer';
 import { useVoiceInput } from './useVoiceInput';
 
 const { mockUseRecorder } = vi.hoisted(() => ({

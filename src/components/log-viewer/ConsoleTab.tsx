@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Filter, Download, Trash2, RefreshCw, Terminal } from 'lucide-react';
 import type { LogEntry, LogLevel, LogCategory } from '@/types/logging';
-import { LOG_LEVEL_COLORS, CATEGORY_COLORS } from './constants';
+import { LOG_LEVEL_COLORS, CATEGORY_COLORS } from './logColorClasses';
 import { LogRow } from './LogRow';
 import { useI18n } from '@/contexts/I18nContext';
-import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/styleClasses';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
 

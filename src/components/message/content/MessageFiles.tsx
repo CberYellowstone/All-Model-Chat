@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { type UploadedFile } from '@/types';
 import { FileDisplay } from '@/components/message/FileDisplay';
-import { SUPPORTED_IMAGE_MIME_TYPES } from '@/constants/fileConstants';
+import { SUPPORTED_IMAGE_MIME_TYPES } from '@/constants/fileTypeSupport';
 
 interface MessageFilesProps {
   files: UploadedFile[];

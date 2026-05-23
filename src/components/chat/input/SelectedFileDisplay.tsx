@@ -90,7 +90,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
     requireActiveForConfigure: true,
     canConfigure: !!onConfigure,
   });
-  const { Icon, colorClass, bgClass } = CATEGORY_STYLES[category] || CATEGORY_STYLES['code'];
+  const { Icon, colorClass, bgClass } = CATEGORY_STYLES[category] || CATEGORY_STYLES['text'];
 
   const ErrorIcon = CATEGORY_STYLES['error'].Icon;
   const canCopyFileId = Boolean(file.fileApiName && isActive && !file.error);

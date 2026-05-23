@@ -14,11 +14,8 @@ import {
   IconZip,
   IconYoutube,
 } from '@/components/icons';
-import {
-  CHAT_INPUT_BUTTON_CLASS,
-  MENU_ITEM_BUTTON_CLASS,
-  MENU_ITEM_DEFAULT_STATE_CLASS,
-} from '@/constants/styleClasses';
+import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { MENU_ITEM_BUTTON_CLASS, MENU_ITEM_DEFAULT_STATE_CLASS } from '@/constants/menuClasses';
 import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
 import { useChatInputActionsContext } from './ChatInputContext';
 

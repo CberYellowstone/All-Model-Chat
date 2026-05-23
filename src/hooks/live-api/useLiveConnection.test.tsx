@@ -7,7 +7,7 @@ const { mockGetLiveApiClient, mockFloat32ToPCM16Base64 } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });
@@ -27,9 +27,9 @@ vi.mock('@/features/audio/audioProcessing', () => ({
 }));
 
 import { useLiveConnection } from './useLiveConnection';
-import { createAppSettings } from '@/test/factories';
-import { createLiveSessionRef, createLiveSessionStub } from '@/test/liveApiFixtures';
-import { renderHook } from '@/test/testUtils';
+import { createAppSettings } from '@/test/data/factories';
+import { createLiveSessionRef, createLiveSessionStub } from '@/test/live-api/fixtures';
+import { renderHook } from '@/test/render/renderer';
 
 const flushAsyncConnect = async () => {
   await Promise.resolve();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { projectRoot, readProjectFile } from './architectureTestUtils';
+import { projectRoot, readProjectFile } from './projectFiles';
 
 const getCallBlock = (source: string, callStart: string) => {
   const startIndex = source.indexOf(callStart);

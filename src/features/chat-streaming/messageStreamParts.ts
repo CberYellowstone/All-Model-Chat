@@ -1,6 +1,6 @@
 import type { Part } from '@google/genai';
 import type { UploadedFile } from '@/types';
-import { SUPPORTED_GENERATED_MIME_TYPES } from '@/constants/fileConstants';
+import { SUPPORTED_GENERATED_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/fileTypeClassification';

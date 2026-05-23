@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { projectRoot } from './architectureTestUtils';
+import { projectRoot } from './projectFiles';
 
 const manifestPath = path.join(projectRoot, 'manifest.json');
 const indexHtmlPath = path.join(projectRoot, 'index.html');

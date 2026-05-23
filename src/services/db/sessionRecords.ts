@@ -5,7 +5,7 @@ import {
   stripSessionFilePayloads,
 } from '@/utils/chat/session';
 import { FILES_STORE, SESSIONS_STORE } from './dbSchema';
-import { getAll, getDb, getItem, transactionToPromise, withWriteLock } from './idbUtils';
+import { getAll, getDb, getItem, transactionToPromise, withWriteLock } from './indexedDbAccess';
 
 const getSessionFileRecords = async (sessionId: string): Promise<PersistedSessionFileRecord[]> => {
   const db = await getDb();

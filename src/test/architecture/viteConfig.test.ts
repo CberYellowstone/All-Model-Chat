@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { projectRoot } from './architectureTestUtils';
+import { projectRoot } from './projectFiles';
 
 const viteConfigPath = path.join(projectRoot, 'vite.config.ts');
 const viteChunksPath = path.join(projectRoot, 'vite/chunks.ts');
@@ -22,6 +22,9 @@ const standardClientFunctionsPath = path.join(projectRoot, 'src/features/standar
 const liveClientFunctionsPath = path.join(projectRoot, 'src/utils/live-api/liveClientFunctions.ts');
 const ttsVoiceSelectorPath = path.join(projectRoot, 'src/components/chat/input/toolbar/TtsVoiceSelector.tsx');
 const markdownPdfExportPath = path.join(projectRoot, 'src/utils/export/markdownPdf.ts');
+const markdownPdfFontsPath = path.join(projectRoot, 'src/utils/export/markdownPdfFonts.ts');
+const markdownPdfImagesPath = path.join(projectRoot, 'src/utils/export/markdownPdfImages.ts');
+const markdownPdfRendererPath = path.join(projectRoot, 'src/utils/export/MarkdownPdfRenderer.ts');
 const chatInputModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputModals.tsx');
 const chatInputFileModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputFileModals.tsx');
 const useCreateFileEditorPath = path.join(projectRoot, 'src/components/modals/create-file/useCreateFileEditor.ts');
@@ -29,7 +32,7 @@ const clipboardDataPath = path.join(projectRoot, 'src/utils/chat-input/clipboard
 const useChatInputClipboardPath = path.join(projectRoot, 'src/hooks/chat-input/useChatInputClipboard.ts');
 const useSelectionPositionPath = path.join(projectRoot, 'src/hooks/text-selection/useSelectionPosition.ts');
 const tableBlockPath = path.join(projectRoot, 'src/components/message/blocks/TableBlock.tsx');
-const importContextLoadersPath = path.join(projectRoot, 'src/utils/importContextLoaders.ts');
+const importContextLoadersPath = path.join(projectRoot, 'src/utils/import-context/loaders.ts');
 const useFileDragDropPath = path.join(projectRoot, 'src/hooks/file-upload/useFileDragDrop.ts');
 const useFilePreProcessingPath = path.join(projectRoot, 'src/hooks/file-upload/useFilePreProcessing.ts');
 const useFilePreProcessingEffectsPath = path.join(projectRoot, 'src/hooks/chat-input/useFilePreProcessingEffects.ts');
@@ -161,6 +164,21 @@ describe('vite.config runtime ownership', () => {
     expect(source).not.toContain('html2pdf');
   });
 
+  it('keeps Markdown PDF font, image, and renderer responsibilities split', () => {
+    const markdownPdfSource = fs.readFileSync(markdownPdfExportPath, 'utf8');
+    const rendererSource = fs.readFileSync(markdownPdfRendererPath, 'utf8');
+
+    expect(fs.existsSync(markdownPdfFontsPath)).toBe(true);
+    expect(fs.existsSync(markdownPdfImagesPath)).toBe(true);
+    expect(fs.existsSync(markdownPdfRendererPath)).toBe(true);
+    expect(markdownPdfSource).toContain("from './MarkdownPdfRenderer'");
+    expect(markdownPdfSource).not.toContain('class MarkdownPdfRenderer');
+    expect(markdownPdfSource).not.toContain('loadCjkFontBase64');
+    expect(markdownPdfSource).not.toContain('fetchImageAsDataUrl');
+    expect(rendererSource).toContain("from './markdownPdfFonts'");
+    expect(rendererSource).toContain("from './markdownPdfImages'");
+  });
+
   it('keeps create-file PDF export code out of the initial chat input bundle', () => {
     const chatInputModalsSource = fs.readFileSync(chatInputModalsPath, 'utf8');
     const useCreateFileEditorSource = fs.readFileSync(useCreateFileEditorPath, 'utf8');
@@ -223,11 +241,11 @@ describe('vite.config runtime ownership', () => {
     expect(useFilePreProcessingSource).not.toContain("import('@/utils/folderImportUtils')");
     expect(useFilePreProcessingEffectsSource).not.toContain("import('@/utils/folderImportUtils')");
 
-    expect(importContextLoadersSource).toContain("import('./import-context/importContextBuilder')");
+    expect(importContextLoadersSource).toContain("import('./importContextBuilder')");
     expect(useFileDragDropSource).toContain("import('@/utils/import-context/droppedItems')");
     expect(useFileDragDropSource).toContain("import('@/utils/import-context/importContextBuilder')");
-    expect(useFilePreProcessingSource).toContain("import('@/utils/importContextLoaders')");
-    expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/importContextLoaders')");
+    expect(useFilePreProcessingSource).toContain("import('@/utils/import-context/loaders')");
+    expect(useFilePreProcessingEffectsSource).toContain("import('@/utils/import-context/loaders')");
   });
 });
 

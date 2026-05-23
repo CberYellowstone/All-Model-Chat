@@ -437,15 +437,16 @@ export const useLiveConnection = ({
     disconnectRef.current = disconnect;
   }, [disconnect]);
 
-  useEffect(() => {
-    return () => {
-      isUserDisconnectRef.current = true;
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- Unmount cleanup needs the latest connection flags from stable refs.
-      if (isConnectedRef.current || isReconnectingRef.current || isConnectingRef.current) {
-        disconnectRef.current();
-      }
-    };
+  const disconnectOnUnmount = useCallback(() => {
+    isUserDisconnectRef.current = true;
+    if (isConnectedRef.current || isReconnectingRef.current || isConnectingRef.current) {
+      disconnectRef.current();
+    }
   }, [isConnectedRef, isReconnectingRef]);
+
+  useEffect(() => {
+    return disconnectOnUnmount;
+  }, [disconnectOnUnmount]);
 
   return {
     isConnected,

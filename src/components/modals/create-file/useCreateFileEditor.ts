@@ -10,7 +10,7 @@ import {
 import { isImageMimeType } from '@/utils/fileTypeClassification';
 import { CREATE_TEXT_FILE_EDITOR_LAST_EXTENSION_KEY } from '@/constants/storageKeys';
 import { useI18n } from '@/contexts/I18nContext';
-import { SUPPORTED_EXTENSIONS } from './createFileEditorConstants';
+import { CREATE_FILE_EXTENSION_OPTIONS } from './createFileExtensionOptions';
 
 interface UseCreateFileEditorProps {
   initialContent: string;
@@ -50,7 +50,7 @@ export const useCreateFileEditor = ({
     if (!initialFilename) {
       if (typeof window !== 'undefined') {
         const storedExtension = window.localStorage.getItem(CREATE_TEXT_FILE_EDITOR_LAST_EXTENSION_KEY);
-        if (storedExtension && SUPPORTED_EXTENSIONS.includes(storedExtension)) {
+        if (storedExtension && CREATE_FILE_EXTENSION_OPTIONS.includes(storedExtension)) {
           return storedExtension;
         }
       }

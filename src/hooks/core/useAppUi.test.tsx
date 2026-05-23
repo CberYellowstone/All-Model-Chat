@@ -2,7 +2,7 @@ import { act, type TouchEvent } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppUi } from './useAppUi';
 import { useUIStore } from '@/stores/uiStore';
-import { renderHook } from '@/test/testUtils';
+import { renderHook } from '@/test/render/renderer';
 
 const createTouchEvent = (target: EventTarget, x: number, y: number): TouchEvent =>
   ({

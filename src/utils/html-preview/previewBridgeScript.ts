@@ -13,7 +13,7 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
     if (!(element instanceof Element)) return undefined;
     return element.getAttribute('src') || element.getAttribute('href') || element.getAttribute('poster') || undefined;
   };
-  const maybeNotifyResourceError = (event) => {
+  const isSupportedResourceError = (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return false;
 
@@ -30,7 +30,7 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
     return true;
   };
   window.addEventListener('error', (event) => {
-    if (maybeNotifyResourceError(event)) return;
+    if (isSupportedResourceError(event)) return;
 
     notifyDiagnostic({
       type: 'runtime-error',

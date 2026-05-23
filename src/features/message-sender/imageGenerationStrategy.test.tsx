@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getTranslator } from '@/i18n/translations';
-import { createAppSettings, createChatSettings } from '@/test/factories';
+import { createAppSettings, createChatSettings } from '@/test/data/factories';
 
 const {
   handleApiErrorMock,

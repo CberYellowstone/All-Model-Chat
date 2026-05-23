@@ -1,8 +1,8 @@
 import { act, type ComponentProps } from 'react';
-import { setupProviderTestRenderer as setupTestRenderer } from '@/test/providerTestUtils';
+import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_APP_SETTINGS, DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
-import { setupStoreStateReset } from '@/test/storeTestUtils';
+import { DEFAULT_APP_SETTINGS, DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
+import { setupStoreStateReset } from '@/test/stores/reset';
 import { SettingsModal } from './SettingsModal';
 
 describe('SettingsModal', () => {

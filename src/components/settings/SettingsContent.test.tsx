@@ -1,7 +1,7 @@
 import { act, type ComponentProps } from 'react';
-import { setupTestRenderer } from '@/test/testUtils';
+import { setupTestRenderer } from '@/test/render/renderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_APP_SETTINGS } from '@/constants/appConstants';
+import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { SettingsContent } from './SettingsContent';
 import type { SettingsTab } from '@/stores/settingsUiStore';
 import type { ModelsSection } from './sections/ModelsSection';

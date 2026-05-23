@@ -4,28 +4,26 @@ import {
   type SavedChatSession,
   type ChatGroup,
   type UploadedFile,
-  type ChatSettings,
   type ChatMessage,
   type InputCommand,
 } from '@/types';
-import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
-import { ACTIVE_CHAT_SESSION_ID_KEY, CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
 import { createNewSession, rehydrateSessionFiles } from '@/utils/chat/session';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
-import { resolveSupportedModelId } from '@/utils/modelSorting';
 import { dbService } from '@/services/db/dbService';
 import { useChatStore, type SetActiveSessionOptions } from '@/stores/chatStore';
+import {
+  cleanupSessionFilePreviews,
+  clearSessionDraftFiles,
+  getSessionDraftFiles,
+  retainRuntimeSession,
+  storeSessionDraftFiles,
+  toSessionMetadata,
+} from './sessionLoaderDrafts';
+import { loadInitialSessionData } from './sessionInitialLoad';
+import { createSettingsForNewChat, sanitizeSessionModel } from './sessionLoaderSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 type SessionLoaderHistoryOptions = Pick<SetActiveSessionOptions, 'history'>;
-
-const focusChatInput = () => {
-  setTimeout(() => {
-    document.querySelector<HTMLTextAreaElement>(CHAT_INPUT_TEXTAREA_SELECTOR)?.focus();
-  }, 0);
-};
-
-const toSessionMetadata = (session: SavedChatSession): SavedChatSession => ({ ...session, messages: [] });
 
 interface UseSessionLoaderProps {
   appSettings: AppSettings;
@@ -69,111 +67,18 @@ export const useSessionLoader = ({
 }: UseSessionLoaderProps) => {
   const sessionViewRequestIdRef = useRef(0);
 
-  const sortSessionsByPinnedAndTimestamp = useCallback(
-    (sessions: SavedChatSession[]) =>
-      [...sessions].sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return b.timestamp - a.timestamp;
+  const buildSettingsForNewChat = useCallback(
+    (explicitTemplateSession?: SavedChatSession, options?: { excludeTemplateSessionId?: string | null }) =>
+      createSettingsForNewChat({
+        appSettings,
+        savedSessions,
+        explicitTemplateSession,
+        excludeTemplateSessionId: options?.excludeTemplateSessionId,
       }),
-    [],
+    [appSettings, savedSessions],
   );
 
-  const sanitizeSessionModel = useCallback(
-    (session: SavedChatSession): SavedChatSession => ({
-      ...session,
-      settings: {
-        ...session.settings,
-        modelId: resolveSupportedModelId(session.settings?.modelId, DEFAULT_CHAT_SETTINGS.modelId),
-      },
-    }),
-    [],
-  );
-
-  const getMostRecentTemplateSession = useCallback(
-    (excludeSessionId?: string | null) => {
-      return [...savedSessions]
-        .filter((session) => session.id !== excludeSessionId)
-        .sort((a, b) => b.timestamp - a.timestamp)[0];
-    },
-    [savedSessions],
-  );
-
-  const createSettingsForNewChat = useCallback(
-    (
-      explicitTemplateSession?: SavedChatSession,
-      options?: { excludeTemplateSessionId?: string | null },
-    ): ChatSettings => {
-      let settingsForNewChat: ChatSettings = {
-        ...DEFAULT_CHAT_SETTINGS,
-        ...appSettings,
-        lockedApiKey: null,
-      };
-
-      const templateSession =
-        explicitTemplateSession || getMostRecentTemplateSession(options?.excludeTemplateSessionId);
-
-      if (templateSession) {
-        const sanitizedTemplate = sanitizeSessionModel(templateSession);
-        settingsForNewChat = {
-          ...settingsForNewChat,
-          modelId: sanitizedTemplate.settings.modelId,
-          isGoogleSearchEnabled: sanitizedTemplate.settings.isGoogleSearchEnabled,
-          isCodeExecutionEnabled: sanitizedTemplate.settings.isCodeExecutionEnabled,
-          isUrlContextEnabled: sanitizedTemplate.settings.isUrlContextEnabled,
-          isDeepSearchEnabled: sanitizedTemplate.settings.isDeepSearchEnabled,
-          thinkingBudget: sanitizedTemplate.settings.thinkingBudget,
-          thinkingLevel: sanitizedTemplate.settings.thinkingLevel,
-          ttsVoice: sanitizedTemplate.settings.ttsVoice,
-        };
-      }
-
-      return settingsForNewChat;
-    },
-    [appSettings, getMostRecentTemplateSession, sanitizeSessionModel],
-  );
-
-  const retainOutgoingSessionRuntime = useCallback(() => {
-    if (!activeSessionId || !activeChat || activeChat.messages.length === 0) {
-      return;
-    }
-
-    const runtimeSession = sanitizeSessionModel(activeChat);
-    setSavedSessions((prev) => {
-      const exists = prev.some((session) => session.id === activeSessionId);
-
-      if (exists) {
-        return prev.map((session) =>
-          session.id === activeSessionId
-            ? { ...session, ...runtimeSession, messages: runtimeSession.messages }
-            : session,
-        );
-      }
-
-      return [runtimeSession, ...prev];
-    });
-  }, [activeChat, activeSessionId, sanitizeSessionModel, setSavedSessions]);
-
-  const retainOutgoingSessionDraft = useCallback(
-    (options?: { skipSessionId?: string }) => {
-      if (!activeSessionId || activeSessionId === options?.skipSessionId) {
-        return;
-      }
-
-      retainOutgoingSessionRuntime();
-      fileDraftsRef.current[activeSessionId] = selectedFiles;
-
-      activeChat?.messages.forEach((message) => cleanupFilePreviewUrls(message.files));
-    },
-    [activeChat, activeSessionId, fileDraftsRef, retainOutgoingSessionRuntime, selectedFiles],
-  );
-
-  const restoreDraftFiles = useCallback(
-    (sessionId: string) => {
-      setSelectedFiles(fileDraftsRef.current[sessionId] || []);
-    },
-    [fileDraftsRef, setSelectedFiles],
-  );
+  const normalizeSessionModel = useCallback((session: SavedChatSession) => sanitizeSessionModel(session), []);
 
   const mergeSessionMetadata = useCallback(
     (session: SavedChatSession) => {
@@ -193,23 +98,53 @@ export const useSessionLoader = ({
     [setSavedSessions],
   );
 
+  const retainOutgoingSessionRuntime = useCallback(() => {
+    if (!activeSessionId || !activeChat || activeChat.messages.length === 0) {
+      return;
+    }
+
+    const runtimeSession = normalizeSessionModel(activeChat);
+    setSavedSessions((prev) => retainRuntimeSession(prev, activeSessionId, runtimeSession));
+  }, [activeChat, activeSessionId, normalizeSessionModel, setSavedSessions]);
+
+  const retainOutgoingSessionDraft = useCallback(
+    (options?: { skipSessionId?: string }) => {
+      if (!activeSessionId || activeSessionId === options?.skipSessionId) {
+        return;
+      }
+
+      retainOutgoingSessionRuntime();
+      storeSessionDraftFiles(fileDraftsRef.current, activeSessionId, selectedFiles);
+
+      cleanupSessionFilePreviews(activeChat);
+    },
+    [activeChat, activeSessionId, fileDraftsRef, retainOutgoingSessionRuntime, selectedFiles],
+  );
+
+  const restoreDraftFiles = useCallback(
+    (sessionId: string) => {
+      setSelectedFiles(getSessionDraftFiles(fileDraftsRef.current, sessionId));
+    },
+    [fileDraftsRef, setSelectedFiles],
+  );
+
   const applyLoadedSession = useCallback(
     (session: SavedChatSession, history: SetActiveSessionOptions['history']) => {
-      const rehydrated = rehydrateSessionFiles(sanitizeSessionModel(session));
+      const rehydrated = rehydrateSessionFiles(normalizeSessionModel(session));
 
       setActiveMessages(rehydrated.messages);
       setActiveSessionId(rehydrated.id, { history });
       mergeSessionMetadata(rehydrated);
       restoreDraftFiles(rehydrated.id);
       setEditingMessageId(null);
-      focusChatInput();
+      focusChatInput(0);
 
       return rehydrated;
     },
     [
       mergeSessionMetadata,
       restoreDraftFiles,
-      sanitizeSessionModel,
+      normalizeSessionModel,
       setActiveMessages,
       setActiveSessionId,
       setEditingMessageId,
@@ -226,11 +161,11 @@ export const useSessionLoader = ({
       if (activeChat && activeChat.messages.length === 0 && !activeChat.settings.systemInstruction) {
         logService.info('Already on an empty chat, reusing session.');
         userScrolledUpRef.current = false;
-        const settingsForReusedChat = createSettingsForNewChat(explicitTemplateSession, {
+        const settingsForReusedChat = buildSettingsForNewChat(explicitTemplateSession, {
           excludeTemplateSessionId: activeSessionId,
         });
         if (!explicitTemplateSession) {
-          const currentEmptyChatSettings = sanitizeSessionModel(activeChat).settings;
+          const currentEmptyChatSettings = normalizeSessionModel(activeChat).settings;
           settingsForReusedChat.modelId = currentEmptyChatSettings.modelId;
           settingsForReusedChat.thinkingBudget = currentEmptyChatSettings.thinkingBudget;
           settingsForReusedChat.thinkingLevel = currentEmptyChatSettings.thinkingLevel;
@@ -243,7 +178,7 @@ export const useSessionLoader = ({
         setEditingMessageId(null);
         setActiveMessages([]);
         if (activeSessionId) {
-          fileDraftsRef.current[activeSessionId] = [];
+          clearSessionDraftFiles(fileDraftsRef.current, activeSessionId);
           updateAndPersistSessions((prev) =>
             prev.map((session) =>
               session.id === activeSessionId
@@ -259,7 +194,7 @@ export const useSessionLoader = ({
           );
         }
 
-        focusChatInput();
+        focusChatInput(0);
         return;
       }
 
@@ -268,7 +203,7 @@ export const useSessionLoader = ({
 
       retainOutgoingSessionDraft();
 
-      const settingsForNewChat = createSettingsForNewChat(explicitTemplateSession);
+      const settingsForNewChat = buildSettingsForNewChat(explicitTemplateSession);
 
       const newSession = createNewSession(settingsForNewChat);
 
@@ -281,7 +216,7 @@ export const useSessionLoader = ({
 
       setEditingMessageId(null);
 
-      focusChatInput();
+      focusChatInput(0);
     },
     [
       activeChat,
@@ -295,9 +230,9 @@ export const useSessionLoader = ({
       fileDraftsRef,
       setCommandedInput,
       setAppFileError,
-      createSettingsForNewChat,
+      buildSettingsForNewChat,
       retainOutgoingSessionDraft,
-      sanitizeSessionModel,
+      normalizeSessionModel,
     ],
   );
 
@@ -337,104 +272,15 @@ export const useSessionLoader = ({
   );
 
   const loadInitialData = useCallback(async () => {
-    try {
-      logService.info('Attempting to load chat history metadata from IndexedDB.');
-
-      const [metadataList, groups] = await Promise.all([dbService.getAllSessionMetadata(), dbService.getAllGroups()]);
-
-      let initialActiveId: string | null = null;
-      const urlMatch = window.location.pathname.match(/^\/chat\/([^/]+)$/);
-      const urlSessionId = urlMatch ? urlMatch[1] : null;
-
-      if (urlSessionId && metadataList.some((s) => s.id === urlSessionId)) {
-        initialActiveId = urlSessionId;
-      } else {
-        const storedActiveId = sessionStorage.getItem(ACTIVE_CHAT_SESSION_ID_KEY);
-        if (storedActiveId && metadataList.some((s) => s.id === storedActiveId)) {
-          initialActiveId = storedActiveId;
-        }
-      }
-
-      if (initialActiveId) {
-        const fullActiveSession = await dbService.getSession(initialActiveId);
-        if (fullActiveSession) {
-          logService.info(`Loaded full content for active session: ${initialActiveId}`);
-          const rehydrated = rehydrateSessionFiles(sanitizeSessionModel(fullActiveSession));
-          setActiveMessages(rehydrated.messages);
-          setActiveSessionId(initialActiveId, { history: 'replace' });
-          restoreDraftFiles(initialActiveId);
-        } else {
-          initialActiveId = null;
-        }
-      }
-
-      const sortedList = sortSessionsByPinnedAndTimestamp(metadataList.map(sanitizeSessionModel));
-
-      setSavedSessions((prev) => {
-        if (prev.length === 0) {
-          return sortedList;
-        }
-
-        const prevById = new Map(prev.map((session) => [session.id, session]));
-        const merged = sortedList.map((session) => {
-          const existing = prevById.get(session.id);
-
-          if (!existing) {
-            return session;
-          }
-
-          prevById.delete(session.id);
-          return {
-            ...session,
-            ...existing,
-            settings: {
-              ...session.settings,
-              ...existing.settings,
-            },
-            messages: existing.messages ?? session.messages,
-          };
-        });
-
-        return sortSessionsByPinnedAndTimestamp([...merged, ...prevById.values()]);
-      });
-      setSavedGroups(groups.map((g) => ({ ...g, isExpanded: g.isExpanded ?? true })));
-
-      if (!initialActiveId) {
-        const mostRecent = sortedList[0];
-        let reused = false;
-
-        if (mostRecent) {
-          const fullSession = await dbService.getSession(mostRecent.id);
-          if (fullSession && fullSession.messages.length === 0 && !fullSession.settings.systemInstruction) {
-            logService.info(`Reusing empty recent session: ${mostRecent.id}`);
-            const rehydrated = rehydrateSessionFiles(sanitizeSessionModel(fullSession));
-            setActiveMessages(rehydrated.messages);
-            setActiveSessionId(rehydrated.id, { history: 'replace' });
-            restoreDraftFiles(rehydrated.id);
-
-            reused = true;
-          }
-        }
-
-        if (!reused) {
-          logService.info('No active session found or empty session to reuse, starting fresh chat.');
-          startNewChat(sortedList.length > 0 ? sortedList[0] : undefined, { history: 'replace' });
-        }
-      }
-    } catch (error) {
-      logService.error('Error loading chat history:', error);
-      startNewChat(undefined, { history: 'replace' });
-    }
-  }, [
-    setSavedSessions,
-    setSavedGroups,
-    startNewChat,
-    setActiveSessionId,
-    setActiveMessages,
-    restoreDraftFiles,
-    sanitizeSessionModel,
-    sortSessionsByPinnedAndTimestamp,
-  ]);
+    await loadInitialSessionData({
+      setSavedSessions,
+      setSavedGroups,
+      setActiveSessionId,
+      setActiveMessages,
+      restoreDraftFiles,
+      startNewChat,
+    });
+  }, [setSavedSessions, setSavedGroups, startNewChat, setActiveSessionId, setActiveMessages, restoreDraftFiles]);
 
   useEffect(() => {
     const handlePopState = () => {

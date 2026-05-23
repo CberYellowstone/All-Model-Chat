@@ -12,7 +12,7 @@ import {
 import { logService } from '@/services/logService';
 import { createNewSession, createMessage } from '@/utils/chat/session';
 import { updateFileInMessage, updateMessageInSession, updateSessionById } from '@/utils/chat/sessionMutations';
-import { DEFAULT_CHAT_SETTINGS } from '@/constants/appConstants';
+import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import {
   createMessageStreamState,
   reduceMessageStreamEvent,

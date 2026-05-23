@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { projectRoot, readProjectFile } from './architectureTestUtils';
+import { projectRoot, readProjectFile } from './projectFiles';
 
 describe('database structure boundaries', () => {
   it('keeps IndexedDB service orchestration split into focused modules', () => {
@@ -9,7 +9,7 @@ describe('database structure boundaries', () => {
 
     for (const relativePath of [
       'src/services/db/dbSchema.ts',
-      'src/services/db/idbUtils.ts',
+      'src/services/db/indexedDbAccess.ts',
       'src/services/db/sessionRecords.ts',
       'src/services/db/logRecords.ts',
       'src/services/db/apiUsageRecords.ts',
@@ -18,6 +18,7 @@ describe('database structure boundaries', () => {
       expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
     }
 
+    expect(fs.existsSync(path.join(projectRoot, 'src/services/db/idbUtils.ts'))).toBe(false);
     expect(dbServiceSource).toContain("from './sessionRecords'");
     expect(dbServiceSource).toContain("from './logRecords'");
     expect(dbServiceSource).toContain("from './apiUsageRecords'");

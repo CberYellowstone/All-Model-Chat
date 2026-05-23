@@ -1,7 +1,8 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { ChevronLeft, Settings2, Save } from 'lucide-react';
-import { ICON_BUTTON_CLASS, FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/styleClasses';
+import { ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 
 interface ScenarioEditorHeaderProps {
   title: string;

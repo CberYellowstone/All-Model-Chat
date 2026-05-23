@@ -1,7 +1,7 @@
 import { useState, useEffect, type FC } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Info, Lightbulb } from 'lucide-react';
-import { THINKING_BUDGET_RANGES, MODELS_MANDATORY_THINKING } from '@/constants/modelConstants';
+import { REQUIRED_THINKING_MODEL_IDS, THINKING_BUDGET_RANGES } from '@/constants/modelConfiguration';
 import { Tooltip } from '@/components/shared/Tooltip';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import { ThinkingModeSelector } from './ThinkingModeSelector';
@@ -47,7 +47,7 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
         : ['LOW', 'MEDIUM', 'HIGH']
       : [];
 
-  const isMandatoryThinking = MODELS_MANDATORY_THINKING.includes(modelId);
+  const isMandatoryThinking = REQUIRED_THINKING_MODEL_IDS.includes(modelId);
   const canDisableThinking = !isMandatoryThinking && !isRobotics;
 
   // Default ranges if config is missing (fallback for unknown models)

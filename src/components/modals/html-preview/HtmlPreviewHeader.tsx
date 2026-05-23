@@ -13,11 +13,8 @@ import {
   Atom,
 } from 'lucide-react';
 import { IconHtml5 } from '@/components/icons';
-import {
-  FOCUS_VISIBLE_RING_SECONDARY_OFFSET_CLASS,
-  ICON_BUTTON_CLASS,
-  MODAL_CLOSE_BUTTON_DANGER_HOVER_CLASS,
-} from '@/constants/styleClasses';
+import { FOCUS_VISIBLE_RING_SECONDARY_OFFSET_CLASS } from '@/constants/focusClasses';
+import { ICON_BUTTON_CLASS, MODAL_CLOSE_BUTTON_DANGER_HOVER_CLASS } from '@/constants/buttonClasses';
 
 interface HtmlPreviewHeaderProps {
   title: string;

@@ -50,7 +50,7 @@ export const useFilePreProcessing = ({ appSettings, setSelectedFiles }: UseFileP
 
           try {
             logService.info(`Auto-converting ZIP file: ${file.name}`);
-            const { generateZipContext } = await import('@/utils/importContextLoaders');
+            const { generateZipContext } = await import('@/utils/import-context/loaders');
             const contextFile = await generateZipContext(file);
             processedFiles.push(contextFile);
           } catch (error) {

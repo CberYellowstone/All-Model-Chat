@@ -10,7 +10,7 @@ import {
 } from 'react';
 
 import type { UploadedFile } from '@/types';
-import { EXTENSION_TO_MIME } from '@/constants/fileConstants';
+import { EXTENSION_TO_MIME } from '@/constants/fileTypeSupport';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { cleanupFilePreviewUrl, cleanupReplacedFilePreviewUrl } from '@/utils/filePreviewUrls';
 import { isTextFile } from '@/utils/fileTypeClassification';

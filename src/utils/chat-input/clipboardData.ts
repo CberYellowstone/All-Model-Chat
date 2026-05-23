@@ -1,4 +1,4 @@
-import { ALL_SUPPORTED_MIME_TYPES } from '@/constants/fileConstants';
+import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 
 const PASTE_TEXT_AS_FILE_THRESHOLD = 5000;
 
@@ -23,7 +23,7 @@ export const processChatInputClipboardData = async (
   if (items) {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.kind === 'file' && ALL_SUPPORTED_MIME_TYPES.includes(item.type)) {
+      if (item.kind === 'file' && SUPPORTED_UPLOAD_MIME_TYPES.includes(item.type)) {
         const file = item.getAsFile();
         if (file) filesToProcess.push(file);
       }

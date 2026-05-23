@@ -1,12 +1,15 @@
 import {
+  SUPPORTED_ARCHIVE_MIME_TYPES,
   SUPPORTED_AUDIO_MIME_TYPES,
+  SUPPORTED_DOC_MIME_TYPES,
   SUPPORTED_IMAGE_MIME_TYPES,
   SUPPORTED_PDF_MIME_TYPES,
+  SUPPORTED_PRESENTATION_MIME_TYPES,
   SUPPORTED_SPREADSHEET_MIME_TYPES,
   SUPPORTED_TEXT_MIME_TYPES,
   SUPPORTED_VIDEO_MIME_TYPES,
   TEXT_BASED_EXTENSIONS,
-} from '@/constants/fileConstants';
+} from '@/constants/fileTypeSupport';
 
 export type FileCategory =
   | 'image'
@@ -14,7 +17,7 @@ export type FileCategory =
   | 'video'
   | 'pdf'
   | 'youtube'
-  | 'code'
+  | 'text'
   | 'spreadsheet'
   | 'doc'
   | 'presentation'
@@ -108,26 +111,14 @@ export const getFileTypeCategory = (mimeType: string, error?: string): FileCateg
   )
     return 'spreadsheet';
 
-  if (
-    normalized === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    normalized === 'application/msword'
-  )
+  if (SUPPORTED_DOC_MIME_TYPES.includes(normalized))
     return 'doc';
-  if (
-    normalized === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
-    normalized === 'application/vnd.ms-powerpoint'
-  )
+  if (SUPPORTED_PRESENTATION_MIME_TYPES.includes(normalized))
     return 'presentation';
-  if (
-    normalized === 'application/zip' ||
-    normalized === 'application/x-zip-compressed' ||
-    normalized === 'application/x-7z-compressed' ||
-    normalized === 'application/x-tar' ||
-    normalized === 'application/gzip'
-  )
+  if (SUPPORTED_ARCHIVE_MIME_TYPES.includes(normalized))
     return 'archive';
 
-  return 'code';
+  return 'text';
 };
 
 export const getFileKindFlags = (file: FileKindInput): FileKindFlags => {

@@ -2,7 +2,7 @@ import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AppSettings, ChatSettings, InputCommand, SavedChatSession } from '@/types';
-import { createAppSettings, createChatSettings, createSavedChatSession } from '@/test/factories';
+import { createAppSettings, createChatSettings, createSavedChatSession } from '@/test/data/factories';
 
 const { mockLoadLiveArtifactsSystemPrompt } = vi.hoisted(() => ({
   mockLoadLiveArtifactsSystemPrompt: vi.fn(),
@@ -19,8 +19,9 @@ vi.mock('@/features/prompts/promptRegistry', async () => {
   };
 });
 
-import { focusChatInput, useAppPromptModes } from './useAppPromptModes';
-import { createDeferred, renderHook } from '@/test/testUtils';
+import { focusChatInput } from '@/utils/chat-input/focus';
+import { useAppPromptModes } from './useAppPromptModes';
+import { createDeferred, renderHook } from '@/test/render/renderer';
 
 const LIVE_ARTIFACTS_PROMPT = '[Live Artifacts Protocol - zh]\nLive Artifacts prompt';
 const LIVE_ARTIFACTS_PROMPT_EN = '[Live Artifacts Protocol - en]\nLive Artifacts prompt';

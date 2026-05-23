@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConstants';
+import { MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConfiguration';
 import {
   getDefaultThinkingLevelForModel,
   getModelCapabilities,

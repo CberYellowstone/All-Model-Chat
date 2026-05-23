@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEFAULT_APP_SETTINGS } from '@/constants/appConstants';
+import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import {
   type AppSettings,
   type FilesApiConfig,

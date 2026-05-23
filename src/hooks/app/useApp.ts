@@ -23,8 +23,9 @@ import { useDataImport } from '@/hooks/data-management/useDataImport';
 import { useChatSessionExport } from '@/hooks/data-management/useChatSessionExport';
 import { useAppInitialization } from './useAppInitialization';
 import { useAppTitle } from './useAppTitle';
-import { focusChatInput, useAppPromptModes } from './useAppPromptModes';
-import { DEFAULT_THINKING_BUDGET } from '@/constants/modelConstants';
+import { focusChatInput } from '@/utils/chat-input/focus';
+import { useAppPromptModes } from './useAppPromptModes';
+import { DEFAULT_THINKING_BUDGET } from '@/constants/modelConfiguration';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
 
 const buildProviderAwareModels = (apiModels: ModelOption[]): ModelOption[] => {

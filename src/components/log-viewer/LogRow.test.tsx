@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { setupProviderTestRenderer as setupTestRenderer } from '@/test/providerTestUtils';
+import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { describe, expect, it } from 'vitest';
 import type { LogEntry } from '@/types/logging';
 import { LogRow } from './LogRow';

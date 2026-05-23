@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { LogEntry } from '@/types/logging';
-import { LOG_LEVEL_COLORS, CATEGORY_COLORS } from './constants';
+import { LOG_LEVEL_COLORS, CATEGORY_COLORS } from './logColorClasses';
 
 export const LogRow: React.FC<{ log: LogEntry }> = React.memo(({ log }) => {
   const [isDataExpanded, setIsDataExpanded] = useState(false);

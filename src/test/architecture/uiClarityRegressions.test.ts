@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readSourceFile } from './architectureTestUtils';
+import { readSourceFile } from './projectFiles';
 
 describe('UI clarity regressions', () => {
   it('keeps popup menus free of zoom-based entry transforms', () => {

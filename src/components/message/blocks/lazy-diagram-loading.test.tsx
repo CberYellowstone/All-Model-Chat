@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { createTestRenderer } from '@/test/testUtils';
+import { createTestRenderer } from '@/test/render/renderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 type MockIntersectionObserverInstance = {

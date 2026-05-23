@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { projectRoot } from './architectureTestUtils';
+import { projectRoot } from './projectFiles';
 
 const publicRoot = path.join(projectRoot, 'public');
 const CLOUDFLARE_PAGES_FILE_LIMIT_BYTES = 25 * 1024 * 1024;

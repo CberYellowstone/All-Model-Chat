@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const chatInputAreaPath = path.resolve(__dirname, './ChatInputArea.tsx');
 const chatInputAreaLayoutPath = path.resolve(__dirname, './chatInputAreaLayout.ts');
-const chatInputLayoutConstantsPath = path.resolve(__dirname, './chatInputLayoutConstants.ts');
+const chatInputTextAreaMetricsPath = path.resolve(__dirname, './chatInputTextAreaMetrics.ts');
 
 describe('ChatInputArea default spacing', () => {
   it('uses the reduced default vertical padding for the non-fullscreen input container', () => {
@@ -35,7 +35,7 @@ describe('ChatInputArea default spacing', () => {
   });
 
   it('uses one text line as the default textarea height', () => {
-    const source = fs.readFileSync(chatInputLayoutConstantsPath, 'utf8');
+    const source = fs.readFileSync(chatInputTextAreaMetricsPath, 'utf8');
 
     expect(source).toContain('export const INITIAL_TEXTAREA_HEIGHT_PX = 24;');
     expect(source).not.toContain('export const INITIAL_TEXTAREA_HEIGHT_PX = 25.2;');

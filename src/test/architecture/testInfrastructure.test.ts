@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 const thisTestFile = 'src/test/architecture/testInfrastructure.test.ts';
 
@@ -86,7 +86,7 @@ describe('test infrastructure guardrails', () => {
     }
   });
 
-  it('keeps core mock modules behind moduleMockDoubles outside the test-double suites', () => {
+  it('keeps core mock modules behind module mock doubles outside the test-double suites', () => {
     const testFiles = listProjectSourceFiles('src').filter(
       (relativePath) =>
         /\.(test|spec)\.(ts|tsx)$/.test(relativePath) &&
@@ -99,6 +99,8 @@ describe('test infrastructure guardrails', () => {
 
       expect(source, relativePath).not.toContain('serviceTestDoubles');
       expect(source, relativePath).not.toContain('i18nTestDoubles');
+      expect(source, relativePath).not.toContain('@/test/doubles/services');
+      expect(source, relativePath).not.toContain('@/test/doubles/i18n');
     }
   });
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './architectureTestUtils';
+import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
 describe('naming and structure optimization guardrails', () => {
   it('keeps the custom Select component on an explicit prop contract', () => {
@@ -23,14 +23,34 @@ describe('naming and structure optimization guardrails', () => {
       true,
     );
     expect(
-      fs.existsSync(path.join(projectRoot, 'src/components/modals/create-file/createFileEditorConstants.ts')),
+      fs.existsSync(path.join(projectRoot, 'src/components/modals/create-file/createFileExtensionOptions.ts')),
     ).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/modals/create-file/supportedFileExtensions.ts'))).toBe(
+      false,
+    );
+    expect(
+      fs.existsSync(path.join(projectRoot, 'src/components/modals/create-file/createFileEditorConstants.ts')),
+    ).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/hooks/useCreateFileEditor.ts'))).toBe(false);
+    expect(readProjectFile('src/components/modals/create-file/createFileExtensionOptions.ts')).toContain(
+      'CREATE_FILE_EXTENSION_OPTIONS',
+    );
 
     for (const relativePath of sourceFiles) {
       const source = readProjectFile(relativePath);
       expect(source, relativePath).not.toContain('@/hooks/useCreateFileEditor');
+      expect(source, relativePath).not.toContain('SUPPORTED_EXTENSIONS');
     }
+  });
+
+  it('names log viewer color class maps after their visual role', () => {
+    const consoleTabSource = readProjectFile('src/components/log-viewer/ConsoleTab.tsx');
+    const logRowSource = readProjectFile('src/components/log-viewer/LogRow.tsx');
+
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/log-viewer/logColorClasses.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/components/log-viewer/constants.ts'))).toBe(false);
+    expect(consoleTabSource).toContain("from './logColorClasses'");
+    expect(logRowSource).toContain("from './logColorClasses'");
   });
 
   it('reuses the exported model capabilities contract instead of duplicating the shape', () => {

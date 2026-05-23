@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { renderHookWithProviders } from '@/test/providerTestUtils';
+import { renderHookWithProviders } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -86,7 +86,7 @@ vi.mock('@/utils/chat/session', () => ({
 }));
 
 vi.mock('@/services/logService', async () => {
-  const { createLogServiceMockModule } = await import('@/test/moduleMockDoubles');
+  const { createLogServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
   return createLogServiceMockModule();
 });
@@ -97,8 +97,8 @@ vi.mock('@/services/api/fileApi', () => ({
 }));
 
 import { useMessageSender } from './useMessageSender';
-import { createMessageSenderProps, type MessageSenderPropsOverrides } from '@/test/hookFactories';
-import { createChatSettings, createUploadedFile } from '@/test/factories';
+import { createMessageSenderProps, type MessageSenderPropsOverrides } from '@/test/hooks/factories';
+import { createChatSettings, createUploadedFile } from '@/test/data/factories';
 import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES } from '@/utils/codeExecution';
 
 describe('useMessageSender', () => {

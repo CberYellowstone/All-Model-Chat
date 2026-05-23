@@ -7,7 +7,8 @@ import { useAudioRecorder } from '@/features/audio/useAudioRecorder';
 import { SYSTEM_AUDIO_CAPTURE_FAILED_WARNING, SYSTEM_AUDIO_NOT_SHARED_WARNING } from '@/features/audio/audioProcessing';
 import { AudioVisualizer } from '@/components/recorder/AudioVisualizer';
 import { RecorderControls } from '@/components/recorder/RecorderControls';
-import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS, MODAL_CLOSE_BUTTON_CLASS } from '@/constants/styleClasses';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
+import { MODAL_CLOSE_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AudioRecorderProps {

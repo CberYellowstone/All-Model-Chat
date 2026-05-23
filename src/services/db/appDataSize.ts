@@ -1,5 +1,5 @@
 import { DB_STORE_NAMES } from './dbSchema';
-import { getDb } from './idbUtils';
+import { getDb } from './indexedDbAccess';
 
 const utf8Encoder = new TextEncoder();
 
