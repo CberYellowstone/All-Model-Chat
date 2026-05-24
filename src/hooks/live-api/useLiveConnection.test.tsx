@@ -97,7 +97,7 @@ describe('useLiveConnection', () => {
     unmount();
   });
 
-  it('sends multipart client content for live text turns with attachments', async () => {
+  it('sends Gemini 3.1 Flash Live inline content through realtime input', async () => {
     const sendRealtimeInput = vi.fn();
     const sendClientContent = vi.fn();
     const sessionRef = createLiveSessionRef();
@@ -120,6 +120,112 @@ describe('useLiveConnection', () => {
       useLiveConnection({
         appSettings: createAppSettings(),
         modelId: 'gemini-3.1-flash-live-preview',
+        liveConfig: {},
+        tools: [],
+        initializeAudio: vi.fn(),
+        cleanupAudio: vi.fn(),
+        stopVideo: vi.fn(),
+        handleMessage: vi.fn(),
+        setSessionHandle: vi.fn(),
+        sessionHandleRef: { current: null },
+        sessionRef,
+      }),
+    );
+
+    let didSend: boolean | undefined;
+    await act(async () => {
+      await result.current.connect();
+      didSend = await result.current.sendContent([
+        { inlineData: { mimeType: 'image/png', data: 'image-base64' } },
+        { text: 'Describe this attachment' },
+      ]);
+    });
+
+    expect(didSend).toBe(true);
+    expect(sendRealtimeInput).toHaveBeenCalledWith({
+      video: {
+        mimeType: 'image/png',
+        data: 'image-base64',
+      },
+    });
+    expect(sendRealtimeInput).toHaveBeenCalledWith({ text: 'Describe this attachment' });
+    expect(sendClientContent).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('does not send Gemini 3.1 Flash Live fileData content through sendClientContent', async () => {
+    const sendRealtimeInput = vi.fn();
+    const sendClientContent = vi.fn();
+    const sessionRef = createLiveSessionRef();
+
+    mockGetLiveApiClient.mockResolvedValue({
+      live: {
+        connect: vi.fn(({ callbacks }) => {
+          callbacks.onopen?.();
+          callbacks.onmessage?.({ setupComplete: {} });
+          return Promise.resolve({
+            sendRealtimeInput,
+            sendClientContent,
+            close: vi.fn(),
+          });
+        }),
+      },
+    });
+
+    const { result, unmount } = renderHook(() =>
+      useLiveConnection({
+        appSettings: createAppSettings(),
+        modelId: 'gemini-3.1-flash-live-preview',
+        liveConfig: {},
+        tools: [],
+        initializeAudio: vi.fn(),
+        cleanupAudio: vi.fn(),
+        stopVideo: vi.fn(),
+        handleMessage: vi.fn(),
+        setSessionHandle: vi.fn(),
+        sessionHandleRef: { current: null },
+        sessionRef,
+      }),
+    );
+
+    let didSend: boolean | undefined;
+    await act(async () => {
+      await result.current.connect();
+      didSend = await result.current.sendContent([
+        { fileData: { mimeType: 'image/png', fileUri: 'files/image-1' } },
+        { text: 'Describe this attachment' },
+      ]);
+    });
+
+    expect(didSend).toBe(false);
+    expect(sendClientContent).not.toHaveBeenCalled();
+    expect(sendRealtimeInput).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('keeps client content for older live models with multipart attachments', async () => {
+    const sendRealtimeInput = vi.fn();
+    const sendClientContent = vi.fn();
+    const sessionRef = createLiveSessionRef();
+
+    mockGetLiveApiClient.mockResolvedValue({
+      live: {
+        connect: vi.fn(({ callbacks }) => {
+          callbacks.onopen?.();
+          callbacks.onmessage?.({ setupComplete: {} });
+          return Promise.resolve({
+            sendRealtimeInput,
+            sendClientContent,
+            close: vi.fn(),
+          });
+        }),
+      },
+    });
+
+    const { result, unmount } = renderHook(() =>
+      useLiveConnection({
+        appSettings: createAppSettings(),
+        modelId: 'gemini-2.5-flash-native-audio-preview-12-2025',
         liveConfig: {},
         tools: [],
         initializeAudio: vi.fn(),

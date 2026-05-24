@@ -4,7 +4,6 @@ import { ChevronDown, RotateCcw, Wand2 } from 'lucide-react';
 import { Select } from '@/components/shared/Select';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
 import { loadLiveArtifactsSystemPrompt, resolveLiveArtifactsPromptTheme } from '@/features/prompts/promptRegistry';
-import { useSettingsStore } from '@/stores/settingsStore';
 import {
   getLiveArtifactsSystemPromptValue,
   updateLiveArtifactsSystemPromptForMode,
@@ -14,12 +13,16 @@ import type { SettingsUpdateHandler } from '@/components/settings/settingsTypes'
 
 interface LiveArtifactsSectionProps {
   currentSettings: AppSettings;
+  currentThemeId: string;
   onUpdateSetting: SettingsUpdateHandler;
 }
 
-export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({ currentSettings, onUpdateSetting }) => {
+export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({
+  currentSettings,
+  currentThemeId,
+  onUpdateSetting,
+}) => {
   const { language, t } = useI18n();
-  const currentThemeId = useSettingsStore((state) => state.currentTheme.id);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [builtInPromptState, setBuiltInPromptState] = useState({ key: '', value: '' });
   const liveArtifactsPromptMode = currentSettings.liveArtifactsPromptMode ?? 'inline';

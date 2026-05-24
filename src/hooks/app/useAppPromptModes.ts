@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from 'react';
 
 import {
   isBboxSystemInstruction,
@@ -32,8 +32,8 @@ interface UseAppPromptModesOptions {
     liveArtifactsSystemPrompt?: string | null;
     liveArtifactsSystemPrompts?: AppSettings['liveArtifactsSystemPrompts'];
   };
-  currentThemeId?: string;
-  setAppSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  currentThemeId: string;
+  setAppSettings: Dispatch<SetStateAction<AppSettings>>;
   activeChat: SavedChatSession | undefined;
   activeSessionId: string | null;
   currentChatSettings: ChatSettings;
@@ -41,6 +41,85 @@ interface UseAppPromptModesOptions {
   handleSendMessage: (args: { text: string }) => void;
   setCommandedInput: (command: InputCommand) => void;
 }
+
+interface LiveArtifactsPromptThemeSyncOptions {
+  activeSessionId: string | null;
+  appSystemInstruction?: string | null;
+  configuredLiveArtifactsSystemPrompt?: string | null;
+  currentChatSystemInstruction?: string | null;
+  currentThemeId: string;
+  loadBuiltInLiveArtifactsPrompt: () => Promise<string>;
+  setAppSettings: Dispatch<SetStateAction<AppSettings>>;
+  setCurrentChatSettings: (updater: (prev: ChatSettings) => ChatSettings) => void;
+}
+
+const useLiveArtifactsPromptThemeSync = ({
+  activeSessionId,
+  appSystemInstruction,
+  configuredLiveArtifactsSystemPrompt,
+  currentChatSystemInstruction,
+  currentThemeId,
+  loadBuiltInLiveArtifactsPrompt,
+  setAppSettings,
+  setCurrentChatSettings,
+}: LiveArtifactsPromptThemeSyncOptions) => {
+  useEffect(() => {
+    if (!currentThemeId || configuredLiveArtifactsSystemPrompt) {
+      return;
+    }
+
+    const hasBuiltInLiveArtifactsPrompt =
+      isLiveArtifactsSystemInstruction(currentChatSystemInstruction) ||
+      isLiveArtifactsSystemInstruction(appSystemInstruction);
+
+    if (!hasBuiltInLiveArtifactsPrompt) {
+      return;
+    }
+
+    let isStale = false;
+
+    loadBuiltInLiveArtifactsPrompt()
+      .then((systemInstruction) => {
+        if (isStale) {
+          return;
+        }
+
+        if (isLiveArtifactsSystemInstruction(appSystemInstruction) && appSystemInstruction !== systemInstruction) {
+          setAppSettings((prev) =>
+            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
+              ? { ...prev, systemInstruction }
+              : prev,
+          );
+        }
+
+        if (
+          activeSessionId &&
+          isLiveArtifactsSystemInstruction(currentChatSystemInstruction) &&
+          currentChatSystemInstruction !== systemInstruction
+        ) {
+          setCurrentChatSettings((prev) =>
+            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
+              ? { ...prev, systemInstruction }
+              : prev,
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isStale = true;
+    };
+  }, [
+    activeSessionId,
+    appSystemInstruction,
+    configuredLiveArtifactsSystemPrompt,
+    currentChatSystemInstruction,
+    currentThemeId,
+    loadBuiltInLiveArtifactsPrompt,
+    setAppSettings,
+    setCurrentChatSettings,
+  ]);
+};
 
 export const useAppPromptModes = ({
   language = 'zh',
@@ -91,65 +170,16 @@ export const useAppPromptModes = ({
     [language, liveArtifactsPromptMode, liveArtifactsPromptTheme],
   );
 
-  useEffect(() => {
-    if (!currentThemeId || configuredLiveArtifactsSystemPrompt) {
-      return;
-    }
-
-    const hasBuiltInLiveArtifactsPrompt =
-      isLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) ||
-      isLiveArtifactsSystemInstruction(appSettings.systemInstruction);
-
-    if (!hasBuiltInLiveArtifactsPrompt) {
-      return;
-    }
-
-    let isStale = false;
-
-    loadBuiltInLiveArtifactsPrompt()
-      .then((systemInstruction) => {
-        if (isStale) {
-          return;
-        }
-
-        if (
-          isLiveArtifactsSystemInstruction(appSettings.systemInstruction) &&
-          appSettings.systemInstruction !== systemInstruction
-        ) {
-          setAppSettings((prev) =>
-            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
-              ? { ...prev, systemInstruction }
-              : prev,
-          );
-        }
-
-        if (
-          activeSessionId &&
-          isLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) &&
-          currentChatSettings.systemInstruction !== systemInstruction
-        ) {
-          setCurrentChatSettings((prev) =>
-            isLiveArtifactsSystemInstruction(prev.systemInstruction) && prev.systemInstruction !== systemInstruction
-              ? { ...prev, systemInstruction }
-              : prev,
-          );
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isStale = true;
-    };
-  }, [
+  useLiveArtifactsPromptThemeSync({
     activeSessionId,
-    appSettings.systemInstruction,
+    appSystemInstruction: appSettings.systemInstruction,
     configuredLiveArtifactsSystemPrompt,
-    currentChatSettings.systemInstruction,
+    currentChatSystemInstruction: currentChatSettings.systemInstruction,
     currentThemeId,
     loadBuiltInLiveArtifactsPrompt,
     setAppSettings,
     setCurrentChatSettings,
-  ]);
+  });
 
   useEffect(() => {
     if (!pendingLiveArtifactsPromptActivation) {

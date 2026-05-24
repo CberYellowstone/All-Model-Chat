@@ -2,7 +2,7 @@ import { REQUIRED_THINKING_MODEL_IDS, THINKING_BUDGET_RANGES } from '@/constants
 import { useModelPreferencesStore, type CachedModelSettings } from '@/stores/modelPreferencesStore';
 import { MediaResolution } from '@/types';
 
-import { getDefaultThinkingLevelForModel, isGemini3Model } from './modelCapabilities';
+import { getDefaultThinkingLevelForModel, isGemini3Model, normalizeThinkingLevelForModel } from './modelCapabilities';
 
 type SwitchableModelSettings = CachedModelSettings & {
   modelId?: string;
@@ -60,8 +60,9 @@ export const resolveModelSwitchSettings = ({
   const cached = getCachedModelSettings(targetModelId);
   const mediaResolution =
     cached?.mediaResolution ?? sourceSettings.mediaResolution ?? MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED;
-  const thinkingLevel =
+  const rawThinkingLevel =
     cached?.thinkingLevel ?? getDefaultThinkingLevelForModel(targetModelId, sourceSettings.thinkingLevel);
+  const thinkingLevel = normalizeThinkingLevelForModel(targetModelId, rawThinkingLevel);
   const thinkingBudget = adjustThinkingBudget(targetModelId, cached?.thinkingBudget ?? sourceSettings.thinkingBudget);
 
   return {

@@ -46,11 +46,8 @@ export const SUPPORTED_AUDIO_MIME_TYPES = [
   'audio/ogg',
   'audio/wav',
   'audio/aac',
-  'audio/webm',
   'audio/flac',
-  'audio/mp4',
   'audio/aiff',
-  'audio/x-aiff',
 ];
 export const SUPPORTED_PDF_MIME_TYPES = ['application/pdf'];
 

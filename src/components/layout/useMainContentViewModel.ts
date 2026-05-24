@@ -125,6 +125,7 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
       isSettingsModalOpen,
       setIsSettingsModalOpen,
       appSettings,
+      currentThemeId: currentTheme.id,
       availableModels: chatState.apiModels,
       handleSaveSettings,
       handleSaveCurrentChatSettings,
@@ -176,6 +177,7 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
       setIsSettingsModalOpen,
       appSettings,
       chatState.activeSessionId,
+      currentTheme.id,
     ],
   );
 

@@ -281,6 +281,7 @@ describe('codebase maintainability guardrails', () => {
   });
 
   it('keeps model settings panels on the shared settings object contract', () => {
+    const settingsContentSource = readProjectFile('src/components/settings/SettingsContent.tsx');
     const modelsSectionSource = readProjectFile('src/components/settings/sections/ModelsSection.tsx');
     const languageVoiceSectionSource = readProjectFile('src/components/settings/sections/LanguageVoiceSection.tsx');
     const liveArtifactsSectionSource = readProjectFile('src/components/settings/sections/LiveArtifactsSection.tsx');
@@ -289,6 +290,12 @@ describe('codebase maintainability guardrails', () => {
       expect(source).toContain('currentSettings: AppSettings;');
       expect(source).toContain('onUpdateSetting: SettingsUpdateHandler;');
     }
+
+    expect(settingsContentSource).toContain('currentThemeId: string;');
+    expect(modelsSectionSource).toContain('currentThemeId: string;');
+    expect(liveArtifactsSectionSource).toContain('currentThemeId: string;');
+    expect(liveArtifactsSectionSource).not.toContain('@/stores/settingsStore');
+    expect(liveArtifactsSectionSource).not.toContain('useSettingsStore(');
 
     for (const source of [modelsSectionSource, languageVoiceSectionSource, liveArtifactsSectionSource]) {
       for (const propName of [

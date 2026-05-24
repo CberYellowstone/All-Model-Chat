@@ -20,6 +20,7 @@ import {
   isGemini3Model,
   isGeminiRoboticsModel,
   isGemmaModel,
+  normalizeThinkingLevelForModel,
   normalizeAspectRatioForModel,
   normalizeImageSizeForModel,
 } from '@/utils/modelCapabilities';
@@ -257,7 +258,10 @@ async function buildGenerationConfigFromOptions({
     if (thinkingBudget > 0) {
       generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
     } else {
-      generationConfig.thinkingConfig.thinkingLevel = toSdkThinkingLevel(thinkingLevel, 'HIGH');
+      generationConfig.thinkingConfig.thinkingLevel = toSdkThinkingLevel(
+        normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'),
+        'HIGH',
+      );
     }
   } else if (isGemma) {
     generationConfig.thinkingConfig = {

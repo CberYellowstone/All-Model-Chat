@@ -67,6 +67,9 @@ export const isAudioMimeType = (mimeType?: string): boolean => {
   return normalized.startsWith('audio/') || SUPPORTED_AUDIO_MIME_TYPES.includes(normalized);
 };
 
+const isSupportedInlineAudioMimeType = (mimeType?: string): boolean =>
+  SUPPORTED_AUDIO_MIME_TYPES.includes(normalizeMimeType(mimeType));
+
 export const isVideoMimeType = (mimeType?: string): boolean => {
   const normalized = normalizeMimeType(mimeType);
   return (
@@ -93,7 +96,10 @@ export const isMarkdownFile = (file: FileTypeInput): boolean => {
 };
 
 const isInlineDataMimeType = (mimeType?: string): boolean =>
-  isImageMimeType(mimeType) || isAudioMimeType(mimeType) || isVideoMimeType(mimeType) || isPdfMimeType(mimeType);
+  isImageMimeType(mimeType) ||
+  isSupportedInlineAudioMimeType(mimeType) ||
+  isVideoMimeType(mimeType) ||
+  isPdfMimeType(mimeType);
 
 export const getFileTypeCategory = (mimeType: string, error?: string): FileCategory => {
   const normalized = normalizeMimeType(mimeType);

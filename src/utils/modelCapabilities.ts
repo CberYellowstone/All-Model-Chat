@@ -211,6 +211,25 @@ export const getDefaultThinkingLevelForModel = (modelId: string, fallback: Think
   return fallback;
 };
 
+const isGemini3ProTextModel = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  return lowerId.includes('gemini-3.1-pro') || (lowerId.includes('gemini-3-pro') && !lowerId.includes('image'));
+};
+
+export const normalizeThinkingLevelForModel = (
+  modelId: string,
+  thinkingLevel: ThinkingLevel | undefined,
+  fallback: ThinkingLevel = 'HIGH',
+): ThinkingLevel => {
+  const resolvedLevel = thinkingLevel ?? fallback;
+
+  if (resolvedLevel === 'MINIMAL' && isGemini3ProTextModel(modelId)) {
+    return 'LOW';
+  }
+
+  return resolvedLevel;
+};
+
 export const shouldStripThinkingFromContext = (modelId: string, hideThinkingInContext?: boolean): boolean => {
   if (hideThinkingInContext) {
     return true;

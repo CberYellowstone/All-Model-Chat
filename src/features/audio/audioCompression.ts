@@ -1,5 +1,6 @@
 import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/objectUrlManager';
-import { audioCompressionWorkerCode } from './audioCompressionWorkerTemplate';
+import { SUPPORTED_AUDIO_MIME_TYPES } from '@/constants/fileTypeSupport';
+import { audioCompressionWorkerCode } from './audioCompressionWorkerCode';
 
 const BYTES_PER_KIB = 1024;
 const MIN_COMPRESSIBLE_AUDIO_BYTES = 50 * BYTES_PER_KIB;
@@ -8,6 +9,14 @@ const LOW_BITRATE_AUDIO_BPS = 80_000;
 const MP3_TARGET_SAMPLE_RATE = 16_000;
 const MP3_TARGET_CHANNELS = 1;
 const MP3_TARGET_KBPS = 64;
+
+const normalizeAudioMimeType = (mimeType: string): string => mimeType.trim().toLowerCase().split(';')[0];
+
+const isGeminiSupportedAudioMimeType = (file: File | Blob): boolean =>
+  SUPPORTED_AUDIO_MIME_TYPES.includes(normalizeAudioMimeType(file.type));
+
+const canKeepOriginalAudio = (file: File | Blob): file is File =>
+  file instanceof File && isGeminiSupportedAudioMimeType(file);
 
 interface EncodeMp3WithWorkerOptions {
   pcmData: Float32Array;
@@ -80,8 +89,7 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
   };
 
   if (file.size < MIN_COMPRESSIBLE_AUDIO_BYTES) {
-    if (file instanceof File) return file;
-    return new File([file], `recording-${Date.now()}.webm`, { type: file.type || 'audio/webm' });
+    if (canKeepOriginalAudio(file)) return file;
   }
 
   try {
@@ -96,8 +104,7 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
     checkAbort();
 
     if (audioBuffer.duration < MIN_COMPRESSIBLE_DURATION_SECONDS) {
-      if (file instanceof File) return file;
-      return new File([file], `recording-${Date.now()}.webm`, { type: file.type || 'audio/webm' });
+      if (canKeepOriginalAudio(file)) return file;
     }
 
     const duration = audioBuffer.duration;

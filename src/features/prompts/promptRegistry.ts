@@ -3,6 +3,7 @@ import type { LiveArtifactsPromptMode } from '@/types';
 
 type PromptLanguage = 'en' | 'zh';
 export type LiveArtifactsPromptTheme = 'dark' | 'light';
+type LiveArtifactsPromptModule = typeof import('./liveArtifacts');
 
 const LIVE_ARTIFACTS_PROMPT_MARKERS = [
   '[Live Artifacts Protocol]',
@@ -34,35 +35,50 @@ export const isBboxSystemInstruction = (instruction?: string | null) =>
 export const isHdGuideSystemInstruction = (instruction?: string | null) =>
   !!instruction && instruction.includes(HD_GUIDE_PROMPT_MARKER);
 
-export const resolveLiveArtifactsPromptTheme = (themeId?: string | null): LiveArtifactsPromptTheme | undefined => {
-  if (themeId === 'onyx') {
-    return 'dark';
-  }
-
-  if (themeId === 'pearl') {
-    return 'light';
-  }
-
-  return undefined;
+const LIVE_ARTIFACT_PROMPT_THEME_BY_THEME_ID: Partial<Record<string, LiveArtifactsPromptTheme>> = {
+  onyx: 'dark',
+  pearl: 'light',
 };
 
-const getLiveArtifactsThemeGuidance = (language: PromptLanguage, theme: LiveArtifactsPromptTheme) => {
-  if (language === 'en') {
-    return theme === 'dark'
-      ? '## Current Page Theme\n\nThe current AMC-WebUI page uses a dark theme. Default artifacts to a dark UI: dark backgrounds, light text, subdued borders/shadows, and color-scheme: dark; unless the user explicitly asks for a light artifact, do not create large white surfaces.\n'
-      : '## Current Page Theme\n\nThe current AMC-WebUI page uses a light theme. Default artifacts to a light UI: light backgrounds, dark text, clear borders/shadows, and color-scheme: light; unless the user explicitly asks for a dark artifact, do not create large black surfaces.\n';
-  }
-
-  return theme === 'dark'
-    ? '## 当前页面主题\n\n当前 AMC-WebUI 页面使用深色主题。产物默认采用深色界面：深背景、浅文字、低亮度边框/阴影，并设置 color-scheme: dark；除非用户明确要求浅色产物，不要生成大面积白底。\n'
-    : '## 当前页面主题\n\n当前 AMC-WebUI 页面使用浅色主题。产物默认采用浅色界面：浅背景、深文字、清晰边框/阴影，并设置 color-scheme: light；除非用户明确要求深色产物，不要生成大面积黑底。\n';
+const LIVE_ARTIFACT_PROMPT_EXPORT_BY_MODE: Record<
+  LiveArtifactsPromptMode,
+  Record<PromptLanguage, keyof LiveArtifactsPromptModule>
+> = {
+  inline: {
+    en: 'LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN',
+    zh: 'LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH',
+  },
+  full: {
+    en: 'LIVE_ARTIFACTS_SYSTEM_PROMPT_EN',
+    zh: 'LIVE_ARTIFACTS_SYSTEM_PROMPT_ZH',
+  },
+  fullHtml: {
+    en: 'LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_EN',
+    zh: 'LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_ZH',
+  },
 };
+
+const LIVE_ARTIFACT_THEME_GUIDANCE: Record<PromptLanguage, Record<LiveArtifactsPromptTheme, string>> = {
+  en: {
+    dark: '## Current Page Theme\n\nThe current AMC-WebUI page uses a dark theme. Default artifacts to a dark UI: dark backgrounds, light text, subdued borders/shadows, and color-scheme: dark; unless the user explicitly asks for a light artifact, do not create large white surfaces.\n',
+    light:
+      '## Current Page Theme\n\nThe current AMC-WebUI page uses a light theme. Default artifacts to a light UI: light backgrounds, dark text, clear borders/shadows, and color-scheme: light; unless the user explicitly asks for a dark artifact, do not create large black surfaces.\n',
+  },
+  zh: {
+    dark: '## 当前页面主题\n\n当前 AMC-WebUI 页面使用深色主题。产物默认采用深色界面：深背景、浅文字、低亮度边框/阴影，并设置 color-scheme: dark；除非用户明确要求浅色产物，不要生成大面积白底。\n',
+    light:
+      '## 当前页面主题\n\n当前 AMC-WebUI 页面使用浅色主题。产物默认采用浅色界面：浅背景、深文字、清晰边框/阴影，并设置 color-scheme: light；除非用户明确要求深色产物，不要生成大面积黑底。\n',
+  },
+};
+
+export const resolveLiveArtifactsPromptTheme = (themeId?: string | null): LiveArtifactsPromptTheme | undefined =>
+  themeId ? LIVE_ARTIFACT_PROMPT_THEME_BY_THEME_ID[themeId] : undefined;
 
 const appendLiveArtifactsThemeGuidance = (
   prompt: string,
   language: PromptLanguage,
   theme?: LiveArtifactsPromptTheme,
-) => (theme ? `${prompt.trimEnd()}\n\n${getLiveArtifactsThemeGuidance(language, theme)}` : prompt);
+) => (theme ? `${prompt.trimEnd()}\n\n${LIVE_ARTIFACT_THEME_GUIDANCE[language][theme]}` : prompt);
 
 export const loadLiveArtifactsSystemPrompt = async (
   language: PromptLanguage = 'zh',
@@ -70,22 +86,7 @@ export const loadLiveArtifactsSystemPrompt = async (
   theme?: LiveArtifactsPromptTheme,
 ) => {
   const prompts = await import('./liveArtifacts');
-  if (mode === 'fullHtml') {
-    const prompt =
-      language === 'en'
-        ? prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_EN
-        : prompts.LIVE_ARTIFACTS_FULL_HTML_SYSTEM_PROMPT_ZH;
-    return appendLiveArtifactsThemeGuidance(prompt, language, theme);
-  }
-
-  if (mode === 'full') {
-    const prompt =
-      language === 'en' ? prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_EN : prompts.LIVE_ARTIFACTS_SYSTEM_PROMPT_ZH;
-    return appendLiveArtifactsThemeGuidance(prompt, language, theme);
-  }
-
-  const prompt =
-    language === 'en' ? prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN : prompts.LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH;
+  const prompt = prompts[LIVE_ARTIFACT_PROMPT_EXPORT_BY_MODE[mode][language]];
   return appendLiveArtifactsThemeGuidance(prompt, language, theme);
 };
 

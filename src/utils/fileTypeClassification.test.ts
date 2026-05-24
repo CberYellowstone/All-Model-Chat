@@ -19,9 +19,10 @@ describe('fileTypeClassification', () => {
     expect(getFileKindFlags({ name: 'report.pdf', type: '' }).isPdf).toBe(true);
   });
 
-  it('uses the same media flags for inline-data eligibility', () => {
+  it('uses Gemini-supported media flags for inline-data eligibility', () => {
     expect(getFileKindFlags({ type: 'image/webp' }).isInlineData).toBe(true);
     expect(getFileKindFlags({ type: 'audio/wav' }).isInlineData).toBe(true);
+    expect(getFileKindFlags({ type: 'audio/webm' })).toMatchObject({ isAudio: true, isInlineData: false });
     expect(getFileKindFlags({ type: 'video/webm' }).isInlineData).toBe(true);
     expect(getFileKindFlags({ type: 'application/pdf' }).isInlineData).toBe(true);
     expect(getFileKindFlags({ type: 'application/vnd.ms-excel' }).isInlineData).toBe(false);

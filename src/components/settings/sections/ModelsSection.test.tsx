@@ -71,6 +71,7 @@ describe('ModelsSection', () => {
           availableModels={[{ id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true }]}
           setAvailableModels={vi.fn()}
           currentSettings={useSettingsStore.getState().appSettings}
+          currentThemeId="pearl"
           onUpdateSettings={vi.fn()}
           {...overrides}
         />,
@@ -176,6 +177,7 @@ describe('ModelsSection', () => {
           availableModels={[{ id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true }]}
           setAvailableModels={vi.fn()}
           currentSettings={settings}
+          currentThemeId="pearl"
           onUpdateSettings={handleUpdateSettings}
         />
       );

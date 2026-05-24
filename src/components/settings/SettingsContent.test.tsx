@@ -11,8 +11,15 @@ import type { ShortcutsSection } from './sections/ShortcutsSection';
 type ModelsSectionProps = ComponentProps<typeof ModelsSection>;
 type GenerationSectionProps = ComponentProps<typeof GenerationSection>;
 type ShortcutsSectionProps = ComponentProps<typeof ShortcutsSection>;
+type SettingsContentTestProps = Omit<ComponentProps<typeof SettingsContent>, 'currentThemeId'> & {
+  currentThemeId?: string;
+};
 
 const removedSettingsTab = (tab: string): SettingsTab => tab as SettingsTab;
+
+const SettingsContentWithDefaultTheme = (props: SettingsContentTestProps) => (
+  <SettingsContent currentThemeId="pearl" {...props} />
+);
 
 const mockModelsSection = vi.hoisted(() => ({
   lastProps: null as ModelsSectionProps | null,
@@ -139,7 +146,7 @@ describe('SettingsContent', () => {
   it('does not render the obsolete usage section when the removed tab is requested', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab={removedSettingsTab('usage')}
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={[]}
@@ -173,7 +180,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -219,7 +226,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -267,10 +274,41 @@ describe('SettingsContent', () => {
     expect(updateSetting).not.toHaveBeenCalled();
   });
 
+  it('passes the current theme id into models settings', () => {
+    act(() => {
+      renderer.root.render(
+        <SettingsContentWithDefaultTheme
+          activeTab="models"
+          currentSettings={DEFAULT_APP_SETTINGS}
+          currentThemeId="onyx"
+          availableModels={[]}
+          updateSetting={vi.fn()}
+          handleModelChange={vi.fn()}
+          setAvailableModels={vi.fn()}
+          onClearHistory={vi.fn()}
+          onClearCache={vi.fn()}
+          onOpenLogViewer={vi.fn()}
+          onClearLogs={vi.fn()}
+          onReset={vi.fn()}
+          onInstallPwa={vi.fn()}
+          installState="installed"
+          onImportSettings={vi.fn()}
+          onExportSettings={vi.fn()}
+          onImportHistory={vi.fn()}
+          onExportHistory={vi.fn()}
+          onImportScenarios={vi.fn()}
+          onExportScenarios={vi.fn()}
+        />,
+      );
+    });
+
+    expect(mockModelsSection.lastProps!.currentThemeId).toBe('onyx');
+  });
+
   it('keeps OpenAI-compatible models out of model settings while the provider is disabled', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -318,7 +356,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -376,7 +414,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -420,7 +458,7 @@ describe('SettingsContent', () => {
   it('includes OpenAI-compatible models in Tab cycle shortcut settings when the provider is enabled', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="shortcuts"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -463,7 +501,7 @@ describe('SettingsContent', () => {
   it('does not render the removed model behavior section when the obsolete tab is requested', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab={removedSettingsTab('generation')}
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={[]}
@@ -495,7 +533,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
@@ -532,7 +570,7 @@ describe('SettingsContent', () => {
   it('does not apply zoom-based enter animation to the active settings panel', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="models"
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={[]}
@@ -565,7 +603,7 @@ describe('SettingsContent', () => {
   it('keeps shortcuts out of the workspace tab', () => {
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="interface"
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={[]}
@@ -598,7 +636,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="shortcuts"
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={availableModels}
@@ -633,7 +671,7 @@ describe('SettingsContent', () => {
 
     act(() => {
       renderer.root.render(
-        <SettingsContent
+        <SettingsContentWithDefaultTheme
           activeTab="mcp"
           currentSettings={DEFAULT_APP_SETTINGS}
           availableModels={[]}

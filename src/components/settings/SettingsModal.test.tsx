@@ -15,6 +15,7 @@ describe('SettingsModal', () => {
     isOpen: true,
     onClose: vi.fn(),
     currentSettings: DEFAULT_APP_SETTINGS,
+    currentThemeId: 'pearl',
     availableModels: [],
     onSave: vi.fn(),
     onClearAllHistory: vi.fn(),

@@ -22,6 +22,7 @@ interface ModelsSectionProps {
   defaultApiMode?: ApiMode;
   isOpenAICompatibleMode?: boolean;
   currentSettings: AppSettings;
+  currentThemeId: string;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
 }
 
@@ -48,6 +49,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
   defaultApiMode,
   isOpenAICompatibleMode = false,
   currentSettings,
+  currentThemeId,
   onUpdateSettings,
 }) => {
   const { t } = useI18n();
@@ -172,7 +174,11 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
 
       {!isOpenAICompatibleMode && (
         <>
-          <LiveArtifactsSection currentSettings={currentSettings} onUpdateSetting={updateSetting} />
+          <LiveArtifactsSection
+            currentSettings={currentSettings}
+            currentThemeId={currentThemeId}
+            onUpdateSetting={updateSetting}
+          />
 
           <LanguageVoiceSection
             availableModels={geminiOnlyModels}

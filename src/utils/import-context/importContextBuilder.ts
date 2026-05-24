@@ -42,7 +42,7 @@ function shouldExpandZipFile(file: File): boolean {
   return !relativePath || relativePath === file.name;
 }
 
-function buildASCIITree(treeData: FileNode[], rootName: string): string {
+function buildUnicodeTree(treeData: FileNode[], rootName: string): string {
   let structure = `${rootName}\n`;
 
   const generateLines = (nodes: FileNode[], prefix: string) => {
@@ -286,7 +286,7 @@ async function processImportFiles(
 
   sortTreeNodes(roots);
 
-  const structureString = buildASCIITree(roots, rootNameForDisplay);
+  const structureString = buildUnicodeTree(roots, rootNameForDisplay);
   const { analysisSummary, securityFindings } = summarizeAnalysis(fileContents);
 
   return {

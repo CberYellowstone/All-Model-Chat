@@ -3,6 +3,60 @@ import path from 'path';
 import { describe, expect, it } from 'vitest';
 import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
 
+const SEND_CONTROLS_OBVIOUS_COMMENT_PATTERNS = [
+  '{/* Cancel Edit Button',
+  '{/* Main Action Button',
+  '{/* Ripples */}',
+  '{/* Icons stack',
+];
+
+const SESSION_LOADING_NARRATION_COMMENTS = [
+  'Set Active Messages and ID',
+  'Ensure metadata list contains this session',
+  'Update metadata if needed',
+  'Restore files from draft',
+  'Fetch metadata only for the list',
+  'Determine Active Session ID',
+  'Set List State',
+  'MEMORY OPTIMIZATION',
+  'Fallback: New Chat',
+  'Pass the top session',
+];
+
+const VAGUE_BYTE_BUFFER_LOCALS = ['const l =', 'const len =', 'const dv =', 'let p ='];
+
+const UNCLEAR_AUDIO_WORKER_FRAGMENTS = [
+  'function(e)',
+  'const s =',
+  'mp3encoder',
+  'mp3buf',
+  'catch (err)',
+  'sampleBlockSize = 1152; ',
+];
+
+const VAGUE_AUDIO_STREAM_LOCALS = ['const ctx =', 'const dest =', 'const micSource =', 'const sysSource ='];
+
+const LOG_VIEWER_OBVIOUS_JSX_COMMENTS = ['{/* Header */}', '{/* Tabs */}', '{/* Content */}'];
+
+const HELP_MODAL_OBVIOUS_JSX_COMMENTS = [
+  '{/* Header */}',
+  '{/* Search Bar */}',
+  '{/* Content */}',
+  '{/* Icon */}',
+  '{/* Text Info */}',
+];
+
+const AUDIO_RECORDER_OBVIOUS_JSX_COMMENTS = [
+  '{/* Header */}',
+  '{/* Content Body */}',
+  '{/* State: Idle / Initializing */}',
+  '{/* State: Recording */}',
+  '{/* State: Review */}',
+  '{/* Controls */}',
+];
+
+const TOKEN_COUNT_MODAL_OBVIOUS_JSX_COMMENTS = ['{/* Header */}', '{/* Model Selection */}', '{/* Error Display */}'];
+
 describe('source readability boundaries', () => {
   it('keeps chat input context type contracts out of the context runtime module', () => {
     const contextSource = readProjectFile('src/components/chat/input/ChatInputContext.tsx');
@@ -58,7 +112,7 @@ describe('source readability boundaries', () => {
 
     expect(appEntrySource).not.toContain('Import Global Styles');
 
-    for (const phrase of ['{/* Cancel Edit Button', '{/* Main Action Button', '{/* Ripples */}', '{/* Icons stack']) {
+    for (const phrase of SEND_CONTROLS_OBVIOUS_COMMENT_PATTERNS) {
       expect(sendControlsSource).not.toContain(phrase);
     }
 
@@ -96,18 +150,7 @@ describe('source readability boundaries', () => {
   it('keeps session loading comments focused on why instead of narrating steps', () => {
     const sessionLoaderSource = readProjectFile('src/hooks/chat/history/useSessionLoader.ts');
 
-    for (const phrase of [
-      'Set Active Messages and ID',
-      'Ensure metadata list contains this session',
-      'Update metadata if needed',
-      'Restore files from draft',
-      'Fetch metadata only for the list',
-      'Determine Active Session ID',
-      'Set List State',
-      'MEMORY OPTIMIZATION',
-      'Fallback: New Chat',
-      'Pass the top session',
-    ]) {
+    for (const phrase of SESSION_LOADING_NARRATION_COMMENTS) {
       expect(sessionLoaderSource).not.toContain(phrase);
     }
   });
@@ -122,7 +165,7 @@ describe('source readability boundaries', () => {
 
     for (const relativePath of byteBufferSources) {
       const source = readProjectFile(relativePath);
-      for (const vagueLocalName of ['const l =', 'const len =', 'const dv =', 'let p =']) {
+      for (const vagueLocalName of VAGUE_BYTE_BUFFER_LOCALS) {
         expect(source, relativePath).not.toContain(vagueLocalName);
       }
     }
@@ -133,8 +176,8 @@ describe('source readability boundaries', () => {
     expect(audioProcessingSource).toContain('writeOffset');
   });
 
-  it('keeps inline worker templates readable despite living inside strings', () => {
-    const audioCompressionWorkerTemplate = readProjectFile('src/features/audio/audioCompressionWorkerTemplate.ts');
+  it('keeps inline worker code readable despite living inside strings', () => {
+    const audioCompressionWorkerCode = readProjectFile('src/features/audio/audioCompressionWorkerCode.ts');
     const audioCompressionSource = readProjectFile('src/features/audio/audioCompression.ts');
 
     expect(audioCompressionSource).not.toContain('createAudioCompressionWorkerCode');
@@ -143,27 +186,20 @@ describe('source readability boundaries', () => {
     expect(audioCompressionSource).not.toContain('revokeObjectUrl?:');
     expect(audioCompressionSource).not.toContain('createWorker ??');
     expect(audioCompressionSource).not.toContain('worker.onmessage = (e)');
-    for (const unclearFragment of [
-      'function(e)',
-      'const s =',
-      'mp3encoder',
-      'mp3buf',
-      'catch (err)',
-      'sampleBlockSize = 1152; ',
-    ]) {
-      expect(audioCompressionWorkerTemplate).not.toContain(unclearFragment);
+    for (const unclearFragment of UNCLEAR_AUDIO_WORKER_FRAGMENTS) {
+      expect(audioCompressionWorkerCode).not.toContain(unclearFragment);
     }
 
-    expect(audioCompressionWorkerTemplate).toContain('function(event)');
-    expect(audioCompressionWorkerTemplate).toContain('clampedSample');
-    expect(audioCompressionWorkerTemplate).toContain('mp3Encoder');
-    expect(audioCompressionWorkerTemplate).toContain('encodedChunk');
+    expect(audioCompressionWorkerCode).toContain('function(event)');
+    expect(audioCompressionWorkerCode).toContain('clampedSample');
+    expect(audioCompressionWorkerCode).toContain('mp3Encoder');
+    expect(audioCompressionWorkerCode).toContain('encodedChunk');
   });
 
   it('names audio stream composition locals after their runtime role', () => {
     const audioProcessingSource = readProjectFile('src/features/audio/audioProcessing.ts');
 
-    for (const vagueLocalName of ['const ctx =', 'const dest =', 'const micSource =', 'const sysSource =']) {
+    for (const vagueLocalName of VAGUE_AUDIO_STREAM_LOCALS) {
       expect(audioProcessingSource).not.toContain(vagueLocalName);
     }
 
@@ -214,32 +250,19 @@ describe('source readability boundaries', () => {
     expect(headerModelSelectorSource).not.toContain('Thinking Level Toggle');
     expect(consoleTabSource).not.toContain('{/* Toolbar */}');
 
-    for (const phrase of ['{/* Header */}', '{/* Tabs */}', '{/* Content */}']) {
+    for (const phrase of LOG_VIEWER_OBVIOUS_JSX_COMMENTS) {
       expect(logViewerSource).not.toContain(phrase);
     }
 
-    for (const phrase of [
-      '{/* Header */}',
-      '{/* Search Bar */}',
-      '{/* Content */}',
-      '{/* Icon */}',
-      '{/* Text Info */}',
-    ]) {
+    for (const phrase of HELP_MODAL_OBVIOUS_JSX_COMMENTS) {
       expect(helpModalSource).not.toContain(phrase);
     }
 
-    for (const phrase of [
-      '{/* Header */}',
-      '{/* Content Body */}',
-      '{/* State: Idle / Initializing */}',
-      '{/* State: Recording */}',
-      '{/* State: Review */}',
-      '{/* Controls */}',
-    ]) {
+    for (const phrase of AUDIO_RECORDER_OBVIOUS_JSX_COMMENTS) {
       expect(audioRecorderSource).not.toContain(phrase);
     }
 
-    for (const phrase of ['{/* Header */}', '{/* Model Selection */}', '{/* Error Display */}']) {
+    for (const phrase of TOKEN_COUNT_MODAL_OBVIOUS_JSX_COMMENTS) {
       expect(tokenCountModalSource).not.toContain(phrase);
     }
 

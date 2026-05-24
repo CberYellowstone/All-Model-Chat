@@ -170,12 +170,12 @@ describe('detail quality boundaries', () => {
     }
   });
 
-  it('keeps audio compression worker source in its own template module', () => {
+  it('keeps audio compression worker source in its own code module', () => {
     const audioCompressionSource = readProjectFile('src/features/audio/audioCompression.ts');
-    const workerTemplateSource = readProjectFile('src/features/audio/audioCompressionWorkerTemplate.ts');
+    const workerCodeSource = readProjectFile('src/features/audio/audioCompressionWorkerCode.ts');
 
-    expect(workerTemplateSource).toContain('export const audioCompressionWorkerCode');
-    expect(audioCompressionSource).toContain("from './audioCompressionWorkerTemplate'");
+    expect(workerCodeSource).toContain('export const audioCompressionWorkerCode');
+    expect(audioCompressionSource).toContain("from './audioCompressionWorkerCode'");
     expect(audioCompressionSource).not.toContain('const WORKER_CODE');
     expect(audioCompressionSource).not.toContain('importScripts(');
   });

@@ -15,6 +15,7 @@ import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
 interface SettingsContentProps extends SettingsTransferProps {
   activeTab: SettingsTab;
   currentSettings: AppSettings;
+  currentThemeId: string;
   availableModels: ModelOption[];
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   handleModelChange: (modelId: string) => void;
@@ -56,6 +57,7 @@ const hasModelId = (models: ModelOption[], modelId: string): boolean => models.s
 export const SettingsContent: React.FC<SettingsContentProps> = ({
   activeTab,
   currentSettings,
+  currentThemeId,
   availableModels,
   updateSetting,
   handleModelChange,
@@ -132,6 +134,7 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             defaultApiMode="gemini-native"
             isOpenAICompatibleMode={isOpenAICompatibleMode}
             currentSettings={currentSettings}
+            currentThemeId={currentThemeId}
             onUpdateSettings={handleBatchUpdate}
           />
         </div>

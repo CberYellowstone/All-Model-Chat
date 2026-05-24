@@ -4,6 +4,7 @@ import {
   getDefaultThinkingLevelForModel,
   getModelCapabilities,
   isGemini3Model,
+  normalizeThinkingLevelForModel,
   shouldStripThinkingFromContext,
 } from './modelCapabilities';
 
@@ -159,6 +160,18 @@ describe('getDefaultThinkingLevelForModel', () => {
 
   it('keeps fallback thinking level for non-special models', () => {
     expect(getDefaultThinkingLevelForModel('gemini-2.5-flash', 'HIGH')).toBe('HIGH');
+  });
+});
+
+describe('normalizeThinkingLevelForModel', () => {
+  it('maps MINIMAL to LOW for Gemini 3 Pro text models', () => {
+    expect(normalizeThinkingLevelForModel('gemini-3.1-pro-preview', 'MINIMAL')).toBe('LOW');
+    expect(normalizeThinkingLevelForModel('models/gemini-3-pro-preview', 'MINIMAL')).toBe('LOW');
+  });
+
+  it('keeps MINIMAL for Gemini 3 Flash models', () => {
+    expect(normalizeThinkingLevelForModel('gemini-3-flash-preview', 'MINIMAL')).toBe('MINIMAL');
+    expect(normalizeThinkingLevelForModel('gemini-3.1-flash-lite', 'MINIMAL')).toBe('MINIMAL');
   });
 });
 
