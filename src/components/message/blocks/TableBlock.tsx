@@ -77,8 +77,8 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       await navigator.clipboard.writeText(markdown);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (e) {
-      logService.error('Failed to copy markdown table', e);
+    } catch (error) {
+      logService.error('Failed to copy markdown table', error);
     }
   };
 

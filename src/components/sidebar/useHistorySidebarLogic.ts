@@ -157,7 +157,7 @@ export const useHistorySidebarLogic = ({
     prevGeneratingTitleSessionIdsRef.current = generatingTitleSessionIds;
   }, [generatingTitleSessionIds]);
 
-  // Search Effect - Async Content Search
+  // Debounced DB-backed content search.
   useEffect(() => {
     const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery) return;
@@ -166,15 +166,13 @@ export const useHistorySidebarLogic = ({
       try {
         const ids = await dbService.searchSessions(trimmedQuery);
         setSearchResults({ query: trimmedQuery, ids: new Set(ids) });
-      } catch (e) {
-        logService.error('Search error', e);
+      } catch (searchError) {
+        logService.error('Search error', searchError);
       }
     }, 300);
 
     return () => clearTimeout(handler);
   }, [searchQuery]);
-
-  // --- Data Processing (Memoized) ---
 
   const filteredSessions = useMemo(() => {
     const trimmedQuery = searchQuery.trim();

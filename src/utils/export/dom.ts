@@ -26,8 +26,8 @@ export const gatherPageStyles = async (): Promise<string> => {
 
         const css = await res.text();
         return `<style>${sanitizeCssColorFunctionsForPngExport(css)}</style>`;
-      } catch (err) {
-        logService.warn('Could not fetch stylesheet for export.', { href, error: err });
+      } catch (stylesheetError) {
+        logService.warn('Could not fetch stylesheet for export.', { href, error: stylesheetError });
         // Fallback: If we can't fetch it, we ignore it rather than linking it,
         // because cross-origin links often cause taint issues in html2canvas.
         // Or we could return empty string.
@@ -71,8 +71,8 @@ const embedImagesInClone = async (clone: HTMLElement): Promise<void> => {
           reader.onerror = () => resolve(); // Resolve to continue even on error
           reader.readAsDataURL(blob);
         });
-      } catch (e) {
-        logService.warn('Failed to embed image for export:', e);
+      } catch (embedError) {
+        logService.warn('Failed to embed image for export:', embedError);
       }
     }),
   );

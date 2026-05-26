@@ -50,7 +50,7 @@ interface CompleteModelMessageParams {
   patch: Partial<ChatMessage> | ((message: ChatMessage) => ChatMessage);
 }
 
-type MessageLifecycleRunner = <T>(params: {
+export type MessageLifecycleRunner = <T>(params: {
   sessionId: string;
   generationId: string;
   abortController: AbortController;

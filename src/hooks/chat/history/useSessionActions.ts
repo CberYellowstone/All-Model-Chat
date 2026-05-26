@@ -23,8 +23,8 @@ export const useSessionActions = ({ updateAndPersistSessions, activeJobs }: UseS
 
       try {
         removeSessionScopedLocalStorageEntries([sessionId]);
-      } catch (e) {
-        logService.error('Failed to clean up session localStorage:', e);
+      } catch (cleanupError) {
+        logService.error('Failed to clean up session localStorage:', cleanupError);
       }
 
       updateAndPersistSessions((prev) => {

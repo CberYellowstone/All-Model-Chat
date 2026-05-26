@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { type ChatMessage, type UploadedFile, type AppSettings, type SideViewContent } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { LazyMarkdownRenderer } from '@/components/message/LazyMarkdownRenderer';
@@ -10,6 +10,13 @@ import { useMessageStream } from '@/hooks/ui/useMessageStream';
 import { extractRawThinkingBlocks } from '@/utils/chat/reasoning';
 import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  getUserMessageCollapseKey,
+  shouldCollapseUserMessageContent,
+  USER_MESSAGE_COLLAPSED_LINE_HEIGHT,
+  USER_MESSAGE_COLLAPSE_LINE_THRESHOLD,
+  type UserMessageCollapseController,
+} from './userMessageCollapse';
 
 interface MessageTextProps {
   message: ChatMessage;
@@ -24,19 +31,8 @@ interface MessageTextProps {
   isMermaidRenderingEnabled: boolean;
   isGraphvizRenderingEnabled: boolean;
   onOpenSidePanel: (content: SideViewContent) => void;
+  userMessageCollapse?: UserMessageCollapseController;
 }
-
-const USER_MESSAGE_COLLAPSE_CHARACTER_THRESHOLD = 600;
-const USER_MESSAGE_COLLAPSE_LINE_THRESHOLD = 8;
-const USER_MESSAGE_COLLAPSED_LINE_HEIGHT = 1.65;
-
-const shouldCollapseUserMessageContent = (content: string): boolean => {
-  if (content.length > USER_MESSAGE_COLLAPSE_CHARACTER_THRESHOLD) return true;
-  return (content.match(/\n/g)?.length ?? 0) + 1 > USER_MESSAGE_COLLAPSE_LINE_THRESHOLD;
-};
-
-const getUserMessageCollapseKey = (messageId: string, content: string): string =>
-  `${messageId}:${content.length}:${content.slice(0, 64)}:${content.slice(-64)}`;
 
 export const MessageText: React.FC<MessageTextProps> = ({
   message,
@@ -51,11 +47,11 @@ export const MessageText: React.FC<MessageTextProps> = ({
   isMermaidRenderingEnabled,
   isGraphvizRenderingEnabled,
   onOpenSidePanel,
+  userMessageCollapse,
 }) => {
   const { t } = useI18n();
   const { content, audioSrc, groundingMetadata, urlContextMetadata, thoughts } = message;
   const isLoading = message.isLoading ?? false;
-  const [expandedUserMessageKey, setExpandedUserMessageKey] = useState<string | null>(null);
 
   const { streamContent, streamThoughts } = useMessageStream(message.id, isLoading && message.role === 'model');
 
@@ -70,9 +66,12 @@ export const MessageText: React.FC<MessageTextProps> = ({
     [displayedContent, shouldSmooth],
   );
   const shouldOfferUserMessageCollapse =
-    message.role === 'user' && !isLoading && shouldCollapseUserMessageContent(displayedContent);
+    Boolean(userMessageCollapse) &&
+    message.role === 'user' &&
+    !isLoading &&
+    shouldCollapseUserMessageContent(displayedContent);
   const userMessageCollapseKey = getUserMessageCollapseKey(message.id, displayedContent);
-  const isUserMessageExpanded = expandedUserMessageKey === userMessageCollapseKey;
+  const isUserMessageExpanded = userMessageCollapse?.expandedUserMessageKeys.has(userMessageCollapseKey) ?? false;
   const isUserMessageCollapsed = shouldOfferUserMessageCollapse && !isUserMessageExpanded;
   const userMessageCollapseRegionId = `${message.id}-message-text`;
   const collapsedMaxHeight = baseFontSize * USER_MESSAGE_COLLAPSED_LINE_HEIGHT * USER_MESSAGE_COLLAPSE_LINE_THRESHOLD;
@@ -172,11 +171,7 @@ export const MessageText: React.FC<MessageTextProps> = ({
               aria-expanded={isUserMessageExpanded}
               aria-label={isUserMessageExpanded ? t('collapse') : t('expand')}
               className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-current opacity-80 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/40"
-              onClick={() =>
-                setExpandedUserMessageKey((expandedKey) =>
-                  expandedKey === userMessageCollapseKey ? null : userMessageCollapseKey,
-                )
-              }
+              onClick={() => userMessageCollapse?.onToggleUserMessageExpanded(userMessageCollapseKey)}
             >
               {isUserMessageExpanded ? t('collapse') : t('expand')}
               {isUserMessageExpanded ? (

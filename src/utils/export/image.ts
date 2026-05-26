@@ -238,8 +238,8 @@ export const exportSvgAsImage = async (
           const dataUrl = canvas.toDataURL(mimeType);
           triggerDownload(dataUrl, filename);
           resolve();
-        } catch (e) {
-          reject(e);
+        } catch (dataUrlError) {
+          reject(dataUrlError);
         }
       } else {
         reject(new Error('Could not get canvas context.'));

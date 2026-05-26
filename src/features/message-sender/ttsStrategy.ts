@@ -1,10 +1,8 @@
 import { type AppSettings, type ChatSettings as IndividualChatSettings } from '@/types';
 import { generateSpeechApi } from '@/services/api/generation/audioApi';
 import { pcmBase64ToWavUrl } from '@/features/audio/audioProcessing';
-import { runOptimisticMessagePipeline } from './messagePipeline';
+import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
 import type { MessageSenderTranslator, SessionsUpdater } from './types';
-
-type MessageLifecycleRunner = Parameters<typeof runOptimisticMessagePipeline>[0]['runMessageLifecycle'];
 
 interface SendTtsMessageParams {
   keyToUse: string;

@@ -220,9 +220,9 @@ export const useLiveConnection = ({
                   data: base64Data,
                 },
               });
-            } catch (e) {
+            } catch (audioSendError) {
               // Catch synchronous send errors (e.g. if socket closed between checks)
-              logService.warn('Failed to send audio frame:', e);
+              logService.warn('Failed to send audio frame:', audioSendError);
             }
           });
         }
@@ -319,7 +319,7 @@ export const useLiveConnection = ({
 
       isConnectingRef.current = false;
       return true;
-    } catch (err) {
+    } catch (connectionError) {
       const wasUserDisconnect = isUserDisconnectRef.current || !isConnectingRef.current;
       isConnectingRef.current = false;
       clearSetupCompleteWaiters();
@@ -330,18 +330,18 @@ export const useLiveConnection = ({
         return false;
       }
 
-      logService.error('Failed to connect to Live API', err);
+      logService.error('Failed to connect to Live API', connectionError);
 
       if (
-        err instanceof LiveApiAuthConfigurationError ||
-        (err instanceof Error && err.name === 'LiveApiAuthConfigurationError')
+        connectionError instanceof LiveApiAuthConfigurationError ||
+        (connectionError instanceof Error && connectionError.name === 'LiveApiAuthConfigurationError')
       ) {
         setIsReconnecting(false);
-        const authError = err as LiveApiAuthConfigurationError & { code?: string };
+        const authError = connectionError as LiveApiAuthConfigurationError & { code?: string };
         if (authError.code === 'MISSING_API_KEY') {
           setTranslationError('liveStatus_missing_api_key');
-        } else if (err.message) {
-          setRawError(err.message);
+        } else if (connectionError.message) {
+          setRawError(connectionError.message);
         } else {
           setTranslationError('liveStatus_failed_to_start');
         }
@@ -353,8 +353,8 @@ export const useLiveConnection = ({
       if (!isUserDisconnectRef.current) {
         triggerReconnect();
       } else {
-        if (err instanceof Error && err.message) {
-          setRawError(err.message);
+        if (connectionError instanceof Error && connectionError.message) {
+          setRawError(connectionError.message);
         } else {
           setTranslationError('liveStatus_failed_to_start');
         }
@@ -396,8 +396,8 @@ export const useLiveConnection = ({
         session.sendRealtimeInput({ text });
         logService.info('Sent text to Live API', { textLength: text.length });
         return true;
-      } catch (e) {
-        logService.error('Failed to send text to Live API', e);
+      } catch (sendTextError) {
+        logService.error('Failed to send text to Live API', sendTextError);
         return false;
       }
     },
@@ -438,8 +438,8 @@ export const useLiveConnection = ({
         });
         logService.info('Sent client content to Live API', { partCount: parts.length });
         return true;
-      } catch (e) {
-        logService.error('Failed to send client content to Live API', e);
+      } catch (sendContentError) {
+        logService.error('Failed to send client content to Live API', sendContentError);
         return false;
       }
     },

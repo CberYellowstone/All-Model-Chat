@@ -130,9 +130,14 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
       }
 
       if (onSuccess) onSuccess();
-    } catch (err) {
-      logService.error(`Failed to export message as ${type.toUpperCase()}:`, err);
-      alert(t('export_failed_with_message').replace('{message}', err instanceof Error ? err.message : String(err)));
+    } catch (exportError) {
+      logService.error(`Failed to export message as ${type.toUpperCase()}:`, exportError);
+      alert(
+        t('export_failed_with_message').replace(
+          '{message}',
+          exportError instanceof Error ? exportError.message : String(exportError),
+        ),
+      );
     } finally {
       setExportingType(null);
     }

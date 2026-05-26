@@ -1,7 +1,28 @@
 import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
-import { listProjectSourceFiles, projectRoot, readProjectFile } from './projectFiles';
+import { listProjectSourceFiles, listProjectSourceFilesExcept, projectRoot, readProjectFile } from './projectFiles';
+
+const thisTestFile = 'src/test/architecture/codebaseMaintainability.test.ts';
+
+const MODEL_SETTINGS_HANDLER_PROP_NAMES = [
+  'setTranscriptionModelId',
+  'setTtsVoice',
+  'setSystemInstruction',
+  'setTemperature',
+  'setTopP',
+  'setTopK',
+  'setThinkingBudget',
+  'setThinkingLevel',
+  'setShowThoughts',
+  'setMediaResolution',
+  'setTranslationTargetLanguage',
+  'setInputTranslationModelId',
+  'setThoughtTranslationTargetLanguage',
+  'setThoughtTranslationModelId',
+  'setAutoLiveArtifactsVisualization',
+  'setAutoLiveArtifactsModelId',
+];
 
 describe('codebase maintainability guardrails', () => {
   it('does not keep identity wrapper exports in mainContentModels', () => {
@@ -20,9 +41,9 @@ describe('codebase maintainability guardrails', () => {
   });
 
   it('keeps model utility consumers on the split module names', () => {
-    const offenders = listProjectSourceFiles('src')
-      .filter((relativePath) => relativePath !== 'src/test/architecture/codebaseMaintainability.test.ts')
-      .filter((relativePath) => readProjectFile(relativePath).includes('modelHelpers'));
+    const offenders = listProjectSourceFilesExcept('src', thisTestFile).filter((relativePath) =>
+      readProjectFile(relativePath).includes('modelHelpers'),
+    );
 
     expect(offenders).toEqual([]);
   });
@@ -298,47 +319,13 @@ describe('codebase maintainability guardrails', () => {
     expect(liveArtifactsSectionSource).not.toContain('useSettingsStore(');
 
     for (const source of [modelsSectionSource, languageVoiceSectionSource, liveArtifactsSectionSource]) {
-      for (const propName of [
-        'setTranscriptionModelId',
-        'setTtsVoice',
-        'setSystemInstruction',
-        'setTemperature',
-        'setTopP',
-        'setTopK',
-        'setThinkingBudget',
-        'setThinkingLevel',
-        'setShowThoughts',
-        'setMediaResolution',
-        'setTranslationTargetLanguage',
-        'setInputTranslationModelId',
-        'setThoughtTranslationTargetLanguage',
-        'setThoughtTranslationModelId',
-        'setAutoLiveArtifactsVisualization',
-        'setAutoLiveArtifactsModelId',
-      ]) {
+      for (const propName of MODEL_SETTINGS_HANDLER_PROP_NAMES) {
         expect(source).not.toContain(`${propName}:`);
       }
     }
 
     for (const source of [modelsSectionSource]) {
-      for (const propName of [
-        'setTranscriptionModelId',
-        'setTtsVoice',
-        'setSystemInstruction',
-        'setTemperature',
-        'setTopP',
-        'setTopK',
-        'setThinkingBudget',
-        'setThinkingLevel',
-        'setShowThoughts',
-        'setMediaResolution',
-        'setTranslationTargetLanguage',
-        'setInputTranslationModelId',
-        'setThoughtTranslationTargetLanguage',
-        'setThoughtTranslationModelId',
-        'setAutoLiveArtifactsVisualization',
-        'setAutoLiveArtifactsModelId',
-      ]) {
+      for (const propName of MODEL_SETTINGS_HANDLER_PROP_NAMES) {
         expect(source).not.toContain(`${propName}={`);
       }
     }
@@ -403,9 +390,7 @@ describe('codebase maintainability guardrails', () => {
     expect(helperSource).not.toContain('@typescript-eslint/no-explicit-any');
     expect(helperSource).not.toContain('ComponentType<any>');
 
-    const sourceFiles = listProjectSourceFiles('src').filter(
-      (relativePath) => relativePath !== 'src/test/architecture/codebaseMaintainability.test.ts',
-    );
+    const sourceFiles = listProjectSourceFilesExcept('src', thisTestFile);
 
     for (const relativePath of sourceFiles) {
       const source = readProjectFile(relativePath);

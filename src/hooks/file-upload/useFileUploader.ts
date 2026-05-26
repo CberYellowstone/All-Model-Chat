@@ -7,7 +7,7 @@ import {
 } from '@/types';
 import { logService } from '@/services/logService';
 import { releaseManagedObjectUrl } from '@/services/objectUrlManager';
-import { getApiKeyErrorTranslationKey, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
+import { formatApiKeyErrorMessage, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import {
   buildFileUploadPreflight,
   checkBatchNeedsApiKey,
@@ -62,8 +62,7 @@ export const useFileUploader = ({
       if (needsApiKeyForUpload) {
         const keyResult = getGeminiKeyForRequest(appSettings, currentChatSettings);
         if ('error' in keyResult) {
-          const translationKey = getApiKeyErrorTranslationKey(keyResult.error);
-          setAppFileError(translationKey ? t(translationKey) : keyResult.error);
+          setAppFileError(formatApiKeyErrorMessage(keyResult.error, t));
           logService.error('Cannot process files: API key not configured.');
           return;
         }

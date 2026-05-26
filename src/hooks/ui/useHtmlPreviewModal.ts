@@ -269,8 +269,8 @@ export const useHtmlPreviewModal = ({
           exportFailed: (message) => t('export_failed_with_message').replace('{message}', message),
         },
       });
-    } catch (err) {
-      logService.error('Failed to take screenshot of iframe content:', err);
+    } catch (screenshotError) {
+      logService.error('Failed to take screenshot of iframe content:', screenshotError);
       alert(t('htmlPreview_screenshot_failed'));
     } finally {
       cleanup();

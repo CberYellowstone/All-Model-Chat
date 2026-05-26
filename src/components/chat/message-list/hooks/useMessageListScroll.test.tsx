@@ -92,30 +92,15 @@ const readStoredScrollSnapshot = (sessionId: string) => {
 };
 
 describe('useMessageListScroll', () => {
-  let storage: Map<string, string>;
-
   beforeEach(() => {
     vi.useFakeTimers();
-    storage = new Map<string, string>();
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      },
-      removeItem: (key: string) => {
-        storage.delete(key);
-      },
-      clear: () => {
-        storage.clear();
-      },
-    });
+    localStorage.clear();
   });
 
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
   });
 
   it('syncs the scroller element, persists a visible message anchor, and respects bottom-state updates', () => {

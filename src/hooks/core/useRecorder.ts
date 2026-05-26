@@ -154,8 +154,8 @@ export const useRecorder = (options: UseRecorderOptions = {}) => {
         setStatus('recording');
         setDuration(0);
         timerRef.current = window.setInterval(() => setDuration((d) => d + 1), 1000);
-      } catch (err) {
-        logService.error('Recorder error:', err);
+      } catch (recorderError) {
+        logService.error('Recorder error:', recorderError);
         const msg = permissionErrorMessage ?? getTranslator('en')('voiceInput_permission_error');
         setError(msg);
         if (onError) onError(msg);

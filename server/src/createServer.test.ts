@@ -1,41 +1,13 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createServer, readMacOsClipboardPng } from './createServer';
-import type { AddressInfo } from 'node:net';
+import { createHttpServerCleanup, startHttpServer } from '../test/httpServer';
 import http from 'node:http';
 import { Buffer } from 'node:buffer';
 
-async function startHttpServer(server: http.Server): Promise<{ baseUrl: string; close: () => Promise<void> }> {
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => resolve());
-  });
+const serverCleanup = createHttpServerCleanup();
 
-  const address = server.address() as AddressInfo;
-
-  return {
-    baseUrl: `http://127.0.0.1:${address.port}`,
-    close: async () => {
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
-    },
-  };
-}
-
-const cleanupCallbacks: Array<() => Promise<void>> = [];
-
-afterEach(async () => {
-  while (cleanupCallbacks.length) {
-    const close = cleanupCallbacks.pop();
-    if (close) {
-      await close();
-    }
-  }
-});
+afterEach(serverCleanup.cleanup);
 
 describe('createServer', () => {
   it('returns health details from GET /health', async () => {
@@ -43,8 +15,7 @@ describe('createServer', () => {
       geminiApiBase: 'https://generativelanguage.googleapis.com',
       geminiApiKey: 'server-key',
     });
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/health`);
     const body = (await response.json()) as Record<string, unknown>;
@@ -59,8 +30,7 @@ describe('createServer', () => {
       geminiApiBase: 'https://generativelanguage.googleapis.com',
       geminiApiKey: 'server-key',
     });
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/api/live-token`, { method: 'POST' });
     const body = (await response.json()) as Record<string, unknown>;
@@ -100,15 +70,13 @@ describe('createServer', () => {
       });
     });
 
-    const upstreamStarted = await startHttpServer(upstream);
-    cleanupCallbacks.push(upstreamStarted.close);
+    const upstreamStarted = serverCleanup.track(await startHttpServer(upstream));
 
     const app = createServer({
       geminiApiBase: upstreamStarted.baseUrl,
       geminiApiKey: 'server-key',
     });
-    const appStarted = await startHttpServer(app);
-    cleanupCallbacks.push(appStarted.close);
+    const appStarted = serverCleanup.track(await startHttpServer(app));
 
     const proxyResponse = await fetch(
       `${appStarted.baseUrl}/api/gemini/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse`,
@@ -149,8 +117,7 @@ describe('createServer', () => {
       },
       { fetchImpl },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await new Promise<{ statusCode: number }>((resolve, reject) => {
       const request = http.request(`${started.baseUrl}/api/gemini/v1beta/models`, {
@@ -218,8 +185,7 @@ describe('createServer', () => {
       },
       { fetchImpl },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/api/gemini/v1beta/models`, {
       method: 'POST',
@@ -252,8 +218,7 @@ describe('createServer', () => {
       },
       { fetchImpl },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/api/gemini/v1beta/models`);
     const body = (await response.json()) as Record<string, unknown>;
@@ -281,8 +246,7 @@ describe('createServer', () => {
         }),
       },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
       `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/diagram.png')}`,
@@ -312,8 +276,7 @@ describe('createServer', () => {
         }),
       },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
       `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/not-image')}`,
@@ -333,8 +296,7 @@ describe('createServer', () => {
       },
       { fetchImpl },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
       `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('http://127.0.0.1/private.png')}`,
@@ -359,8 +321,7 @@ describe('createServer', () => {
       },
       { readLocalClipboardImage },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/api/local-clipboard-image`);
     const bytes = new Uint8Array(await response.arrayBuffer());
@@ -380,8 +341,7 @@ describe('createServer', () => {
       },
       { readLocalClipboardImage },
     );
-    const started = await startHttpServer(app);
-    cleanupCallbacks.push(started.close);
+    const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(`${started.baseUrl}/api/local-clipboard-image`);
     const body = (await response.json()) as Record<string, unknown>;

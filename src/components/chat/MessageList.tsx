@@ -7,6 +7,7 @@ import { ScrollNavigation } from './message-list/ScrollNavigation';
 import { TextSelectionToolbar } from './message-list/TextSelectionToolbar';
 import { useMessageListUi } from './message-list/hooks/useMessageListUi';
 import { useMessageListScroll } from './message-list/hooks/useMessageListScroll';
+import { useExpandedUserMessages } from './message-list/hooks/useExpandedUserMessages';
 import { MessageListFooter } from './message-list/MessageListFooter';
 import { MessageListModals } from './message-list/MessageListModals';
 import { isGemini3Model } from '@/utils/modelCapabilities';
@@ -68,6 +69,8 @@ const MessageListComponent: React.FC = () => {
     [language, onSendMessage],
   );
   const visibleMessages = useMemo(() => getVisibleChatMessages(messages), [messages]);
+  const userMessageCollapse = useExpandedUserMessages(activeSessionId);
+
   const {
     previewFile,
     isHtmlPreviewModalOpen,
@@ -139,6 +142,7 @@ const MessageListComponent: React.FC = () => {
           onOpenSidePanel={onOpenSidePanel}
           onConfigureFile={msg.role === 'user' ? handleConfigureFile : undefined}
           isGemini3={isGemini3}
+          userMessageCollapse={userMessageCollapse}
         />
       </div>
     ),
@@ -158,6 +162,7 @@ const MessageListComponent: React.FC = () => {
       onOpenSidePanel,
       onRetryMessage,
       sessionTitle,
+      userMessageCollapse,
       visibleMessages,
     ],
   );

@@ -67,9 +67,9 @@ export const AboutSection: React.FC = () => {
         } else {
           setHasReleaseData(false);
         }
-      } catch (err) {
+      } catch (releaseError) {
         if (!isCancelled) {
-          logService.error('Failed to fetch about info', err);
+          logService.error('Failed to fetch about info', releaseError);
           setHasReleaseData(false);
         }
       } finally {

@@ -36,8 +36,8 @@ export const useLiveVideo = () => {
       setVideoStream(stream);
       setVideoSource('camera');
       return true;
-    } catch (err) {
-      logService.error('Failed to start camera', err);
+    } catch (cameraError) {
+      logService.error('Failed to start camera', cameraError);
       return false;
     }
   }, [stopActiveStream, videoSource]);
@@ -63,8 +63,8 @@ export const useLiveVideo = () => {
         setVideoSource(null);
       };
       return true;
-    } catch (err) {
-      logService.error('Failed to start screen share', err);
+    } catch (screenShareError) {
+      logService.error('Failed to start screen share', screenShareError);
       return false;
     }
   }, [stopActiveStream, videoSource]);

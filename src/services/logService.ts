@@ -28,7 +28,7 @@ class LogServiceImpl {
     console.error(message, error);
   });
 
-  // Batching Buffer
+  // Buffered DB writes keep logging responsive during bursts.
   private logBuffer: LogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private activeFlushPromise: Promise<void> | null = null;
@@ -38,8 +38,6 @@ class LogServiceImpl {
     this.pruneOldLogs();
     this.info('Log service initialized (IndexedDB Batched Mode).', { category: 'SYSTEM' });
   }
-
-  // --- Core Logging Logic ---
 
   private createLogEntry(level: LogLevel, category: LogCategory, message: string, data?: unknown): LogEntry {
     return {
@@ -191,8 +189,8 @@ class LogServiceImpl {
       try {
         await dbService.addLogs(logsToSave);
         flushSucceeded = true;
-      } catch (e) {
-        console.error('Failed to flush logs to DB:', e);
+      } catch (flushError) {
+        console.error('Failed to flush logs to DB:', flushError);
         if (!this.isClearing) {
           this.logBuffer = [...logsToSave, ...this.logBuffer];
           this.scheduleFlush();
@@ -223,12 +221,10 @@ class LogServiceImpl {
     try {
       const cutoff = Date.now() - LOG_RETENTION_MS;
       await dbService.pruneLogs(cutoff);
-    } catch (e) {
-      console.error('Failed to prune old logs:', e);
+    } catch (pruneError) {
+      console.error('Failed to prune old logs:', pruneError);
     }
   }
-
-  // --- Public Interface ---
 
   /**
    * Standard log methods.
@@ -289,8 +285,6 @@ class LogServiceImpl {
   public recordTokenUsage(modelId: string, usage: TokenUsageInput, exactPricing?: ApiUsageExactPricing) {
     this.usageTracker.recordTokenUsage(modelId, usage, exactPricing);
   }
-
-  // --- Subscription & Retrieval ---
 
   /**
    * Subscribes to NEW logs as they happen (for live view).

@@ -157,8 +157,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
           loadingSessionIds,
         }),
       );
-    } catch (e) {
-      logService.error('Failed to refresh sessions from DB', { error: e });
+    } catch (refreshError) {
+      logService.error('Failed to refresh sessions from DB', { error: refreshError });
     }
   },
 
@@ -166,8 +166,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     try {
       const groups = await dbService.getAllGroups();
       set({ savedGroups: groups });
-    } catch (e) {
-      logService.error('Failed to refresh groups from DB', { error: e });
+    } catch (refreshError) {
+      logService.error('Failed to refresh groups from DB', { error: refreshError });
     }
   },
 

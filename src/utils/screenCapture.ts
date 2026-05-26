@@ -79,8 +79,8 @@ export const captureScreenImage = async (messages: ScreenCaptureMessages): Promi
         canvas.toBlob((blob) => {
           finish(blob);
         }, 'image/png');
-      } catch (e) {
-        logService.error('Error drawing bitmap:', e);
+      } catch (drawError) {
+        logService.error('Error drawing bitmap:', drawError);
         finish(null);
       }
     };
@@ -166,8 +166,8 @@ export const captureScreenImage = async (messages: ScreenCaptureMessages): Promi
           }
         };
         video.onerror = () => fail();
-      } catch (e) {
-        fail(e);
+      } catch (captureError) {
+        fail(captureError);
       }
     }
   });
