@@ -3,7 +3,7 @@ import { generateImagesApi } from '@/services/api/generation/imageApi';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
 import { formatMessageSenderText } from './i18nFormat';
 import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
-import type { MessageSenderTranslator, SessionsUpdater } from './types';
+import type { MessageSenderTranslator, SessionsUpdater } from './messageSenderTypes';
 
 interface SendImageGenerationMessageParams {
   keyToUse: string;

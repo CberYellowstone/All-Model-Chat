@@ -59,8 +59,8 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
         <Toggle
           id="use-api-proxy-toggle"
           checked={useApiProxy}
-          onChange={(val) => {
-            setUseApiProxy(val);
+          onChange={(enabled) => {
+            setUseApiProxy(enabled);
           }}
         />
       </div>

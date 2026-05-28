@@ -92,8 +92,8 @@ export const captureScreenImage = async (messages: ScreenCaptureMessages): Promi
       imageCapture
         .grabFrame()
         .then(processBitmap)
-        .catch((err: unknown) => {
-          logService.warn('ImageCapture failed, falling back to video element:', err);
+        .catch((error: unknown) => {
+          logService.warn('ImageCapture failed, falling back to video element:', error);
           fallbackToVideo();
         });
     } else {

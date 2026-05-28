@@ -42,9 +42,9 @@ export const ApiConnectionTester: React.FC<ApiConnectionTesterProps> = ({
               }
               className="mb-0"
             >
-              {availableModels.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
+              {availableModels.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
                 </option>
               ))}
             </Select>

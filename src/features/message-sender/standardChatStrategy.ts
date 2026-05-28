@@ -7,7 +7,7 @@ import type { UploadedFile } from '@/types';
 import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
 import { resolveStandardChatTurn } from './standardChatTurn';
 import { performStandardChatApiCall } from './standardChatApiCall';
-import type { GetStreamHandlers, StandardChatProps } from './types';
+import type { GetStreamHandlers, StandardChatProps } from './messageSenderTypes';
 import type { PreparedModelRequest } from './useModelRequestRunner';
 
 interface SendStandardMessageParams {

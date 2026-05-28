@@ -234,7 +234,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
       }
 
       if (isImageEditModel || (isGemini3Image && appSettings.generateQuadImages)) {
-        const editIndex = effectiveEditingId ? messages.findIndex((m) => m.id === effectiveEditingId) : -1;
+        const editIndex = effectiveEditingId ? messages.findIndex((message) => message.id === effectiveEditingId) : -1;
         const historyMessages = editIndex !== -1 ? messages.slice(0, editIndex) : messages;
         await sendImageEditMessage({
           keyToUse,

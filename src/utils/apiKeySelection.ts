@@ -67,8 +67,8 @@ export const parseApiKeys = (apiKeysString: string | null): string[] => {
   if (!apiKeysString) return [];
   return apiKeysString
     .split(/[\n,]+/)
-    .map((k) => k.trim().replace(/^["']|["']$/g, ''))
-    .filter((k) => k.length > 0);
+    .map((apiKey) => apiKey.trim().replace(/^["']|["']$/g, ''))
+    .filter((apiKey) => apiKey.length > 0);
 };
 
 export const getKeyForRequest = (

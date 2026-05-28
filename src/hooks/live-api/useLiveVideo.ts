@@ -92,8 +92,8 @@ export const useLiveVideo = () => {
     if (videoRef.current && videoStream) {
       const videoEl = videoRef.current;
       videoEl.srcObject = videoStream;
-      void videoEl.play().catch((err) => {
-        logService.error('Failed to play live video stream', err);
+      void videoEl.play().catch((error) => {
+        logService.error('Failed to play live video stream', error);
       });
     }
   }, [videoStream]);

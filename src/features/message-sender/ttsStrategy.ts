@@ -2,7 +2,7 @@ import { type AppSettings, type ChatSettings as IndividualChatSettings } from '@
 import { generateSpeechApi } from '@/services/api/generation/audioApi';
 import { pcmBase64ToWavUrl } from '@/features/audio/audioProcessing';
 import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
-import type { MessageSenderTranslator, SessionsUpdater } from './types';
+import type { MessageSenderTranslator, SessionsUpdater } from './messageSenderTypes';
 
 interface SendTtsMessageParams {
   keyToUse: string;

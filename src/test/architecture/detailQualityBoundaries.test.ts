@@ -152,6 +152,7 @@ describe('detail quality boundaries', () => {
   it('keeps import-context shared details split into named helper modules', () => {
     const expectedHelperFiles = [
       'src/utils/import-context/defaultIgnorePatterns.ts',
+      'src/utils/import-context/importContextTypes.ts',
       'src/utils/import-context/languageMap.ts',
       'src/utils/import-context/textStats.ts',
       'src/utils/import-context/treeSorting.ts',
@@ -163,10 +164,12 @@ describe('detail quality boundaries', () => {
     }
 
     expect(fs.existsSync(path.join(projectRoot, 'src/utils/import-context/shared.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/import-context/types.ts'))).toBe(false);
 
     for (const relativePath of importContextFiles) {
       const source = readProjectFile(relativePath);
       expect(source, relativePath).not.toContain("from './shared'");
+      expect(source, relativePath).not.toContain("from './types'");
     }
   });
 

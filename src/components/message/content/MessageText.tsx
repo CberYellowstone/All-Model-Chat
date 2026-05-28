@@ -99,12 +99,7 @@ export const MessageText: React.FC<MessageTextProps> = ({
     };
   }, [isLoading, appSettings.autoFullscreenHtml, effectiveContent, message.role, onOpenHtmlPreview]);
 
-  // Only show the primary thinking indicator (spinner) if:
-  // 1. It is loading
-  // 2. There is no content yet
-  // 3. There is no audio yet
-  // 4. AND either thoughts are disabled OR there are no thoughts (even streamed ones) yet.
-  // This prevents showing the spinner here when the MessageThoughts component is already showing it.
+  // Avoid showing the primary spinner when content, audio, or MessageThoughts already covers the loading state.
   const showPrimaryThinkingIndicator =
     isLoading && !effectiveContent && !audioSrc && (!showThoughts || !effectiveThoughts);
 

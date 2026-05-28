@@ -54,11 +54,11 @@ interface UseLiveConnectionProps {
   tools: Tool[];
   initializeAudio: (
     onAudioData: (data: Float32Array) => void,
-  ) => Promise<void | { audioCtx: AudioContext; inputCtx: AudioContext }>;
+  ) => Promise<void | { outputAudioContext: AudioContext; inputAudioContext: AudioContext }>;
   cleanupAudio: () => void;
   clearBufferedAudio?: () => void;
   stopVideo: () => void;
-  handleMessage: (msg: LiveServerMessage) => void;
+  handleMessage: (message: LiveServerMessage) => void;
   onClose?: () => void;
   onTranscript?: LiveTranscriptHandler;
   setSessionHandle: (handle: string | null) => void;
@@ -239,18 +239,18 @@ export const useLiveConnection = ({
           onopen: () => {
             logService.info('Live API Connected', { tools: tools?.length ?? 0, resumed: !!sessionHandleRef.current });
           },
-          onmessage: (msg) => {
-            if (msg.setupComplete) {
+          onmessage: (message) => {
+            if (message.setupComplete) {
               setIsConnected(true);
               setIsReconnecting(false);
               setErrorState(null);
               retryCountRef.current = 0;
               resolveSetupComplete();
             }
-            handleMessage(msg);
+            handleMessage(message);
           },
-          onclose: (e) => {
-            logService.info('Live API Closed', e);
+          onclose: (event) => {
+            logService.info('Live API Closed', event);
             sessionRef.current = null;
             rejectSetupComplete(new Error('Live API connection closed before setup completed.'));
 
@@ -273,10 +273,11 @@ export const useLiveConnection = ({
               if (onClose) onClose();
             }
           },
-          onerror: (err) => {
-            logService.error('Live API Error', err);
+          onerror: (error) => {
+            logService.error('Live API Error', error);
+            const connectionError = error instanceof Error ? error : new Error('Connection error');
             sessionRef.current = null;
-            rejectSetupComplete(err instanceof Error ? err : new Error('Connection error'));
+            rejectSetupComplete(connectionError);
 
             setIsConnected(false);
 
@@ -288,8 +289,8 @@ export const useLiveConnection = ({
             if (!isUserDisconnectRef.current) {
               triggerReconnect();
             } else {
-              if (err.message) {
-                setRawError(err.message);
+              if (connectionError.message) {
+                setRawError(connectionError.message);
               } else {
                 setTranslationError('liveStatus_connection_error');
               }

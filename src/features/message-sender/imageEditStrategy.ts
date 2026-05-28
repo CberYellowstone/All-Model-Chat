@@ -20,7 +20,7 @@ import { isImageMimeType } from '@/utils/fileTypeClassification';
 import { appendApiPart } from '@/features/chat-streaming/messageStreamParts';
 import { formatMessageSenderText } from './i18nFormat';
 import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
-import type { MessageSenderTranslator, SessionsUpdater } from './types';
+import type { MessageSenderTranslator, SessionsUpdater } from './messageSenderTypes';
 
 const stripGeneratedInlinePayload = (part: Part): Part => {
   const inlineData = (part as Part & { inlineData?: { mimeType?: string; data?: string } }).inlineData;

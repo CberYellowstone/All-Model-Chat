@@ -152,9 +152,9 @@ export const useTokenCountLogic = ({
     }
   }, [isOpen, initialText, initialFiles, currentModelId, performCalculation]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files).map((file) => ({
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const newFiles = Array.from(event.target.files).map((file) => ({
         id: generateUniqueId(),
         name: file.name,
         type: file.type,

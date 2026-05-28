@@ -166,4 +166,17 @@ describe('comment quality boundaries', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('keeps production source comments descriptive instead of numbered checklists', () => {
+    const productionSourceFiles = listProjectSourceFilesExcept('src', thisTestFile).filter(
+      (relativePath) => !relativePath.endsWith('.test.ts') && !relativePath.endsWith('.test.tsx'),
+    );
+
+    const numberedCommentOffenders = productionSourceFiles.flatMap((relativePath) => {
+      const source = readProjectFile(relativePath);
+      return /^\s*\/\/\s*\d+\.\s+/m.test(source) ? [relativePath] : [];
+    });
+
+    expect(numberedCommentOffenders).toEqual([]);
+  });
 });

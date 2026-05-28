@@ -257,21 +257,21 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
               <div className="space-y-5">
                 <ApiKeyInput
                   apiKey={apiKey}
-                  setApiKey={(val) => {
-                    setApiKey(val);
+                  setApiKey={(nextApiKey) => {
+                    setApiKey(nextApiKey);
                     setTestStatus('idle');
                   }}
                 />
 
                 <ApiProxySettings
                   useApiProxy={useApiProxy}
-                  setUseApiProxy={(val) => {
-                    setUseApiProxy(val);
+                  setUseApiProxy={(nextUseApiProxy) => {
+                    setUseApiProxy(nextUseApiProxy);
                     setTestStatus('idle');
                   }}
                   apiProxyUrl={apiProxyUrl}
-                  setApiProxyUrl={(val) => {
-                    setApiProxyUrl(val);
+                  setApiProxyUrl={(nextApiProxyUrl) => {
+                    setApiProxyUrl(nextApiProxyUrl);
                     setTestStatus('idle');
                   }}
                 />

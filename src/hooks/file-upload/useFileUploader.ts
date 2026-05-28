@@ -54,7 +54,6 @@ export const useFileUploader = ({
         return;
       }
 
-      // Calculate if ANY file requires API upload to handle key rotation logic first
       const needsApiKeyForUpload = checkBatchNeedsApiKey(preflight.filesToUpload, appSettings);
       const filesRequiringApi = getFilesRequiringFileApi(preflight.filesToUpload, appSettings);
 
@@ -69,7 +68,7 @@ export const useFileUploader = ({
         keyToUse = keyResult.key;
         if (keyResult.isNewKey && !isOpenAICompatibleApiActive(appSettings)) {
           logService.info('New API key selected for this session due to file upload.');
-          setCurrentChatSettings((prev) => ({ ...prev, lockedApiKey: keyToUse! }));
+          setCurrentChatSettings((previousSettings) => ({ ...previousSettings, lockedApiKey: keyToUse! }));
         }
       }
 

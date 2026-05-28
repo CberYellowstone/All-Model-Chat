@@ -18,9 +18,13 @@ interface ErrorLogOptions extends LogOptions {
   error?: unknown;
 }
 
-const LOG_RETENTION_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
-const FLUSH_INTERVAL_MS = 2000; // 2 seconds
-const FLUSH_THRESHOLD = 50; // Flush if 50 items accumulate
+const LOG_RETENTION_DAYS = 2;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const LOG_RETENTION_MS = LOG_RETENTION_DAYS * MILLISECONDS_PER_DAY;
+const FLUSH_INTERVAL_MS = 2000;
+const FLUSH_THRESHOLD_COUNT = 50;
+const MAX_SERIALIZED_STRING_LENGTH = 5000;
+const TRUNCATED_STRING_SUFFIX = '...[TRUNCATED]';
 
 class LogServiceImpl {
   private listeners: Set<LogListener> = new Set();
@@ -52,20 +56,18 @@ class LogServiceImpl {
   private safeSerialize(data: unknown): unknown {
     if (data === undefined || data === null) return undefined;
     try {
-      // Simple circular reference handler
-      const seen = new WeakSet<object>();
+      const seenObjects = new WeakSet<object>();
       return JSON.parse(
         JSON.stringify(data, (_key: string, value: unknown) => {
           if (value instanceof Error) {
             return this.serializeError(value);
           }
           if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) return '[Circular]';
-            seen.add(value);
+            if (seenObjects.has(value)) return '[Circular]';
+            seenObjects.add(value);
           }
-          // Truncate extremely long strings to save DB space
-          if (typeof value === 'string' && value.length > 5000) {
-            return value.substring(0, 5000) + '...[TRUNCATED]';
+          if (typeof value === 'string' && value.length > MAX_SERIALIZED_STRING_LENGTH) {
+            return value.substring(0, MAX_SERIALIZED_STRING_LENGTH) + TRUNCATED_STRING_SUFFIX;
           }
           return value;
         }),
@@ -160,7 +162,7 @@ class LogServiceImpl {
     // Notify listeners immediately for "live" feeling, even if not persisted yet
     this.notifyListeners([entry]);
 
-    if (this.logBuffer.length >= FLUSH_THRESHOLD) {
+    if (this.logBuffer.length >= FLUSH_THRESHOLD_COUNT) {
       void this.flush();
     } else {
       this.scheduleFlush();
@@ -181,7 +183,7 @@ class LogServiceImpl {
     }
 
     const logsToSave = [...this.logBuffer];
-    this.logBuffer = []; // Clear buffer immediately
+    this.logBuffer = [];
     let flushSucceeded = false;
 
     let flushPromise: Promise<void> | null = null;
@@ -303,10 +305,9 @@ class LogServiceImpl {
   }
 
   /**
-   * Async fetch logs from DB with pagination.
+   * Fetches logs from DB with pagination after flushing buffered entries.
    */
   public async getRecentLogs(limit = 200, offset = 0): Promise<LogEntry[]> {
-    // Ensure buffer is flushed before reading to get latest state
     await this.flush();
     return dbService.getLogs(limit, offset);
   }

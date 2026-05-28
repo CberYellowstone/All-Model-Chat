@@ -120,11 +120,11 @@ const MessageListComponent: React.FC = () => {
     [VirtuosoFooter],
   );
   const renderMessageItem = React.useCallback(
-    (index: number, msg: (typeof visibleMessages)[number]) => (
+    (index: number, message: (typeof visibleMessages)[number]) => (
       <div className="px-1.5 sm:px-2 md:px-3 max-w-7xl mx-auto w-full">
         <Message
-          key={msg.id}
-          message={msg}
+          key={message.id}
+          message={message}
           sessionTitle={sessionTitle}
           prevMessage={index > 0 ? visibleMessages[index - 1] : undefined}
           messageIndex={index}
@@ -140,7 +140,7 @@ const MessageListComponent: React.FC = () => {
           onSuggestionClick={onFollowUpSuggestionClick}
           onSuggestionFill={onFollowUpSuggestionFill}
           onOpenSidePanel={onOpenSidePanel}
-          onConfigureFile={msg.role === 'user' ? handleConfigureFile : undefined}
+          onConfigureFile={message.role === 'user' ? handleConfigureFile : undefined}
           isGemini3={isGemini3}
           userMessageCollapse={userMessageCollapse}
         />
@@ -182,7 +182,7 @@ const MessageListComponent: React.FC = () => {
             atBottomStateChange={setAtBottom}
             atBottomThreshold={150}
             followOutput={followOutput}
-            computeItemKey={(_, msg) => msg.id}
+            computeItemKey={(_, message) => message.id}
             rangeChanged={onRangeChanged}
             increaseViewportBy={{ top: 800, bottom: 800 }}
             className="custom-scrollbar chat-message-list-scroller"

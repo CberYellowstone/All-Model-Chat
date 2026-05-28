@@ -82,6 +82,21 @@ describe('naming and structure optimization guardrails', () => {
     expect(useMessageSenderSource).not.toContain('sendTtsImagenMessage');
   });
 
+  it('names message sender shared contracts after their feature boundary', () => {
+    const sourceFiles = listProjectSourceFilesExcept('src', thisTestFile);
+
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/messageSenderTypes.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/types.ts'))).toBe(false);
+
+    for (const relativePath of sourceFiles) {
+      const source = readProjectFile(relativePath);
+      expect(source, relativePath).not.toContain('@/features/message-sender/types');
+      if (relativePath.startsWith('src/features/message-sender/')) {
+        expect(source, relativePath).not.toContain("from './importContextTypes'");
+      }
+    }
+  });
+
   it('names composer auxiliary action buttons after their role', () => {
     const chatInputActionsSource = readProjectFile('src/components/chat/input/ChatInputActions.tsx');
 
