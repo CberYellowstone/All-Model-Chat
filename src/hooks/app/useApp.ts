@@ -17,7 +17,12 @@ import {
   type Theme,
   type ThinkingLevel,
 } from '@/types';
-import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
+import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import {
+  buildProviderAwareModelList,
+  getThirdPartyProviderModelId,
+  getThirdPartyProviderModels,
+} from '@/utils/thirdPartyApiProviders';
 import { useDataExport } from '@/hooks/data-management/useDataExport';
 import { useDataImport } from '@/hooks/data-management/useDataImport';
 import { useChatSessionExport } from '@/hooks/data-management/useChatSessionExport';
@@ -27,7 +32,6 @@ import { focusChatInput } from '@/utils/chat-input/focus';
 import { useAppPromptModes } from './useAppPromptModes';
 import { DEFAULT_THINKING_BUDGET } from '@/constants/modelConfiguration';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
-import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
 
 type AppTranslator = ReturnType<typeof getTranslator>;
 type ChatViewModel = ReturnType<typeof useChat>;
@@ -272,14 +276,11 @@ export const useApp = (): AppViewModel => {
   );
 
   const getCurrentModelDisplayName = useCallback(() => {
-    const isOpenAICompatibleMode = isOpenAICompatibleApiActive({
-      apiMode: appSettings.apiMode,
-      isOpenAICompatibleApiEnabled: appSettings.isOpenAICompatibleApiEnabled,
-    });
-    const modelIdToDisplay = isOpenAICompatibleMode
-      ? appSettings.openaiCompatibleModelId
+    const isThirdPartyMode = isThirdPartyApiActive(appSettings);
+    const modelIdToDisplay = isThirdPartyMode
+      ? getThirdPartyProviderModelId(appSettings)
       : currentChatSettings.modelId || appSettings.modelId;
-    const availableModels = isOpenAICompatibleMode ? appSettings.openaiCompatibleModels : apiModels;
+    const availableModels = isThirdPartyMode ? getThirdPartyProviderModels(appSettings) : apiModels;
 
     if (isSwitchingModel) {
       return t('appSwitchingModel');
@@ -307,11 +308,7 @@ export const useApp = (): AppViewModel => {
     return availableModels.length === 0 ? t('appNoModelsAvailable') : t('appNoModelSelected');
   }, [
     apiModels,
-    appSettings.apiMode,
-    appSettings.isOpenAICompatibleApiEnabled,
-    appSettings.modelId,
-    appSettings.openaiCompatibleModelId,
-    appSettings.openaiCompatibleModels,
+    appSettings,
     currentChatSettings.modelId,
     isSwitchingModel,
     t,
