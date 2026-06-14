@@ -20,7 +20,7 @@ export const commonTranslations = {
   paste: { en: 'Paste', zh: '粘贴' },
   download: { en: 'Download', zh: '下载' },
   unknown: { en: 'Unknown', zh: '未知' },
-  fill_input: { en: 'Insert', zh: '插入' },
+  fillInput: { en: 'Insert', zh: '插入' },
   search: { en: 'Search', zh: '搜索' },
   modelPickerNoResults: { en: 'No matching models', zh: '没有匹配的模型' },
   modelPickerSectionPinned: { en: 'Pinned', zh: '已置顶' },

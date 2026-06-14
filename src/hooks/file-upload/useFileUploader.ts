@@ -112,7 +112,7 @@ export const useFileUploader = ({
             return {
               ...file,
               isProcessing: false,
-              error: t('upload_cancelled'),
+              error: t('uploadCancelled'),
               uploadState: 'cancelled',
               uploadSpeed: undefined,
               dataUrl: undefined, // Clear URL so UI gracefully falls back to a file type icon

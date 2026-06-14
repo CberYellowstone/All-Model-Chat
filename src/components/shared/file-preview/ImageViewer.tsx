@@ -225,7 +225,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file }) => {
           <ToolbarButton
             onClick={() => handleZoom('out')}
             disabled={scale <= MIN_SCALE}
-            title={t('filePreview_zoom_out')}
+            title={t('filePreviewZoomOut')}
           >
             <ZoomOut size={16} strokeWidth={1.5} />
           </ToolbarButton>
@@ -235,14 +235,14 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file }) => {
           <ToolbarButton
             onClick={() => handleZoom('in')}
             disabled={scale >= MAX_SCALE}
-            title={t('filePreview_zoom_in')}
+            title={t('filePreviewZoomIn')}
           >
             <ZoomIn size={16} strokeWidth={1.5} />
           </ToolbarButton>
 
           <ToolbarDivider />
 
-          <ToolbarButton onClick={handleReset} title={t('filePreview_reset_view')}>
+          <ToolbarButton onClick={handleReset} title={t('filePreviewResetView')}>
             <RotateCw size={16} strokeWidth={1.5} />
           </ToolbarButton>
         </FloatingToolbar>

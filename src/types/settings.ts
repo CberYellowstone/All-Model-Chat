@@ -33,23 +33,34 @@ export enum MediaResolution {
 
 export type ImageOutputMode = 'IMAGE_TEXT' | 'IMAGE_ONLY';
 export type ImagePersonGeneration = 'ALLOW_ADULT' | 'ALLOW_ALL' | 'DONT_ALLOW';
-export type ApiMode = 'gemini-native' | 'openai-compatible';
+/** All valid API modes — used for both type checking and runtime validation. */
+export const API_MODES = ['gemini-native', 'openai-compatible'] as const;
+export type ApiMode = (typeof API_MODES)[number];
 export type { McpServerAuthType, McpServerConfig, McpServerTransport };
 
 /** All valid thinking levels — used for both type checking and runtime validation. */
 export const THINKING_LEVELS = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH'] as const;
 export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
-export type LiveArtifactsPromptMode = 'inline';
+/** All valid live artifacts prompt modes — used for both type checking and runtime validation. */
+export const LIVE_ARTIFACTS_PROMPT_MODES = ['inline'] as const;
+export type LiveArtifactsPromptMode = (typeof LIVE_ARTIFACTS_PROMPT_MODES)[number];
 export type LiveArtifactsSystemPrompts = Record<LiveArtifactsPromptMode, string>;
-export type TranslationTargetLanguage =
-  | 'English'
-  | 'Simplified Chinese'
-  | 'Traditional Chinese'
-  | 'Japanese'
-  | 'Korean'
-  | 'Spanish'
-  | 'French'
-  | 'German';
+/** All valid translation target languages — used for both type checking and runtime validation. */
+export const TRANSLATION_TARGET_LANGUAGES = [
+  'English',
+  'Simplified Chinese',
+  'Traditional Chinese',
+  'Japanese',
+  'Korean',
+  'Spanish',
+  'French',
+  'German',
+] as const;
+export type TranslationTargetLanguage = (typeof TRANSLATION_TARGET_LANGUAGES)[number];
+
+/** All valid app language identifiers — used for both type checking and runtime validation. */
+export const APP_LANGUAGE_IDS = ['en', 'zh', 'system'] as const;
+export type AppLanguage = (typeof APP_LANGUAGE_IDS)[number];
 
 export interface SafetySetting {
   category: HarmCategory;
@@ -102,7 +113,7 @@ export interface AppSettings extends ChatSettings {
   openaiCompatibleModelId: string;
   openaiCompatibleModels: ModelOption[];
   useApiProxy?: boolean;
-  language: 'en' | 'zh' | 'system';
+  language: AppLanguage;
   translationTargetLanguage: TranslationTargetLanguage;
   inputTranslationModelId?: string;
   thoughtTranslationTargetLanguage?: TranslationTargetLanguage;

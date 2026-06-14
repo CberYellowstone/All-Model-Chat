@@ -146,7 +146,7 @@ describe('source readability boundaries', () => {
   it('does not pass literal fallbacks for translation keys that already exist', () => {
     const sendControlsSource = readProjectFile('src/components/chat/input/actions/SendControls.tsx');
 
-    expect(sendControlsSource).not.toContain("t('sendMessage_fast_suffix',");
+    expect(sendControlsSource).not.toContain("t('sendMessageFastSuffix',");
   });
 
   it('names shared error boundary contracts after the component', () => {

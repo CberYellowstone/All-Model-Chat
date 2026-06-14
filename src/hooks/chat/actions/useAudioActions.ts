@@ -50,8 +50,8 @@ export const useAudioActions = ({
         const transcribedText = await transcribeAudioApi(keyResult.key, audioFile, modelToUse);
         return transcribedText;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : t('transcription_unknown_error');
-        setAppFileError(t('transcription_failedWithMessage').replace('{message}', errorMessage));
+        const errorMessage = error instanceof Error ? error.message : t('transcriptionUnknownError');
+        setAppFileError(t('transcriptionFailedWithMessage').replace('{message}', errorMessage));
         logService.error('Transcription failed in handler', { error });
         return null;
       }

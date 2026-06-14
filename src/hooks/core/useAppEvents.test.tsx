@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSettings, ModelOption } from '@/types';
-import { FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/shortcuts';
+import { FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { useAppEvents } from './useAppEvents';
 import { createAppSettings, createChatSettings } from '@/test/data/factories';
 import { setTestMatchMedia } from '@/test/browser/environment';

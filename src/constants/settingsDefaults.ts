@@ -2,6 +2,7 @@ import { getRuntimeConfigAppSettingsOverrides } from '@/runtime/runtimeConfig';
 import { MediaResolution, type AppSettings, type FilesApiConfig, type ModelOption, type ThinkingLevel } from '@/types';
 import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL } from '@/utils/apiProxyUrl';
 import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { DEFAULT_THEME_ID } from './themeRegistry';
 import {
   DEFAULT_MODEL_ID,
   DEFAULT_SHOW_THOUGHTS,
@@ -61,7 +62,7 @@ export const DEFAULT_CHAT_SETTINGS = {
 
 const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   ...DEFAULT_CHAT_SETTINGS,
-  themeId: 'pearl',
+  themeId: DEFAULT_THEME_ID,
   baseFontSize: DEFAULT_BASE_FONT_SIZE,
   apiMode: 'gemini-native',
   isOpenAICompatibleApiEnabled: DEFAULT_IS_OPENAI_COMPATIBLE_API_ENABLED,

@@ -195,7 +195,7 @@ export const useApp = (): AppViewModel => {
       } catch (error) {
         logService.error(`Chat export failed (format: ${format})`, { error });
         alert(
-          t('export_failed_with_message').replace('{message}', error instanceof Error ? error.message : String(error)),
+          t('exportFailedWithMessage').replace('{message}', error instanceof Error ? error.message : String(error)),
         );
       } finally {
         setExportStatus('idle');

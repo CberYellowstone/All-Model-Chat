@@ -47,7 +47,7 @@ export const OpenAICompatibleApiSettingsPanel: React.FC<OpenAICompatibleApiSetti
           onResetConnectionTest();
         }}
         label={t('settingsOpenAICompatibleApiKey')}
-        placeholder={t('apiConfig_openai_key_placeholder')}
+        placeholder={t('apiConfigOpenaiKeyPlaceholder')}
         helpText={t('settingsOpenAICompatibleApiKeyHelp')}
       />
       <div className="space-y-2">

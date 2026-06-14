@@ -7,11 +7,14 @@ import {
   type McpServerConfig,
   type ModelOption,
   type SafetySetting,
+  API_MODES,
+  APP_LANGUAGE_IDS,
   HarmBlockThreshold,
   HarmCategory,
+  LIVE_ARTIFACTS_PROMPT_MODES,
   MediaResolution,
-  type ApiMode,
-  type TranslationTargetLanguage,
+  THINKING_LEVELS,
+  TRANSLATION_TARGET_LANGUAGES,
 } from '@/types';
 import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
 import {
@@ -21,21 +24,6 @@ import {
   sanitizeStringRecord,
 } from '../../shared/mcpServerConfig';
 import { THEME_IDS } from '@/utils/themeMode';
-
-const LANGUAGE_IDS = ['en', 'zh', 'system'] as const;
-const THINKING_LEVELS = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH'] as const;
-const API_MODES = ['gemini-native', 'openai-compatible'] as const;
-const LIVE_ARTIFACTS_PROMPT_MODES = ['inline'] as const;
-const TRANSLATION_TARGET_LANGUAGES = [
-  'English',
-  'Simplified Chinese',
-  'Traditional Chinese',
-  'Japanese',
-  'Korean',
-  'Spanish',
-  'French',
-  'German',
-] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -248,7 +236,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   mediaResolution: optionalWithDefault(z.nativeEnum(MediaResolution), DEFAULT_APP_SETTINGS.mediaResolution),
   themeId: withDefault(z.enum(THEME_IDS), DEFAULT_APP_SETTINGS.themeId),
   baseFontSize: numberWithDefault(DEFAULT_APP_SETTINGS.baseFontSize),
-  apiMode: withDefault(z.enum(API_MODES), DEFAULT_APP_SETTINGS.apiMode as ApiMode),
+  apiMode: withDefault(z.enum(API_MODES), DEFAULT_APP_SETTINGS.apiMode),
   isOpenAICompatibleApiEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isOpenAICompatibleApiEnabled ?? false),
   useCustomApiConfig: booleanWithDefault(DEFAULT_APP_SETTINGS.useCustomApiConfig),
   serverManagedApi: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.serverManagedApi),
@@ -263,10 +251,10 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
     .transform((value) => sanitizeModelOptions(value, DEFAULT_APP_SETTINGS.openaiCompatibleModels))
     .default(DEFAULT_APP_SETTINGS.openaiCompatibleModels),
   useApiProxy: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.useApiProxy),
-  language: withDefault(z.enum(LANGUAGE_IDS), DEFAULT_APP_SETTINGS.language),
+  language: withDefault(z.enum(APP_LANGUAGE_IDS), DEFAULT_APP_SETTINGS.language),
   translationTargetLanguage: withDefault(
     z.enum(TRANSLATION_TARGET_LANGUAGES),
-    DEFAULT_APP_SETTINGS.translationTargetLanguage as TranslationTargetLanguage,
+    DEFAULT_APP_SETTINGS.translationTargetLanguage,
   ),
   inputTranslationModelId: optionalStringWithDefault(DEFAULT_APP_SETTINGS.inputTranslationModelId),
   thoughtTranslationTargetLanguage: optionalWithDefault(

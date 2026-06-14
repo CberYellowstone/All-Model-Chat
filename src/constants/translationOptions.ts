@@ -7,12 +7,12 @@ export const TRANSLATION_TARGET_LANGUAGE_OPTIONS: Array<{
   value: TranslationTargetLanguage;
   labelKey: string;
 }> = [
-  { value: 'English', labelKey: 'translationTargetLanguage_english' },
-  { value: 'Simplified Chinese', labelKey: 'translationTargetLanguage_simplifiedChinese' },
-  { value: 'Traditional Chinese', labelKey: 'translationTargetLanguage_traditionalChinese' },
-  { value: 'Japanese', labelKey: 'translationTargetLanguage_japanese' },
-  { value: 'Korean', labelKey: 'translationTargetLanguage_korean' },
-  { value: 'Spanish', labelKey: 'translationTargetLanguage_spanish' },
-  { value: 'French', labelKey: 'translationTargetLanguage_french' },
-  { value: 'German', labelKey: 'translationTargetLanguage_german' },
+  { value: 'English', labelKey: 'translationTargetLanguageEnglish' },
+  { value: 'Simplified Chinese', labelKey: 'translationTargetLanguageSimplifiedChinese' },
+  { value: 'Traditional Chinese', labelKey: 'translationTargetLanguageTraditionalChinese' },
+  { value: 'Japanese', labelKey: 'translationTargetLanguageJapanese' },
+  { value: 'Korean', labelKey: 'translationTargetLanguageKorean' },
+  { value: 'Spanish', labelKey: 'translationTargetLanguageSpanish' },
+  { value: 'French', labelKey: 'translationTargetLanguageFrench' },
+  { value: 'German', labelKey: 'translationTargetLanguageGerman' },
 ];

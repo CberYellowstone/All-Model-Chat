@@ -85,7 +85,7 @@ export const useFilePolling = ({
                 selectedFile.id === fileId
                   ? {
                       ...selectedFile,
-                      error: t('fileProcessing_timed_out'),
+                      error: t('fileProcessingTimedOut'),
                       uploadState: 'failed',
                       isProcessing: false,
                     }
@@ -135,7 +135,7 @@ export const useFilePolling = ({
                   selectedFile.id === fileId
                     ? {
                         ...selectedFile,
-                        error: t('fileProcessing_backend_failed'),
+                        error: t('fileProcessingBackendFailed'),
                         uploadState: 'failed',
                         isProcessing: false,
                       }

@@ -156,9 +156,9 @@ export const useMessageSender = (props: MessageSenderProps) => {
         generationId: continueTargetMessage ? (effectiveEditingId ?? undefined) : undefined,
         generationStartTime: continueTargetMessage?.generationStartTime,
         messages: {
-          noModelSelected: t('messageSender_noModelSelected'),
-          noModelTitle: t('messageSender_errorSessionTitle'),
-          apiKeyTitle: t('messageSender_apiKeyErrorSessionTitle'),
+          noModelSelected: t('messageSenderNoModelSelected'),
+          noModelTitle: t('messageSenderErrorSessionTitle'),
+          apiKeyTitle: t('messageSenderApiKeyErrorSessionTitle'),
         },
       });
 

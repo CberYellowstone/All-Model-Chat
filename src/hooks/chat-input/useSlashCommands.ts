@@ -101,19 +101,19 @@ export const useSlashCommands = ({
     }));
 
     return [
-      { name: 'model', description: t('help_cmd_model'), icon: 'bot' },
-      { name: 'help', description: t('help_cmd_help'), icon: 'help' },
-      { name: 'edit', description: t('help_cmd_edit'), icon: 'edit' },
-      { name: 'pin', description: t('help_cmd_pin'), icon: 'pin' },
-      { name: 'retry', description: t('help_cmd_retry'), icon: 'retry' },
+      { name: 'model', description: t('helpCmdModel'), icon: 'bot' },
+      { name: 'help', description: t('helpCmdHelp'), icon: 'help' },
+      { name: 'edit', description: t('helpCmdEdit'), icon: 'edit' },
+      { name: 'pin', description: t('helpCmdPin'), icon: 'pin' },
+      { name: 'retry', description: t('helpCmdRetry'), icon: 'retry' },
       ...toolCommands,
-      { name: 'file', description: t('help_cmd_file'), icon: 'file' },
-      { name: 'clear', description: t('help_cmd_clear'), icon: 'clear' },
-      { name: 'new', description: t('help_cmd_new'), icon: 'new' },
-      { name: 'settings', description: t('help_cmd_settings'), icon: 'settings' },
-      { name: 'artifacts', description: t('help_cmd_artifacts'), icon: 'artifacts' },
-      { name: 'pip', description: t('help_cmd_pip'), icon: 'pip' },
-      { name: 'fast', description: t('help_cmd_fast'), icon: 'fast' },
+      { name: 'file', description: t('helpCmdFile'), icon: 'file' },
+      { name: 'clear', description: t('helpCmdClear'), icon: 'clear' },
+      { name: 'new', description: t('helpCmdNew'), icon: 'new' },
+      { name: 'settings', description: t('helpCmdSettings'), icon: 'settings' },
+      { name: 'artifacts', description: t('helpCmdArtifacts'), icon: 'artifacts' },
+      { name: 'pip', description: t('helpCmdPip'), icon: 'pip' },
+      { name: 'fast', description: t('helpCmdFast'), icon: 'fast' },
     ];
   }, [t]);
 

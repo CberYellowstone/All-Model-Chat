@@ -69,7 +69,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
 
     if (!keyToFetch) {
       setModelFetchStatus('error');
-      setModelFetchMessage(t('apiConfig_noKeyAvailable'));
+      setModelFetchMessage(t('apiConfigNoKeyAvailable'));
       return [];
     }
 
@@ -78,7 +78,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
 
     if (!firstKey) {
       setModelFetchStatus('error');
-      setModelFetchMessage(t('apiConfig_invalidKeyFormat'));
+      setModelFetchMessage(t('apiConfigInvalidKeyFormat'));
       return [];
     }
 
@@ -171,17 +171,17 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
               type="button"
               onClick={() => setIsSafetyExpanded((prev) => !prev)}
               aria-expanded={isSafetyExpanded}
-              aria-label={t('models_safety_toggle_aria')}
+              aria-label={t('modelsSafetyToggleAria')}
               className="flex w-full items-center justify-between gap-3 text-left"
             >
               <span className="flex min-w-0 items-start gap-3">
                 <Shield size={20} className="mt-0.5 flex-shrink-0 text-[var(--theme-text-link)]" strokeWidth={1.75} />
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-[var(--theme-text-primary)]">
-                    {t('safety_title')}
+                    {t('safetyTitle')}
                   </span>
                   <span className="mt-1 block text-xs leading-relaxed text-[var(--theme-text-tertiary)]">
-                    {t('safety_description')}
+                    {t('safetyDescription')}
                   </span>
                 </span>
               </span>

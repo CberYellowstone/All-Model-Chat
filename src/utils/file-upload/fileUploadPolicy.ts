@@ -205,11 +205,11 @@ export const buildFileUploadPreflight = (
 
   const noticeParts: string[] = [];
   if (duplicateNames.length > 0) {
-    noticeParts.push(t('upload_skipped_duplicates').replace('{filenames}', duplicateNames.join(', ')));
+    noticeParts.push(t('uploadSkippedDuplicates').replace('{filenames}', duplicateNames.join(', ')));
   }
 
   if (unsupportedNames.length > 0) {
-    noticeParts.push(t('upload_unsupported_types').replace('{filenames}', unsupportedNames.join(', ')));
+    noticeParts.push(t('uploadUnsupportedTypes').replace('{filenames}', unsupportedNames.join(', ')));
   }
 
   return {

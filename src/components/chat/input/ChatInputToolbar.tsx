@@ -104,7 +104,7 @@ const ChatInputToolbarComponent: React.FC = () => {
                   ? 'bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-link)] border-[var(--theme-border-focus)] font-medium'
                   : 'bg-[var(--theme-bg-input)] text-[var(--theme-text-primary)] border-[var(--theme-border-secondary)] hover:border-[var(--theme-border-focus)]'
               }`}
-              title={t('ttsDirectorNotes_title')}
+              title={t('ttsDirectorNotesTitle')}
             >
               <div className="flex items-center gap-2">
                 <Clapperboard
@@ -116,7 +116,7 @@ const ChatInputToolbarComponent: React.FC = () => {
                       : 'text-[var(--theme-text-tertiary)]'
                   }
                 />
-                <span>{t('ttsDirectorNotes_context')}</span>
+                <span>{t('ttsDirectorNotesContext')}</span>
               </div>
               {ttsContext && ttsContext.trim() && (
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--theme-text-link)]" />

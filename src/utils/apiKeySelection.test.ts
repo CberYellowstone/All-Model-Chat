@@ -228,7 +228,7 @@ describe('formatApiKeyErrorMessage', () => {
     const translate = vi.fn((translationKey: string) => `translated:${translationKey}`);
 
     expect(formatApiKeyErrorMessage('API Key not configured.', translate)).toBe(
-      'translated:apiRuntime_keyNotConfigured',
+      'translated:apiRuntimeKeyNotConfigured',
     );
     expect(formatApiKeyErrorMessage('custom failure', translate)).toBe('custom failure');
   });

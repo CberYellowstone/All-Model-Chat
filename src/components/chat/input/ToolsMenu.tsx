@@ -128,8 +128,8 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({ currentModelId, toolStates
             onClick={toggleMenu}
             disabled={disabled}
             className={`${CHAT_INPUT_BUTTON_CLASS} text-[var(--theme-icon-attach)] ${isOpen ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)]' : 'bg-transparent hover:bg-[var(--theme-bg-tertiary)]'}`}
-            aria-label={t('tools_button')}
-            title={t('tools_button')}
+            aria-label={t('toolsButton')}
+            title={t('toolsButton')}
             aria-haspopup="true"
             aria-expanded={isOpen}
           >
@@ -192,7 +192,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({ currentModelId, toolStates
         <div className="max-w-sm rounded-xl border border-[var(--theme-bg-danger)]/20 bg-[var(--theme-bg-danger)]/8 px-3 py-2 text-xs text-[var(--theme-text-secondary)]">
           <div className="flex items-start gap-2">
             <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[var(--theme-text-danger)]" strokeWidth={2} />
-            <span>{t('tools_local_python_combination_notice')}</span>
+            <span>{t('toolsLocalPythonCombinationNotice')}</span>
           </div>
         </div>
       )}

@@ -38,7 +38,7 @@ const getActiveApiConfig = (
   appSettings: AppSettings,
   apiMode: ApiKeyRequestMode = 'active',
 ): { apiKeysString: string | null } => {
-  const envWithGeminiKey = (
+  const importEnv = (
     import.meta as ImportMeta & {
       env?: {
         VITE_GEMINI_API_KEY?: string;
@@ -49,7 +49,7 @@ const getActiveApiConfig = (
 
   if (resolveApiKeyRequestMode(appSettings, apiMode) === 'openai-compatible') {
     return {
-      apiKeysString: appSettings.openaiCompatibleApiKey || envWithGeminiKey?.VITE_OPENAI_API_KEY || null,
+      apiKeysString: appSettings.openaiCompatibleApiKey || importEnv?.VITE_OPENAI_API_KEY || null,
     };
   }
 
@@ -59,7 +59,7 @@ const getActiveApiConfig = (
     };
   }
   return {
-    apiKeysString: envWithGeminiKey?.VITE_GEMINI_API_KEY || null,
+    apiKeysString: importEnv?.VITE_GEMINI_API_KEY || null,
   };
 };
 
@@ -171,9 +171,9 @@ export const getGeminiKeyForRequest = (
 const getApiKeyErrorTranslationKey = (error: string): string | null => {
   switch (error) {
     case 'API Key not configured.':
-      return 'apiRuntime_keyNotConfigured';
+      return 'apiRuntimeKeyNotConfigured';
     case 'No valid API keys found.':
-      return 'apiRuntime_noValidKeysFound';
+      return 'apiRuntimeNoValidKeysFound';
     default:
       return null;
   }

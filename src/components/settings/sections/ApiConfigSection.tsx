@@ -126,13 +126,13 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
 
     if (!isOpenAICompatibleMode && !keyToTest && useCustomApiConfig && !canUseServerManagedTestKey) {
       setTestStatus('error');
-      setTestMessage(t('apiConfig_noKeyProvided'));
+      setTestMessage(t('apiConfigNoKeyProvided'));
       return;
     }
 
     if (!keyToTest) {
       setTestStatus('error');
-      setTestMessage(t('apiConfig_noKeyAvailable'));
+      setTestMessage(t('apiConfigNoKeyAvailable'));
       return;
     }
 
@@ -141,7 +141,7 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
 
     if (!firstKey) {
       setTestStatus('error');
-      setTestMessage(t('apiConfig_invalidKeyFormat'));
+      setTestMessage(t('apiConfigInvalidKeyFormat'));
       return;
     }
 
