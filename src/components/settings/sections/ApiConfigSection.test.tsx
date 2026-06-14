@@ -155,7 +155,7 @@ describe('ApiConfigSection', () => {
     expect(renderer.container.textContent).toContain('File Transfer Method');
     expect(renderer.container.textContent).toContain('API Provider');
     expect(renderer.container.textContent).toContain('Gemini Official API');
-    expect(renderer.container.textContent).toContain('OpenAI-Compatible API');
+    expect(renderer.container.textContent).toContain('Third-Party API');
 
     act(() => {
       useSettingsStore.setState({ language: 'zh' });
@@ -166,7 +166,7 @@ describe('ApiConfigSection', () => {
     expect(renderer.container.textContent).toContain('文件传输方式');
     expect(renderer.container.textContent).toContain('API 提供方');
     expect(renderer.container.textContent).toContain('Gemini 官方接口');
-    expect(renderer.container.textContent).toContain('OpenAI 兼容接口');
+    expect(renderer.container.textContent).toContain('第三方接口');
   });
 
   it('renders a single provider selector and enables third-party mode from it', async () => {
@@ -176,7 +176,7 @@ describe('ApiConfigSection', () => {
 
     const providerSelector = renderer.container.querySelector('[role="group"][aria-label="API Provider"]');
     const openaiProviderButton = Array.from(renderer.container.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'OpenAI-Compatible API',
+      (button) => button.textContent?.trim() === 'Third-Party API',
     );
 
     expect(providerSelector).not.toBeNull();

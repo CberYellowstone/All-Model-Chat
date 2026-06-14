@@ -2,7 +2,7 @@ const apiSettings = {
   settingsApiConfig: { en: 'API & Connections', zh: 'API 与连接' },
   settingsApiModeLabel: { en: 'API Provider', zh: 'API 提供方' },
   settingsApiModeGeminiNative: { en: 'Gemini Official API', zh: 'Gemini 官方接口' },
-  settingsApiModeOpenAICompatible: { en: 'OpenAI-Compatible API', zh: 'OpenAI 兼容接口' },
+  settingsApiModeOpenAICompatible: { en: 'Third-Party API', zh: '第三方接口' },
   settingsOpenAICompatibleToggleLabel: { en: 'OpenAI-Compatible API', zh: 'OpenAI 兼容 API' },
   settingsOpenAICompatibleToggleHelp: {
     en: 'Turn on to use OpenAI or GPT-compatible providers. When off, Gemini Native remains active.',
