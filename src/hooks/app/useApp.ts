@@ -27,10 +27,7 @@ import { focusChatInput } from '@/utils/chat-input/focus';
 import { useAppPromptModes } from './useAppPromptModes';
 import { DEFAULT_THINKING_BUDGET } from '@/constants/modelConfiguration';
 import { getModelCapabilities } from '@/utils/modelCapabilities';
-
-const buildProviderAwareModels = (apiModels: ModelOption[]): ModelOption[] => {
-  return apiModels.map((model) => ({ ...model, apiMode: 'gemini-native' as const }));
-};
+import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
 
 type AppTranslator = ReturnType<typeof getTranslator>;
 type ChatViewModel = ReturnType<typeof useChat>;
@@ -127,7 +124,10 @@ export const useApp = (): AppViewModel => {
     }
   }, [pipState.pipWindow, currentTheme, appSettings]);
 
-  const providerAwareModels = useMemo(() => buildProviderAwareModels(apiModels), [apiModels]);
+  const providerAwareModels = useMemo(
+    () => buildProviderAwareModelList(appSettings, apiModels),
+    [appSettings, apiModels],
+  );
 
   const eventsState = useAppEvents({
     appSettings,
