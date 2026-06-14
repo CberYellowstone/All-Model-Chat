@@ -15,7 +15,7 @@ interface UseLiveConfigProps {
   };
 }
 
-interface LiveConfig {
+export interface LiveConfig {
   responseModalities: ['AUDIO'];
   speechConfig: {
     voiceConfig: {

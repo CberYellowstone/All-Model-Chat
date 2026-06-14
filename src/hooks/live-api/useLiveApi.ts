@@ -21,6 +21,10 @@ interface UseLiveApiProps {
   onTranscript?: LiveTranscriptHandler;
   onGeneratedFiles?: (files: UploadedFile[]) => void;
   clientFunctions?: LiveClientFunctions;
+  liveTranslateLanguages?: {
+    sourceLanguage: string;
+    targetLanguage: string;
+  };
 }
 
 export const useLiveApi = ({
@@ -31,6 +35,7 @@ export const useLiveApi = ({
   onTranscript,
   onGeneratedFiles,
   clientFunctions,
+  liveTranslateLanguages,
 }: UseLiveApiProps) => {
   const { t } = useI18n();
   const sessionRef = useRef<Promise<LiveSession> | null>(null);
@@ -47,6 +52,7 @@ export const useLiveApi = ({
     chatSettings,
     sessionHandle,
     clientFunctions,
+    liveTranslateLanguages,
   });
   const liveApiKeyForConnection = useMemo(() => {
     const keyResult = getGeminiKeyForRequest(appSettings, chatSettings, {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LOCAL_PYTHON_SYSTEM_PROMPT } from '@/features/prompts/localPython';
 import { MediaResolution, type LiveClientFunctions } from '@/types';
-import { useLiveConfig } from './useLiveConfig';
+import { useLiveConfig, type LiveConfig } from './useLiveConfig';
 import { createChatSettings } from '@/test/data/factories';
 import { renderHook } from '@/test/render/renderer';
 
@@ -38,7 +38,7 @@ describe('useLiveConfig', () => {
       }),
     );
 
-    expect(result.current.liveConfig.sessionResumption).toEqual({});
+    expect((result.current.liveConfig as LiveConfig).sessionResumption).toEqual({});
     unmount();
   });
 
@@ -50,7 +50,7 @@ describe('useLiveConfig', () => {
       }),
     );
 
-    expect(result.current.liveConfig.thinkingConfig).toEqual({
+    expect((result.current.liveConfig as LiveConfig).thinkingConfig).toEqual({
       includeThoughts: true,
       thinkingLevel: 'LOW',
     });
@@ -74,7 +74,7 @@ describe('useLiveConfig', () => {
       }),
     );
 
-    expect(result.current.liveConfig.tools).toContainEqual({
+    expect((result.current.liveConfig as LiveConfig).tools).toContainEqual({
       functionDeclarations: [
         {
           name: 'turn_on_the_lights',
