@@ -16,9 +16,12 @@ export const isGemmaModel = (modelId: string): boolean => !!modelId && modelId.t
 export const isGeminiRoboticsModel = (modelId: string): boolean =>
   !!modelId && modelId.toLowerCase().includes('gemini-robotics-er');
 
+export const isLiveTranslateModel = (modelId: string): boolean =>
+  !!modelId && modelId.toLowerCase().includes('live-translate');
+
 const isNativeAudioModel = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
-  return lowerId.includes('native-audio') || lowerId.includes('-live-');
+  return lowerId.includes('native-audio') || lowerId.includes('-live-') || lowerId.includes('live-translate');
 };
 
 const isGemini31FlashLiveModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-3.1-flash-live');
@@ -78,6 +81,7 @@ export interface ModelCapabilities {
   isImageGenerationModel: boolean;
   isTtsModel: boolean;
   isNativeAudioModel: boolean;
+  isLiveTranslate: boolean;
   supportsBuiltInCustomToolCombination: boolean;
   permissions: ModelInteractionPermissions;
   supportedAspectRatios?: string[];
@@ -168,6 +172,7 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     isImageGenerationModel: imageGenerationModel,
     isTtsModel: ttsModel,
     isNativeAudioModel: nativeAudioModel,
+    isLiveTranslate: isLiveTranslateModel(modelId),
     supportsBuiltInCustomToolCombination: isGemini3,
     permissions,
     supportedAspectRatios,
