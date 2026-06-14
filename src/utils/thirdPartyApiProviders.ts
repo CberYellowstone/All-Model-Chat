@@ -15,6 +15,7 @@ export const THIRD_PARTY_PROVIDER_IDS = [
   'openrouter',
   'qwen',
   'kimi',
+  'glm',
   'custom',
 ] as const;
 
@@ -25,6 +26,7 @@ export const THIRD_PARTY_PROVIDER_LABELS: Record<ThirdPartyProviderId, string> =
   openrouter: 'OpenRouter',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  glm: 'GLM',
   custom: 'Custom',
 };
 
@@ -76,6 +78,16 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     baseUrl: 'https://api.moonshot.ai/v1',
     modelId: 'kimi-k2.6',
     models: [{ id: 'kimi-k2.6', name: 'Kimi K2.6', isPinned: true }],
+    protocol: 'openai-compatible',
+  },
+  glm: {
+    apiKey: null,
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    modelId: 'glm-5.2',
+    models: [
+      { id: 'glm-5.2', name: 'GLM-5.2', isPinned: true },
+      { id: 'glm-5.2-flash', name: 'GLM-5.2 Flash' },
+    ],
     protocol: 'openai-compatible',
   },
   custom: {

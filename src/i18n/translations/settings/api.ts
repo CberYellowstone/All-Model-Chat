@@ -132,6 +132,7 @@ const apiSettings = {
   thirdPartyProviderOpenrouter: { en: 'OpenRouter', zh: 'OpenRouter' },
   thirdPartyProviderQwen: { en: 'Qwen', zh: '通义千问' },
   thirdPartyProviderKimi: { en: 'Kimi', zh: 'Kimi' },
+  thirdPartyProviderGlm: { en: 'GLM', zh: '智谱 GLM' },
   thirdPartyProviderCustom: { en: 'Custom', zh: '自定义' },
 };
 export default apiSettings;

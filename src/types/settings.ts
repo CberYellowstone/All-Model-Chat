@@ -49,6 +49,7 @@ export const THIRD_PARTY_PROVIDER_IDS = [
   'openrouter',
   'qwen',
   'kimi',
+  'glm',
   'custom',
 ] as const;
 export type ThirdPartyProviderId = (typeof THIRD_PARTY_PROVIDER_IDS)[number];
