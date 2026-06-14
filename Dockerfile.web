@@ -1,9 +1,14 @@
-FROM nginx:1.27-alpine
+FROM node:24-slim
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/web-entrypoint.sh /docker-entrypoint.d/40-runtime-config.sh
+WORKDIR /app
+
+COPY docker/web-server.js /app/web-server.js
 COPY dist /usr/share/nginx/html
 
-RUN chmod +x /docker-entrypoint.d/40-runtime-config.sh
+ENV PORT=80
+ENV API_UPSTREAM=http://api:3001
+ENV WEB_ROOT=/usr/share/nginx/html
 
 EXPOSE 80
+
+CMD ["node", "web-server.js"]
