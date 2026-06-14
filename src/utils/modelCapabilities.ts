@@ -31,8 +31,14 @@ const isGemini31FlashImageModel = (modelId: string): boolean =>
 
 const isTtsModel = (modelId: string): boolean => modelId.toLowerCase().includes('tts');
 
-const supportsThinkingLevel = (modelId: string): boolean =>
-  !isTtsModel(modelId) && (isGemini3Model(modelId) || isGeminiRoboticsModel(modelId));
+const supportsThinkingLevel = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  // GLM-5 series supports thinking via the OpenAI-compatible thinking parameter.
+  if (lowerId.startsWith('glm-')) {
+    return true;
+  }
+  return !isTtsModel(modelId) && (isGemini3Model(modelId) || isGeminiRoboticsModel(modelId));
+};
 
 const isGemini3ImageModel = (modelId: string): boolean =>
   modelId === 'gemini-3-pro-image-preview' || modelId === 'gemini-3.1-flash-image-preview';
