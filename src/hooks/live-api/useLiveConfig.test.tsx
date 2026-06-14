@@ -114,4 +114,48 @@ describe('useLiveConfig', () => {
     });
     unmount();
   });
+
+  it('emits a stripped-down config for live-translate models', () => {
+    const { result, unmount } = renderHook(() =>
+      useLiveConfig({
+        chatSettings: createChatSettings({
+          ...baseChatSettings,
+          modelId: 'gemini-3.5-live-translate-preview',
+        }),
+        sessionHandle: null,
+      }),
+    );
+
+    expect(result.current.liveConfig.responseModalities).toEqual(['AUDIO']);
+    // 未传 liveTranslateLanguages 时走默认 { sourceLanguage: 'auto', targetLanguage: 'English' }
+    expect(result.current.liveConfig.systemInstruction).toEqual({
+      parts: [{ text: 'Translate into English.' }],
+    });
+    expect(result.current.liveConfig).not.toHaveProperty('speechConfig');
+    expect(result.current.liveConfig).not.toHaveProperty('tools');
+    expect(result.current.liveConfig).not.toHaveProperty('inputAudioTranscription');
+    expect(result.current.liveConfig).not.toHaveProperty('contextWindowCompression');
+    expect(result.current.liveConfig).not.toHaveProperty('thinkingConfig');
+    // tools 数组应为空（builder 不产生 tools）
+    expect(result.current.tools).toEqual([]);
+    unmount();
+  });
+
+  it('uses the provided language direction for live-translate models', () => {
+    const { result, unmount } = renderHook(() =>
+      useLiveConfig({
+        chatSettings: createChatSettings({
+          ...baseChatSettings,
+          modelId: 'gemini-3.5-live-translate-preview',
+        }),
+        sessionHandle: null,
+        liveTranslateLanguages: { sourceLanguage: 'English', targetLanguage: 'Japanese' },
+      }),
+    );
+
+    expect(result.current.liveConfig.systemInstruction).toEqual({
+      parts: [{ text: 'Translate from English into Japanese.' }],
+    });
+    unmount();
+  });
 });
