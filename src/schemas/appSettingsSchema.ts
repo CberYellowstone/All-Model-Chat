@@ -309,6 +309,8 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
     .unknown()
     .optional()
     .transform((value) => sanitizeTabModelCycleIds(value, DEFAULT_APP_SETTINGS.tabModelCycleIds)),
+  liveTranslateSourceLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateSourceLanguage),
+  liveTranslateTargetLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguage),
 });
 
 const coerceDisabledOpenAICompatibleMode = (settings: AppSettings): AppSettings => ({
