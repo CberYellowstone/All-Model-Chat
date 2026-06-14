@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react';
 
 import type { AppViewModel } from '@/hooks/app/useApp';
 import { focusChatInput } from '@/utils/chat-input/focus';
-import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
+import { getThirdPartyProviderModelId, getThirdPartyProviderModels } from '@/utils/thirdPartyApiProviders';
+import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import type { ChatHeaderRuntimeValue } from './chatRuntimeTypes';
 
 interface HeaderRuntimeValuesOptions {
@@ -17,15 +18,15 @@ const buildHeaderModels = (
 ) => {
   const seenIds = new Set<string>();
   const geminiModels = apiModels.map((model) => ({ ...model, apiMode: 'gemini-native' as const }));
-  const openaiCompatibleModels =
-    appSettings.isOpenAICompatibleApiEnabled === true
-      ? appSettings.openaiCompatibleModels.map((model) => ({
+  const thirdPartyModels =
+    appSettings.isThirdPartyApiEnabled === true
+      ? getThirdPartyProviderModels(appSettings).map((model) => ({
           ...model,
-          apiMode: 'openai-compatible' as const,
+          apiMode: 'third-party' as const,
         }))
       : [];
 
-  return [...geminiModels, ...openaiCompatibleModels].filter((model) => {
+  return [...geminiModels, ...thirdPartyModels].filter((model) => {
     if (seenIds.has(model.id)) {
       return false;
     }
@@ -68,15 +69,12 @@ export const useChatHeaderRuntimeValues = ({
   }, [chatState, gemmaReasoningEnabled, setAppSettings]);
 
   const currentModelName = getCurrentModelDisplayName();
-  const isOpenAICompatibleMode = isOpenAICompatibleApiActive(appSettings);
-  const openaiCompatibleModelIds = useMemo(
+  const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
+  const thirdPartyEnabled = appSettings.isThirdPartyApiEnabled === true;
+  const thirdPartyModelIds = useMemo(
     () =>
-      new Set(
-        appSettings.isOpenAICompatibleApiEnabled === true
-          ? appSettings.openaiCompatibleModels.map((model) => model.id)
-          : [],
-      ),
-    [appSettings.isOpenAICompatibleApiEnabled, appSettings.openaiCompatibleModels],
+      new Set(thirdPartyEnabled ? getThirdPartyProviderModels(appSettings).map((model) => model.id) : []),
+    [appSettings, thirdPartyEnabled],
   );
   const geminiModelIds = useMemo(() => new Set(chatState.apiModels.map((model) => model.id)), [chatState.apiModels]);
   const headerAvailableModels = useMemo(
@@ -84,22 +82,31 @@ export const useChatHeaderRuntimeValues = ({
     [appSettings, chatState.apiModels],
   );
   const headerSelectedModelId = isOpenAICompatibleMode
-    ? appSettings.openaiCompatibleModelId
+    ? getThirdPartyProviderModelId(appSettings)
     : chatState.currentChatSettings.modelId || appSettings.modelId;
   const handleHeaderSelectModel = useCallback(
     (modelId: string) => {
-      const isOpenAICompatibleModel = openaiCompatibleModelIds.has(modelId);
+      const isThirdPartyModel = thirdPartyModelIds.has(modelId);
       const isGeminiModel = geminiModelIds.has(modelId);
 
       if (
-        appSettings.isOpenAICompatibleApiEnabled === true &&
-        isOpenAICompatibleModel &&
+        thirdPartyEnabled &&
+        isThirdPartyModel &&
         (!isGeminiModel || isOpenAICompatibleMode)
       ) {
         setAppSettings((prev) => ({
           ...prev,
-          apiMode: 'openai-compatible',
-          openaiCompatibleModelId: modelId,
+          apiMode: 'third-party',
+          thirdPartyApi: {
+            ...prev.thirdPartyApi,
+            providers: {
+              ...prev.thirdPartyApi.providers,
+              [prev.thirdPartyApi.activeProvider]: {
+                ...prev.thirdPartyApi.providers[prev.thirdPartyApi.activeProvider],
+                modelId,
+              },
+            },
+          },
         }));
         focusChatInput();
         return;
@@ -115,10 +122,10 @@ export const useChatHeaderRuntimeValues = ({
     },
     [
       chatState,
-      appSettings.isOpenAICompatibleApiEnabled,
       geminiModelIds,
       isOpenAICompatibleMode,
-      openaiCompatibleModelIds,
+      thirdPartyEnabled,
+      thirdPartyModelIds,
       setAppSettings,
     ],
   );

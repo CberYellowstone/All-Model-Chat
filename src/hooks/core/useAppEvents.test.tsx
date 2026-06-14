@@ -4,6 +4,7 @@ import type { AppSettings, ModelOption } from '@/types';
 import { FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { useAppEvents } from './useAppEvents';
 import { createAppSettings, createChatSettings } from '@/test/data/factories';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { setTestMatchMedia } from '@/test/browser/environment';
 import { renderHook } from '@/test/render/renderer';
 
@@ -206,11 +207,17 @@ describe('useAppEvents PWA lifecycle', () => {
   it('starts the Tab cycle from the configured Gemini list when a GPT-compatible model is active', async () => {
     const handleSelectModelInHeader = vi.fn();
     const setAppSettings = vi.fn();
-    const openaiCompatibleSettings = createAppSettings({
+    const openaiProviderSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'openai-compatible',
-      isOpenAICompatibleApiEnabled: true,
-      openaiCompatibleModelId: 'gpt-5.5',
+      apiMode: 'third-party',
+      isThirdPartyApiEnabled: true,
+      thirdPartyApi: {
+        activeProvider: 'openai',
+        providers: {
+          ...createDefaultThirdPartyApiSettings().providers,
+          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.5' },
+        },
+      },
     });
     const textarea = document.createElement('textarea');
     textarea.dataset.chatInputTextarea = 'true';
@@ -219,7 +226,7 @@ describe('useAppEvents PWA lifecycle', () => {
 
     const { unmount } = renderHook(() =>
       useAppEvents({
-        appSettings: openaiCompatibleSettings,
+        appSettings: openaiProviderSettings,
         setAppSettings,
         startNewChat: vi.fn(),
         currentChatSettings: createChatSettings({
@@ -247,10 +254,9 @@ describe('useAppEvents PWA lifecycle', () => {
     expect(setAppSettings).toHaveBeenCalledWith(expect.any(Function));
 
     const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
-    expect(updateSettings(openaiCompatibleSettings)).toEqual(
+    expect(updateSettings(openaiProviderSettings)).toEqual(
       expect.objectContaining({
         apiMode: 'gemini-native',
-        openaiCompatibleModelId: 'gpt-5.5',
       }),
     );
 

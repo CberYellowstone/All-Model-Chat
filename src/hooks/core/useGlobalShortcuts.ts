@@ -4,7 +4,7 @@ import { useFullscreen } from '@/hooks/ui/useFullscreen';
 import type { AppSettings, ChatSettings, ModelOption } from '@/types';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
 import { getTabCycleModelIds } from '@/utils/modelCatalog';
-import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
+import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import {
   buildProviderAwareModelList,
   getThirdPartyProviderConfig,
@@ -104,7 +104,7 @@ export const useGlobalShortcuts = ({
           activeElement instanceof Element && activeElement.matches(CHAT_INPUT_TEXTAREA_SELECTOR);
         if (isChatTextareaFocused || !isGenerallyInputFocused) {
           event.preventDefault();
-          const isOpenAICompatibleMode = isOpenAICompatibleApiActive(appSettings);
+          const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
           const activeThirdPartyProvider =
             isOpenAICompatibleMode && appSettings.apiMode === 'third-party'
               ? getThirdPartyProviderConfig(appSettings)
