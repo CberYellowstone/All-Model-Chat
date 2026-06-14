@@ -111,8 +111,8 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   mcpServers: [],
   customShortcuts: {},
   tabModelCycleIds: undefined,
-  liveTranslateSourceLanguage: 'auto',
-  liveTranslateTargetLanguage: 'English',
+  liveTranslateTargetLanguageCode: 'en',
+  liveTranslateEchoTargetLanguage: false,
   thirdPartyApi: DEFAULT_THIRD_PARTY_API_SETTINGS,
 };
 

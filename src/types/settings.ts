@@ -179,8 +179,8 @@ export interface AppSettings extends ChatSettings {
   mcpServers: McpServerConfig[];
   customShortcuts: Record<string, string>; // ID -> Key Combination String
   tabModelCycleIds?: string[];
-  liveTranslateSourceLanguage: string; // 'auto' = 自动检测，或具体语言名
-  liveTranslateTargetLanguage: string; // 目标语言名
+  liveTranslateTargetLanguageCode: string; // 目标语言 BCP-47 代码（源语言由模型自动检测）
+  liveTranslateEchoTargetLanguage: boolean; // 输入已是目标语言时是否回放原声
   thirdPartyApi: ThirdPartyApiSettings;
   isThirdPartyApiEnabled?: boolean;
 }

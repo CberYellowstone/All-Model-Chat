@@ -18,18 +18,32 @@ export const TRANSLATION_TARGET_LANGUAGE_OPTIONS: Array<{
 ];
 
 /**
- * Live Translate 源语言选项。包含 'auto'（自动检测）。
- * value 为语言名（与 systemInstruction 一致），labelKey 为 i18n key。
+ * Live Translate 目标语言选项。
+ *
+ * value 为 BCP-47 语言代码（官方 translationConfig.targetLanguageCode 要求的格式）。
+ * 源语言由模型自动检测，故此处不提供源语言列表。
  */
-export const LIVE_TRANSLATE_SOURCE_LANGUAGE_OPTIONS: Array<{
+export const LIVE_TRANSLATE_TARGET_LANGUAGE_OPTIONS: Array<{
   value: string;
   labelKey: string;
 }> = [
-  { value: 'auto', labelKey: 'liveTranslateSourceLanguageAuto' },
-  ...TRANSLATION_TARGET_LANGUAGE_OPTIONS,
+  { value: 'en', labelKey: 'liveTranslateLanguageEnglish' },
+  { value: 'zh-Hans', labelKey: 'liveTranslateLanguageSimplifiedChinese' },
+  { value: 'zh-Hant', labelKey: 'liveTranslateLanguageTraditionalChinese' },
+  { value: 'ja', labelKey: 'liveTranslateLanguageJapanese' },
+  { value: 'ko', labelKey: 'liveTranslateLanguageKorean' },
+  { value: 'es', labelKey: 'liveTranslateLanguageSpanish' },
+  { value: 'fr', labelKey: 'liveTranslateLanguageFrench' },
+  { value: 'de', labelKey: 'liveTranslateLanguageGerman' },
+  { value: 'it', labelKey: 'liveTranslateLanguageItalian' },
+  { value: 'pt-BR', labelKey: 'liveTranslateLanguagePortugueseBrazil' },
+  { value: 'ru', labelKey: 'liveTranslateLanguageRussian' },
+  { value: 'ar', labelKey: 'liveTranslateLanguageArabic' },
+  { value: 'hi', labelKey: 'liveTranslateLanguageHindi' },
+  { value: 'pl', labelKey: 'liveTranslateLanguagePolish' },
+  { value: 'vi', labelKey: 'liveTranslateLanguageVietnamese' },
+  { value: 'th', labelKey: 'liveTranslateLanguageThai' },
+  { value: 'id', labelKey: 'liveTranslateLanguageIndonesian' },
 ];
 
-/**
- * Live Translate 目标语言选项。复用现有目标语言列表（不含 auto）。
- */
-export const LIVE_TRANSLATE_TARGET_LANGUAGE_OPTIONS = TRANSLATION_TARGET_LANGUAGE_OPTIONS;
+export const DEFAULT_LIVE_TRANSLATE_TARGET_LANGUAGE_CODE = 'en';

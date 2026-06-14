@@ -9,9 +9,9 @@ interface UseLiveConfigProps {
   chatSettings: ChatSettings;
   sessionHandle: string | null;
   clientFunctions?: LiveClientFunctions;
-  liveTranslateLanguages?: {
-    sourceLanguage: string;
-    targetLanguage: string;
+  liveTranslateConfig?: {
+    targetLanguageCode: string;
+    echoTargetLanguage: boolean;
   };
 }
 
@@ -44,19 +44,20 @@ export const useLiveConfig = ({
   chatSettings,
   sessionHandle,
   clientFunctions,
-  liveTranslateLanguages,
+  liveTranslateConfig,
 }: UseLiveConfigProps) => {
   return useMemo(() => {
     const capabilities = getCachedModelCapabilities(chatSettings.modelId);
 
-    // Live Translate 模型走精简 config：无 voiceConfig / tools / transcription / compression / thinking
+    // Live Translate 模型走专用 config：translationConfig + transcription，
+    // 无 voiceConfig / tools / compression / thinking
     if (capabilities.isLiveTranslate) {
-      const { sourceLanguage, targetLanguage } = liveTranslateLanguages ?? {
-        sourceLanguage: 'auto',
-        targetLanguage: 'English',
+      const { targetLanguageCode, echoTargetLanguage } = liveTranslateConfig ?? {
+        targetLanguageCode: 'en',
+        echoTargetLanguage: false,
       };
       return {
-        liveConfig: buildLiveTranslateConfig({ sourceLanguage, targetLanguage }),
+        liveConfig: buildLiveTranslateConfig({ targetLanguageCode, echoTargetLanguage }),
         tools: [] as Tool[],
       };
     }
@@ -120,5 +121,5 @@ export const useLiveConfig = ({
     }
 
     return { liveConfig, tools };
-  }, [chatSettings, sessionHandle, clientFunctions, liveTranslateLanguages]);
+  }, [chatSettings, sessionHandle, clientFunctions, liveTranslateConfig]);
 };

@@ -105,7 +105,7 @@ describe('useLiveConfig', () => {
       }),
     );
 
-    expect(result.current.liveConfig.systemInstruction).toEqual({
+    expect((result.current.liveConfig as { systemInstruction?: { parts: Array<{ text: string }> } }).systemInstruction).toEqual({
       parts: [
         {
           text: `Custom live instruction\n\n${LOCAL_PYTHON_SYSTEM_PROMPT}`,
@@ -115,7 +115,7 @@ describe('useLiveConfig', () => {
     unmount();
   });
 
-  it('emits a stripped-down config for live-translate models', () => {
+  it('emits a translation-config for live-translate models', () => {
     const { result, unmount } = renderHook(() =>
       useLiveConfig({
         chatSettings: createChatSettings({
@@ -127,21 +127,25 @@ describe('useLiveConfig', () => {
     );
 
     expect(result.current.liveConfig.responseModalities).toEqual(['AUDIO']);
-    // 未传 liveTranslateLanguages 时走默认 { sourceLanguage: 'auto', targetLanguage: 'English' }
-    expect(result.current.liveConfig.systemInstruction).toEqual({
-      parts: [{ text: 'Translate into English.' }],
+    // 未传 liveTranslateConfig 时走默认 targetLanguageCode 'en'，echo 关闭
+    expect(
+      (result.current.liveConfig as { translationConfig: { targetLanguageCode: string; echoTargetLanguage: boolean } })
+        .translationConfig,
+    ).toEqual({
+      targetLanguageCode: 'en',
+      echoTargetLanguage: false,
     });
     expect(result.current.liveConfig).not.toHaveProperty('speechConfig');
     expect(result.current.liveConfig).not.toHaveProperty('tools');
-    expect(result.current.liveConfig).not.toHaveProperty('inputAudioTranscription');
     expect(result.current.liveConfig).not.toHaveProperty('contextWindowCompression');
     expect(result.current.liveConfig).not.toHaveProperty('thinkingConfig');
+    expect(result.current.liveConfig).not.toHaveProperty('systemInstruction');
     // tools 数组应为空（builder 不产生 tools）
     expect(result.current.tools).toEqual([]);
     unmount();
   });
 
-  it('uses the provided language direction for live-translate models', () => {
+  it('uses the provided target language code and echo flag for live-translate models', () => {
     const { result, unmount } = renderHook(() =>
       useLiveConfig({
         chatSettings: createChatSettings({
@@ -149,12 +153,16 @@ describe('useLiveConfig', () => {
           modelId: 'gemini-3.5-live-translate-preview',
         }),
         sessionHandle: null,
-        liveTranslateLanguages: { sourceLanguage: 'English', targetLanguage: 'Japanese' },
+        liveTranslateConfig: { targetLanguageCode: 'ja', echoTargetLanguage: true },
       }),
     );
 
-    expect(result.current.liveConfig.systemInstruction).toEqual({
-      parts: [{ text: 'Translate from English into Japanese.' }],
+    expect(
+      (result.current.liveConfig as { translationConfig: { targetLanguageCode: string; echoTargetLanguage: boolean } })
+        .translationConfig,
+    ).toEqual({
+      targetLanguageCode: 'ja',
+      echoTargetLanguage: true,
     });
     unmount();
   });

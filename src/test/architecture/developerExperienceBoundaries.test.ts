@@ -14,8 +14,8 @@ describe('developer experience detail boundaries', () => {
     expect(appEventsSource).toContain("from './usePwaLifecycle'");
     expect(appEventsSource).toContain("from './useGlobalShortcuts'");
     expect(appEventsSource).not.toContain('loadRegisterSW');
-    expect(appLifecycleSource).not.toContain('registerPwa');
-    expect(appLifecycleSource).not.toContain('getPwaInstallState');
+    expect(appEventsSource).not.toContain('registerPwa');
+    expect(appEventsSource).not.toContain('getPwaInstallState');
     expect(appEventsSource).not.toContain('isShortcutPressed');
     expect(appEventsSource).not.toContain('getTabCycleModelIds');
     expect(appEventsSource).not.toContain('FOCUS_HISTORY_SEARCH_EVENT');

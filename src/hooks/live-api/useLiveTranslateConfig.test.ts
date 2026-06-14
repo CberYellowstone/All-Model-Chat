@@ -2,33 +2,44 @@ import { describe, expect, it } from 'vitest';
 import { buildLiveTranslateConfig } from './useLiveTranslateConfig';
 
 describe('buildLiveTranslateConfig', () => {
-  it('omits voiceConfig, tools, transcription, compression, and thinking', () => {
-    const config = buildLiveTranslateConfig({ sourceLanguage: 'English', targetLanguage: 'Japanese' });
+  it('emits translationConfig with the BCP-47 target language code', () => {
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'zh-Hans' });
 
-    expect(config).not.toHaveProperty('speechConfig');
-    expect(config).not.toHaveProperty('tools');
-    expect(config).not.toHaveProperty('inputAudioTranscription');
-    expect(config).not.toHaveProperty('outputAudioTranscription');
-    expect(config).not.toHaveProperty('contextWindowCompression');
-    expect(config).not.toHaveProperty('thinkingConfig');
+    expect(config.translationConfig).toEqual({
+      targetLanguageCode: 'zh-Hans',
+      echoTargetLanguage: false,
+    });
   });
 
   it('requests AUDIO modality only', () => {
-    const config = buildLiveTranslateConfig({ sourceLanguage: 'English', targetLanguage: 'Japanese' });
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'en' });
     expect(config.responseModalities).toEqual(['AUDIO']);
   });
 
-  it('uses "Translate into" when source is auto', () => {
-    const config = buildLiveTranslateConfig({ sourceLanguage: 'auto', targetLanguage: 'Japanese' });
-    expect(config.systemInstruction).toEqual({
-      parts: [{ text: 'Translate into Japanese.' }],
-    });
+  it('enables input and output transcription to capture source/translated text', () => {
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'ja' });
+
+    expect(config.inputAudioTranscription).toEqual({});
+    expect(config.outputAudioTranscription).toEqual({});
   });
 
-  it('uses "Translate from X into Y" when source is specified', () => {
-    const config = buildLiveTranslateConfig({ sourceLanguage: 'English', targetLanguage: 'Japanese' });
-    expect(config.systemInstruction).toEqual({
-      parts: [{ text: 'Translate from English into Japanese.' }],
-    });
+  it('defaults echoTargetLanguage to false', () => {
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'en' });
+    expect(config.translationConfig.echoTargetLanguage).toBe(false);
+  });
+
+  it('honours an explicitly enabled echoTargetLanguage', () => {
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'en', echoTargetLanguage: true });
+    expect(config.translationConfig.echoTargetLanguage).toBe(true);
+  });
+
+  it('omits voiceConfig, tools, contextWindowCompression, and thinking', () => {
+    const config = buildLiveTranslateConfig({ targetLanguageCode: 'en' });
+
+    expect(config).not.toHaveProperty('speechConfig');
+    expect(config).not.toHaveProperty('tools');
+    expect(config).not.toHaveProperty('contextWindowCompression');
+    expect(config).not.toHaveProperty('thinkingConfig');
+    expect(config).not.toHaveProperty('systemInstruction');
   });
 });

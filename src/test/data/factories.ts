@@ -76,8 +76,8 @@ export const createAppSettings = (overrides: Partial<AppSettings> = {}): AppSett
   isSystemAudioRecordingEnabled: false,
   mcpServers: [],
   customShortcuts: {},
-  liveTranslateSourceLanguage: 'auto',
-  liveTranslateTargetLanguage: 'English',
+  liveTranslateTargetLanguageCode: 'en',
+  liveTranslateEchoTargetLanguage: false,
   thirdPartyApi: createDefaultThirdPartyApiSettings(),
   ...overrides,
 });

@@ -87,8 +87,8 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
       defaultSettings.thoughtTranslationModelId ?? defaultSettings.modelId,
     ),
     liveArtifactsSystemPrompts: normalizeLiveArtifactsSystemPrompts(settings),
-    liveTranslateSourceLanguage: settings.liveTranslateSourceLanguage ?? defaultSettings.liveTranslateSourceLanguage,
-    liveTranslateTargetLanguage: settings.liveTranslateTargetLanguage ?? defaultSettings.liveTranslateTargetLanguage,
+    liveTranslateTargetLanguageCode: settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
+    liveTranslateEchoTargetLanguage: settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
   };
 }
 

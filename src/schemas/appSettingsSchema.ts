@@ -317,8 +317,11 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
     .unknown()
     .optional()
     .transform((value) => sanitizeTabModelCycleIds(value, DEFAULT_APP_SETTINGS.tabModelCycleIds)),
-  liveTranslateSourceLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateSourceLanguage),
-  liveTranslateTargetLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguage),
+  liveTranslateTargetLanguageCode: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguageCode),
+  liveTranslateEchoTargetLanguage: z
+    .boolean()
+    .optional()
+    .default(DEFAULT_APP_SETTINGS.liveTranslateEchoTargetLanguage),
   thirdPartyApi: thirdPartyApiSchema,
 });
 

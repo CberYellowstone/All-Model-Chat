@@ -37,8 +37,8 @@ describe('DEFAULT_APP_SETTINGS', () => {
 });
 
 describe('Live Translate settings defaults', () => {
-  it('defaults source language to auto-detect and target to English', () => {
-    expect(DEFAULT_APP_SETTINGS.liveTranslateSourceLanguage).toBe('auto');
-    expect(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguage).toBe('English');
+  it('defaults target language to English (en) and echo off', () => {
+    expect(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguageCode).toBe('en');
+    expect(DEFAULT_APP_SETTINGS.liveTranslateEchoTargetLanguage).toBe(false);
   });
 });

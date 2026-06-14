@@ -408,8 +408,27 @@ export const chatInputTranslations = {
   queuedSubmissionEdit: { en: 'Edit queued message', zh: '编辑排队消息' },
   queuedSubmissionRemove: { en: 'Remove queued message', zh: '移除排队消息' },
 
-  // Live Translate language direction selector
-  liveTranslateSourceLanguageAuto: { en: 'Auto-detect', zh: '自动检测' },
-  liveTranslateSourceLanguageLabel: { en: 'Source language', zh: '源语言' },
+  // Live Translate target language selector
   liveTranslateTargetLanguageLabel: { en: 'Target language', zh: '目标语言' },
+  liveTranslateEchoTargetLanguageTooltip: {
+    en: 'Echo original audio when input is already in target language',
+    zh: '输入已是目标语言时回放原声',
+  },
+  liveTranslateLanguageEnglish: { en: 'English', zh: '英语' },
+  liveTranslateLanguageSimplifiedChinese: { en: 'Simplified Chinese', zh: '简体中文' },
+  liveTranslateLanguageTraditionalChinese: { en: 'Traditional Chinese', zh: '繁体中文' },
+  liveTranslateLanguageJapanese: { en: 'Japanese', zh: '日语' },
+  liveTranslateLanguageKorean: { en: 'Korean', zh: '韩语' },
+  liveTranslateLanguageSpanish: { en: 'Spanish', zh: '西班牙语' },
+  liveTranslateLanguageFrench: { en: 'French', zh: '法语' },
+  liveTranslateLanguageGerman: { en: 'German', zh: '德语' },
+  liveTranslateLanguageItalian: { en: 'Italian', zh: '意大利语' },
+  liveTranslateLanguagePortugueseBrazil: { en: 'Portuguese (Brazil)', zh: '葡萄牙语（巴西）' },
+  liveTranslateLanguageRussian: { en: 'Russian', zh: '俄语' },
+  liveTranslateLanguageArabic: { en: 'Arabic', zh: '阿拉伯语' },
+  liveTranslateLanguageHindi: { en: 'Hindi', zh: '印地语' },
+  liveTranslateLanguagePolish: { en: 'Polish', zh: '波兰语' },
+  liveTranslateLanguageVietnamese: { en: 'Vietnamese', zh: '越南语' },
+  liveTranslateLanguageThai: { en: 'Thai', zh: '泰语' },
+  liveTranslateLanguageIndonesian: { en: 'Indonesian', zh: '印尼语' },
 };

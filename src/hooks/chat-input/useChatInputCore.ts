@@ -137,9 +137,9 @@ export const useChatInputCore = () => {
       ? (files) => onLiveTranscript?.('', 'model', false, 'content', undefined, files)
       : undefined,
     clientFunctions: liveClientFunctions,
-    liveTranslateLanguages: {
-      sourceLanguage: appSettings.liveTranslateSourceLanguage,
-      targetLanguage: appSettings.liveTranslateTargetLanguage,
+    liveTranslateConfig: {
+      targetLanguageCode: appSettings.liveTranslateTargetLanguageCode,
+      echoTargetLanguage: appSettings.liveTranslateEchoTargetLanguage,
     },
   });
 

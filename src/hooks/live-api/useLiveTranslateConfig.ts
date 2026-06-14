@@ -1,31 +1,38 @@
 interface LiveTranslateLanguageSettings {
-  sourceLanguage: string; // 'auto' 或具体语言名
-  targetLanguage: string;
+  targetLanguageCode: string; // BCP-47 代码，如 'zh-Hans' / 'en' / 'ja'
+  echoTargetLanguage?: boolean; // 输入已是目标语言时是否回放原声，默认 false
 }
 
 export interface LiveTranslateConfig {
   responseModalities: ['AUDIO'];
-  systemInstruction: { parts: Array<{ text: string }> };
+  inputAudioTranscription: Record<string, never>;
+  outputAudioTranscription: Record<string, never>;
+  translationConfig: {
+    targetLanguageCode: string;
+    echoTargetLanguage: boolean;
+  };
 }
 
 /**
- * 为 Live Translate 模型构建精简 config。
- * 与普通 Live API 的差异：
- *   - 不需要 voiceConfig（翻译音频沿用源说话人音色）
- *   - 不需要 tools / transcription / contextWindowCompression / thinkingConfig
- *   - systemInstruction 仅含语言方向提示
+ * 为 Live Translate 模型构建 config。
+ *
+ * 对照官方文档（gemini-3.5-live-translate-preview）：
+ *   - 翻译方向通过 generationConfig.translationConfig.targetLanguageCode（BCP-47）配置，
+ *     不是 systemInstruction —— 该模型是音频专用模型，不读文本指令。
+ *   - 源语言由模型自动检测，无需配置。
+ *   - 开启 input/output transcription 以拿到原文与译文文字。
+ *   - 不需要 voiceConfig / tools / contextWindowCompression / thinkingConfig
+ *     （翻译专用模型，音频沿用源说话人音色）。
  */
 export const buildLiveTranslateConfig = ({
-  sourceLanguage,
-  targetLanguage,
-}: LiveTranslateLanguageSettings): LiveTranslateConfig => {
-  const instruction =
-    sourceLanguage === 'auto' || !sourceLanguage
-      ? `Translate into ${targetLanguage}.`
-      : `Translate from ${sourceLanguage} into ${targetLanguage}.`;
-
-  return {
-    responseModalities: ['AUDIO'],
-    systemInstruction: { parts: [{ text: instruction }] },
-  };
-};
+  targetLanguageCode,
+  echoTargetLanguage = false,
+}: LiveTranslateLanguageSettings): LiveTranslateConfig => ({
+  responseModalities: ['AUDIO'],
+  inputAudioTranscription: {},
+  outputAudioTranscription: {},
+  translationConfig: {
+    targetLanguageCode,
+    echoTargetLanguage,
+  },
+});
