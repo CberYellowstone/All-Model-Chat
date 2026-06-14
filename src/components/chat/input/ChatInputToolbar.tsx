@@ -7,6 +7,7 @@ import { ImageOutputModeSelector } from './toolbar/ImageOutputModeSelector';
 import { PersonGenerationSelector } from './toolbar/PersonGenerationSelector';
 import { QuadImageToggle } from './toolbar/QuadImageToggle';
 import { TtsVoiceSelector } from './toolbar/TtsVoiceSelector';
+import { LanguageDirectionSelector } from './toolbar/LanguageDirectionSelector';
 import { MediaResolutionSelector } from './toolbar/MediaResolutionSelector';
 import { Clapperboard } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
@@ -43,6 +44,7 @@ const ChatInputToolbarComponent: React.FC = () => {
     isRealImagenModel,
     isTtsModel,
     isNativeAudioModel,
+    isLiveTranslate,
     supportedAspectRatios,
     supportedImageSizes,
   } = capabilities;
@@ -67,8 +69,12 @@ const ChatInputToolbarComponent: React.FC = () => {
   const showPersonGeneration = isRealImagenModel && !!personGeneration;
   const showQuadToggle = (isImageGenerationModel || isGemini3ImageModel) && generateQuadImages !== undefined;
 
-  // Allow voice selection for both explicit TTS models and Native Audio (Live) models
-  const canShowTtsVoice = (isTtsModel || isNativeAudioModel) && Boolean(ttsVoice);
+  // Allow voice selection for TTS and Native Audio (Live) models, except Live Translate
+  // which shows a language-direction selector instead.
+  const canShowTtsVoice = (isTtsModel || isNativeAudioModel) && !isLiveTranslate && Boolean(ttsVoice);
+
+  // Live Translate models show a language-direction selector instead of voice
+  const canShowLanguageDirection = isLiveTranslate;
 
   // Show Media Resolution selector for Native Audio (Live API) to control stream quality
   const canShowMediaResolution = isNativeAudioModel && Boolean(mediaResolution);
@@ -80,6 +86,7 @@ const ChatInputToolbarComponent: React.FC = () => {
     showPersonGeneration ||
     showQuadToggle ||
     canShowTtsVoice ||
+    canShowLanguageDirection ||
     canShowMediaResolution ||
     fileError ||
     showAddByIdInput ||
@@ -93,9 +100,11 @@ const ChatInputToolbarComponent: React.FC = () => {
         showPersonGeneration ||
         showQuadToggle ||
         canShowTtsVoice ||
+        canShowLanguageDirection ||
         canShowMediaResolution) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {canShowTtsVoice && <TtsVoiceSelector ttsVoice={ttsVoice} setTtsVoice={setTtsVoice} />}
+          {canShowLanguageDirection && <LanguageDirectionSelector />}
           {isTtsModel && (
             <button
               onClick={onEditTtsContext}
