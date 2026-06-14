@@ -17,6 +17,7 @@ import {
 } from './modelConfiguration';
 import { DEFAULT_SAFETY_SETTINGS } from './safetySettings';
 import { DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE, DEFAULT_TRANSLATION_TARGET_LANGUAGE } from './translationOptions';
+import { DEFAULT_THIRD_PARTY_API_SETTINGS } from '@/utils/thirdPartyApiProviders';
 
 export const DEFAULT_SYSTEM_INSTRUCTION = '';
 
@@ -112,6 +113,7 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   tabModelCycleIds: undefined,
   liveTranslateSourceLanguage: 'auto',
   liveTranslateTargetLanguage: 'English',
+  thirdPartyApi: DEFAULT_THIRD_PARTY_API_SETTINGS,
 };
 
 export function getDefaultAppSettings(): AppSettings {

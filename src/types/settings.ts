@@ -34,9 +34,39 @@ export enum MediaResolution {
 export type ImageOutputMode = 'IMAGE_TEXT' | 'IMAGE_ONLY';
 export type ImagePersonGeneration = 'ALLOW_ADULT' | 'ALLOW_ALL' | 'DONT_ALLOW';
 /** All valid API modes — used for both type checking and runtime validation. */
-export const API_MODES = ['gemini-native', 'openai-compatible'] as const;
+export const API_MODES = ['gemini-native', 'openai-compatible', 'third-party'] as const;
 export type ApiMode = (typeof API_MODES)[number];
 export type { McpServerAuthType, McpServerConfig, McpServerTransport };
+
+/** Wire protocol supported by a third-party API provider. */
+export type ThirdPartyApiProtocol = 'openai-compatible' | 'anthropic';
+
+/** Identifiers for built-in third-party API providers. */
+export const THIRD_PARTY_PROVIDER_IDS = [
+  'openai',
+  'deepseek',
+  'anthropic',
+  'openrouter',
+  'qwen',
+  'kimi',
+  'custom',
+] as const;
+export type ThirdPartyProviderId = (typeof THIRD_PARTY_PROVIDER_IDS)[number];
+
+/** Connection + model configuration for a single third-party provider. */
+export interface ThirdPartyProviderConfig {
+  apiKey: string | null;
+  baseUrl: string | null;
+  modelId: string;
+  models: ModelOption[];
+  protocol: ThirdPartyApiProtocol;
+}
+
+/** Top-level container for all third-party provider configurations. */
+export interface ThirdPartyApiSettings {
+  activeProvider: ThirdPartyProviderId;
+  providers: Record<ThirdPartyProviderId, ThirdPartyProviderConfig>;
+}
 
 /** All valid thinking levels — used for both type checking and runtime validation. */
 export const THINKING_LEVELS = ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH'] as const;
@@ -150,4 +180,6 @@ export interface AppSettings extends ChatSettings {
   tabModelCycleIds?: string[];
   liveTranslateSourceLanguage: string; // 'auto' = 自动检测，或具体语言名
   liveTranslateTargetLanguage: string; // 目标语言名
+  thirdPartyApi: ThirdPartyApiSettings;
+  isThirdPartyApiEnabled?: boolean;
 }

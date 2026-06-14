@@ -17,6 +17,7 @@ import {
   TRANSLATION_TARGET_LANGUAGES,
 } from '@/types';
 import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { sanitizeThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import {
   isValidMcpHttpUrl,
   sanitizeMcpAuth,
@@ -87,6 +88,13 @@ const filesApiConfigSchema: z.ZodType<FilesApiConfig> = z
   })
   .default(DEFAULT_APP_SETTINGS.filesApiConfig)
   .catch(DEFAULT_APP_SETTINGS.filesApiConfig);
+
+const thirdPartyApiSchema: z.ZodType<AppSettings['thirdPartyApi']> = parseUnknownWithDefault(
+  z
+    .unknown()
+    .transform((value) => sanitizeThirdPartyApiSettings(value as Partial<AppSettings['thirdPartyApi']> | undefined)),
+  DEFAULT_APP_SETTINGS.thirdPartyApi,
+);
 
 const safetySettingSchema = z.object({
   category: z.nativeEnum(HarmCategory),
@@ -311,6 +319,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
     .transform((value) => sanitizeTabModelCycleIds(value, DEFAULT_APP_SETTINGS.tabModelCycleIds)),
   liveTranslateSourceLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateSourceLanguage),
   liveTranslateTargetLanguage: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguage),
+  thirdPartyApi: thirdPartyApiSchema,
 });
 
 const coerceDisabledOpenAICompatibleMode = (settings: AppSettings): AppSettings => ({
