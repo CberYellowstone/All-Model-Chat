@@ -197,6 +197,54 @@ describe('getKeyForRequest', () => {
 
     expect(result).toEqual({ error: 'API Key not configured.' });
   });
+
+  it('resolves the active third-party provider api key when third-party mode is active', () => {
+    const anthropicProvider = {
+      apiKey: 'sk-ant-test',
+      baseUrl: 'https://api.anthropic.com',
+      modelId: 'claude-sonnet-4-6',
+      models: [{ id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', isPinned: true }],
+      protocol: 'anthropic' as const,
+    };
+    const result = getKeyForRequest(
+      {
+        ...DEFAULT_APP_SETTINGS,
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
+        thirdPartyApi: {
+          activeProvider: 'anthropic',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            anthropic: anthropicProvider,
+          },
+        },
+      },
+      chatSettings,
+    );
+
+    expect('key' in result).toBe(true);
+    expect((result as { key: string }).key).toBe('sk-ant-test');
+  });
+
+  it('returns error when third-party provider has no api key', () => {
+    const result = getKeyForRequest(
+      {
+        ...DEFAULT_APP_SETTINGS,
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
+        thirdPartyApi: {
+          activeProvider: 'anthropic',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            anthropic: { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.anthropic, apiKey: null },
+          },
+        },
+      },
+      chatSettings,
+    );
+
+    expect(result).toEqual({ error: 'API Key not configured.' });
+  });
 });
 
 describe('isServerManagedApiEnabledForProxyRequests', () => {

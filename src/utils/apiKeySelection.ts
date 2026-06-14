@@ -2,6 +2,8 @@ import { type AppSettings, type ChatSettings } from '@/types';
 import { API_KEY_LAST_USED_INDEX_KEY } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
 import { isOpenAICompatibleApiActive } from './openaiCompatibleMode';
+import { isThirdPartyApiActive } from './thirdPartyApiActive';
+import { getThirdPartyProviderConfig } from './thirdPartyApiProviders';
 
 export const SERVER_MANAGED_API_KEY = '__SERVER_MANAGED_API_KEY__';
 
@@ -18,7 +20,7 @@ export const isServerManagedApiEnabledForProxyRequests = (appSettings: ServerMan
     appSettings.apiProxyUrl?.trim()
   );
 
-type ApiKeyRequestMode = 'active' | 'gemini-native' | 'openai-compatible';
+type ApiKeyRequestMode = 'active' | 'gemini-native' | 'openai-compatible' | 'third-party';
 
 type GetKeyForRequestOptions = {
   skipIncrement?: boolean;
@@ -31,6 +33,9 @@ const resolveApiKeyRequestMode = (appSettings: AppSettings, apiMode: ApiKeyReque
     return apiMode;
   }
 
+  if (isThirdPartyApiActive(appSettings)) {
+    return 'third-party';
+  }
   return isOpenAICompatibleApiActive(appSettings) ? 'openai-compatible' : 'gemini-native';
 };
 
@@ -51,6 +56,12 @@ const getActiveApiConfig = (
     return {
       apiKeysString: appSettings.openaiCompatibleApiKey || importEnv?.VITE_OPENAI_API_KEY || null,
     };
+  }
+
+  if (resolveApiKeyRequestMode(appSettings, apiMode) === 'third-party') {
+    const activeProvider = getThirdPartyProviderConfig(appSettings);
+    const envFallback = activeProvider.protocol === 'openai-compatible' ? importEnv?.VITE_OPENAI_API_KEY : null;
+    return { apiKeysString: activeProvider.apiKey || envFallback || null };
   }
 
   if (appSettings.useCustomApiConfig) {
