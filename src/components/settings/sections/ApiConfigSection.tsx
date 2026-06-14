@@ -6,18 +6,20 @@ import { DEFAULT_LIVE_ARTIFACTS_MODEL_ID } from '@/constants/modelConfiguration'
 import { CONNECTION_TEST_MODELS } from '@/constants/settingsModelOptions';
 import { getClient } from '@/services/api/apiClient';
 import { sendOpenAICompatibleMessageNonStream } from '@/services/api/openaiCompatibleApi';
+import { sendAnthropicMessageNonStream } from '@/services/api/anthropicApi';
 import {
   isServerManagedApiEnabledForProxyRequests,
   parseApiKeys,
   SERVER_MANAGED_API_KEY,
 } from '@/utils/apiKeySelection';
+import { getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
 import { ApiConfigToggle } from './api-config/ApiConfigToggle';
 import { ApiKeyInput } from './api-config/ApiKeyInput';
 import { ApiProxySettings } from './api-config/ApiProxySettings';
 import { ApiConnectionTester } from './api-config/ApiConnectionTester';
-import { OpenAICompatibleApiSettingsPanel } from './api-config/OpenAICompatibleApiSettingsPanel';
+import { ThirdPartyApiSettingsPanel } from './api-config/ThirdPartyApiSettingsPanel';
 import { FileStrategyControl } from './appearance/FileStrategyControl';
-import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
+import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 
 interface ApiConfigSectionProps {
   useCustomApiConfig: boolean;
@@ -63,8 +65,8 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
     useApiProxy,
     apiProxyUrl,
   });
-  const isOpenAICompatibleMode = isOpenAICompatibleApiActive(settings);
-  const openaiCompatibleApiKey = settings.openaiCompatibleApiKey;
+  const isOpenAICompatibleMode = isThirdPartyApiActive(settings);
+  const activeProvider = getThirdPartyProviderConfig(settings);
 
   useEffect(() => {
     return () => {
@@ -95,8 +97,9 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
   };
 
   const handleApiProviderChange = (nextApiMode: AppSettings['apiMode']) => {
-    onUpdate('apiMode', nextApiMode);
-    onUpdate('isOpenAICompatibleApiEnabled', nextApiMode === 'openai-compatible');
+    const isThirdParty = nextApiMode === 'third-party';
+    onUpdate('apiMode', isThirdParty ? 'third-party' : 'gemini-native');
+    onUpdate('isThirdPartyApiEnabled', isThirdParty);
     setTestStatus('idle');
     setTestMessage(null);
   };
@@ -106,13 +109,12 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
     setTestMessage(null);
   };
 
-  const resolveOpenAICompatibleKey = (): string | null =>
-    openaiCompatibleApiKey || viteEnv?.VITE_OPENAI_API_KEY || null;
+  const resolveProviderKey = (): string | null => activeProvider.apiKey || viteEnv?.VITE_OPENAI_API_KEY || null;
 
   const handleTestConnection = async () => {
     const resolveKeyToTest = (): string | null => {
       if (isOpenAICompatibleMode) {
-        return resolveOpenAICompatibleKey();
+        return resolveProviderKey();
       }
       if (apiKey) return apiKey;
       if (!useCustomApiConfig && hasEnvKey) {
@@ -152,29 +154,45 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
 
     try {
       const modelIdToUse = isOpenAICompatibleMode
-        ? settings.openaiCompatibleModelId
+        ? activeProvider.modelId
         : testModelId || DEFAULT_LIVE_ARTIFACTS_MODEL_ID;
 
       if (isOpenAICompatibleMode) {
-        let compatibleError: Error | null = null;
-        await sendOpenAICompatibleMessageNonStream(
-          firstKey,
-          modelIdToUse,
-          [],
-          [{ text: 'Hello' }],
-          {
-            baseUrl: settings.openaiCompatibleBaseUrl,
-            temperature: 0,
-          },
-          new AbortController().signal,
-          (error) => {
-            compatibleError = error;
-          },
-          () => undefined,
-        );
+        let providerError: Error | null = null;
+        const onError = (error: Error) => {
+          providerError = error;
+        };
+        const providerConfig = {
+          baseUrl: activeProvider.baseUrl,
+          temperature: 0,
+        };
 
-        if (compatibleError) {
-          throw compatibleError;
+        if (activeProvider.protocol === 'anthropic') {
+          await sendAnthropicMessageNonStream(
+            firstKey,
+            modelIdToUse,
+            [],
+            [{ text: 'Hello' }],
+            providerConfig,
+            new AbortController().signal,
+            onError,
+            () => undefined,
+          );
+        } else {
+          await sendOpenAICompatibleMessageNonStream(
+            firstKey,
+            modelIdToUse,
+            [],
+            [{ text: 'Hello' }],
+            providerConfig,
+            new AbortController().signal,
+            onError,
+            () => undefined,
+          );
+        }
+
+        if (providerError) {
+          throw providerError;
         }
       } else {
         const ai = await getClient(firstKey, effectiveUrl);
@@ -224,21 +242,27 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
                 type="button"
                 className={modeButtonClass(isOpenAICompatibleMode)}
                 aria-pressed={isOpenAICompatibleMode}
-                onClick={() => handleApiProviderChange('openai-compatible')}
+                onClick={() => handleApiProviderChange('third-party')}
               >
                 {t('settingsApiModeOpenAICompatible')}
               </button>
             </div>
           </div>
           {isOpenAICompatibleMode && (
-            <OpenAICompatibleApiSettingsPanel
+            <ThirdPartyApiSettingsPanel
               settings={settings}
-              onUpdate={onUpdate}
+              onUpdateSettings={(partial) => {
+                (Object.entries(partial) as Array<[keyof AppSettings, AppSettings[keyof AppSettings]]>).forEach(
+                  ([key, value]) => {
+                    onUpdate(key, value);
+                  },
+                );
+              }}
               onResetConnectionTest={resetConnectionTest}
               onTestConnection={handleTestConnection}
               testStatus={testStatus}
               testMessage={testMessage}
-              hasOpenAIEnvKey={hasOpenAIEnvKey}
+              hasEnvKey={hasOpenAIEnvKey}
             />
           )}
         </div>

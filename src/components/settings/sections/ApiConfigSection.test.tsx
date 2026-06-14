@@ -5,12 +5,14 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { setupStoreStateReset } from '@/test/stores/reset';
 import type { AppSettings } from '@/types';
 import { SERVER_MANAGED_API_KEY } from '@/utils/apiKeySelection';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { ApiConfigSection } from './ApiConfigSection';
 
-const { getClientMock, generateContentMock, sendOpenAICompatibleMessageNonStreamMock } = vi.hoisted(() => ({
+const { getClientMock, generateContentMock, sendOpenAICompatibleMessageNonStreamMock, sendAnthropicMessageNonStreamMock } = vi.hoisted(() => ({
   getClientMock: vi.fn(),
   generateContentMock: vi.fn(),
   sendOpenAICompatibleMessageNonStreamMock: vi.fn(),
+  sendAnthropicMessageNonStreamMock: vi.fn(),
 }));
 
 vi.mock('@/hooks/useDevice', () => ({
@@ -23,6 +25,10 @@ vi.mock('@/services/api/apiClient', () => ({
 
 vi.mock('@/services/api/openaiCompatibleApi', () => ({
   sendOpenAICompatibleMessageNonStream: sendOpenAICompatibleMessageNonStreamMock,
+}));
+
+vi.mock('@/services/api/anthropicApi', () => ({
+  sendAnthropicMessageNonStream: sendAnthropicMessageNonStreamMock,
 }));
 
 vi.mock('@/services/logService', async () => {
@@ -66,10 +72,37 @@ describe('ApiConfigSection', () => {
     });
   };
 
+  const withOpenaiProvider = (overrides: {
+    apiKey?: string | null;
+    baseUrl?: string | null;
+    modelId?: string;
+    models?: Array<{ id: string; name: string; isPinned?: boolean }>;
+  }): Partial<AppSettings> => {
+    const defaults = createDefaultThirdPartyApiSettings();
+    return {
+      isThirdPartyApiEnabled: true,
+      apiMode: 'third-party',
+      thirdPartyApi: {
+        activeProvider: 'openai',
+        providers: {
+          ...defaults.providers,
+          openai: {
+            apiKey: overrides.apiKey ?? null,
+            baseUrl: overrides.baseUrl ?? defaults.providers.openai.baseUrl,
+            modelId: overrides.modelId ?? defaults.providers.openai.modelId,
+            models: overrides.models ?? defaults.providers.openai.models,
+            protocol: 'openai-compatible' as const,
+          },
+        },
+      },
+    };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     generateContentMock.mockResolvedValue({});
     sendOpenAICompatibleMessageNonStreamMock.mockResolvedValue(undefined);
+    sendAnthropicMessageNonStreamMock.mockResolvedValue(undefined);
     getClientMock.mockReturnValue({
       models: {
         generateContent: generateContentMock,
@@ -136,7 +169,7 @@ describe('ApiConfigSection', () => {
     expect(renderer.container.textContent).toContain('OpenAI 兼容接口');
   });
 
-  it('renders a single provider selector and enables OpenAI-compatible mode from it', async () => {
+  it('renders a single provider selector and enables third-party mode from it', async () => {
     const onUpdate = vi.fn();
 
     await renderApiConfigSection({ onUpdate });
@@ -149,25 +182,20 @@ describe('ApiConfigSection', () => {
     expect(providerSelector).not.toBeNull();
     expect(renderer.container.querySelector('#openai-compatible-api-enabled-toggle')).toBeNull();
     expect(openaiProviderButton).toBeDefined();
-    expect(renderer.container.textContent).not.toContain('OpenAI-Compatible API Keys');
 
     await act(async () => {
       openaiProviderButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(onUpdate).toHaveBeenCalledWith('isOpenAICompatibleApiEnabled', true);
-    expect(onUpdate).toHaveBeenCalledWith('apiMode', 'openai-compatible');
+    expect(onUpdate).toHaveBeenCalledWith('isThirdPartyApiEnabled', true);
+    expect(onUpdate).toHaveBeenCalledWith('apiMode', 'third-party');
   });
 
-  it('returns to Gemini provider from the same selector and hides OpenAI-compatible settings', async () => {
+  it('returns to Gemini provider from the same selector and hides third-party settings', async () => {
     const onUpdate = vi.fn();
 
     await renderApiConfigSection({
-      settings: {
-        ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-      },
+      settings: { ...settingsFixture, ...withOpenaiProvider({}) },
       onUpdate,
     });
 
@@ -177,26 +205,26 @@ describe('ApiConfigSection', () => {
 
     expect(renderer.container.querySelector('#openai-compatible-api-enabled-toggle')).toBeNull();
     expect(geminiProviderButton).toBeDefined();
-    expect(renderer.container.textContent).toContain('OpenAI-Compatible API Keys');
+    expect(renderer.container.textContent).toContain('Provider');
 
     await act(async () => {
       geminiProviderButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(onUpdate).toHaveBeenCalledWith('isOpenAICompatibleApiEnabled', false);
+    expect(onUpdate).toHaveBeenCalledWith('isThirdPartyApiEnabled', false);
     expect(onUpdate).toHaveBeenCalledWith('apiMode', 'gemini-native');
   });
 
-  it('tests the OpenAI-compatible endpoint with the isolated OpenAI key when that global API mode is selected', async () => {
+  it('tests the third-party openai endpoint with the active provider key when third-party mode is selected', async () => {
     await renderApiConfigSection({
       apiKey: 'gemini-key',
       settings: {
         ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-        openaiCompatibleApiKey: 'openai-compatible-key',
-        openaiCompatibleBaseUrl: 'https://api.openai.com/v1',
-        openaiCompatibleModelId: 'gpt-5.5',
+        ...withOpenaiProvider({
+          apiKey: 'openai-compatible-key',
+          baseUrl: 'https://api.openai.com/v1',
+          modelId: 'gpt-5.5',
+        }),
       },
     });
 
@@ -224,36 +252,20 @@ describe('ApiConfigSection', () => {
     );
   });
 
-  it('previews the OpenAI-compatible request URL and warns when the endpoint path is already included', async () => {
+  it('shows the active provider base url in the third-party settings panel', async () => {
     await renderApiConfigSection({
       settings: {
         ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-        openaiCompatibleBaseUrl: 'https://gateway.example.com/v1',
+        ...withOpenaiProvider({ baseUrl: 'https://gateway.example.com/v1' }),
       },
     });
 
-    expect(renderer.container.textContent).toContain('Request URL Preview');
-    expect(renderer.container.textContent).toContain('https://gateway.example.com/v1/chat/completions');
-    expect(renderer.container.textContent).not.toContain('AMC appends');
-
-    await renderApiConfigSection({
-      settings: {
-        ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-        openaiCompatibleBaseUrl: 'https://gateway.example.com/v1/chat/completions',
-      },
-    });
-
-    expect(renderer.container.textContent).toContain(
-      'https://gateway.example.com/v1/chat/completions/chat/completions',
-    );
-    expect(renderer.container.textContent).toContain('AMC appends /chat/completions automatically');
+    const baseUrlInput = renderer.container.querySelector('#third-party-base-url-input') as HTMLInputElement | null;
+    expect(baseUrlInput).not.toBeNull();
+    expect(baseUrlInput?.value).toBe('https://gateway.example.com/v1');
   });
 
-  it('edits the OpenAI-compatible API key without overwriting the Gemini API key', async () => {
+  it('edits the active provider api key without overwriting the Gemini api key', async () => {
     const setApiKey = vi.fn();
     const onUpdate = vi.fn();
 
@@ -262,10 +274,7 @@ describe('ApiConfigSection', () => {
       setApiKey,
       settings: {
         ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-        openaiCompatibleApiKey: null,
-        openaiCompatibleBaseUrl: 'https://api.openai.com/v1',
+        ...withOpenaiProvider({ apiKey: null, baseUrl: 'https://api.openai.com/v1' }),
       },
       onUpdate,
     });
@@ -281,28 +290,32 @@ describe('ApiConfigSection', () => {
     });
 
     expect(setApiKey).not.toHaveBeenCalled();
-    expect(onUpdate).toHaveBeenCalledWith('openaiCompatibleApiKey', 'sk-openai');
+    // The active provider api key is written through onUpdate with the full thirdPartyApi object.
+    const thirdPartyUpdate = onUpdate.mock.calls.find(
+      ([key]) => key === 'thirdPartyApi',
+    );
+    expect(thirdPartyUpdate).toBeDefined();
+    const updatedSettings = thirdPartyUpdate![1] as AppSettings['thirdPartyApi'];
+    expect(updatedSettings.providers.openai.apiKey).toBe('sk-openai');
   });
 
-  it('keeps OpenAI-compatible model ID management out of the API settings screen', async () => {
+  it('shows active provider model management inside the third-party API settings panel', async () => {
     await renderApiConfigSection({
       settings: {
         ...settingsFixture,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
-        openaiCompatibleModelId: 'gpt-5.5',
-        openaiCompatibleModels: [
-          { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
-          { id: 'gpt-4.1', name: 'GPT-4.1' },
-        ],
+        ...withOpenaiProvider({
+          modelId: 'gpt-5.5',
+          models: [
+            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-4.1', name: 'GPT-4.1' },
+          ],
+        }),
       },
     });
 
-    expect(renderer.container.textContent).not.toContain('OpenAI-Compatible Model IDs');
-    expect(renderer.container.textContent).not.toContain('Fetch Models');
-    expect(
-      renderer.container.querySelector<HTMLInputElement>('input[data-openai-compatible-model-id-input="true"]'),
-    ).toBeNull();
+    expect(renderer.container.textContent).toContain('Provider');
+    expect(renderer.container.querySelector('#third-party-base-url-input')).not.toBeNull();
+    expect(renderer.container.querySelector('#third-party-provider-select')).not.toBeNull();
   });
 
   it('explains that Live uses the browser API key directly without token endpoint settings', async () => {
