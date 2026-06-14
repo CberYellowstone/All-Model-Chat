@@ -407,4 +407,9 @@ export const chatInputTranslations = {
   queuedSubmissionAttachments: { en: 'attachments', zh: '个附件' },
   queuedSubmissionEdit: { en: 'Edit queued message', zh: '编辑排队消息' },
   queuedSubmissionRemove: { en: 'Remove queued message', zh: '移除排队消息' },
+
+  // Live Translate language direction selector
+  liveTranslateSourceLanguageAuto: { en: 'Auto-detect', zh: '自动检测' },
+  liveTranslateSourceLanguageLabel: { en: 'Source language', zh: '源语言' },
+  liveTranslateTargetLanguageLabel: { en: 'Target language', zh: '目标语言' },
 };
