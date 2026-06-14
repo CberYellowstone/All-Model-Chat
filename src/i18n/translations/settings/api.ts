@@ -125,6 +125,11 @@ const apiSettings = {
   thirdPartyApiPanelTitle: { en: 'Third-Party API Provider', zh: '第三方 API 服务商' },
   thirdPartyApiProviderLabel: { en: 'Provider', zh: '服务商' },
   thirdPartyApiEnableToggle: { en: 'Enable third-party API provider', zh: '启用第三方 API 服务商' },
+  thirdPartyApiKey: { en: 'Provider API Key', zh: '服务商 API 密钥' },
+  thirdPartyApiKeyHelp: {
+    en: 'Stored separately from Gemini API keys. Enter the API key for the selected provider.',
+    zh: '与 Gemini API 密钥分开保存。请填入所选服务商的 API 密钥。',
+  },
   thirdPartyApiBaseUrl: { en: 'Base URL', zh: 'Base URL' },
   thirdPartyProviderOpenai: { en: 'OpenAI', zh: 'OpenAI' },
   thirdPartyProviderDeepseek: { en: 'DeepSeek', zh: 'DeepSeek' },

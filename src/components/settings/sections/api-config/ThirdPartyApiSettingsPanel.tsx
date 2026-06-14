@@ -73,9 +73,9 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
       <ApiKeyInput
         apiKey={activeConfig.apiKey}
         setApiKey={(value) => updateActiveField('apiKey', value)}
-        label={t('settingsOpenAICompatibleApiKey')}
+        label={t('thirdPartyApiKey')}
         placeholder={t('apiConfigOpenaiKeyPlaceholder')}
-        helpText={t('settingsOpenAICompatibleApiKeyHelp')}
+        helpText={t('thirdPartyApiKeyHelp')}
       />
 
       <div className="space-y-2">
