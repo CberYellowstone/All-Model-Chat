@@ -104,22 +104,24 @@ function useLiveTranslateConfig(settings: LiveTranslateSettings) {
 
 **消息数据结构**：
 
+Live Translate 模型默认只返回音频。文字（原文/译文）为可选字段——如果模型在响应中包含 text part 则记录，否则仅保存音频。
+
 ```typescript
 interface TranslateMessageData {
-  sourceText?: string;       // 原文（模型转录返回）
-  translatedText?: string;   // 译文（模型转录返回）
+  sourceText?: string;       // 原文（可选，模型可能不返回文字）
+  translatedText?: string;   // 译文（可选，模型可能不返回文字）
   audioUrl?: string;         // 翻译音频 Blob URL
-  sourceLanguage: string;    // 检测到的源语言
-  targetLanguage: string;    // 目标语言
+  sourceLanguage: string;    // 用户设置的源语言
+  targetLanguage: string;    // 用户设置的目标语言
   duration: number;          // 音频时长（秒）
 }
 ```
 
 **消息气泡** — 新建 `src/components/chat/message-list/TranslateMessageBubble.tsx`：
-- 上半部分：原文（次要色）
-- 分隔线
-- 下半部分：目标语言标签 + 音频播放器 + 译文文字
-- 复用现有 `<audio>` 元素和自定义控件
+- 上半部分：原文（可选，如果模型返回了文字则显示，次要色）
+- 分隔线（仅当有文字时显示）
+- 下半部分：目标语言标签 + 音频播放器 + 译文文字（可选）
+- 如果模型未返回文字，气泡仅显示音频播放器和语言标签
 
 **音频处理**：
 - 录音期间：翻译音频块流式实时播放（低延迟）
