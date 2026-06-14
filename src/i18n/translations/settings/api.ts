@@ -120,5 +120,18 @@ const apiSettings = {
     en: 'Proxy note: the connection test checks regular Gemini requests. Live ignores relative frontend proxy paths and connects from this browser; only absolute Live-compatible base URLs are applied.',
     zh: '代理提示：连通性测试只检查普通 Gemini 请求。Live 会忽略相对前端代理路径并从此浏览器直连；只有兼容 Live 的绝对 Base URL 会被应用。',
   },
+
+  // Third-party API provider
+  thirdPartyApiPanelTitle: { en: 'Third-Party API Provider', zh: '第三方 API 服务商' },
+  thirdPartyApiProviderLabel: { en: 'Provider', zh: '服务商' },
+  thirdPartyApiEnableToggle: { en: 'Enable third-party API provider', zh: '启用第三方 API 服务商' },
+  thirdPartyApiBaseUrl: { en: 'Base URL', zh: 'Base URL' },
+  thirdPartyProviderOpenai: { en: 'OpenAI', zh: 'OpenAI' },
+  thirdPartyProviderDeepseek: { en: 'DeepSeek', zh: 'DeepSeek' },
+  thirdPartyProviderAnthropic: { en: 'Anthropic', zh: 'Anthropic' },
+  thirdPartyProviderOpenrouter: { en: 'OpenRouter', zh: 'OpenRouter' },
+  thirdPartyProviderQwen: { en: 'Qwen', zh: '通义千问' },
+  thirdPartyProviderKimi: { en: 'Kimi', zh: 'Kimi' },
+  thirdPartyProviderCustom: { en: 'Custom', zh: '自定义' },
 };
 export default apiSettings;

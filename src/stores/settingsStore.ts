@@ -65,7 +65,11 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
 
   return {
     ...settings,
-    apiMode: isOpenAICompatibleApiEnabled ? settings.apiMode : 'gemini-native',
+    apiMode: (() => {
+      const rawMode = isOpenAICompatibleApiEnabled ? settings.apiMode : 'gemini-native';
+      // Legacy 'openai-compatible' apiMode is replaced by 'third-party'. Normalize stale data.
+      return rawMode === 'openai-compatible' ? 'gemini-native' : rawMode;
+    })(),
     isOpenAICompatibleApiEnabled,
     modelId: resolveSupportedModelId(settings.modelId, defaultSettings.modelId),
     openaiCompatibleModelId: resolveSupportedModelId(
