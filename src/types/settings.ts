@@ -5,6 +5,7 @@ export interface ModelOption {
   name: string;
   isPinned?: boolean;
   apiMode?: ApiMode;
+  providerId?: ThirdPartyProviderId;
 }
 
 export enum HarmCategory {
@@ -61,6 +62,7 @@ export interface ThirdPartyProviderConfig {
   modelId: string;
   models: ModelOption[];
   protocol: ThirdPartyApiProtocol;
+  enabled?: boolean;
 }
 
 /** Top-level container for all third-party provider configurations. */

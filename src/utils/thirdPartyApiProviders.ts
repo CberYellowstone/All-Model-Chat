@@ -37,6 +37,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     modelId: 'gpt-5.5',
     models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   deepseek: {
     apiKey: null,
@@ -47,6 +48,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
       { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro' },
     ],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   anthropic: {
     apiKey: null,
@@ -58,6 +60,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
       { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' },
     ],
     protocol: 'anthropic',
+    enabled: false,
   },
   openrouter: {
     apiKey: null,
@@ -65,6 +68,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     modelId: '~openai/gpt-latest',
     models: [{ id: '~openai/gpt-latest', name: 'OpenAI GPT Latest', isPinned: true }],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   qwen: {
     apiKey: null,
@@ -72,6 +76,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     modelId: 'qwen-plus',
     models: [{ id: 'qwen-plus', name: 'Qwen Plus', isPinned: true }],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   kimi: {
     apiKey: null,
@@ -79,6 +84,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     modelId: 'kimi-k2.6',
     models: [{ id: 'kimi-k2.6', name: 'Kimi K2.6', isPinned: true }],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   glm: {
     apiKey: null,
@@ -90,6 +96,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
       { id: 'glm-5-turbo', name: 'GLM-5 Turbo' },
     ],
     protocol: 'openai-compatible',
+    enabled: false,
   },
   custom: {
     apiKey: null,
@@ -97,6 +104,7 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     modelId: 'custom-model',
     models: [{ id: 'custom-model', name: 'Custom Model', isPinned: true }],
     protocol: 'openai-compatible',
+    enabled: false,
   },
 };
 
@@ -141,6 +149,39 @@ export const getThirdPartyProviderModels = (settings: Pick<AppSettings, 'thirdPa
 export const getThirdPartyProviderModelId = (settings: Pick<AppSettings, 'thirdPartyApi'>): string =>
   getThirdPartyProviderConfig(settings).modelId;
 
+/**
+ * Returns all enabled third-party providers as { id, config } pairs.
+ * A provider is considered enabled only when `config.enabled === true`.
+ */
+export const getEnabledThirdPartyProviders = (
+  settings: Pick<AppSettings, 'thirdPartyApi'>,
+): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig }[] => {
+  const thirdPartyApi = settings.thirdPartyApi ?? createDefaultThirdPartyApiSettings();
+  return THIRD_PARTY_PROVIDER_IDS.filter(
+    (id) => thirdPartyApi.providers[id]?.enabled === true,
+  ).map((id) => ({ id, config: thirdPartyApi.providers[id] }));
+};
+
+/**
+ * Given a modelId, find the enabled provider that contains it.
+ * Falls back to the activeProvider config if no match is found.
+ */
+export const resolveProviderForModelId = (
+  settings: Pick<AppSettings, 'thirdPartyApi'>,
+  modelId: string,
+): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig } => {
+  const enabled = getEnabledThirdPartyProviders(settings);
+  const match = enabled.find(({ config }) =>
+    config.models.some((m) => m.id === modelId),
+  );
+  if (match) return match;
+
+  // Fallback: active provider
+  const activeId = settings.thirdPartyApi?.activeProvider ?? 'openai';
+  const activeConfig = getThirdPartyProviderConfig(settings);
+  return { id: activeId, config: activeConfig };
+};
+
 export const buildProviderAwareModelList = (
   appSettings: Pick<
     AppSettings,
@@ -150,10 +191,13 @@ export const buildProviderAwareModelList = (
 ): ModelOption[] => {
   const thirdPartyModels =
     appSettings.isThirdPartyApiEnabled === true
-      ? getThirdPartyProviderConfig(appSettings).models.map((model) => ({
-          ...model,
-          apiMode: 'third-party' as const,
-        }))
+      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+          config.models.map((model) => ({
+            ...model,
+            apiMode: 'third-party' as const,
+            providerId: id,
+          })),
+        )
       : [];
   const openaiCompatibleModels =
     appSettings.isThirdPartyApiEnabled !== true && appSettings.isOpenAICompatibleApiEnabled === true
@@ -183,6 +227,7 @@ export const sanitizeThirdPartyProviderConfig = (
     modelId,
     models,
     protocol: isThirdPartyProtocol(value?.protocol) ? value.protocol : defaults.protocol,
+    enabled: value?.enabled === true,
   };
 };
 

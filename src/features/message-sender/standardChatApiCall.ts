@@ -34,7 +34,7 @@ import type {
 } from './messageSenderTypes';
 import type { resolveStandardChatTurn } from './standardChatTurn';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
+import { getThirdPartyProviderConfig, resolveProviderForModelId } from '@/utils/thirdPartyApiProviders';
 
 interface StandardChatApiCallContext {
   appSettings: StandardChatProps['appSettings'];
@@ -116,7 +116,18 @@ export const performStandardChatApiCall = async ({
   enrichedFiles,
 }: PerformStandardChatApiCallParams) => {
   const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-  const activeProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
+  // Resolve provider: if the active provider doesn't contain the selected model,
+  // fall back to searching enabled providers for the correct one.
+  let activeProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
+  if (activeProvider) {
+    const hasModel = activeProvider.models.some((m) => m.id === activeProvider!.modelId);
+    if (!hasModel) {
+      const resolved = resolveProviderForModelId(appSettings, activeProvider!.modelId);
+      if (resolved.config) {
+        activeProvider = resolved.config;
+      }
+    }
+  }
   const apiModelId = activeProvider ? activeProvider.modelId : activeModelId;
   const { baseMessagesForApi, finalRole, finalParts, shouldSkipApiCall } = resolveTurn({
     messages,

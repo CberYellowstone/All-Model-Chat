@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from 'react';
 
 import type { AppViewModel } from '@/hooks/app/useApp';
+import type { ThirdPartyProviderId } from '@/types';
 import { focusChatInput } from '@/utils/chat-input/focus';
-import { getThirdPartyProviderModelId, getThirdPartyProviderModels } from '@/utils/thirdPartyApiProviders';
+import { getThirdPartyProviderModelId, getEnabledThirdPartyProviders } from '@/utils/thirdPartyApiProviders';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import type { ChatHeaderRuntimeValue } from './chatRuntimeTypes';
 
@@ -20,10 +21,13 @@ const buildHeaderModels = (
   const geminiModels = apiModels.map((model) => ({ ...model, apiMode: 'gemini-native' as const }));
   const thirdPartyModels =
     appSettings.isThirdPartyApiEnabled === true
-      ? getThirdPartyProviderModels(appSettings).map((model) => ({
-          ...model,
-          apiMode: 'third-party' as const,
-        }))
+      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+          config.models.map((model) => ({
+            ...model,
+            apiMode: 'third-party' as const,
+            providerId: id,
+          })),
+        )
       : [];
 
   return [...geminiModels, ...thirdPartyModels].filter((model) => {
@@ -71,11 +75,17 @@ export const useChatHeaderRuntimeValues = ({
   const currentModelName = getCurrentModelDisplayName();
   const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
   const thirdPartyEnabled = appSettings.isThirdPartyApiEnabled === true;
-  const thirdPartyModelIds = useMemo(
-    () =>
-      new Set(thirdPartyEnabled ? getThirdPartyProviderModels(appSettings).map((model) => model.id) : []),
-    [appSettings, thirdPartyEnabled],
-  );
+  // Map of modelId → providerId for all enabled third-party models.
+  const thirdPartyModelProviders = useMemo(() => {
+    const map = new Map<string, string>();
+    if (thirdPartyEnabled) {
+      getEnabledThirdPartyProviders(appSettings).forEach(({ id, config }) => {
+        config.models.forEach((model) => map.set(model.id, id));
+      });
+    }
+    return map;
+  }, [appSettings, thirdPartyEnabled]);
+  const thirdPartyModelIds = useMemo(() => new Set(thirdPartyModelProviders.keys()), [thirdPartyModelProviders]);
   const geminiModelIds = useMemo(() => new Set(chatState.apiModels.map((model) => model.id)), [chatState.apiModels]);
   const headerAvailableModels = useMemo(
     () => buildHeaderModels(appSettings, chatState.apiModels),
@@ -94,20 +104,27 @@ export const useChatHeaderRuntimeValues = ({
         isThirdPartyModel &&
         (!isGeminiModel || isOpenAICompatibleMode)
       ) {
-        setAppSettings((prev) => ({
-          ...prev,
-          apiMode: 'third-party',
-          thirdPartyApi: {
-            ...prev.thirdPartyApi,
-            providers: {
-              ...prev.thirdPartyApi.providers,
-              [prev.thirdPartyApi.activeProvider]: {
-                ...prev.thirdPartyApi.providers[prev.thirdPartyApi.activeProvider],
-                modelId,
+        const providerId = (thirdPartyModelProviders.get(modelId) ?? null) as ThirdPartyProviderId | null;
+        setAppSettings((prev) => {
+          const targetProvider = providerId ?? prev.thirdPartyApi.activeProvider;
+          return {
+            ...prev,
+            apiMode: 'third-party',
+            thirdPartyApi: {
+              ...prev.thirdPartyApi,
+              // Switch activeProvider to the one that owns this model so the
+              // send layer picks up the correct baseUrl / apiKey / protocol.
+              activeProvider: targetProvider,
+              providers: {
+                ...prev.thirdPartyApi.providers,
+                [targetProvider]: {
+                  ...prev.thirdPartyApi.providers[targetProvider],
+                  modelId,
+                },
               },
             },
-          },
-        }));
+          };
+        });
         focusChatInput();
         return;
       }
