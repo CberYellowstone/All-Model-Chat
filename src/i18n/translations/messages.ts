@@ -235,6 +235,7 @@ export const messagesTranslations = {
   dragToMove: { en: 'Drag to move', zh: '拖动以移动' },
   searchSourcesTitle: { en: 'Sources', zh: '来源' },
   mapsSourcesTitle: { en: 'Map Results', zh: '地图结果' },
+  mapsExpand: { en: 'Expand', zh: '全屏' },
   webSourceFallback: { en: 'Web Source', zh: '网页来源' },
   contextUrlsTitle: { en: 'Context URLs', zh: '上下文链接' },
   contextUrlsStatus: { en: 'Status: {status}', zh: '状态：{status}' },

@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { MapPin, ChevronDown, ExternalLink } from 'lucide-react';
+import { MapPin, ChevronDown, ExternalLink, Maximize2, X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildMapsEmbedUrl, type MapsPlace } from '@/utils/groundingMetadata';
+import { Modal } from '@/components/shared/Modal';
 
 interface MapsWidgetProps {
   places: MapsPlace[];
@@ -16,15 +17,14 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState<string>(places[0]?.uri ?? '');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Use the place title as the query for the keyless embed — the `cid` in the
-  // chunk URI is a numeric ID that the keyless embed cannot resolve to a location.
+  const activePlace = places.find((p) => p.uri === selectedPlace) ?? places[0];
+
   const embedSrc = useMemo(() => {
-    if (!selectedPlace) return '';
-    const place = places.find((p) => p.uri === selectedPlace);
-    if (!place) return '';
-    return buildMapsEmbedUrl(place);
-  }, [selectedPlace, places]);
+    if (!activePlace) return '';
+    return buildMapsEmbedUrl(activePlace);
+  }, [activePlace]);
 
   if (!places || places.length === 0) return null;
 
@@ -50,16 +50,25 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
       {expanded && (
         <div className="space-y-2">
           {embedSrc && (
-            <div className="overflow-hidden rounded-xl border border-[var(--theme-border-secondary)]/40">
+            <div className="group relative overflow-hidden rounded-xl border border-[var(--theme-border-secondary)]/40">
               <iframe
                 title={t('mapsSourcesTitle')}
                 src={embedSrc}
                 className="w-full"
-                style={{ height: 280, border: 0 }}
+                style={{ border: 0, aspectRatio: '16 / 9' }}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 allowFullScreen
               />
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(true)}
+                className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
+                title={t('mapsExpand')}
+              >
+                <Maximize2 size={12} strokeWidth={2} />
+                <span>{t('mapsExpand')}</span>
+              </button>
             </div>
           )}
 
@@ -113,6 +122,43 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
           </div>
         </div>
       )}
+
+      {/* Fullscreen map modal */}
+      <Modal
+        isOpen={isFullscreen}
+        onClose={() => setIsFullscreen(false)}
+        noPadding
+        contentClassName="w-[95vw] h-[90vh] max-w-[1200px] bg-[var(--theme-bg-primary)] rounded-2xl overflow-hidden flex flex-col"
+        ariaLabel={t('mapsSourcesTitle')}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)]/40">
+          <div className="flex items-center gap-2 min-w-0">
+            <MapPin size={16} className="text-[var(--theme-text-link)] flex-shrink-0" strokeWidth={2} />
+            <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate">
+              {activePlace?.title}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(false)}
+            className="flex-shrink-0 p-1.5 rounded-lg text-[var(--theme-text-tertiary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors cursor-pointer"
+          >
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
+        <div className="flex-1 min-h-0">
+          {embedSrc && (
+            <iframe
+              title={t('mapsSourcesTitle')}
+              src={embedSrc}
+              className="w-full h-full"
+              style={{ border: 0 }}
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
