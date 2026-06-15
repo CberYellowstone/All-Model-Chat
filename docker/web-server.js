@@ -56,16 +56,6 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
-const streamHeaders = [
-  'content-type',
-  'content-length',
-  'content-encoding',
-  'cache-control',
-  'content-disposition',
-  'etag',
-  'last-modified',
-];
-
 // --- proxy /api/* to upstream, preserving method/path/query/body, streaming response ---
 function proxyApi(req, res) {
   const url = new URL(req.url, API_UPSTREAM);

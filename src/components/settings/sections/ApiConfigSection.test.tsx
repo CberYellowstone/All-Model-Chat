@@ -315,7 +315,9 @@ describe('ApiConfigSection', () => {
 
     expect(renderer.container.textContent).toContain('Provider');
     expect(renderer.container.querySelector('#third-party-base-url-input')).not.toBeNull();
-    expect(renderer.container.querySelector('#third-party-provider-select')).not.toBeNull();
+    // Per-provider collapsible UI (no separate <select>): the active provider
+    // (openai) is expanded by default and its model list editor is rendered.
+    expect(renderer.container.querySelector('[aria-label="Model Name 1"]')).not.toBeNull();
   });
 
   it('explains that Live uses the browser API key directly without token endpoint settings', async () => {

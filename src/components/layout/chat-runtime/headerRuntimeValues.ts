@@ -21,11 +21,10 @@ const buildHeaderModels = (
   const geminiModels = apiModels.map((model) => ({ ...model, apiMode: 'gemini-native' as const }));
   const thirdPartyModels =
     appSettings.isThirdPartyApiEnabled === true
-      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ config }) =>
           config.models.map((model) => ({
             ...model,
             apiMode: 'third-party' as const,
-            providerId: id,
           })),
         )
       : [];
@@ -143,6 +142,7 @@ export const useChatHeaderRuntimeValues = ({
       isOpenAICompatibleMode,
       thirdPartyEnabled,
       thirdPartyModelIds,
+      thirdPartyModelProviders,
       setAppSettings,
     ],
   );

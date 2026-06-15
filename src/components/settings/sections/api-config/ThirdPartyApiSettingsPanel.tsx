@@ -60,7 +60,6 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
 
   return (
     <div className="space-y-3">
-      {/* Per-provider list */}
       <div className="space-y-1.5">
         {THIRD_PARTY_PROVIDER_IDS.map((providerId) => {
           const config = thirdPartyApi?.providers?.[providerId];
@@ -78,7 +77,6 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
               }`}
             >
               <div className="flex items-center gap-2 p-2.5">
-                {/* Enable/disable toggle */}
                 <button
                   type="button"
                   onClick={() => handleToggleEnabled(providerId)}
@@ -92,7 +90,6 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                   )}
                 </button>
 
-                {/* Provider label */}
                 <button
                   type="button"
                   onClick={() => {
@@ -126,7 +123,6 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                 </button>
               </div>
 
-              {/* Expanded config panel */}
               {isExpanded && (
                 <div className="px-2.5 pb-2.5 space-y-3 border-t border-[var(--theme-border-secondary)]/30 pt-3">
                   <ApiKeyInput

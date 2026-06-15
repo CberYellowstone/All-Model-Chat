@@ -52,8 +52,8 @@ export const useFilePolling = ({
   // This is the ONLY effect dependency — progress updates, file additions, etc.
   // do NOT change this value, so the effect is not rebuilt on every state change.
   const pollingTargetIds = selectedFiles
-    .filter((f) => f.uploadState === 'processing_api' && !f.error && f.fileApiName)
-    .map((f) => f.id)
+    .filter((file) => file.uploadState === 'processing_api' && !file.error && file.fileApiName)
+    .map((file) => file.id)
     .join('\n');
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export const useFilePolling = ({
     for (const fileId of filesThatShouldPoll) {
       if (filesCurrentlyPolling.has(fileId)) continue;
 
-      const fileToPoll = selectedFilesRef.current.find((f) => f.id === fileId);
+      const fileToPoll = selectedFilesRef.current.find((file) => file.id === fileId);
       if (!fileToPoll?.fileApiName) continue;
 
       const fileApiName = fileToPoll.fileApiName;
@@ -189,17 +189,22 @@ export const useFilePolling = ({
     }
     // No cleanup here — incremental start/stop above handles file changes.
     // Full cleanup is done by the unmount-only effect below.
-  }, [pollingTargetIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pollingTargetIds]);
 
   // Clear all polling state only when the component unmounts.
   useEffect(() => {
+    const intervals = pollingIntervals.current;
+    const inFlight = pollingInFlight.current;
+    const failures = pollingFailures.current;
+    const lastAttempts = lastPollingAttempt.current;
+    const startTimes = pollingStartTimes.current;
     return () => {
-      pollingIntervals.current.forEach((intervalId) => window.clearInterval(intervalId));
-      pollingIntervals.current.clear();
-      pollingInFlight.current.clear();
-      pollingFailures.current.clear();
-      lastPollingAttempt.current.clear();
-      pollingStartTimes.current.clear();
+      intervals.forEach((intervalId) => window.clearInterval(intervalId));
+      intervals.clear();
+      inFlight.clear();
+      failures.clear();
+      lastAttempts.clear();
+      startTimes.clear();
     };
   }, []);
 };

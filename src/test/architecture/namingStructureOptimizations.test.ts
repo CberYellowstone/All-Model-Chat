@@ -293,7 +293,7 @@ describe('naming and structure optimization guardrails', () => {
     expect(apiConfigSource).not.toContain('settingsOpenAICompatibleRequestUrlPreview');
     expect(thirdPartySettingsSource).toContain('THIRD_PARTY_PROVIDER_IDS');
     expect(thirdPartySettingsSource).toContain('getThirdPartyProviderConfig');
-    expect(thirdPartySettingsSource).toContain('updateActiveThirdPartyProviderConfig');
+    expect(thirdPartySettingsSource).toContain('updateThirdPartyProviderConfig');
   });
 
   it('keeps user message collapse state outside the markdown renderer component', () => {

@@ -26,6 +26,7 @@ describe('chat tool registry', () => {
     expect(getSlashCommandToolDefinitions().map((tool) => tool.slashCommand?.name)).toEqual([
       'deep',
       'online',
+      'maps',
       'code',
       'url',
     ]);
@@ -50,7 +51,7 @@ describe('chat tool registry', () => {
         capabilities: geminiImageCapabilities,
         hasLocalPythonHandler: true,
       }).map((tool) => tool.id),
-    ).toEqual(['googleSearch', 'tokenCount']);
+    ).toEqual(['googleSearch', 'googleMaps', 'tokenCount']);
 
     expect(
       getChatToolsForSurface({
@@ -58,6 +59,6 @@ describe('chat tool registry', () => {
         capabilities: gemmaCapabilities,
         hasLocalPythonHandler: true,
       }).map((tool) => tool.id),
-    ).toEqual(['deepSearch', 'googleSearch', 'localPython', 'tokenCount']);
+    ).toEqual(['deepSearch', 'googleSearch', 'googleMaps', 'localPython', 'tokenCount']);
   });
 });

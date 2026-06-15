@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MapPin, ChevronDown, ChevronUp, ExternalLink, Maximize2, X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildMapsEmbedUrl, type MapsPlace } from '@/utils/groundingMetadata';
@@ -20,19 +20,16 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
 
-  // Reset selection when the place list changes (e.g. message regenerated),
-  // so we don't hold a stale URI that no longer exists.
-  useEffect(() => {
-    if (!places.some((p) => p.uri === selectedPlace)) {
-      setSelectedPlace(places[0]?.uri ?? '');
-    }
-  }, [places, selectedPlace]);
-
   const COLLAPSED_LIMIT = 6;
   const visiblePlaces = listExpanded ? places : places.slice(0, COLLAPSED_LIMIT);
   const hiddenCount = places.length - COLLAPSED_LIMIT;
 
-  const activePlace = places.find((p) => p.uri === selectedPlace) ?? places[0];
+  // Fall back to the first place when the stored selection no longer exists
+  // (e.g. the message was regenerated with a different place list).
+  const effectiveSelectedPlace = places.some((p) => p.uri === selectedPlace)
+    ? selectedPlace
+    : places[0]?.uri ?? '';
+  const activePlace = places.find((p) => p.uri === effectiveSelectedPlace) ?? places[0];
 
   const embedSrc = useMemo(() => {
     if (!activePlace) return '';
@@ -131,7 +128,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {visiblePlaces.map((place) => renderPlaceItem(place, place.uri === selectedPlace))}
+            {visiblePlaces.map((place) => renderPlaceItem(place, place.uri === effectiveSelectedPlace))}
           </div>
 
           {hiddenCount > 0 && (
@@ -156,7 +153,6 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         </div>
       )}
 
-      {/* Fullscreen map modal with place list sidebar */}
       <Modal
         isOpen={isFullscreen}
         onClose={() => setIsFullscreen(false)}
@@ -180,7 +176,6 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
           </button>
         </div>
         <div className="flex-1 min-h-0 flex">
-          {/* Map area */}
           <div className="flex-1 min-w-0">
             {embedSrc && (
               <iframe
@@ -193,12 +188,11 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
               />
             )}
           </div>
-          {/* Place list sidebar */}
           {places.length > 1 && (
             <div className="w-64 flex-shrink-0 border-l border-[var(--theme-border-secondary)]/40 overflow-y-auto custom-scrollbar p-2 space-y-1.5 hidden sm:block">
               {places.map((place) => (
                 <div key={`modal-place-${place.chunkIndex}`}>
-                  {renderPlaceItem(place, place.uri === selectedPlace)}
+                  {renderPlaceItem(place, place.uri === effectiveSelectedPlace)}
                 </div>
               ))}
             </div>
