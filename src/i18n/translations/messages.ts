@@ -236,6 +236,8 @@ export const messagesTranslations = {
   searchSourcesTitle: { en: 'Sources', zh: '来源' },
   mapsSourcesTitle: { en: 'Map Results', zh: '地图结果' },
   mapsExpand: { en: 'Expand', zh: '全屏' },
+  mapsShowMore: { en: 'Show more', zh: '展开更多' },
+  mapsShowLess: { en: 'Show less', zh: '收起' },
   webSourceFallback: { en: 'Web Source', zh: '网页来源' },
   contextUrlsTitle: { en: 'Context URLs', zh: '上下文链接' },
   contextUrlsStatus: { en: 'Status: {status}', zh: '状态：{status}' },

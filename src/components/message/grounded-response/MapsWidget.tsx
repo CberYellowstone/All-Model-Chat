@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { MapPin, ChevronDown, ExternalLink, Maximize2, X } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp, ExternalLink, Maximize2, X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildMapsEmbedUrl, type MapsPlace } from '@/utils/groundingMetadata';
 import { Modal } from '@/components/shared/Modal';
@@ -18,6 +18,11 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   const [expanded, setExpanded] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState<string>(places[0]?.uri ?? '');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [listExpanded, setListExpanded] = useState(false);
+
+  const COLLAPSED_LIMIT = 6;
+  const visiblePlaces = listExpanded ? places : places.slice(0, COLLAPSED_LIMIT);
+  const hiddenCount = places.length - COLLAPSED_LIMIT;
 
   const activePlace = places.find((p) => p.uri === selectedPlace) ?? places[0];
 
@@ -73,11 +78,12 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {places.map((place, i) => {
+            {visiblePlaces.map((place) => {
+              const realIndex = places.indexOf(place);
               const isActive = place.uri === selectedPlace;
               return (
                 <div
-                  key={`maps-place-${i}`}
+                  key={`maps-place-${realIndex}`}
                   className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all cursor-pointer ${
                     isActive
                       ? 'bg-[var(--theme-bg-tertiary)]/60 border-[var(--theme-border-focus)]'
@@ -114,12 +120,32 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
                     <ExternalLink size={12} strokeWidth={2} />
                   </a>
                   <span className="text-[9px] font-mono font-medium text-[var(--theme-text-tertiary)] opacity-40">
-                    {i + 1}
+                    {realIndex + 1}
                   </span>
                 </div>
               );
             })}
           </div>
+
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setListExpanded((prev) => !prev)}
+              className="flex items-center justify-center gap-1 w-full py-1.5 text-[11px] font-medium text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-secondary)] transition-colors cursor-pointer"
+            >
+              {listExpanded ? (
+                <>
+                  <ChevronUp size={13} strokeWidth={2} />
+                  {t('mapsShowLess')}
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={13} strokeWidth={2} />
+                  {t('mapsShowMore')} ({hiddenCount})
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
 
