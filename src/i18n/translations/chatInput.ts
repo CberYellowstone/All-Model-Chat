@@ -226,6 +226,7 @@ export const chatInputTranslations = {
   uploadCancelledByUser: { en: 'Upload cancelled by user.', zh: '用户已取消上传。' },
   uploadCancelled: { en: 'Upload cancelled.', zh: '上传已取消。' },
   uploadSkippedDuplicates: { en: 'Skipped duplicate files: {filenames}', zh: '已跳过重复文件：{filenames}' },
+  uploadSkippedEmpty: { en: 'Skipped empty files: {filenames}', zh: '已跳过空文件：{filenames}' },
   uploadUnsupportedTypes: { en: 'Unsupported file types: {filenames}', zh: '不支持的文件类型：{filenames}' },
   voiceInputPermissionError: {
     en: 'Could not start recording. Please check permissions.',
