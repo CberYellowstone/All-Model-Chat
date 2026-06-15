@@ -234,6 +234,7 @@ export const messagesTranslations = {
   generatingAudio: { en: 'Generating Audio...', zh: '正在生成音频…' },
   dragToMove: { en: 'Drag to move', zh: '拖动以移动' },
   searchSourcesTitle: { en: 'Sources', zh: '来源' },
+  mapsSourcesTitle: { en: 'Map Results', zh: '地图结果' },
   webSourceFallback: { en: 'Web Source', zh: '网页来源' },
   contextUrlsTitle: { en: 'Context URLs', zh: '上下文链接' },
   contextUrlsStatus: { en: 'Status: {status}', zh: '状态：{status}' },

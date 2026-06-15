@@ -135,3 +135,31 @@ export const mergeGroundingMetadata = (
 
   return Object.keys(merged).length > 0 ? merged : undefined;
 };
+
+export interface MapsPlace {
+  uri: string;
+  title: string;
+}
+
+/**
+ * Extracts Maps grounding chunks as structured place entries.
+ * Returns an empty array when the metadata has no Maps chunks.
+ */
+export const extractMapsPlaces = (metadata: unknown): MapsPlace[] => {
+  if (!isRecord(metadata) || !Array.isArray(metadata.groundingChunks)) {
+    return [];
+  }
+
+  const places: MapsPlace[] = [];
+  const seen = new Set<string>();
+
+  for (const chunk of metadata.groundingChunks) {
+    if (!isRecord(chunk) || !isRecord(chunk.maps)) continue;
+    const maps = chunk.maps as GroundingChunkLike['maps'];
+    if (!maps?.uri || seen.has(maps.uri)) continue;
+    seen.add(maps.uri);
+    places.push({ uri: maps.uri, title: maps.title || maps.uri });
+  }
+
+  return places;
+};
