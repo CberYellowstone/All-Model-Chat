@@ -163,3 +163,13 @@ export const extractMapsPlaces = (metadata: unknown): MapsPlace[] => {
 
   return places;
 };
+
+/**
+ * Builds a keyless Google Maps embed URL for a place.
+ * Uses the place title as the query (most reliable for the keyless embed),
+ * falling back to the chunk URI.
+ */
+export const buildMapsEmbedUrl = (place: MapsPlace): string => {
+  const query = place.title && place.title !== place.uri ? place.title : place.uri;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
+};

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { MapPin, ChevronDown, ExternalLink } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import type { MapsPlace } from '@/utils/groundingMetadata';
+import { buildMapsEmbedUrl, type MapsPlace } from '@/utils/groundingMetadata';
 
 interface MapsWidgetProps {
   places: MapsPlace[];
@@ -17,14 +17,14 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   const [expanded, setExpanded] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState<string>(places[0]?.uri ?? '');
 
-  // The `cid` query param in the chunk URI carries over to the keyless embed.
+  // Use the place title as the query for the keyless embed — the `cid` in the
+  // chunk URI is a numeric ID that the keyless embed cannot resolve to a location.
   const embedSrc = useMemo(() => {
     if (!selectedPlace) return '';
-    // Strip the protocol/host and re-wrap in the keyless embed path.
-    const url = new URL(selectedPlace);
-    const query = url.searchParams.get('q') || url.searchParams.get('cid') || selectedPlace;
-    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
-  }, [selectedPlace]);
+    const place = places.find((p) => p.uri === selectedPlace);
+    if (!place) return '';
+    return buildMapsEmbedUrl(place);
+  }, [selectedPlace, places]);
 
   if (!places || places.length === 0) return null;
 
