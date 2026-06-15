@@ -139,11 +139,17 @@ export const mergeGroundingMetadata = (
 export interface MapsPlace {
   uri: string;
   title: string;
+  /** Original index in groundingChunks array — used to align with citation [N] markers. */
+  chunkIndex: number;
 }
 
 /**
  * Extracts Maps grounding chunks as structured place entries.
  * Returns an empty array when the metadata has no Maps chunks.
+ *
+ * `chunkIndex` preserves the position in the original groundingChunks array so
+ * that the place list numbering matches the [N] citation markers inserted by
+ * insertCitations (which uses raw chunk indices).
  */
 export const extractMapsPlaces = (metadata: unknown): MapsPlace[] => {
   if (!isRecord(metadata) || !Array.isArray(metadata.groundingChunks)) {
@@ -153,13 +159,13 @@ export const extractMapsPlaces = (metadata: unknown): MapsPlace[] => {
   const places: MapsPlace[] = [];
   const seen = new Set<string>();
 
-  for (const chunk of metadata.groundingChunks) {
-    if (!isRecord(chunk) || !isRecord(chunk.maps)) continue;
+  metadata.groundingChunks.forEach((chunk, index) => {
+    if (!isRecord(chunk) || !isRecord(chunk.maps)) return;
     const maps = chunk.maps as GroundingChunkLike['maps'];
-    if (!maps?.uri || seen.has(maps.uri)) continue;
+    if (!maps?.uri || seen.has(maps.uri)) return;
     seen.add(maps.uri);
-    places.push({ uri: maps.uri, title: maps.title || maps.uri });
-  }
+    places.push({ uri: maps.uri, title: maps.title || maps.uri, chunkIndex: index });
+  });
 
   return places;
 };

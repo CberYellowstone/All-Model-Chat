@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, ChevronDown, ChevronUp, ExternalLink, Maximize2, X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildMapsEmbedUrl, type MapsPlace } from '@/utils/groundingMetadata';
@@ -20,6 +20,14 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
 
+  // Reset selection when the place list changes (e.g. message regenerated),
+  // so we don't hold a stale URI that no longer exists.
+  useEffect(() => {
+    if (!places.some((p) => p.uri === selectedPlace)) {
+      setSelectedPlace(places[0]?.uri ?? '');
+    }
+  }, [places, selectedPlace]);
+
   const COLLAPSED_LIMIT = 6;
   const visiblePlaces = listExpanded ? places : places.slice(0, COLLAPSED_LIMIT);
   const hiddenCount = places.length - COLLAPSED_LIMIT;
@@ -32,6 +40,51 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
   }, [activePlace]);
 
   if (!places || places.length === 0) return null;
+
+  const renderPlaceItem = (place: MapsPlace, isActive: boolean) => (
+    <div
+      key={`maps-place-${place.chunkIndex}`}
+      className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all cursor-pointer ${
+        isActive
+          ? 'bg-[var(--theme-bg-tertiary)]/60 border-[var(--theme-border-focus)]'
+          : 'bg-[var(--theme-bg-tertiary)]/20 border-[var(--theme-border-secondary)]/30 hover:bg-[var(--theme-bg-tertiary)]/60'
+      }`}
+      onClick={() => setSelectedPlace(place.uri)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setSelectedPlace(place.uri);
+        }
+      }}
+    >
+      <MapPin
+        size={14}
+        className={`flex-shrink-0 ${isActive ? 'text-[var(--theme-text-link)]' : 'text-[var(--theme-text-tertiary)]'}`}
+        strokeWidth={2}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-medium text-[var(--theme-text-primary)] truncate leading-tight">
+          {place.title}
+        </div>
+      </div>
+      <a
+        href={place.uri}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="flex-shrink-0 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-link)] transition-colors"
+        title={place.title}
+      >
+        <ExternalLink size={12} strokeWidth={2} />
+      </a>
+      {/* Use chunkIndex+1 to match the [N] citation markers in the text body. */}
+      <span className="text-[9px] font-mono font-medium text-[var(--theme-text-tertiary)] opacity-40">
+        [{place.chunkIndex + 1}]
+      </span>
+    </div>
+  );
 
   return (
     <div className="mt-3 pt-2 border-t border-[var(--theme-border-secondary)]/30 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -68,7 +121,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
               <button
                 type="button"
                 onClick={() => setIsFullscreen(true)}
-                className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
+                className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white text-[10px] font-medium opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
                 title={t('mapsExpand')}
               >
                 <Maximize2 size={12} strokeWidth={2} />
@@ -78,53 +131,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {visiblePlaces.map((place) => {
-              const realIndex = places.indexOf(place);
-              const isActive = place.uri === selectedPlace;
-              return (
-                <div
-                  key={`maps-place-${realIndex}`}
-                  className={`flex items-center gap-2 p-1.5 rounded-lg border transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[var(--theme-bg-tertiary)]/60 border-[var(--theme-border-focus)]'
-                      : 'bg-[var(--theme-bg-tertiary)]/20 border-[var(--theme-border-secondary)]/30 hover:bg-[var(--theme-bg-tertiary)]/60'
-                  }`}
-                  onClick={() => setSelectedPlace(place.uri)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedPlace(place.uri);
-                    }
-                  }}
-                >
-                  <MapPin
-                    size={14}
-                    className={`flex-shrink-0 ${isActive ? 'text-[var(--theme-text-link)]' : 'text-[var(--theme-text-tertiary)]'}`}
-                    strokeWidth={2}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-medium text-[var(--theme-text-primary)] truncate leading-tight">
-                      {place.title}
-                    </div>
-                  </div>
-                  <a
-                    href={place.uri}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-link)] transition-colors"
-                    title={place.title}
-                  >
-                    <ExternalLink size={12} strokeWidth={2} />
-                  </a>
-                  <span className="text-[9px] font-mono font-medium text-[var(--theme-text-tertiary)] opacity-40">
-                    {realIndex + 1}
-                  </span>
-                </div>
-              );
-            })}
+            {visiblePlaces.map((place) => renderPlaceItem(place, place.uri === selectedPlace))}
           </div>
 
           {hiddenCount > 0 && (
@@ -149,15 +156,15 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         </div>
       )}
 
-      {/* Fullscreen map modal */}
+      {/* Fullscreen map modal with place list sidebar */}
       <Modal
         isOpen={isFullscreen}
         onClose={() => setIsFullscreen(false)}
         noPadding
-        contentClassName="w-[95vw] h-[90vh] max-w-[1200px] bg-[var(--theme-bg-primary)] rounded-2xl overflow-hidden flex flex-col"
+        contentClassName="w-[95vw] h-[90vh] max-w-[1400px] bg-[var(--theme-bg-primary)] rounded-2xl overflow-hidden flex flex-col"
         ariaLabel={t('mapsSourcesTitle')}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)]/40">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)]/40 flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <MapPin size={16} className="text-[var(--theme-text-link)] flex-shrink-0" strokeWidth={2} />
             <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate">
@@ -172,16 +179,29 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
             <X size={18} strokeWidth={2} />
           </button>
         </div>
-        <div className="flex-1 min-h-0">
-          {embedSrc && (
-            <iframe
-              title={t('mapsSourcesTitle')}
-              src={embedSrc}
-              className="w-full h-full"
-              style={{ border: 0 }}
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
+        <div className="flex-1 min-h-0 flex">
+          {/* Map area */}
+          <div className="flex-1 min-w-0">
+            {embedSrc && (
+              <iframe
+                title={t('mapsSourcesTitle')}
+                src={embedSrc}
+                className="w-full h-full"
+                style={{ border: 0 }}
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            )}
+          </div>
+          {/* Place list sidebar */}
+          {places.length > 1 && (
+            <div className="w-64 flex-shrink-0 border-l border-[var(--theme-border-secondary)]/40 overflow-y-auto custom-scrollbar p-2 space-y-1.5 hidden sm:block">
+              {places.map((place) => (
+                <div key={`modal-place-${place.chunkIndex}`}>
+                  {renderPlaceItem(place, place.uri === selectedPlace)}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </Modal>
