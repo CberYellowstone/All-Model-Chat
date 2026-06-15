@@ -14,6 +14,7 @@ interface UseChatInputToolStatesParams {
 const TOOL_SETTING_KEYS: Record<ToggleableChatToolId, ChatToolSettingKey> = {
   deepSearch: 'isDeepSearchEnabled',
   googleSearch: 'isGoogleSearchEnabled',
+  googleMaps: 'isGoogleMapsEnabled',
   codeExecution: 'isCodeExecutionEnabled',
   localPython: 'isLocalPythonEnabled',
   urlContext: 'isUrlContextEnabled',
@@ -33,6 +34,24 @@ const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Toggleable
       ...settings,
       isLocalPythonEnabled: !settings.isLocalPythonEnabled,
       isCodeExecutionEnabled: !settings.isLocalPythonEnabled ? false : settings.isCodeExecutionEnabled,
+    };
+  }
+
+  // googleSearch and googleMaps are mutually exclusive (SDK rejects a request that
+  // carries both tools), so enabling one disables the other.
+  if (toolId === 'googleSearch') {
+    return {
+      ...settings,
+      isGoogleSearchEnabled: !settings.isGoogleSearchEnabled,
+      isGoogleMapsEnabled: !settings.isGoogleSearchEnabled ? false : settings.isGoogleMapsEnabled,
+    };
+  }
+
+  if (toolId === 'googleMaps') {
+    return {
+      ...settings,
+      isGoogleMapsEnabled: !settings.isGoogleMapsEnabled,
+      isGoogleSearchEnabled: !settings.isGoogleMapsEnabled ? false : settings.isGoogleSearchEnabled,
     };
   }
 
@@ -71,6 +90,10 @@ export const useChatInputToolStates = ({
       googleSearch: {
         isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleSearchEnabled,
         onToggle: createToggle('googleSearch'),
+      },
+      googleMaps: {
+        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleMapsEnabled,
+        onToggle: createToggle('googleMaps'),
       },
       codeExecution: {
         isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isCodeExecutionEnabled,

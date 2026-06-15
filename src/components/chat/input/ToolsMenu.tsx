@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { SlidersHorizontal, Globe, Check, Terminal, Link, X, Telescope, Calculator, AlertTriangle } from 'lucide-react';
+import { SlidersHorizontal, Globe, Check, Terminal, Link, X, Telescope, Calculator, AlertTriangle, MapPin } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconPython } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
@@ -48,10 +48,10 @@ const ActiveToolBadge: React.FC<{
   </>
 );
 
-const BUILT_IN_TOOL_IDS = new Set<ChatToolId>(['deepSearch', 'googleSearch', 'codeExecution', 'urlContext']);
+const BUILT_IN_TOOL_IDS = new Set<ChatToolId>(['deepSearch', 'googleSearch', 'googleMaps', 'codeExecution', 'urlContext']);
 
 const isToggleableToolId = (id: ChatToolId): id is ToggleableChatToolId =>
-  id === 'deepSearch' || id === 'googleSearch' || id === 'codeExecution' || id === 'localPython' || id === 'urlContext';
+  id === 'deepSearch' || id === 'googleSearch' || id === 'googleMaps' || id === 'codeExecution' || id === 'localPython' || id === 'urlContext';
 
 const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
   switch (icon) {
@@ -59,6 +59,8 @@ const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
       return <Telescope size={size} strokeWidth={2} />;
     case 'globe':
       return <Globe size={size} strokeWidth={2} />;
+    case 'map':
+      return <MapPin size={size} strokeWidth={2} />;
     case 'terminal':
       return <Terminal size={size} strokeWidth={2} />;
     case 'python':

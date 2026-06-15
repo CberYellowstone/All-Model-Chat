@@ -118,6 +118,7 @@ export interface ChatSettings {
   thinkingLevel?: ThinkingLevel;
   lockedApiKey?: string | null;
   isGoogleSearchEnabled?: boolean;
+  isGoogleMapsEnabled?: boolean;
   isCodeExecutionEnabled?: boolean;
   isLocalPythonEnabled?: boolean;
   isUrlContextEnabled?: boolean;

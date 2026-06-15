@@ -57,6 +57,7 @@ export interface ModelInteractionPermissions {
   canAcceptAttachments: boolean;
   canUseTools: boolean;
   canUseGoogleSearch: boolean;
+  canUseGoogleMaps: boolean;
   canUseDeepSearch: boolean;
   canUseCodeExecution: boolean;
   canUseLocalPython: boolean;
@@ -114,6 +115,7 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     canAcceptAttachments: !realImagenModel && !ttsModel && !nativeAudioModel,
     canUseTools: canUseTextChatTools || nativeAudioModel || gemini3ImageModel || imageGenerationModel,
     canUseGoogleSearch: canUseTextChatTools || nativeAudioModel || gemini3ImageModel,
+    canUseGoogleMaps: canUseTextChatTools || nativeAudioModel || gemini3ImageModel,
     canUseDeepSearch: canUseTextChatTools,
     canUseCodeExecution: canUseTextChatTools && !isGemmaModel(modelId),
     canUseLocalPython: canUseTextChatTools || nativeAudioModel,

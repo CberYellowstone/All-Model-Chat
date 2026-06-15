@@ -231,6 +231,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   thinkingLevel: optionalWithDefault(z.enum(THINKING_LEVELS), DEFAULT_APP_SETTINGS.thinkingLevel),
   lockedApiKey: nullableStringWithDefault(DEFAULT_APP_SETTINGS.lockedApiKey ?? null),
   isGoogleSearchEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isGoogleSearchEnabled),
+  isGoogleMapsEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isGoogleMapsEnabled),
   isCodeExecutionEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isCodeExecutionEnabled),
   isLocalPythonEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isLocalPythonEnabled),
   isUrlContextEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isUrlContextEnabled),

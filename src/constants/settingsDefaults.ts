@@ -52,6 +52,7 @@ export const DEFAULT_CHAT_SETTINGS = {
   thinkingLevel: DEFAULT_THINKING_LEVEL as ThinkingLevel,
   lockedApiKey: null,
   isGoogleSearchEnabled: false,
+  isGoogleMapsEnabled: false,
   isCodeExecutionEnabled: false,
   isUrlContextEnabled: false,
   isDeepSearchEnabled: false,

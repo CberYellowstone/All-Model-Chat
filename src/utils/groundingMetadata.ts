@@ -11,6 +11,12 @@ export interface GroundingChunkLike {
     title?: string;
     domain?: string;
   };
+  maps?: {
+    placeId?: string;
+    title?: string;
+    uri?: string;
+    text?: string;
+  };
 }
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -29,6 +35,13 @@ export const getGroundingChunkSource = (chunk: GroundingChunkLike): GroundingSou
     return {
       uri: chunk.image.sourceUri,
       title: chunk.image.title || chunk.image.domain,
+    };
+  }
+
+  if (chunk.maps?.uri) {
+    return {
+      uri: chunk.maps.uri,
+      title: chunk.maps.title,
     };
   }
 

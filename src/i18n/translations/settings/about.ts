@@ -13,11 +13,5 @@ const aboutSettings = {
   aboutStarsLabel: { en: 'Stars', zh: '星标' },
   aboutUnavailable: { en: 'Unavailable', zh: '不可用' },
   aboutVersionChecking: { en: 'Checking release', zh: '检查版本中' },
-  aboutUpdateReady: { en: 'Update ready to refresh', zh: '发现可用更新' },
-  pwaUpdateRefreshPrompt: {
-    en: 'Refresh to update the installed shell and latest assets.',
-    zh: '刷新以更新已安装的应用外壳和最新资源。',
-  },
-  pwaUpdateLater: { en: 'Later', zh: '稍后' },
 };
 export default aboutSettings;

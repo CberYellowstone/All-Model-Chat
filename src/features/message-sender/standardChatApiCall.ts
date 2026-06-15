@@ -288,6 +288,7 @@ export const performStandardChatApiCall = async ({
   const mcpFunctionDeclarations = Object.values(mcpClientFunctions).map(({ declaration }) => declaration);
   const hasRequestedServerSideToolThatNeedsCombination =
     !!sessionToUpdate.isGoogleSearchEnabled ||
+    !!sessionToUpdate.isGoogleMapsEnabled ||
     !!sessionToUpdate.isDeepSearchEnabled ||
     !!sessionToUpdate.isUrlContextEnabled;
   const isLocalPythonEnabledForTurn =

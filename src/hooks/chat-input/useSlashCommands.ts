@@ -48,6 +48,7 @@ const INPUT_POPULATING_COMMANDS = new Set(['model', 'edit']);
 const TOOL_COMMAND_ACTIONS: Record<string, ToggleableChatToolId> = {
   deep: 'deepSearch',
   online: 'googleSearch',
+  maps: 'googleMaps',
   code: 'codeExecution',
   url: 'urlContext',
 };
@@ -147,6 +148,7 @@ export const useSlashCommands = ({
           case 'retry':
             return { name, description, icon, action: onRetryLastTurn };
           case 'online':
+          case 'maps':
           case 'deep':
           case 'code':
           case 'url':

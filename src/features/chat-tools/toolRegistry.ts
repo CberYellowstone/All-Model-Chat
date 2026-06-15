@@ -3,7 +3,7 @@ import type { ChatToolId, ChatToolSettingKey } from '@/types/chatTools';
 
 type ChatToolSurface = 'tools-menu' | 'slash-command';
 
-export type ChatToolIconKey = 'telescope' | 'globe' | 'terminal' | 'python' | 'link' | 'calculator';
+export type ChatToolIconKey = 'telescope' | 'globe' | 'map' | 'terminal' | 'python' | 'link' | 'calculator';
 
 export interface ChatToolDefinition {
   id: ChatToolId;
@@ -46,6 +46,17 @@ const CHAT_TOOL_REGISTRY: ChatToolDefinition[] = [
     slashCommand: { name: 'online', descriptionKey: 'helpCmdSearch', icon: 'search' },
     isAvailable: (context) =>
       context.capabilities.permissions.canUseGoogleSearch &&
+      (!isToolsMenu(context) || !context.capabilities.permissions.canUseLiveControls),
+  },
+  {
+    id: 'googleMaps',
+    labelKey: 'mapsGroundingLabel',
+    shortLabelKey: 'mapsGroundingShort',
+    icon: 'map',
+    settingKey: 'isGoogleMapsEnabled',
+    slashCommand: { name: 'maps', descriptionKey: 'helpCmdMaps', icon: 'maps' },
+    isAvailable: (context) =>
+      context.capabilities.permissions.canUseGoogleMaps &&
       (!isToolsMenu(context) || !context.capabilities.permissions.canUseLiveControls),
   },
   {
