@@ -1,6 +1,7 @@
 import { logService } from '@/services/logService';
 import React, { useCallback, useState } from 'react';
-import { Check, ClipboardCopy, Download, Edit3, FileText, Save, X } from 'lucide-react';
+import { Check, ClipboardCopy, Download, Edit3, Save, X } from 'lucide-react';
+import { IconMarkdown } from '@/components/icons';
 import { type UploadedFile } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { Modal } from '@/components/shared/Modal';
@@ -101,13 +102,13 @@ export const MarkdownPreviewModal: React.FC<MarkdownPreviewModalProps> = ({
       onClose={handleClose}
       noPadding
       backdropClassName="bg-black/45 backdrop-blur-sm"
-      contentClassName="w-[min(1200px,96vw)] h-[min(900px,94vh)]"
+      contentClassName="w-[min(1600px,98vw)] h-[min(1000px,96vh)]"
     >
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] shadow-2xl">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-accent)]">
-              <FileText size={20} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-bg-accent)]/10 text-[var(--theme-bg-accent)]">
+              <IconMarkdown size={20} strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
               {isEditing ? (

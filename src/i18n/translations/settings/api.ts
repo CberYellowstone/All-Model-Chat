@@ -131,6 +131,14 @@ const apiSettings = {
     zh: '与 Gemini API 密钥分开保存。请填入所选服务商的 API 密钥。',
   },
   thirdPartyApiBaseUrl: { en: 'Base URL', zh: 'Base URL' },
+  thirdPartyApiBaseUrlChatCompletionsWarning: {
+    en: "Omit '/chat/completions' — it is appended automatically.",
+    zh: '无需包含 “/chat/completions”，系统会自动拼接。',
+  },
+  thirdPartyApiBaseUrlModelsWarning: {
+    en: "Omit '/models' — it is appended automatically.",
+    zh: '无需包含 “/models”，系统会自动拼接。',
+  },
   thirdPartyApiKeyMissing: { en: 'No key', zh: '未配置' },
   thirdPartyApiReady: { en: 'Ready', zh: '已就绪' },
   enable: { en: 'Enable', zh: '启用' },

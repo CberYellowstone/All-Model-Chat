@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, CircleCheck, Circle } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
+import { Toggle } from '@/components/shared/Toggle';
+import { getOpenAICompatibleBaseUrlWarning } from '@/services/api/openaiCompatibleUrls';
 import type { AppSettings, ThirdPartyApiSettings, ThirdPartyProviderId } from '@/types';
 import {
   THIRD_PARTY_PROVIDER_IDS,
@@ -77,18 +79,13 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
               }`}
             >
               <div className="flex items-center gap-2 p-2.5">
-                <button
-                  type="button"
-                  onClick={() => handleToggleEnabled(providerId)}
-                  className="flex-shrink-0 cursor-pointer transition-colors"
-                  title={isEnabled ? t('disable') : t('enable')}
-                >
-                  {isEnabled ? (
-                    <CircleCheck size={18} className="text-[var(--theme-text-link)]" strokeWidth={2} />
-                  ) : (
-                    <Circle size={18} className="text-[var(--theme-text-tertiary)]" strokeWidth={2} />
-                  )}
-                </button>
+                <div className="flex-shrink-0">
+                  <Toggle
+                    checked={isEnabled}
+                    onChange={() => handleToggleEnabled(providerId)}
+                    ariaLabel={`${THIRD_PARTY_PROVIDER_LABELS[providerId]} ${t('enable')}`}
+                  />
+                </div>
 
                 <button
                   type="button"
@@ -147,8 +144,27 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                       onChange={(e) => updateField('baseUrl', e.target.value)}
                       className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 focus:ring-offset-0 text-sm custom-scrollbar font-mono ${SETTINGS_INPUT_CLASS}`}
                       aria-label={t('thirdPartyApiBaseUrl')}
-                    />
-                  </div>
+                      />
+                  {expandedConfig.protocol === 'openai-compatible' &&
+                    (() => {
+                      const warning = getOpenAICompatibleBaseUrlWarning(expandedConfig.baseUrl);
+                      if (warning === 'chat-completions-endpoint') {
+                        return (
+                          <p className="text-xs text-[var(--theme-status-warning-text)]">
+                            {t('thirdPartyApiBaseUrlChatCompletionsWarning')}
+                          </p>
+                        );
+                      }
+                      if (warning === 'models-endpoint') {
+                        return (
+                          <p className="text-xs text-[var(--theme-status-warning-text)]">
+                            {t('thirdPartyApiBaseUrlModelsWarning')}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
+                    </div>
 
                   <OpenAICompatibleModelListEditor
                     models={expandedConfig.models}

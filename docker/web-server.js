@@ -135,6 +135,9 @@ function serveStatic(req, res) {
     headers['cache-control'] = 'public, max-age=31536000, immutable';
   } else if (ext === '.mjs') {
     headers['cache-control'] = 'no-cache';
+  } else if (ext === '.html') {
+    // index.html must always revalidate so new builds' chunk hashes replace stale ones.
+    headers['cache-control'] = 'no-cache';
   }
 
   res.writeHead(200, headers);

@@ -343,9 +343,11 @@ describe('useDataImport', () => {
     });
 
     expect(didImportSettings).toBe(true);
-    expect(importedSettings.isOpenAICompatibleApiEnabled).toBe(true);
-    expect(importedSettings.apiMode).toBe('openai-compatible');
-    expect(importedSettings.openaiCompatibleApiKey).toBe('openai-key');
+   expect(importedSettings.isOpenAICompatibleApiEnabled).toBe(true);
+    // Legacy 'openai-compatible' apiMode is normalized to 'gemini-native' on import
+    // (third-party mode replaced it; enable via isThirdPartyApiEnabled instead).
+    expect(importedSettings.apiMode).toBe('gemini-native');
+   expect(importedSettings.openaiCompatibleApiKey).toBe('openai-key');
     expect(importedSettings.openaiCompatibleBaseUrl).toBe('https://openai-compatible.example.com/v1');
     expect(importedSettings.openaiCompatibleModelId).toBe('custom-model');
     expect(importedSettings.openaiCompatibleModels).toEqual([

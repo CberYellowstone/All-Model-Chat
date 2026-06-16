@@ -130,8 +130,3 @@ export const liveTranslateLanguageLabel = (code: string, locale: string = 'en'):
   }
 };
 
-/**
- * @deprecated 使用 LIVE_TRANSLATE_TARGET_LANGUAGE_CODES。仅为向后兼容保留旧结构。
- */
-export const LIVE_TRANSLATE_TARGET_LANGUAGE_OPTIONS: Array<{ value: string; labelKey: string }> =
-  LIVE_TRANSLATE_TARGET_LANGUAGE_CODES.map((code) => ({ value: code, labelKey: code }));

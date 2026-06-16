@@ -55,6 +55,7 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
   const defaultSettings = getDefaultAppSettings();
   const isOpenAICompatibleApiEnabled =
     settings.isOpenAICompatibleApiEnabled ?? defaultSettings.isOpenAICompatibleApiEnabled;
+  const isThirdPartyApiEnabled = settings.isThirdPartyApiEnabled === true;
   const sanitizedOpenAICompatibleModels = sanitizeModelOptions(
     settings.openaiCompatibleModels ?? defaultSettings.openaiCompatibleModels,
   );
@@ -66,11 +67,15 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
   return {
     ...settings,
     apiMode: (() => {
-      const rawMode = isOpenAICompatibleApiEnabled ? settings.apiMode : 'gemini-native';
-      // Legacy 'openai-compatible' apiMode is replaced by 'third-party'. Normalize stale data.
-      return rawMode === 'openai-compatible' ? 'gemini-native' : rawMode;
+      // Trust the explicitly-written apiMode; only normalize the legacy
+      // 'openai-compatible' value. The per-mode enabling toggles
+      // (isThirdPartyApiEnabled / isOpenAICompatibleApiEnabled) are validated at
+      // read-time by isThirdPartyApiActive, so coupling them here breaks the
+      // two-step writes that handleApiProviderChange performs.
+      return settings.apiMode === 'openai-compatible' ? 'gemini-native' : settings.apiMode;
     })(),
     isOpenAICompatibleApiEnabled,
+    isThirdPartyApiEnabled,
     modelId: resolveSupportedModelId(settings.modelId, defaultSettings.modelId),
     openaiCompatibleModelId: resolveSupportedModelId(
       settings.openaiCompatibleModelId,

@@ -68,6 +68,7 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   baseFontSize: DEFAULT_BASE_FONT_SIZE,
   apiMode: 'gemini-native',
   isOpenAICompatibleApiEnabled: DEFAULT_IS_OPENAI_COMPATIBLE_API_ENABLED,
+  isThirdPartyApiEnabled: false,
   useCustomApiConfig: false,
   serverManagedApi: false,
   apiKey: null,

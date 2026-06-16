@@ -113,15 +113,15 @@ export const DEFAULT_THIRD_PARTY_API_SETTINGS: ThirdPartyApiSettings = {
   providers: DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS,
 };
 
-export const isThirdPartyProviderId = (value: unknown): value is ThirdPartyProviderId =>
+const isThirdPartyProviderId = (value: unknown): value is ThirdPartyProviderId =>
   typeof value === 'string' && THIRD_PARTY_PROVIDER_IDS.includes(value as ThirdPartyProviderId);
 
-export const isThirdPartyProtocol = (value: unknown): value is ThirdPartyApiProtocol =>
+const isThirdPartyProtocol = (value: unknown): value is ThirdPartyApiProtocol =>
   value === 'openai-compatible' || value === 'anthropic';
 
 const cloneModels = (models: ModelOption[]): ModelOption[] => models.map((model) => ({ ...model }));
 
-export const cloneThirdPartyProviderConfig = (config: ThirdPartyProviderConfig): ThirdPartyProviderConfig => ({
+const cloneThirdPartyProviderConfig = (config: ThirdPartyProviderConfig): ThirdPartyProviderConfig => ({
   ...config,
   models: cloneModels(config.models),
 });
@@ -210,7 +210,7 @@ export const buildProviderAwareModelList = (
   return deduplicateModelsById([...baseModels, ...thirdPartyModels, ...openaiCompatibleModels]);
 };
 
-export const sanitizeThirdPartyProviderConfig = (
+const sanitizeThirdPartyProviderConfig = (
   providerId: ThirdPartyProviderId,
   value: Partial<ThirdPartyProviderConfig> | undefined,
 ): ThirdPartyProviderConfig => {
@@ -281,17 +281,6 @@ export const updateThirdPartyProviderConfig = (
     }),
   },
 });
-
-export const isThirdPartyProviderOpenAICompatible = (provider: ThirdPartyProviderConfig): boolean =>
-  provider.protocol === 'openai-compatible';
-
-export const resolveActiveThirdPartyProviderApiKey = (
-  settings: Pick<AppSettings, 'thirdPartyApi'>,
-  envOpenAIApiKey?: string | null,
-): string | null => {
-  const activeProvider = getThirdPartyProviderConfig(settings);
-  return activeProvider.apiKey || (settings.thirdPartyApi.activeProvider === 'openai' ? envOpenAIApiKey || null : null);
-};
 
 export const updateActiveThirdPartyProviderConfig = (
   thirdPartyApi: ThirdPartyApiSettings,

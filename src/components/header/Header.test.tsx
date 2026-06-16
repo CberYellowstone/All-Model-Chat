@@ -76,7 +76,7 @@ describe('Header', () => {
     });
 
     const liveArtifactsButton = renderer.container.querySelector(
-      'button[aria-label="Load Live Artifacts prompt and save settings"]',
+      'button[aria-label="Load Live Artifacts prompt"]',
     );
 
     expect(liveArtifactsButton).not.toBeNull();

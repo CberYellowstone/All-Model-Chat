@@ -3,7 +3,7 @@ interface LiveTranslateLanguageSettings {
   echoTargetLanguage?: boolean; // 输入已是目标语言时是否回放原声，默认 false
 }
 
-export interface LiveTranslateConfig {
+interface LiveTranslateConfig {
   responseModalities: ['AUDIO'];
   inputAudioTranscription: Record<string, never>;
   outputAudioTranscription: Record<string, never>;

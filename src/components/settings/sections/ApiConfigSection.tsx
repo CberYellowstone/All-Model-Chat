@@ -98,8 +98,10 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
 
   const handleApiProviderChange = (nextApiMode: AppSettings['apiMode']) => {
     const isThirdParty = nextApiMode === 'third-party';
-    onUpdate('apiMode', isThirdParty ? 'third-party' : 'gemini-native');
+    // Enable/disable the flag first so sanitizeAppSettings keeps apiMode='third-party'
+    // instead of resetting it to 'gemini-native' on the intermediate state.
     onUpdate('isThirdPartyApiEnabled', isThirdParty);
+    onUpdate('apiMode', isThirdParty ? 'third-party' : 'gemini-native');
     setTestStatus('idle');
     setTestMessage(null);
   };

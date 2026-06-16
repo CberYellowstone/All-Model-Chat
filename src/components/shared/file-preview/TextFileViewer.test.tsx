@@ -46,7 +46,8 @@ describe('TextFileViewer', () => {
     expect(markdownRenderer?.getAttribute('data-theme-id')).toBe('pearl');
     expect(markdownRenderer?.getAttribute('data-interactive-mode')).toBe('disabled');
     expect(markdownRenderer?.parentElement?.className).toContain('bg-[var(--theme-bg-primary)]');
-    expect(renderer.container.querySelector('pre')).toBeNull();
+    expect(renderer.container.textContent).toContain('Preview');
+    expect(renderer.container.textContent).toContain('Source');
   });
 
   it('falls back to plain text for large markdown files until the user opts in to rich rendering', () => {

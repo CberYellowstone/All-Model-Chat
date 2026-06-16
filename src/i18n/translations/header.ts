@@ -9,16 +9,16 @@ export const headerTranslations = {
     zh: 'Live Artifacts 提示已激活。点击移除。',
   },
   liveArtifactsPromptInactiveAria: {
-    en: 'Load Live Artifacts prompt and save settings',
-    zh: '加载 Live Artifacts 提示并保存设置',
+    en: 'Load Live Artifacts prompt',
+    zh: '加载 Live Artifacts 提示',
   },
   liveArtifactsPromptActiveTitle: {
     en: 'Live Artifacts prompt is active. Click to remove.',
     zh: 'Live Artifacts 提示已激活。点击移除。',
   },
   liveArtifactsPromptInactiveTitle: {
-    en: 'Load Live Artifacts Prompt and save',
-    zh: '加载 Live Artifacts 提示并保存',
+    en: 'Load Live Artifacts Prompt',
+    zh: '加载 Live Artifacts 提示',
   },
   scenariosManageAria: { en: 'Preset Scenarios', zh: '预设场景' },
   scenariosManageTitle: { en: 'Preset Scenarios', zh: '预设场景' },

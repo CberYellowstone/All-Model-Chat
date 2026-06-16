@@ -7,7 +7,11 @@ import { MarkdownFileViewer } from './MarkdownFileViewer';
 
 const { mockLazyMarkdownRenderer } = vi.hoisted(() => ({
   mockLazyMarkdownRenderer: vi.fn(({ content }: { content: string }) => (
-    <div data-testid="markdown-renderer">{content}</div>
+    <div data-testid="markdown-renderer">
+      <h1>Preview title</h1>
+      <h2>Section</h2>
+      {content}
+    </div>
   )),
 }));
 
@@ -73,5 +77,50 @@ describe('MarkdownFileViewer', () => {
 
     expect(container.textContent).toContain('# Preview title');
     expect(container.querySelector('[data-testid="markdown-renderer"]')).toBeNull();
+  });
+
+  it('shows document stats and an outline toggle in preview mode', () => {
+    const file = createMarkdownFile();
+
+    act(() => {
+      root.render(<MarkdownFileViewer file={file} content={'# Preview title\n\n## Section\n\nBody'} />);
+    });
+
+    expect(container.textContent).toContain('5 lines');
+    expect(container.textContent).toContain('Outline');
+
+    const outlineButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Outline'),
+    );
+
+    act(() => {
+      outlineButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain('Document outline');
+    expect(container.textContent).toContain('Section');
+  });
+
+  it('offers rich rendering for large markdown files', () => {
+    const file = createMarkdownFile();
+    const largeMarkdown = `${'# Heading\n\n'}${'Paragraph line\n'.repeat(5000)}`;
+
+    act(() => {
+      root.render(<MarkdownFileViewer file={file} content={largeMarkdown} />);
+    });
+
+    expect(container.querySelector('[data-testid="markdown-renderer"]')).toBeNull();
+    expect(container.textContent).toContain('Large Markdown file detected');
+    expect(container.textContent).toContain('Render Markdown anyway');
+
+    const renderAnywayButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Render Markdown anyway'),
+    );
+
+    act(() => {
+      renderAnywayButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-testid="markdown-renderer"]')).not.toBeNull();
   });
 });

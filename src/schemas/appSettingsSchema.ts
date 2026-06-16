@@ -247,6 +247,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   baseFontSize: numberWithDefault(DEFAULT_APP_SETTINGS.baseFontSize),
   apiMode: withDefault(z.enum(API_MODES), DEFAULT_APP_SETTINGS.apiMode),
   isOpenAICompatibleApiEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isOpenAICompatibleApiEnabled ?? false),
+  isThirdPartyApiEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isThirdPartyApiEnabled ?? false),
   useCustomApiConfig: booleanWithDefault(DEFAULT_APP_SETTINGS.useCustomApiConfig),
   serverManagedApi: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.serverManagedApi),
   apiKey: nullableStringWithDefault(DEFAULT_APP_SETTINGS.apiKey),
@@ -328,7 +329,9 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
 
 const coerceDisabledOpenAICompatibleMode = (settings: AppSettings): AppSettings => ({
   ...settings,
-  apiMode: settings.isOpenAICompatibleApiEnabled ? settings.apiMode : 'gemini-native',
+  // Only normalize the legacy 'openai-compatible' value on import; trust the
+  // stored apiMode otherwise so third-party mode survives import.
+  apiMode: settings.apiMode === 'openai-compatible' ? 'gemini-native' : settings.apiMode,
 });
 
 export const sanitizeImportedAppSettings = (value: unknown): AppSettings =>
