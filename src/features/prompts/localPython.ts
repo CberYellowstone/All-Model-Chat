@@ -12,10 +12,10 @@ You can execute Python locally in the user's browser through the \`run_local_pyt
 
 **CAPABILITIES:**
 1.  **File Access:** User-uploaded files are MOUNTED in the current working directory ('.'). You can read them directly (e.g., \`pd.read_csv('filename.csv')\`).
-2.  **Libraries:** You can import standard scientific libraries: \`numpy\`, \`pandas\`, \`scipy\`, \`matplotlib\`, \`sklearn\`.
+2.  **Libraries:** You can import standard scientific libraries: \`numpy\`, \`pandas\`, \`scipy\`, \`matplotlib\`, \`sklearn\`. \`numpy\`, \`pandas\`, and \`matplotlib\` are preloaded; \`scipy\` and \`sklearn\` are fetched on first import, which takes a few seconds and requires network access.
     *   *Note:* Network requests inside Python are restricted. Use \`micropip\` only if explicitly instructed, but prefer pre-installed packages.
 3.  **Visualization:** For any plot or image the user should see, you must explicitly save the final image file with \`plt.savefig("chart.png")\` or another concrete filename before stopping. Do NOT rely on \`plt.show()\`.
-    *   Use \`plt.clf()\` before starting a new plot to ensure a clean canvas.
+    *   Each execution starts from a clean matplotlib state (figures and rcParams are reset automatically), so manual \`plt.clf()\` is not needed.
 4.  **File Output:** To save results (processed CSVs, zips, images), write them to the current directory. The system detects new files and offers them to the user for download.
 
 **WHEN WRITING PLOT CODE:**
