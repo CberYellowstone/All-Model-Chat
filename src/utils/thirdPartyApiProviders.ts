@@ -93,7 +93,6 @@ export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, 
     models: [
       { id: 'glm-5.2', name: 'GLM-5.2', isPinned: true },
       { id: 'glm-5.1', name: 'GLM-5.1' },
-      { id: 'glm-5-turbo', name: 'GLM-5 Turbo' },
     ],
     protocol: 'openai-compatible',
     enabled: false,
