@@ -36,8 +36,8 @@ describe('createLiveClientFunctions', () => {
     const runPython = vi.fn(async () => ({
       output: '42',
       result: '42',
-      image: 'base64-image',
-      files: [{ name: 'chart.png', type: 'image/png', data: 'Zm9v' }],
+      image: new ArrayBuffer(8),
+      files: [{ name: 'chart.png', type: 'image/png', data: new ArrayBuffer(3) }],
     }));
 
     const functions = createLiveClientFunctions({

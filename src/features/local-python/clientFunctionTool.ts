@@ -1,7 +1,7 @@
 import type { FunctionDeclaration, Type } from '@google/genai';
 import type { ExecutionResult } from './pyodideService';
 import type { UploadedFile } from '@/types';
-import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
+import { createUploadedFileFromBytes } from '@/utils/chat/parsing';
 import { hasGeneratedImageFile } from './executionFiles';
 
 type PythonRunOptions = { files?: UploadedFile[]; abortSignal?: AbortSignal };
@@ -41,12 +41,10 @@ export const createLocalPythonToolHandler = <RunOptions extends PythonRunOptions
 
     const result = await runPython(code, getRunOptions(options));
     const outputFiles = result.files || [];
-    const generatedFiles = [...outputFiles].map((file) =>
-      createUploadedFileFromBase64(file.data, file.type, file.name),
-    );
+    const generatedFiles = [...outputFiles].map((file) => createUploadedFileFromBytes(file.data, file.type, file.name));
 
     if (result.image && !hasGeneratedImageFile(outputFiles)) {
-      generatedFiles.unshift(createUploadedFileFromBase64(result.image, 'image/png', `generated-plot-${Date.now()}`));
+      generatedFiles.unshift(createUploadedFileFromBytes(result.image, 'image/png', `generated-plot-${Date.now()}`));
     }
 
     return {

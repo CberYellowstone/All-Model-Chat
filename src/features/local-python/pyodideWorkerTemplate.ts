@@ -17,15 +17,6 @@ async function loadPyodideAndPackages() {
   return pyodide;
 }
 
-function arrayBufferToBase64(buffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 function getMimeType(filename) {
   const ext = filename.split('.').pop().toLowerCase();
   const mimeMap = {
@@ -45,6 +36,21 @@ function getMimeType(filename) {
     zip: 'application/zip',
   };
   return mimeMap[ext] || 'application/octet-stream';
+}
+
+// FS.readFile returns a Uint8Array view that may share a larger backing buffer;
+// copy the bytes into an exact-sized standalone ArrayBuffer so it can be
+// transferred back to the main thread without dragging unrelated bytes along.
+function ensureArrayBuffer(data) {
+    const u8 = data instanceof Uint8Array ? data : new Uint8Array(data);
+    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+}
+
+function normalizeErrorMessage(error) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    if (error && typeof error.message === 'string') return error.message;
+    return String(error);
 }
 
 function ensureDir(path) {
@@ -81,7 +87,7 @@ function removePath(path) {
     }
 }
 
-function listFilesRecursively(basePath, currentPath = '.') {
+function listFilesRecursively(currentPath) {
     const files = [];
     const entries = pyodide.FS.readdir(currentPath);
     for (const entry of entries) {
@@ -89,7 +95,7 @@ function listFilesRecursively(basePath, currentPath = '.') {
         const absolutePath = currentPath === '.' ? './' + entry : currentPath + '/' + entry;
         const stat = pyodide.FS.stat(absolutePath);
         if (pyodide.FS.isDir(stat.mode)) {
-            files.push(...listFilesRecursively(basePath, absolutePath));
+            files.push(...listFilesRecursively(absolutePath));
         } else if (pyodide.FS.isFile(stat.mode)) {
             const relativePath = absolutePath.replace(/^\\.\\//, '');
             files.push(relativePath);
@@ -100,46 +106,17 @@ function listFilesRecursively(basePath, currentPath = '.') {
 
 async function installDependencies(code) {
     try {
+        // loadPackagesFromImports parses the code's import statements (AST-level,
+        // not substring matching) and loads every importable package from the
+        // Pyodide lock file. Pyodide de-dupes packages already loaded at init,
+        // so this is a no-op for the preloaded set.
         await pyodide.loadPackagesFromImports(code);
-        const packagesToLoad = [];
-        const packagesToInstall = [];
-
-        if (code.includes('matplotlib')) {
-            packagesToLoad.push('matplotlib');
-        }
-        if (code.includes('pandas')) {
-            packagesToLoad.push('pandas');
-        }
-        if (code.includes('numpy')) {
-            packagesToLoad.push('numpy');
-        }
-        
-        if (code.includes('sklearn') || code.includes('scikit-learn')) {
-            packagesToInstall.push('scikit-learn');
-        }
-        if (code.includes('scipy')) {
-            packagesToInstall.push('scipy');
-        }
-        if (code.includes('seaborn')) {
-            packagesToInstall.push('seaborn');
-        }
-
-        if (packagesToLoad.length > 0) {
-            await pyodide.loadPackage([...new Set(packagesToLoad)]);
-        }
-
-        if (packagesToInstall.length === 0) {
-            return;
-        }
-
-        // Load micropip lazily so simple scripts without extra dependencies do not fail.
-        await pyodide.loadPackage('micropip');
-        const micropip = pyodide.pyimport("micropip");
-        
-        await micropip.install(packagesToInstall);
     } catch (dependencyError) {
-        console.warn("Dependency resolution warning:", dependencyError);
-        throw new Error("Failed to install dependencies: " + dependencyError.message);
+        const message = normalizeErrorMessage(dependencyError);
+        if (/No known package|not found|could not find|unknown package/i.test(message)) {
+            throw new Error("A requested dependency is not available in the browser Pyodide environment: " + message);
+        }
+        throw new Error("Dependency download failed, please retry: " + message);
     }
 }
 
@@ -152,15 +129,11 @@ self.onmessage = async (event) => {
     }
     await pyodideReadyPromise;
 
-    if (type === 'MOUNT_FILES') {
-        if (files && Array.isArray(files)) {
-            for (const file of files) {
-                // file.data is ArrayBuffer transferred
-                pyodide.FS.writeFile(file.name, new Uint8Array(file.data));
-            }
-        }
-        self.postMessage({ id, status: 'success', type: 'MOUNT_COMPLETE' });
-        return;
+    if (type === 'WARMUP') {
+      // No code to run; just ensure the runtime + packages are loaded so the
+      // next real execution skips the cold load.
+      self.postMessage({ status: 'success', type: 'WARMUP_READY' });
+      return;
     }
 
     const previousDir = pyodide.FS.cwd();
@@ -168,6 +141,9 @@ self.onmessage = async (event) => {
 
     removePath(runDir);
     ensureDir(runDir);
+
+    let result;
+    const transferBuffers = [];
 
     try {
       if (files && Array.isArray(files)) {
@@ -196,22 +172,40 @@ self.onmessage = async (event) => {
       pyodide.setStdout({ batched: (msg) => stdout.push(msg) });
       pyodide.setStderr({ batched: (msg) => stdout.push(msg) });
 
-      // Auto-install packages detected in imports
       await installDependencies(code);
 
-      // Setup matplotlib backend if needed
+      // Reset matplotlib state carried over from any prior run before executing.
       await pyodide.runPythonAsync(\`
         try:
           import matplotlib
           matplotlib.use("Agg")
           import matplotlib.pyplot as plt
-          plt.clf()
+          plt.close('all')
         except ImportError:
           pass
       \`);
 
-      const result = await pyodide.runPythonAsync(code);
-      
+      result = await pyodide.runPythonAsync(code);
+
+      const generatedOutputFiles = [];
+      try {
+          const finalFiles = listFilesRecursively(runDir);
+          for (const filePath of finalFiles) {
+              if (!initialFiles.has(filePath)) {
+                   const content = pyodide.FS.readFile(filePath);
+                   const fileBuffer = ensureArrayBuffer(content);
+                   generatedOutputFiles.push({
+                       name: filePath,
+                       data: fileBuffer,
+                       type: getMimeType(filePath)
+                   });
+                   transferBuffers.push(fileBuffer);
+              }
+          }
+      } catch (outputError) {
+          console.error("Error reading output files", normalizeErrorMessage(outputError));
+      }
+
       let image = null;
       const hasPlot = pyodide.runPython(\`
         try:
@@ -222,48 +216,48 @@ self.onmessage = async (event) => {
       \`);
 
       if (hasPlot) {
-         pyodide.runPython(\`
-           import io, base64
-           plotBuffer = io.BytesIO()
-           plt.savefig(plotBuffer, format='png', bbox_inches='tight')
-           plotBuffer.seek(0)
-           plotImageBase64 = base64.b64encode(plotBuffer.read()).decode('utf-8')
-           plt.clf()
-         \`);
-         image = pyodide.globals.get('plotImageBase64');
-         pyodide.runPython("del plotImageBase64");
-      }
-
-      const generatedOutputFiles = [];
-      try {
-          const finalFiles = listFilesRecursively(runDir);
-          for (const filePath of finalFiles) {
-              if (!initialFiles.has(filePath)) {
-                   const content = pyodide.FS.readFile(filePath);
-                   generatedOutputFiles.push({
-                       name: filePath,
-                       data: arrayBufferToBase64(content),
-                       type: getMimeType(filePath)
-                   });
-              }
+          const plotPath = runDir + '/__matplotlib_plot__.png';
+          pyodide.runPython(
+              "import matplotlib.pyplot as plt\\n" +
+              "plt.savefig(" + JSON.stringify(plotPath) + ", format='png', bbox_inches='tight')\\n" +
+              "plt.close('all')"
+          );
+          try {
+              const content = pyodide.FS.readFile(plotPath);
+              image = ensureArrayBuffer(content);
+              pyodide.FS.unlink(plotPath);
+          } catch (plotReadError) {
+              // best-effort plot extraction
           }
-      } catch (outputError) {
-          console.error("Error reading output files", outputError);
       }
 
       if (image && generatedOutputFiles.some((file) => file.type.startsWith('image/'))) {
           image = null;
+      } else if (image) {
+          transferBuffers.push(image);
       }
 
-      self.postMessage({ 
-        id, 
-        status: 'success', 
-        output: stdout.join('\\n'), 
+      self.postMessage({
+        id,
+        status: 'success',
+        output: stdout.join('\\n'),
         image,
         files: generatedOutputFiles,
         result: result !== undefined ? String(result) : undefined
-      });
+      }, transferBuffers);
     } finally {
+      try {
+          pyodide.runPython(
+              "try:\\n" +
+              "    import matplotlib.pyplot as plt\\n" +
+              "    plt.close('all')\\n" +
+              "    plt.rcdefaults()\\n" +
+              "except Exception:\\n" +
+              "    pass"
+          );
+      } catch (cleanupError) {
+          // best-effort isolation cleanup between runs
+      }
       try {
           pyodide.FS.chdir(previousDir);
       } catch (error) {
@@ -273,7 +267,7 @@ self.onmessage = async (event) => {
     }
 
   } catch (executionError) {
-    self.postMessage({ id, status: 'error', error: executionError.message });
+    self.postMessage({ id, status: 'error', error: normalizeErrorMessage(executionError) });
   }
 };
 `;

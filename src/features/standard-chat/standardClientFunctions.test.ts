@@ -26,7 +26,7 @@ describe('createStandardClientFunctions', () => {
     const runPython = vi.fn(async () => ({
       output: '42',
       result: '42',
-      image: 'Zm9v',
+      image: new ArrayBuffer(8),
       files: [],
     }));
 

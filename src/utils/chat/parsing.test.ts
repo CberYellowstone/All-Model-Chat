@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { parseThoughtProcess } from './parsing';
+import { parseThoughtProcess, createUploadedFileFromBytes } from './parsing';
+
+describe('createUploadedFileFromBytes', () => {
+  it('builds an UploadedFile directly from an ArrayBuffer without base64 decoding', () => {
+    const buffer = new ArrayBuffer(3);
+    new Uint8Array(buffer).set([1, 2, 3]);
+
+    const file = createUploadedFileFromBytes(buffer, 'image/png', 'plot');
+
+    expect(file.type).toBe('image/png');
+    expect(file.name).toMatch(/^plot\.png$/);
+    expect(file.size).toBe(3);
+    expect(file.rawFile).toBeInstanceOf(File);
+    expect(file.uploadState).toBe('active');
+    expect(file.id).toEqual(expect.any(String));
+    expect(file.dataUrl).toEqual(expect.any(String));
+  });
+});
 
 describe('parseThoughtProcess', () => {
   it('returns null for undefined input', () => {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronUp, X, Terminal, AlertTriangle, FileOutput, RotateCcw } from 'lucide-react';
 import { type SideViewContent } from '@/types';
 import { useCodeBlock } from '@/hooks/ui/useCodeBlock';
@@ -7,6 +7,7 @@ import { CodeHeader } from './parts/CodeHeader';
 import { ArtifactFrame } from './ArtifactFrame';
 import { extractTextFromNode } from '@/utils/reactNodeText';
 import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { FileDisplay } from '@/components/message/FileDisplay';
 import { useI18n } from '@/contexts/I18nContext';
 import {
@@ -97,20 +98,41 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
 
   const generatedFiles = useMemo(() => {
     return files.map((file, fileIndex) => {
-      const dataUrl = `data:${file.type};base64,${file.data}`;
+      const blob = new Blob([file.data], { type: file.type });
       // Build a file-like wrapper so FileDisplay can render generated artifacts.
       return {
         id: `generated-file-${fileIndex}`,
         name: file.name,
         type: file.type,
-        size: 0, // Size is unknown for generated artifacts.
-        dataUrl,
+        size: file.data.byteLength,
+        dataUrl: createManagedObjectUrl(blob),
         uploadState: 'active' as const,
       };
     });
   }, [files]);
 
-  const displayInlineImage = image && !generatedFiles.some((file) => isImageMimeType(file.type));
+  // Object URLs are external resources that outlive the render that created
+  // them; release the previous batch whenever the derived entries change.
+  useEffect(() => {
+    return () => {
+      for (const entry of generatedFiles) {
+        releaseManagedObjectUrl(entry.dataUrl);
+      }
+    };
+  }, [generatedFiles]);
+
+  const imageUrl = useMemo(() => {
+    if (!image) return null;
+    const blob = new Blob([image], { type: 'image/png' });
+    return createManagedObjectUrl(blob);
+  }, [image]);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    return () => releaseManagedObjectUrl(imageUrl);
+  }, [imageUrl]);
+
+  const displayInlineImage = imageUrl && !generatedFiles.some((file) => isImageMimeType(file.type)) ? imageUrl : null;
   const isInteractive = props.showPreviewControls ?? true;
   const showPreviewControls = isInteractive && showPreview;
   const interactionSpec = useMemo(
@@ -256,11 +278,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
 
             {displayInlineImage && (
               <div className="mt-2 mb-2 rounded-lg overflow-hidden border border-[var(--theme-border-secondary)] inline-block bg-white">
-                <img
-                  src={`data:image/png;base64,${displayInlineImage}`}
-                  alt={t('codePlotAlt')}
-                  className="max-w-full h-auto block"
-                />
+                <img src={displayInlineImage} alt={t('codePlotAlt')} className="max-w-full h-auto block" />
               </div>
             )}
 

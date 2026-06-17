@@ -46,9 +46,9 @@ describe('developer experience detail boundaries', () => {
     }
 
     expect(workerTemplateSource).toContain('byteLength');
-    expect(workerTemplateSource).toContain('plotBuffer');
-    expect(workerTemplateSource).toContain('plotImageBase64');
+    expect(workerTemplateSource).toContain('ensureArrayBuffer');
     expect(workerTemplateSource).toContain('generatedOutputFiles');
+    expect(workerTemplateSource).toContain("'WARMUP'");
   });
 
   it('keeps install commands consistent with the npmrc dependency policy', () => {

@@ -47,6 +47,9 @@ const createService = (overrides: Partial<ConstructorParameters<typeof PyodideSe
     createObjectUrl,
     revokeObjectUrl,
     createRequestId: () => ids.shift() ?? `req-${Date.now()}`,
+    // Keep the idle reclaim window tiny in tests so the feature is exercised
+    // without forcing every test to drive a multi-minute fake clock.
+    idleTimeoutMs: 1000,
     ...overrides,
   });
 
@@ -110,6 +113,34 @@ describe('buildPyodideWorkerScript', () => {
     expect(workerCode).toContain('const runDir =');
     expect(workerCode).toContain('pyodide.FS.chdir(runDir)');
     expect(workerCode).toContain('removePath(runDir)');
+  });
+
+  it('does not base64-encode generated output files (zero-copy ArrayBuffer transfer)', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).not.toContain('arrayBufferToBase64');
+    expect(workerCode).not.toMatch(/\sbtoa\(/);
+  });
+
+  it('exposes a WARMUP message handler that preloads the runtime without executing code', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).toContain("'WARMUP'");
+    expect(workerCode).toContain('loadPyodideAndPackages');
+  });
+
+  it('closes all matplotlib figures and resets rcParams between runs', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).toContain("plt.close('all')");
+    expect(workerCode).toContain('plt.rcdefaults()');
+  });
+
+  it('walks files via currentPath without a misleading basePath parameter', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).not.toContain('function listFilesRecursively(basePath');
+    expect(workerCode).toContain('listFilesRecursively(runDir)');
   });
 });
 
@@ -222,42 +253,7 @@ describe('PyodideService', () => {
     });
   });
 
-  it('mounts raw file buffers through the worker and resolves on mount completion', async () => {
-    const { service, workers, createObjectUrl, revokeObjectUrl } = createService();
-    const [worker] = workers;
-    const csvFile = new File(['a,b\n1,2\n'], 'dataset.csv', { type: 'text/csv' });
-
-    const mountPromise = service.mountFiles([
-      createUploadedFile({
-        id: 'file-1',
-        name: 'dataset.csv',
-        type: 'text/csv',
-        size: csvFile.size,
-        rawFile: csvFile,
-      }),
-    ]);
-
-    await waitForWorkerPost();
-
-    expect(createObjectUrl).toHaveBeenCalledTimes(1);
-    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:pyodide-worker');
-    expect(worker.postMessage).toHaveBeenCalledTimes(1);
-
-    const [message, transferredBuffers] = worker.postMessage.mock.calls[0];
-    expect(message.type).toBe('MOUNT_FILES');
-    expect(message.id).toBe('mount-1');
-    expect(message.files).toHaveLength(1);
-    expect(message.files[0].name).toBe('dataset.csv');
-    expect(message.files[0].data).toBeInstanceOf(ArrayBuffer);
-    expect(transferredBuffers).toHaveLength(1);
-    expect(transferredBuffers[0]).toBe(message.files[0].data);
-
-    worker.emit({ id: 'mount-1', status: 'success', type: 'MOUNT_COMPLETE' });
-
-    await expect(mountPromise).resolves.toBeUndefined();
-  });
-
-  it('resolves execution payloads posted back from the worker', async () => {
+  it('resolves execution payloads posted back from the worker as zero-copy ArrayBuffers', async () => {
     const { service, workers } = createService();
     const [worker] = workers;
 
@@ -275,24 +271,25 @@ describe('PyodideService', () => {
       [],
     );
 
+    const imageBuffer = new ArrayBuffer(8);
+    const fileBuffer = new ArrayBuffer(3);
     const payload: Omit<ExecutionResult, 'status'> & { id: string; status: 'success' } = {
       id: 'mount-1',
       status: 'success',
       output: 'hello',
-      image: 'base64-image',
-      files: [{ name: 'chart.png', data: 'Zm9v', type: 'image/png' }],
+      image: imageBuffer,
+      files: [{ name: 'chart.png', data: fileBuffer, type: 'image/png' }],
       result: 'None',
     };
 
     worker.emit(payload);
 
-    await expect(runPromise).resolves.toEqual({
-      status: 'success',
-      output: 'hello',
-      image: 'base64-image',
-      files: [{ name: 'chart.png', data: 'Zm9v', type: 'image/png' }],
-      result: 'None',
-    });
+    const result = await runPromise;
+    expect(result.status).toBe('success');
+    expect(result.output).toBe('hello');
+    expect(result.image).toBe(imageBuffer);
+    expect(result.files).toHaveLength(1);
+    expect(result.files?.[0].data).toBe(fileBuffer);
   });
 
   it('sends execution-scoped files with each python request', async () => {
@@ -336,41 +333,52 @@ describe('PyodideService', () => {
     await expect(runPromise).resolves.toEqual({
       status: 'success',
       output: 'hello',
-      image: undefined,
-      files: undefined,
+      image: null,
+      files: [],
       result: undefined,
     });
   });
 
-  it('rejects python execution after the safety timeout', async () => {
+  it('rejects python execution after the safety timeout and warms up a replacement worker', async () => {
     vi.useFakeTimers();
 
-    const { service } = createService();
-    const runPromise = service.runPython('print("slow")');
-    const rejection = expect(runPromise).rejects.toThrow('Execution timed out (60s)');
+    const { service, workers, createWorker } = createService();
+    const [firstWorker, secondWorker] = workers;
 
+    const timedOutRun = service.runPython('print("slow")');
+    const timedOutRejection = expect(timedOutRun).rejects.toThrow('Execution timed out (60s)');
     await vi.advanceTimersByTimeAsync(60_000);
+    await timedOutRejection;
 
-    await rejection;
+    expect(firstWorker.terminate).toHaveBeenCalledTimes(1);
+
+    // The aborted worker is replaced immediately so the next request skips the
+    // cold Pyodide load. The replacement is warmed up in the background.
+    expect(createWorker).toHaveBeenCalledTimes(2);
+    expect(secondWorker.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'WARMUP' }), []);
+
+    vi.useRealTimers();
   });
 
-  it('aborts an in-flight execution when the abort signal fires', async () => {
-    const { service, workers } = createService();
-    const [worker] = workers;
+  it('aborts an in-flight execution when the abort signal fires and warms up a replacement', async () => {
+    const { service, workers, createWorker } = createService();
+    const [firstWorker, secondWorker] = workers;
     const abortController = new AbortController();
 
     const runPromise = service.runPython('print("slow")', {
       abortSignal: abortController.signal,
     });
 
-    await flushMicrotasks();
+    await waitForWorkerPost();
     abortController.abort();
 
     await expect(runPromise).rejects.toMatchObject({
       name: 'AbortError',
       message: 'Execution aborted.',
     });
-    expect(worker.terminate).toHaveBeenCalledTimes(1);
+    expect(firstWorker.terminate).toHaveBeenCalledTimes(1);
+    expect(createWorker).toHaveBeenCalledTimes(2);
+    expect(secondWorker.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'WARMUP' }), []);
   });
 
   it('aborts while preparing attachment buffers before the worker request starts', async () => {
@@ -407,7 +415,7 @@ describe('PyodideService', () => {
     expect(delayedFile.streamCancelled).toBe(true);
   });
 
-  it('rejects overlapping requests while attachment preparation is still in progress', async () => {
+  it('queues overlapping requests while attachment preparation is still in progress', async () => {
     vi.useFakeTimers();
 
     const { service, workers } = createService();
@@ -427,13 +435,16 @@ describe('PyodideService', () => {
     });
     const secondRun = service.runPython('print("second")');
 
-    await expect(secondRun).rejects.toThrow('Pyodide request already in progress');
+    // The second request does NOT reject — it waits in the queue while the
+    // first request is still preparing its attachments.
+    await flushMicrotasks();
     expect(worker.postMessage).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1000);
     await flushMicrotasks();
 
-    expect(worker.postMessage).toHaveBeenCalledWith(
+    expect(worker.postMessage).toHaveBeenNthCalledWith(
+      1,
       {
         id: 'mount-1',
         type: 'RUN_PYTHON',
@@ -457,10 +468,90 @@ describe('PyodideService', () => {
     await expect(firstRun).resolves.toEqual({
       status: 'success',
       output: 'first',
-      image: undefined,
-      files: undefined,
+      image: null,
+      files: [],
       result: undefined,
     });
+
+    // The queued second request now runs.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(worker.postMessage).toHaveBeenNthCalledWith(
+      2,
+      {
+        id: 'run-1',
+        type: 'RUN_PYTHON',
+        code: 'print("second")',
+        files: [],
+      },
+      [],
+    );
+
+    worker.emit({
+      id: 'run-1',
+      status: 'success',
+      output: 'second',
+    });
+
+    await expect(secondRun).resolves.toEqual({
+      status: 'success',
+      output: 'second',
+      image: null,
+      files: [],
+      result: undefined,
+    });
+  });
+
+  it('executes queued requests in FIFO order', async () => {
+    const { service, workers } = createService();
+    const [worker] = workers;
+
+    const first = service.runPython('print("a")');
+    const second = service.runPython('print("b")');
+    const third = service.runPython('print("c")');
+
+    await waitForWorkerPost();
+    // Only the head of the queue has been posted; the rest wait.
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage.mock.calls[0][0].code).toBe('print("a")');
+
+    worker.emit({ id: 'mount-1', status: 'success', output: 'a' });
+    await expect(first).resolves.toMatchObject({ output: 'a' });
+
+    await waitForWorkerPost();
+    expect(worker.postMessage.mock.calls[1][0].code).toBe('print("b")');
+    worker.emit({ id: 'run-1', status: 'success', output: 'b' });
+    await expect(second).resolves.toMatchObject({ output: 'b' });
+
+    await waitForWorkerPost();
+    expect(worker.postMessage.mock.calls[2][0].code).toBe('print("c")');
+    worker.emit({ id: 'run-2', status: 'success', output: 'c' });
+    await expect(third).resolves.toMatchObject({ output: 'c' });
+  });
+
+  it('aborts a queued request without terminating the in-flight worker', async () => {
+    const { service, workers } = createService();
+    const [worker] = workers;
+
+    const firstRun = service.runPython('print("first")');
+    const abortController = new AbortController();
+    const secondRun = service.runPython('print("second")', { abortSignal: abortController.signal });
+
+    await waitForWorkerPost();
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+
+    // Abort the request that is still waiting in the queue.
+    abortController.abort();
+    await expect(secondRun).rejects.toMatchObject({
+      name: 'AbortError',
+      message: 'Execution aborted.',
+    });
+
+    // The in-flight worker is untouched; cancelling a queued request must not
+    // tear down a healthy runtime.
+    expect(worker.terminate).not.toHaveBeenCalled();
+
+    worker.emit({ id: 'mount-1', status: 'success', output: 'first' });
+    await expect(firstRun).resolves.toMatchObject({ output: 'first' });
   });
 
   it('clears pending request bookkeeping when worker postMessage throws synchronously', async () => {
@@ -499,55 +590,13 @@ describe('PyodideService', () => {
     await expect(recoveredRun).resolves.toEqual({
       status: 'success',
       output: 'after clone error',
-      image: undefined,
-      files: undefined,
+      image: null,
+      files: [],
       result: undefined,
     });
   });
 
-  it('recreates the worker after a timed out execution so the next request can recover', async () => {
-    vi.useFakeTimers();
-
-    const { service, workers, createWorker } = createService();
-    const [firstWorker, secondWorker] = workers;
-
-    const timedOutRun = service.runPython('print("slow")');
-    const timedOutRejection = expect(timedOutRun).rejects.toThrow('Execution timed out (60s)');
-    await vi.advanceTimersByTimeAsync(60_000);
-    await timedOutRejection;
-
-    expect(firstWorker.terminate).toHaveBeenCalledTimes(1);
-
-    const recoveredRun = service.runPython('print("recovered")');
-    await flushMicrotasks();
-
-    expect(createWorker).toHaveBeenCalledTimes(2);
-    expect(secondWorker.postMessage).toHaveBeenCalledWith(
-      {
-        id: 'run-1',
-        type: 'RUN_PYTHON',
-        code: 'print("recovered")',
-        files: [],
-      },
-      [],
-    );
-
-    secondWorker.emit({
-      id: 'run-1',
-      status: 'success',
-      output: 'recovered',
-    });
-
-    await expect(recoveredRun).resolves.toEqual({
-      status: 'success',
-      output: 'recovered',
-      image: undefined,
-      files: undefined,
-      result: undefined,
-    });
-  });
-
-  it('resets the worker after a fatal worker error and rejects the in-flight request', async () => {
+  it('recreates the worker after a fatal worker error and rejects the in-flight request', async () => {
     const { service, workers, createWorker } = createService();
     const [firstWorker, secondWorker] = workers;
 
@@ -571,35 +620,72 @@ describe('PyodideService', () => {
     await expect(recoveredRun).resolves.toEqual({
       status: 'success',
       output: 'after crash',
-      image: undefined,
-      files: undefined,
+      image: null,
+      files: [],
       result: undefined,
     });
   });
 
-  it('rejects overlapping executions while a request is already running', async () => {
+  it('terminates the worker after the idle reclaim window elapses', async () => {
+    vi.useFakeTimers();
+
+    const { service, workers } = createService({ idleTimeoutMs: 1000 });
+    const [worker] = workers;
+
+    const run = service.runPython('print("hi")');
+    await vi.advanceTimersByTimeAsync(0);
+    worker.emit({ id: 'mount-1', status: 'success', output: 'hi' });
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(run).resolves.toMatchObject({ output: 'hi' });
+
+    expect(worker.terminate).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels the idle timer when a new request arrives before reclaim', async () => {
+    vi.useFakeTimers();
+
+    const { service, workers } = createService({ idleTimeoutMs: 1000 });
+    const [worker] = workers;
+
+    const first = service.runPython('print("a")');
+    await vi.advanceTimersByTimeAsync(0);
+    worker.emit({ id: 'mount-1', status: 'success', output: 'a' });
+    await vi.advanceTimersByTimeAsync(0);
+    await first;
+
+    // Part-way through the idle window a new request arrives.
+    await vi.advanceTimersByTimeAsync(500);
+    const second = service.runPython('print("b")');
+    await vi.advanceTimersByTimeAsync(0);
+    worker.emit({ id: 'run-1', status: 'success', output: 'b' });
+    await vi.advanceTimersByTimeAsync(0);
+    await second;
+
+    // Advancing past the original idle deadline must NOT terminate the worker,
+    // because the timer was reset by the second request.
+    await vi.advanceTimersByTimeAsync(700);
+    expect(worker.terminate).not.toHaveBeenCalled();
+  });
+
+  it('disposes the worker, clears pending state, and rejects queued requests', async () => {
     const { service, workers } = createService();
     const [worker] = workers;
 
     const firstRun = service.runPython('print("first")');
     const secondRun = service.runPython('print("second")');
+    await waitForWorkerPost();
 
-    await expect(secondRun).rejects.toThrow('Pyodide request already in progress');
-    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    service.dispose();
 
-    worker.emit({
-      id: 'mount-1',
-      status: 'success',
-      output: 'first',
-    });
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+    await expect(firstRun).rejects.toThrow();
+    await expect(secondRun).rejects.toThrow();
 
-    await expect(firstRun).resolves.toEqual({
-      status: 'success',
-      output: 'first',
-      image: undefined,
-      files: undefined,
-      result: undefined,
-    });
+    const serviceInternals = service as unknown as PyodideServiceInternals;
+    expect(serviceInternals.pendingPromises.size).toBe(0);
   });
 
   it('binds the default timeout implementation so browser native timers do not throw illegal invocation', async () => {
@@ -633,8 +719,8 @@ describe('PyodideService', () => {
       await expect(runPromise).resolves.toEqual({
         status: 'success',
         output: 'bound',
-        image: undefined,
-        files: undefined,
+        image: null,
+        files: [],
         result: undefined,
       });
     } finally {

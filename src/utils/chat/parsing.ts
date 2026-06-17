@@ -86,3 +86,30 @@ export const createUploadedFileFromBase64 = (
     uploadState: 'active',
   };
 };
+
+/**
+ * Creates an UploadedFile directly from raw bytes, skipping the base64
+ * encode/decode round-trip used by {@link createUploadedFileFromBase64}.
+ * Used for Pyodide execution artifacts, which arrive as zero-copy ArrayBuffers.
+ */
+export const createUploadedFileFromBytes = (
+  bytes: ArrayBuffer,
+  mimeType: string,
+  baseName: string = 'generated-file',
+): UploadedFile => {
+  const extension = getExtensionFromMimeType(mimeType);
+  const fileName = buildGeneratedFileName(baseName, extension);
+
+  const file = new File([bytes], fileName, { type: mimeType });
+  const dataUrl = createManagedObjectUrl(file);
+
+  return {
+    id: generateUniqueId(),
+    name: fileName,
+    type: mimeType,
+    size: bytes.byteLength,
+    dataUrl,
+    rawFile: file,
+    uploadState: 'active',
+  };
+};

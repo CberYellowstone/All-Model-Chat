@@ -6,13 +6,13 @@ import { PYODIDE_WORKER_CODE_TEMPLATE } from './pyodideWorkerTemplate';
 
 export interface PyodideFile {
   name: string;
-  data: string; // Base64
+  data: ArrayBuffer;
   type: string;
 }
 
 export interface ExecutionResult {
   output: string;
-  image?: string;
+  image?: ArrayBuffer | null;
   files?: PyodideFile[];
   result?: string;
   error?: string;
@@ -26,6 +26,7 @@ interface PyodideServiceDependencies {
   revokeObjectUrl?: (url: string) => void;
   setTimeoutFn?: typeof setTimeout;
   createRequestId?: () => string;
+  idleTimeoutMs?: number;
 }
 
 interface RunPythonOptions {
@@ -37,7 +38,23 @@ interface BuildPyodideWorkerScriptOptions {
   baseUriIsPyodideBaseUrl?: boolean;
 }
 
-const FILE_MOUNT_TIMEOUT_MS = 10000;
+interface QueuedRequest {
+  id: string;
+  code: string;
+  uploadedFiles: UploadedFile[];
+  abortSignal?: AbortSignal;
+  resolve: (result: ExecutionResult) => void;
+  reject: (error: unknown) => void;
+  aborted: boolean;
+}
+
+type PendingPyodideRequest = {
+  resolve: (result: ExecutionResult) => void;
+  reject: (error: unknown) => void;
+};
+
+const DEFAULT_IDLE_TIMEOUT_MS = 300_000;
+const DEFAULT_EXECUTION_TIMEOUT_MS = 60_000;
 
 const ensureTrailingSlash = (value: string) => value.replace(/\/?$/, '/');
 
@@ -66,11 +83,6 @@ const getBrowserPyodideBaseUri = () => {
   };
 };
 
-type PendingPyodideRequest = {
-  resolve: (result: void | ExecutionResult) => void;
-  reject: (error: unknown) => void;
-};
-
 export class PyodideService {
   private worker: Worker | null = null;
   private pendingPromises = new Map<string, PendingPyodideRequest>();
@@ -81,6 +93,11 @@ export class PyodideService {
   private readonly revokeObjectUrl: (url: string) => void;
   private readonly setTimeoutFn: typeof setTimeout;
   private readonly createRequestId: () => string;
+  private readonly idleTimeoutMs: number;
+  private queue: QueuedRequest[] = [];
+  private running = false;
+  private idleTimerVersion = 0;
+  private disposed = false;
 
   constructor({
     baseUri,
@@ -89,6 +106,7 @@ export class PyodideService {
     revokeObjectUrl,
     setTimeoutFn,
     createRequestId,
+    idleTimeoutMs,
   }: PyodideServiceDependencies = {}) {
     this.baseUri = baseUri;
     this.createWorker = createWorker ?? ((url) => new Worker(url));
@@ -96,6 +114,7 @@ export class PyodideService {
     this.revokeObjectUrl = revokeObjectUrl ?? releaseManagedObjectUrl;
     this.setTimeoutFn = setTimeoutFn ?? globalThis.setTimeout.bind(globalThis);
     this.createRequestId = createRequestId ?? (() => Math.random().toString(36).substring(7));
+    this.idleTimeoutMs = idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
   }
 
   private normalizeWorkerError(error: unknown, fallbackMessage: string) {
@@ -123,14 +142,6 @@ export class PyodideService {
     const abortError = new Error('Execution aborted.');
     abortError.name = 'AbortError';
     return abortError;
-  }
-
-  private beginRequest(id: string) {
-    if (this.activeRequestId) {
-      throw new Error('Pyodide request already in progress');
-    }
-
-    this.activeRequestId = id;
   }
 
   private completeRequest(id: string) {
@@ -166,101 +177,211 @@ export class PyodideService {
       promise.reject(normalizedError);
       this.pendingPromises.delete(id);
     }
+
+    // Abort/timeout/fatal-error all tear down the worker (Pyodide cannot be
+    // interrupted cleanly mid-C-extension). Immediately bring up a replacement
+    // and warm it up so the next request skips the multi-megabyte cold load.
+    this.warmupReplacement();
+  }
+
+  private warmupReplacement() {
+    if (this.disposed) {
+      return;
+    }
+    this.initWorker();
+    this.worker?.postMessage({ type: 'WARMUP' }, []);
   }
 
   private initWorker() {
-    if (!this.worker) {
-      const workerScriptInput = this.baseUri
-        ? { baseUri: this.baseUri, baseUriIsPyodideBaseUrl: false }
-        : getBrowserPyodideBaseUri();
-      const { pyodideBaseUrl, workerCode } = buildPyodideWorkerScript(workerScriptInput.baseUri, {
-        baseUriIsPyodideBaseUrl: workerScriptInput.baseUriIsPyodideBaseUrl,
-      });
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
-      const url = this.createObjectUrl(blob);
-
-      this.worker = this.createWorker(url);
-      this.worker.onmessage = this.handleMessage.bind(this);
-      this.worker.onerror = (event) => {
-        this.resetWorker(event, { skipRejectIds: [] });
-      };
-      this.worker.onmessageerror = (event) => {
-        this.resetWorker(event, { skipRejectIds: [] });
-      };
-
-      // Clean up the object URL after worker creation
-      this.revokeObjectUrl(url);
-
-      logService.info('Pyodide Worker initialized (Local Mode)', { baseUrl: pyodideBaseUrl });
+    if (this.worker) {
+      return;
     }
+
+    const workerScriptInput = this.baseUri
+      ? { baseUri: this.baseUri, baseUriIsPyodideBaseUrl: false }
+      : getBrowserPyodideBaseUri();
+    const { pyodideBaseUrl, workerCode } = buildPyodideWorkerScript(workerScriptInput.baseUri, {
+      baseUriIsPyodideBaseUrl: workerScriptInput.baseUriIsPyodideBaseUrl,
+    });
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const url = this.createObjectUrl(blob);
+
+    this.worker = this.createWorker(url);
+    this.worker.onmessage = this.handleMessage.bind(this);
+    this.worker.onerror = (event) => {
+      this.resetWorker(event, { skipRejectIds: [] });
+    };
+    this.worker.onmessageerror = (event) => {
+      this.resetWorker(event, { skipRejectIds: [] });
+    };
+
+    // Clean up the object URL after worker creation
+    this.revokeObjectUrl(url);
+
+    logService.info('Pyodide Worker initialized (Local Mode)', { baseUrl: pyodideBaseUrl });
   }
 
   private handleMessage(event: MessageEvent) {
     const { id, status, output, image, files, result, error, type } = event.data;
+
+    // Warmup completions carry no request id and have no pending promise to settle.
+    if (type === 'WARMUP_READY') {
+      return;
+    }
+
     const promise = this.pendingPromises.get(id);
+    if (!promise) {
+      return;
+    }
 
-    if (promise) {
-      this.pendingPromises.delete(id);
-      this.completeRequest(id);
+    this.pendingPromises.delete(id);
+    this.completeRequest(id);
 
-      if (status === 'success') {
-        if (type === 'MOUNT_COMPLETE') {
-          promise.resolve(undefined);
-        } else {
-          promise.resolve({ output, image, files, result, status: 'success' });
+    if (status === 'success') {
+      promise.resolve({
+        output,
+        image: image ?? null,
+        files: files ?? [],
+        result,
+        status: 'success',
+      });
+    } else {
+      promise.reject(error);
+    }
+  }
+
+  private clearIdleTimer() {
+    // Invalidate any in-flight idle-reclaim callback by bumping the version it
+    // captured; the callback checks the version before tearing the worker down.
+    this.idleTimerVersion += 1;
+  }
+
+  private scheduleIdleReclaim() {
+    if (this.idleTimeoutMs <= 0 || !this.worker) {
+      return;
+    }
+    const version = ++this.idleTimerVersion;
+    this.setTimeoutFn(() => {
+      if (version !== this.idleTimerVersion || this.disposed) {
+        return;
+      }
+      if (!this.running && this.queue.length === 0 && this.worker) {
+        this.terminateWorker();
+        logService.info('Pyodide Worker reclaimed after idle');
+      }
+    }, this.idleTimeoutMs);
+  }
+
+  private async drain() {
+    if (this.running || this.disposed) {
+      return;
+    }
+    this.running = true;
+    try {
+      while (!this.disposed && this.queue.length > 0) {
+        const req = this.queue.shift() as QueuedRequest;
+        if (req.aborted) {
+          req.reject(this.createAbortError());
+          continue;
         }
-      } else {
-        promise.reject(error);
+        try {
+          const result = await this.executeRequest(req);
+          if (!this.disposed) {
+            req.resolve(result);
+          }
+        } catch (error) {
+          req.reject(error);
+        }
+      }
+    } finally {
+      this.running = false;
+      if (!this.disposed) {
+        this.scheduleIdleReclaim();
       }
     }
   }
 
-  public async mountFiles(files: UploadedFile[]): Promise<void> {
+  private async executeRequest(req: QueuedRequest): Promise<ExecutionResult> {
+    this.clearIdleTimer();
     this.initWorker();
-    const id = this.createRequestId();
+    this.activeRequestId = req.id;
+    const abortSignal = req.abortSignal;
+    const abortError = this.createAbortError();
 
-    const filesToMount = await Promise.all(
-      files.map(async (f) => {
-        if (!f.rawFile) return null;
-        const buffer = await f.rawFile.arrayBuffer();
-        return { name: f.name, data: buffer };
-      }),
-    );
+    if (abortSignal?.aborted || req.aborted) {
+      this.activeRequestId = null;
+      throw abortError;
+    }
 
-    const validFiles = filesToMount.filter((file): file is { name: string; data: ArrayBuffer } => file !== null);
+    let files: Array<{ name: string; data: ArrayBuffer }>;
+    try {
+      files = await this.prepareExecutionFiles(req.uploadedFiles, abortSignal);
+    } catch (error) {
+      this.activeRequestId = null;
+      throw error;
+    }
 
-    if (validFiles.length === 0) return;
+    if (abortSignal?.aborted || req.aborted) {
+      this.activeRequestId = null;
+      throw abortError;
+    }
 
-    return new Promise<void>((resolve, reject) => {
-      try {
-        this.beginRequest(id);
-      } catch (error) {
+    return this.dispatchToWorker(req, files);
+  }
+
+  private dispatchToWorker(
+    req: QueuedRequest,
+    files: Array<{ name: string; data: ArrayBuffer }>,
+  ): Promise<ExecutionResult> {
+    const abortSignal = req.abortSignal;
+    const abortError = this.createAbortError();
+
+    return new Promise<ExecutionResult>((resolve, reject) => {
+      const cleanup = () => {
+        abortSignal?.removeEventListener('abort', handleAbort);
+        this.completeRequest(req.id);
+      };
+      const resolveWithCleanup = (value: ExecutionResult) => {
+        cleanup();
+        resolve(value);
+      };
+      const rejectWithCleanup = (error: unknown) => {
+        cleanup();
         reject(error);
+      };
+      const handleAbort = () => {
+        // Only the in-flight request (already dispatched) is cancelled here.
+        // Queued-but-not-yet-dispatched aborts are rejected directly in runPython.
+        if (this.pendingPromises.has(req.id)) {
+          this.pendingPromises.delete(req.id);
+          this.resetWorker(abortError);
+          rejectWithCleanup(abortError);
+        }
+      };
+
+      abortSignal?.addEventListener('abort', handleAbort, { once: true });
+
+      this.pendingPromises.set(req.id, {
+        resolve: resolveWithCleanup,
+        reject: rejectWithCleanup,
+      });
+
+      try {
+        const buffers = files.map((file) => file.data);
+        this.worker?.postMessage({ id: req.id, type: 'RUN_PYTHON', code: req.code, files }, buffers);
+      } catch (error) {
+        this.pendingPromises.delete(req.id);
+        rejectWithCleanup(error);
         return;
       }
 
-      this.pendingPromises.set(id, { resolve: resolve as PendingPyodideRequest['resolve'], reject });
-
-      const fileTransferBuffers = validFiles.map((file) => file.data);
-
-      this.worker?.postMessage(
-        {
-          type: 'MOUNT_FILES',
-          id,
-          files: validFiles,
-        },
-        fileTransferBuffers,
-      );
-
       this.setTimeoutFn(() => {
-        if (this.pendingPromises.has(id)) {
-          this.pendingPromises.delete(id);
-          this.completeRequest(id);
-          this.resetWorker(new Error('File mount timed out'), { skipRejectIds: [id] });
-          logService.warn('File mount timed out');
-          resolve();
+        if (this.pendingPromises.has(req.id)) {
+          this.pendingPromises.delete(req.id);
+          this.resetWorker(new Error('Execution timed out (60s)'), { skipRejectIds: [req.id] });
+          rejectWithCleanup(new Error('Execution timed out (60s)'));
         }
-      }, FILE_MOUNT_TIMEOUT_MS);
+      }, DEFAULT_EXECUTION_TIMEOUT_MS);
     });
   }
 
@@ -351,72 +472,60 @@ export class PyodideService {
     return preparedFiles;
   }
 
-  public async runPython(code: string, options: RunPythonOptions = {}): Promise<ExecutionResult> {
-    this.initWorker();
+  public runPython(code: string, options: RunPythonOptions = {}): Promise<ExecutionResult> {
     const id = this.createRequestId();
     const abortSignal = options.abortSignal;
-    const abortError = this.createAbortError();
 
     if (abortSignal?.aborted) {
-      throw abortError;
+      return Promise.reject(this.createAbortError());
     }
-    this.beginRequest(id);
 
-    try {
-      const files = await this.prepareExecutionFiles(options.files, abortSignal);
-      if (abortSignal?.aborted) {
-        throw abortError;
-      }
+    return new Promise<ExecutionResult>((resolve, reject) => {
+      const req: QueuedRequest = {
+        id,
+        code,
+        uploadedFiles: options.files ?? [],
+        abortSignal,
+        resolve,
+        reject,
+        aborted: false,
+      };
 
-      return await new Promise<ExecutionResult>((resolve, reject) => {
-        const cleanupAbortListener = () => {
-          abortSignal?.removeEventListener('abort', handleAbort);
-        };
-        const resolveWithCleanup = (value: void | ExecutionResult) => {
-          cleanupAbortListener();
-          resolve(value as ExecutionResult);
-        };
-        const rejectWithCleanup = (error: unknown) => {
-          cleanupAbortListener();
-          reject(error);
-        };
-        const handleAbort = () => {
-          if (!this.pendingPromises.has(id)) {
-            return;
-          }
-          this.resetWorker(abortError);
-        };
-
-        abortSignal?.addEventListener('abort', handleAbort, { once: true });
-
-        this.pendingPromises.set(id, {
-          resolve: resolveWithCleanup as PendingPyodideRequest['resolve'],
-          reject: rejectWithCleanup,
-        });
-        try {
-          const buffers = files.map((file) => file.data);
-          this.worker?.postMessage({ id, type: 'RUN_PYTHON', code, files }, buffers);
-        } catch (error) {
-          this.pendingPromises.delete(id);
-          this.completeRequest(id);
-          rejectWithCleanup(error);
-          return;
+      // Reject a queued request the moment it is aborted, without waiting for
+      // the in-flight request ahead of it to finish and without touching the
+      // healthy worker.
+      const onAbort = () => {
+        req.aborted = true;
+        const idx = this.queue.indexOf(req);
+        if (idx >= 0) {
+          this.queue.splice(idx, 1);
+          req.reject(this.createAbortError());
         }
+      };
+      abortSignal?.addEventListener('abort', onAbort, { once: true });
 
-        // Timeout safety
-        this.setTimeoutFn(() => {
-          if (this.pendingPromises.has(id)) {
-            this.pendingPromises.delete(id);
-            this.completeRequest(id);
-            this.resetWorker(new Error('Execution timed out (60s)'), { skipRejectIds: [id] });
-            rejectWithCleanup(new Error('Execution timed out (60s)'));
-          }
-        }, 60000);
-      });
-    } catch (error) {
-      this.completeRequest(id);
-      throw error;
+      this.queue.push(req);
+      void this.drain();
+    });
+  }
+
+  public dispose() {
+    this.disposed = true;
+    this.clearIdleTimer();
+
+    const error = new Error('Pyodide service disposed.');
+    const queued = this.queue;
+    this.queue = [];
+    for (const req of queued) {
+      req.reject(error);
     }
+    const pending = [...this.pendingPromises.values()];
+    this.pendingPromises.clear();
+    for (const promise of pending) {
+      promise.reject(error);
+    }
+    this.activeRequestId = null;
+    this.terminateWorker();
   }
 }
 

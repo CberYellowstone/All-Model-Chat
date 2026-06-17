@@ -4,19 +4,59 @@ import { getPyodideService, type PyodideFile } from './loadPyodideService';
 interface PyodideState {
   isRunning: boolean;
   output: string | null;
-  image: string | null;
+  image: ArrayBuffer | null;
   files: PyodideFile[];
   error: string | null;
   hasRun: boolean;
 }
 
-// Global cache to persist manual execution results across virtual list unmounts
+/**
+ * Upper bound on how many execution results stay cached. Each entry can hold
+ * base64-encoded images/files (potentially several MB), so without a cap a long
+ * session leaks memory as every distinct code block adds an entry.
+ */
+const PYODIDE_RESULT_CACHE_LIMIT = 24;
+
+// Global LRU cache to persist manual execution results across virtual list
+// unmounts (e.g. when the message list virtualizes blocks out of view).
+// Map iteration order follows insertion order, so re-inserting a key promotes
+// it to most-recently-used and the oldest entry is evicted once the cap is hit.
 const pyodideResultCache = new Map<string, PyodideState>();
+
+const readCachedResult = (codeKey: string): PyodideState | undefined => {
+  const cached = pyodideResultCache.get(codeKey);
+  if (cached) {
+    // Promote to most-recently-used so frequently viewed blocks survive eviction.
+    pyodideResultCache.delete(codeKey);
+    pyodideResultCache.set(codeKey, cached);
+  }
+  return cached;
+};
+
+const writeCachedResult = (codeKey: string, state: PyodideState) => {
+  if (pyodideResultCache.has(codeKey)) {
+    pyodideResultCache.delete(codeKey);
+  }
+  pyodideResultCache.set(codeKey, state);
+  while (pyodideResultCache.size > PYODIDE_RESULT_CACHE_LIMIT) {
+    const oldestKey = pyodideResultCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    pyodideResultCache.delete(oldestKey);
+  }
+};
+
+/** Drop every cached execution result (e.g. on session switch / clear history). */
+export const clearPyodideResultCache = () => {
+  pyodideResultCache.clear();
+};
 
 export const usePyodide = (codeKey?: string) => {
   const [state, setState] = useState<PyodideState>(() => {
     if (codeKey && pyodideResultCache.has(codeKey)) {
-      return pyodideResultCache.get(codeKey)!;
+      const cached = readCachedResult(codeKey);
+      if (cached) {
+        return cached;
+      }
     }
     return {
       isRunning: false,
@@ -40,7 +80,7 @@ export const usePyodide = (codeKey?: string) => {
       };
       setState(runningState);
       if (codeKey) {
-        pyodideResultCache.set(codeKey, runningState);
+        writeCachedResult(codeKey, runningState);
       }
 
       try {
@@ -49,10 +89,7 @@ export const usePyodide = (codeKey?: string) => {
 
         const finalState: PyodideState = {
           isRunning: false,
-          output:
-            result.output ||
-            result.result ||
-            (result.image || (result.files && result.files.length > 0) ? null : 'No output'),
+          output: result.output || (result.image || (result.files && result.files.length > 0) ? null : 'No output'),
           image: result.image || null,
           files: result.files || [],
           error: null,
@@ -60,7 +97,7 @@ export const usePyodide = (codeKey?: string) => {
         };
         setState(finalState);
         if (codeKey) {
-          pyodideResultCache.set(codeKey, finalState);
+          writeCachedResult(codeKey, finalState);
         }
         return finalState;
       } catch (executionError) {
@@ -74,7 +111,7 @@ export const usePyodide = (codeKey?: string) => {
         };
         setState(errorState);
         if (codeKey) {
-          pyodideResultCache.set(codeKey, errorState);
+          writeCachedResult(codeKey, errorState);
         }
         return errorState;
       }
