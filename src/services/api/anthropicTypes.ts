@@ -5,6 +5,7 @@ export interface AnthropicChatConfig {
   systemInstruction?: string;
   temperature?: number;
   topP?: number;
+  thinkingBudget?: number;
 }
 
 export type AnthropicContentBlock =

@@ -46,4 +46,49 @@ describe('buildAnthropicRequestBody', () => {
     const bodyNoStream = buildAnthropicRequestBody('m', [], [{ text: 'hi' }], {}, 'user', false);
     expect(bodyNoStream.stream).toBe(false);
   });
+
+  it('enables thinking with budget_tokens for non-Fable Claude models', () => {
+    const body = buildAnthropicRequestBody(
+      'claude-sonnet-4-6',
+      [],
+      [{ text: 'hi' }],
+      { thinkingBudget: 5000 },
+      'user',
+      false,
+    ) as { thinking: { type: string; budget_tokens: number }; max_tokens: number };
+    expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 5000 });
+    expect(body.max_tokens).toBe(5000 + 8192);
+  });
+
+  it('clamps thinking budget to the Anthropic minimum (1024)', () => {
+    const body = buildAnthropicRequestBody(
+      'claude-opus-4-8',
+      [],
+      [{ text: 'hi' }],
+      { thinkingBudget: 500 },
+      'user',
+      false,
+    ) as { thinking: { budget_tokens: number } };
+    expect(body.thinking.budget_tokens).toBe(1024);
+  });
+
+  it('omits thinking for Fable 5 (adaptive thinking is always on)', () => {
+    const body = buildAnthropicRequestBody(
+      'claude-fable-5',
+      [],
+      [{ text: 'hi' }],
+      { thinkingBudget: 5000 },
+      'user',
+      false,
+    ) as { thinking?: unknown; max_tokens: number };
+    expect(body.thinking).toBeUndefined();
+    expect(body.max_tokens).toBe(8192);
+  });
+
+  it('omits thinking when no thinking budget is set', () => {
+    const body = buildAnthropicRequestBody('claude-sonnet-4-6', [], [{ text: 'hi' }], {}, 'user', false) as {
+      thinking?: unknown;
+    };
+    expect(body.thinking).toBeUndefined();
+  });
 });

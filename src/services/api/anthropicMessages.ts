@@ -70,6 +70,12 @@ const buildAnthropicMessages = (
   return messages;
 };
 
+const ANTHROPIC_OUTPUT_TOKENS = 8192;
+const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
+
+// Fable 5 has adaptive thinking always-on and does not accept the `thinking` parameter.
+const isAnthropicFableModel = (modelId: string) => /fable/i.test(modelId);
+
 export const buildAnthropicRequestBody = (
   modelId: string,
   history: ChatHistoryItem[],
@@ -82,7 +88,7 @@ export const buildAnthropicRequestBody = (
     model: modelId,
     messages: buildAnthropicMessages(history, parts, role),
     stream,
-    max_tokens: 8192,
+    max_tokens: ANTHROPIC_OUTPUT_TOKENS,
   };
 
   const systemInstruction = config.systemInstruction?.trim();
@@ -95,5 +101,12 @@ export const buildAnthropicRequestBody = (
   if (typeof config.topP === 'number') {
     body['top_p'] = config.topP;
   }
+
+  if (typeof config.thinkingBudget === 'number' && config.thinkingBudget > 0 && !isAnthropicFableModel(modelId)) {
+    const budgetTokens = Math.max(ANTHROPIC_MIN_THINKING_BUDGET, config.thinkingBudget);
+    body.thinking = { type: 'enabled', budget_tokens: budgetTokens };
+    body.max_tokens = budgetTokens + ANTHROPIC_OUTPUT_TOKENS;
+  }
+
   return body;
 };

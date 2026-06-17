@@ -176,6 +176,7 @@ export const performStandardChatApiCall = async ({
       temperature: sessionToUpdate.temperature,
       topP: sessionToUpdate.topP,
       thinkingLevel: sessionToUpdate.thinkingLevel,
+      thinkingBudget: sessionToUpdate.thinkingBudget,
     };
     const isAnthropic = activeProvider.protocol === 'anthropic';
 
