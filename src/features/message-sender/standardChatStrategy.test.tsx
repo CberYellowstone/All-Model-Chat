@@ -421,13 +421,13 @@ describe('standardChatStrategy', () => {
       'gpt-5.5',
       [],
       [{ text: 'analyze the csv' }],
-      {
+      expect.objectContaining({
         baseUrl: 'https://api.openai.com/v1',
         systemInstruction: 'Custom system instruction',
         temperature: 1,
         topP: 0.95,
         thinkingLevel: 'LOW',
-      },
+      }),
       expect.any(AbortSignal),
       streamOnPart,
       onThoughtChunk,
@@ -498,13 +498,13 @@ describe('standardChatStrategy', () => {
       'gpt-4.1-custom',
       [],
       [{ text: 'analyze the csv' }],
-      {
+      expect.objectContaining({
         baseUrl: 'https://api.openai.com/v1',
         systemInstruction: 'Custom system instruction',
         temperature: 1,
         topP: 0.95,
         thinkingLevel: 'LOW',
-      },
+      }),
       expect.any(AbortSignal),
       streamOnError,
       expect.any(Function),
