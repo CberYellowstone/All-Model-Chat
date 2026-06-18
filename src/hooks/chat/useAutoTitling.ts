@@ -87,9 +87,7 @@ export const useAutoTitling = ({
       setGeneratingTitleSessionIds((prev) => new Set(prev).add(sessionId));
       logService.info(`Auto-generating title for session ${sessionId}`);
 
-      const stickyKey = isThirdPartyApiActive(appSettings)
-        ? undefined
-        : sessionKeyMapRef?.current?.get(sessionId);
+      const stickyKey = isThirdPartyApiActive(appSettings) ? undefined : sessionKeyMapRef?.current?.get(sessionId);
 
       let keyToUse: string;
       if (stickyKey) {

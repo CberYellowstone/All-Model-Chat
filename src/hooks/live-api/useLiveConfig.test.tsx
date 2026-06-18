@@ -105,7 +105,9 @@ describe('useLiveConfig', () => {
       }),
     );
 
-    expect((result.current.liveConfig as { systemInstruction?: { parts: Array<{ text: string }> } }).systemInstruction).toEqual({
+    expect(
+      (result.current.liveConfig as { systemInstruction?: { parts: Array<{ text: string }> } }).systemInstruction,
+    ).toEqual({
       parts: [
         {
           text: `Custom live instruction\n\n${LOCAL_PYTHON_SYSTEM_PROMPT}`,

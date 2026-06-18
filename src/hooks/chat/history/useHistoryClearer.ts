@@ -5,6 +5,7 @@ import { logService } from '@/services/logService';
 import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
 import { removeSessionScopedLocalStorageEntries } from '@/utils/sessionLocalStorage';
 import { useChatDraftStore } from '@/stores/chatDraftStore';
+import { clearPyodideResultCache } from '@/features/local-python/usePyodide';
 
 interface UseHistoryClearerProps {
   savedSessions: SavedChatSession[];
@@ -49,6 +50,7 @@ export const useHistoryClearer = ({
 
     setSavedSessions([]);
     setSavedGroups([]);
+    clearPyodideResultCache();
     startNewChat();
   }, [savedSessions, setSavedSessions, setSavedGroups, startNewChat, activeJobs]);
 

@@ -11,6 +11,7 @@ import {
   getExportableUserScenarios,
   mergeImportedScenarios,
   SYSTEM_SCENARIO_IDS,
+  BUILT_IN_SCENARIO_IDS,
 } from '@/features/scenarios/scenarioLibrary';
 
 type ModalView = 'list' | 'editor';
@@ -136,7 +137,7 @@ export const useScenarioManager = ({
       setScenarios((prev) =>
         buildSavedScenarios(getExportableUserScenarios(prev).filter((scenario) => scenario.id !== scenarioId)),
       );
-      showFeedback('info', t('scenariosFeedbackCleared'));
+      showFeedback('info', t('scenariosFeedbackDeleted'));
     },
     [showFeedback, t],
   );
@@ -229,6 +230,7 @@ export const useScenarioManager = ({
     feedback,
     importInputRef,
     systemScenarioIds: SYSTEM_SCENARIO_IDS,
+    builtInScenarioIds: BUILT_IN_SCENARIO_IDS,
     hasUnsavedChanges,
     showFeedback,
     actions: {

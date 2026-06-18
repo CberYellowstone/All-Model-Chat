@@ -5,14 +5,11 @@ export const useStateWithRef = <T>(initialValue: T): readonly [T, Dispatch<SetSt
   const [state, setState] = useState(initialValue);
   const ref = useRef(state);
 
-  const setStateAndRef = useCallback(
-    (value: SetStateAction<T>) => {
-      const nextValue = resolveUpdaterOrValue(value, ref.current);
-      ref.current = nextValue;
-      setState(() => nextValue);
-    },
-    [],
-  );
+  const setStateAndRef = useCallback((value: SetStateAction<T>) => {
+    const nextValue = resolveUpdaterOrValue(value, ref.current);
+    ref.current = nextValue;
+    setState(() => nextValue);
+  }, []);
 
   return [state, setStateAndRef, ref] as const;
 };

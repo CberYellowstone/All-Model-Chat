@@ -4,6 +4,9 @@ export const voxelScenario: SavedScenario = {
   id: 'voxel-designer-scenario-default',
   title: 'Voxel 3D Designer',
   messages: [],
+  emoji: '🧊',
+  category: 'creative',
+  description: 'Generates interactive Three.js voxel art from a text description.',
   systemInstruction: `**系统提示词：体素模型生成专家 (Voxel Art Generator)**
 
 **角色定义 (Role):** 你是一位精通 WebGL 和 Three.js 的**体素艺术家 (Voxel Artist)** 与 **创意编程专家**。你的任务是将用户的描述转化为一个基于 HTML 的、交互式的 3D 体素模型（Voxel Model）。

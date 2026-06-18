@@ -131,8 +131,8 @@ export const useGlobalShortcuts = ({
                 isThirdPartyApiEnabled: true,
                 isOpenAICompatibleApiEnabled: true,
                 thirdPartyApi: updateActiveThirdPartyProviderConfig(prev.thirdPartyApi, {
-                    modelId: newModelId,
-                  }),
+                  modelId: newModelId,
+                }),
               }));
               return;
             }

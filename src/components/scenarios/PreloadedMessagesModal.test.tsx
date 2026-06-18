@@ -18,6 +18,7 @@ const { loadableScenario, scenarioManagerState } = vi.hoisted(() => ({
     feedback: null,
     importInputRef: { current: null },
     systemScenarioIds: [],
+    builtInScenarioIds: [],
     hasUnsavedChanges: true,
     showFeedback: vi.fn(),
     actions: {
@@ -68,7 +69,8 @@ describe('PreloadedMessagesModal', () => {
     scenarioManagerState.hasUnsavedChanges = true;
   });
 
-  it('closes without saving when the close button is clicked', () => {
+  it('closes immediately when there are no unsaved changes', () => {
+    scenarioManagerState.hasUnsavedChanges = false;
     const onClose = vi.fn();
 
     act(() => {
@@ -91,6 +93,48 @@ describe('PreloadedMessagesModal', () => {
 
     act(() => {
       closeButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(scenarioManagerState.actions.handleSaveAllAndClose).not.toHaveBeenCalled();
+  });
+
+  it('asks for confirmation before closing with unsaved changes', () => {
+    const onClose = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <PreloadedMessagesModal
+          isOpen
+          onClose={onClose}
+          savedScenarios={[]}
+          onSaveAllScenarios={vi.fn()}
+          onLoadScenario={vi.fn()}
+        />,
+      );
+    });
+
+    const closeButton = Array.from(renderer.container.querySelectorAll('button')).find(
+      (button) => button.getAttribute('aria-label') === 'Close scenarios manager',
+    );
+
+    expect(closeButton).not.toBeUndefined();
+
+    act(() => {
+      closeButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    // Unsaved changes should gate the close behind a confirmation, not close yet.
+    expect(onClose).not.toHaveBeenCalled();
+
+    const discardButton = Array.from(renderer.container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Discard and close'),
+    );
+
+    expect(discardButton).not.toBeUndefined();
+
+    act(() => {
+      discardButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);

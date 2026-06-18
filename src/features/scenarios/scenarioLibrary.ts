@@ -48,6 +48,16 @@ const USER_SCENARIO_SEEDS: UserScenarioSeed[] = [
 
 export const SYSTEM_SCENARIO_IDS = SYSTEM_SCENARIOS.map((scenario) => scenario.id);
 
+/**
+ * Every scenario shipped with the app: read-only system presets plus the
+ * seeded user presets (roleplay / creative). Used to separate "built-in" from
+ * truly user-authored scenarios in the library UI.
+ */
+export const BUILT_IN_SCENARIO_IDS: string[] = [
+  ...SYSTEM_SCENARIO_IDS,
+  ...USER_SCENARIO_SEEDS.flatMap((seed) => seed.scenarios.map((scenario) => scenario.id)),
+];
+
 const RESERVED_SCENARIO_IDS = new Set([...SYSTEM_SCENARIO_IDS, ...DEPRECATED_SCENARIO_IDS]);
 
 const getScenarioFingerprint = (scenario: SavedScenario): string =>

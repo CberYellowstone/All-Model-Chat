@@ -306,13 +306,7 @@ export const useApp = (): AppViewModel => {
     }
 
     return availableModels.length === 0 ? t('appNoModelsAvailable') : t('appNoModelSelected');
-  }, [
-    apiModels,
-    appSettings,
-    currentChatSettings.modelId,
-    isSwitchingModel,
-    t,
-  ]);
+  }, [apiModels, appSettings, currentChatSettings.modelId, isSwitchingModel, t]);
 
   return {
     appSettings,

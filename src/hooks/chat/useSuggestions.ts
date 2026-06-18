@@ -42,9 +42,7 @@ export const useSuggestions = ({
     ) => {
       updateMessageInSession(sessionId, messageId, { isGeneratingSuggestions: true });
 
-      const stickyKey = isThirdPartyApiActive(appSettings)
-        ? undefined
-        : sessionKeyMapRef?.current?.get(sessionId);
+      const stickyKey = isThirdPartyApiActive(appSettings) ? undefined : sessionKeyMapRef?.current?.get(sessionId);
       let keyToUse: string;
 
       if (stickyKey) {

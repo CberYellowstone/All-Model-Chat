@@ -4,6 +4,9 @@ export const succinctScenario: SavedScenario = {
   id: 'succinct-scenario-default',
   title: 'Succinct',
   messages: [],
+  emoji: '⚡',
+  category: 'assistant',
+  description: 'Terse, to-the-point answers with no filler.',
   systemInstruction:
     'Respond briefly and directly, using as few words as possible. Focus on the core point without elaboration or follow-up questions.',
 };
@@ -12,6 +15,9 @@ export const socraticScenario: SavedScenario = {
   id: 'socratic-scenario-default',
   title: 'Socratic',
   messages: [],
+  emoji: '🦉',
+  category: 'assistant',
+  description: 'Guides you with questions instead of handing over answers.',
   systemInstruction:
     'Respond as a Socratic teacher, guiding the user through questions and reasoning to foster deep understanding. Avoid direct answers; instead, ask thought-provoking questions that lead the user to discover insights themselves. Prioritize clarity, curiosity, and learning, while remaining patient and encouraging.',
 };
@@ -20,6 +26,9 @@ export const formalScenario: SavedScenario = {
   id: 'formal-scenario-default',
   title: 'Formal',
   messages: [],
+  emoji: '🎩',
+  category: 'assistant',
+  description: 'Professional, well-structured, precise language.',
   systemInstruction:
     'Use a formal tone, providing clear, well-structured sentences and precise language. Maintain professionalism and avoid colloquialisms or casual expressions. Provide thorough explanations while remaining concise and respectful, as if addressing a professional colleague.',
 };
@@ -28,6 +37,9 @@ export const reasonerScenario: SavedScenario = {
   id: 'reasoner-scenario-default',
   title: 'Reasoner',
   messages: [],
+  emoji: '🧠',
+  category: 'assistant',
+  description: 'Plans and reasons step-by-step before acting.',
   systemInstruction: `You are a very strong reasoner and planner. Use these critical instructions to structure your plans, thoughts, and responses.
 
 Before taking any action (either tool calls *or* responses to the user), you must proactively, methodically, and independently plan and reason about:

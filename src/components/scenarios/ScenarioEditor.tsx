@@ -1,16 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
+import { ScrollText, Sparkles } from 'lucide-react';
 import { type SavedScenario } from '@/types';
 import { TextEditorModal } from '@/components/modals/TextEditorModal';
 import { ScenarioEditorHeader } from './editor/ScenarioEditorHeader';
 import { ScenarioSystemPrompt } from './editor/ScenarioSystemPrompt';
 import { ScenarioMessageList } from './editor/ScenarioMessageList';
 import { ScenarioMessageInput } from './editor/ScenarioMessageInput';
+import { DEFAULT_CATEGORY } from '@/features/scenarios/scenarioCategories';
 
 interface ScenarioEditorProps {
   initialScenario: SavedScenario | null;
   onSave: (scenario: SavedScenario) => void;
-  onCancel: () => void;
   readOnly?: boolean;
 }
 
@@ -19,14 +20,10 @@ const createEmptyScenario = (): SavedScenario => ({
   title: '',
   messages: [],
   systemInstruction: '',
+  category: DEFAULT_CATEGORY,
 });
 
-export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({
-  initialScenario,
-  onSave,
-  onCancel,
-  readOnly = false,
-}) => {
+export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ initialScenario, onSave, readOnly = false }) => {
   const { t } = useI18n();
   const [scenario, setScenario] = useState<SavedScenario>(() => initialScenario || createEmptyScenario());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -82,8 +79,11 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({
       <ScenarioEditorHeader
         title={scenario.title}
         setTitle={(title) => setScenario((prev) => ({ ...prev, title }))}
+        description={scenario.description}
+        setDescription={(description) => setScenario((prev) => ({ ...prev, description }))}
+        category={scenario.category}
+        setCategory={(category) => setScenario((prev) => ({ ...prev, category }))}
         onSave={() => onSave(scenario)}
-        onCancel={onCancel}
         onOpenSystemPrompt={() => setIsSystemPromptExpanded(true)}
         isSaveDisabled={!scenario.title.trim()}
         readOnly={readOnly}
@@ -108,6 +108,20 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({
         />
 
         <div className="flex-1 flex flex-col min-w-0 bg-[var(--theme-bg-primary)]">
+          <button
+            type="button"
+            onClick={() => setIsSystemPromptExpanded(true)}
+            className="md:hidden flex items-center gap-2 mx-4 mt-3 px-3 py-2 rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] text-xs font-semibold text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+          >
+            <ScrollText size={14} />
+            <span>{t('scenariosSystemPromptLabel')}</span>
+            {scenario.systemInstruction?.trim() && (
+              <span className="ml-auto flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[var(--theme-text-link)]">
+                <Sparkles size={10} /> {t('scenariosEditorSet')}
+              </span>
+            )}
+          </button>
+
           <ScenarioMessageList
             messages={scenario.messages}
             editingMessageId={editingMessageId}

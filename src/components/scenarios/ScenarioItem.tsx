@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { type SavedScenario } from '@/types';
-import { Download, Edit3, Trash2, Shield, MessageSquare, Eye, Copy, Sparkles } from 'lucide-react';
-import { SMALL_ICON_BUTTON_CLASS, SMALL_ICON_DANGER_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { Download, Edit3, Trash2, Eye, Copy, Sparkles, MoreVertical, Play } from 'lucide-react';
+import { SMALL_ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { getCategoryMeta } from '@/features/scenarios/scenarioCategories';
+import {
+  MENU_ITEM_BUTTON_CLASS,
+  MENU_ITEM_DEFAULT_STATE_CLASS,
+  MENU_ITEM_DANGER_STATE_CLASS,
+} from '@/constants/menuClasses';
 
 interface ScenarioItemProps {
   scenario: SavedScenario;
@@ -29,107 +35,215 @@ export const ScenarioItem: React.FC<ScenarioItemProps> = ({
   const messageCount = scenario.messages.length;
   const hasSystemPrompt = !!scenario.systemInstruction;
 
-  const Icon = isSystem ? Shield : MessageSquare;
-  const iconColorClass = isSystem
-    ? 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10'
-    : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10';
+  const meta = getCategoryMeta(scenario.category);
+  const CategoryIcon = meta.icon;
+  // Show the scenario emoji when provided, otherwise fall back to the category icon.
+  const displayGlyph = scenario.emoji ? null : <CategoryIcon size={18} strokeWidth={2} />;
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return undefined;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMenuOpen]);
+
+  // Card preview prefers a human description; only fall back to content when absent.
+  const previewText =
+    scenario.description ||
+    (scenario.messages.length > 0
+      ? scenario.messages[0].content
+      : scenario.systemInstruction || t('scenariosPreviewFallback'));
+
+  const secondaryActions: Array<{
+    key: string;
+    label: string;
+    icon: React.ElementType;
+    onSelect: () => void;
+    danger?: boolean;
+  }> = [];
+
+  if (isSystem && onView) {
+    secondaryActions.push({
+      key: 'view',
+      label: t('scenariosViewTitle'),
+      icon: Eye,
+      onSelect: () => onView(scenario),
+    });
+  }
+  if (!isSystem && onEdit) {
+    secondaryActions.push({
+      key: 'edit',
+      label: t('scenariosEditTitle'),
+      icon: Edit3,
+      onSelect: () => onEdit(scenario),
+    });
+  }
+  secondaryActions.push({
+    key: 'duplicate',
+    label: t('scenariosDuplicateTitle'),
+    icon: Copy,
+    onSelect: () => onDuplicate(scenario),
+  });
+  secondaryActions.push({
+    key: 'export',
+    label: t('scenariosExportSingleTitle'),
+    icon: Download,
+    onSelect: () => onExport(scenario),
+  });
+  if (!isSystem && onDelete) {
+    secondaryActions.push({
+      key: 'delete',
+      label: t('scenariosDeleteTitle'),
+      icon: Trash2,
+      onSelect: () => onDelete(scenario.id),
+      danger: true,
+    });
+  }
+
+  const editAction = !isSystem && onEdit ? () => onEdit(scenario) : null;
 
   return (
     <div
       className="
-        group flex flex-col h-full
+        group relative flex flex-col h-full overflow-hidden
         bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)]
-        rounded-xl p-4
-        transition-all duration-200
-        hover:bg-[var(--theme-bg-input)] hover:border-[var(--theme-border-focus)] hover:shadow-sm
-        cursor-pointer select-none
+        rounded-xl transition-all duration-200
+        hover:border-[var(--theme-border-focus)] hover:shadow-md
       "
-      onClick={() => onLoad(scenario)}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColorClass}`}>
-          <Icon size={16} strokeWidth={2} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-sm text-[var(--theme-text-primary)] truncate" title={scenario.title}>
-            {scenario.title}
-          </h3>
-          <div className="flex items-center gap-2 text-[10px] text-[var(--theme-text-tertiary)]">
-            <span>{t('scenariosMessageCount').replace('{count}', String(messageCount))}</span>
-            {hasSystemPrompt && (
-              <>
-                <span className="w-0.5 h-0.5 rounded-full bg-current" />
-                <span className="flex items-center gap-0.5 text-[var(--theme-text-secondary)]">
-                  <Sparkles size={8} /> {t('scenariosHasSystemPrompt')}
+      <div
+        className={`absolute inset-y-0 left-0 w-1 ${meta.barClass} opacity-70 group-hover:opacity-100 transition-opacity`}
+        aria-hidden="true"
+      />
+
+      <div className="flex flex-col h-full pl-5 pr-4 py-4">
+        <div className="flex items-start gap-3 mb-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg ${meta.chipClass}`}
+          >
+            {scenario.emoji ? <span aria-hidden="true">{scenario.emoji}</span> : displayGlyph}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3
+              className="font-semibold text-sm text-[var(--theme-text-primary)] truncate leading-snug"
+              title={scenario.title}
+            >
+              {scenario.title}
+            </h3>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[var(--theme-text-tertiary)] mt-1">
+              <span>{t('scenariosMessageCount').replace('{count}', String(messageCount))}</span>
+              {hasSystemPrompt && (
+                <span className="flex items-center gap-1 text-[var(--theme-text-secondary)]">
+                  <Sparkles size={11} /> {t('scenariosHasSystemPrompt')}
                 </span>
-              </>
+              )}
+              {isSystem && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${meta.chipClass}`}
+                >
+                  {t(meta.labelKey)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onLoad(scenario)}
+          className="flex-grow text-left mb-3 cursor-pointer"
+          title={t('scenariosUseButtonTitle')}
+          aria-label={`${t('scenariosUseButton')} ${scenario.title}`}
+        >
+          <p className="text-xs text-[var(--theme-text-secondary)] leading-relaxed line-clamp-3 opacity-80 group-hover:opacity-100 transition-opacity">
+            {previewText}
+          </p>
+        </button>
+
+        <div className="flex items-center gap-2 pt-3 mt-auto border-t border-[var(--theme-border-secondary)]/50">
+          <button
+            type="button"
+            onClick={() => onLoad(scenario)}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)] rounded-lg font-semibold text-xs transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+            title={t('scenariosUseButtonTitle')}
+          >
+            <Play size={13} strokeWidth={2.5} />
+            {t('scenariosUseButton')}
+          </button>
+
+          {editAction && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                editAction();
+              }}
+              className={SMALL_ICON_BUTTON_CLASS}
+              title={t('scenariosEditTitle')}
+              aria-label={t('scenariosEditTitle')}
+            >
+              <Edit3 size={15} />
+            </button>
+          )}
+
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMenuOpen((open) => !open);
+              }}
+              className={SMALL_ICON_BUTTON_CLASS}
+              title={t('scenariosMoreActions')}
+              aria-label={t('scenariosActionsAria')}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+            >
+              <MoreVertical size={15} />
+            </button>
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 bottom-full mb-1 z-20 w-44 bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] rounded-lg shadow-lg py-1 animate-in fade-in zoom-in-95 duration-150"
+              >
+                {secondaryActions.map((action) => {
+                  const ActionIcon = action.icon;
+                  return (
+                    <button
+                      key={action.key}
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMenuOpen(false);
+                        action.onSelect();
+                      }}
+                      className={`${MENU_ITEM_BUTTON_CLASS} ${action.danger ? MENU_ITEM_DANGER_STATE_CLASS : MENU_ITEM_DEFAULT_STATE_CLASS}`}
+                    >
+                      <ActionIcon size={14} />
+                      <span>{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
       </div>
-
-      <div className="flex-grow mb-4">
-        <p className="text-xs text-[var(--theme-text-secondary)] leading-relaxed line-clamp-3 opacity-80 group-hover:opacity-100 transition-opacity">
-          {scenario.systemInstruction ||
-            (scenario.messages.length > 0 ? scenario.messages[0].content : t('scenariosNoPreview'))}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-end gap-1 pt-3 border-t border-[var(--theme-border-secondary)]/50 opacity-100 pointer-events-auto sm:opacity-0 sm:pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-        {isSystem && onView && (
-          <ActionButton onClick={onView} icon={Eye} label={t('scenariosViewTitle')} scenario={scenario} />
-        )}
-        {!isSystem && onEdit && (
-          <ActionButton onClick={onEdit} icon={Edit3} label={t('scenariosEditTitle')} scenario={scenario} />
-        )}
-
-        <ActionButton onClick={onDuplicate} icon={Copy} label={t('scenariosDuplicateTitle')} scenario={scenario} />
-        <ActionButton
-          onClick={onExport}
-          icon={Download}
-          label={t('scenariosExportSingleTitle')}
-          scenario={scenario}
-        />
-
-        {!isSystem && onDelete && (
-          <>
-            <div className="w-px h-3 bg-[var(--theme-border-secondary)] mx-1" />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(scenario.id);
-              }}
-              className={SMALL_ICON_DANGER_BUTTON_CLASS}
-              title={t('scenariosDeleteTitle')}
-            >
-              <Trash2 size={14} />
-            </button>
-          </>
-        )}
-      </div>
     </div>
   );
 };
-
-const ActionButton = ({
-  onClick,
-  icon: Icon,
-  label,
-  scenario,
-}: {
-  onClick: (scenario: SavedScenario) => void;
-  icon: React.ElementType;
-  label: string;
-  scenario: SavedScenario;
-}) => (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick(scenario);
-    }}
-    className={SMALL_ICON_BUTTON_CLASS}
-    title={label}
-  >
-    <Icon size={14} />
-  </button>
-);
