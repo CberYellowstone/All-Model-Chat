@@ -235,7 +235,7 @@ const buildPreviewThemeStyle = (themeId?: string): string => {
   const colors = theme.colors;
   const colorScheme = DARK_LIVE_ARTIFACT_THEME_IDS.has(theme.id) ? 'dark' : 'light';
 
-  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};--amc-live-artifact-text:${colors.textPrimary};--amc-live-artifact-muted:${colors.textSecondary};--amc-live-artifact-subtle:${colors.textTertiary};--amc-live-artifact-surface:${colors.bgTertiary};--amc-live-artifact-surface-muted:${colors.bgInput};--amc-live-artifact-border:${colors.borderSecondary};--amc-live-artifact-accent:${colors.textLink};--amc-live-artifact-accent-surface:${colors.bgAccent};--amc-live-artifact-success:${colors.textSuccess};--amc-live-artifact-danger:${colors.textDanger};--amc-live-artifact-warning:${colors.textWarning};}html,body{margin:0;padding:0;background:transparent!important;color:var(--amc-live-artifact-text);}</style>`;
+  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};--amc-live-artifact-text:${colors.textPrimary};--amc-live-artifact-muted:${colors.textSecondary};--amc-live-artifact-subtle:${colors.textTertiary};--amc-live-artifact-surface:${colors.bgTertiary};--amc-live-artifact-surface-muted:${colors.bgInput};--amc-live-artifact-border:${colors.borderSecondary};--amc-live-artifact-accent:${colors.textLink};--amc-live-artifact-accent-surface:${colors.bgAccent};--amc-live-artifact-success:${colors.textSuccess};--amc-live-artifact-danger:${colors.textDanger};--amc-live-artifact-warning:${colors.textWarning};}html,body{margin:0;padding:0;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
 };
 
 const injectPreviewTheme = (srcDoc: string, themeId?: string): string => {
@@ -264,46 +264,43 @@ const injectPreviewBaseFontSize = (srcDoc: string, baseFontSize?: number): strin
   return injectPreviewHeadStyle(srcDoc, style);
 };
 
-const prepareHtmlPreviewSrcDoc = (
-  srcDoc: string,
-  options: { baseFontSize?: number; themeId?: string } = {},
-): string =>
+const prepareHtmlPreviewSrcDoc = (srcDoc: string, options: { baseFontSize?: number; themeId?: string } = {}): string =>
   renderPreviewMath(
-    injectPreviewBaseFontSize(injectPreviewTheme(injectPreviewSecurityPolicy(srcDoc), options.themeId), options.baseFontSize),
+    injectPreviewBaseFontSize(
+      injectPreviewTheme(injectPreviewSecurityPolicy(srcDoc), options.themeId),
+      options.baseFontSize,
+    ),
   );
 
 export const buildStreamingHtmlPreviewRenderPayload = (htmlContent: string): string => {
   return renderPreviewMath(htmlContent);
 };
 
+const sanitizePreviewHtml = (htmlContent: string): string => {
+  if (typeof DOMParser === 'undefined') {
+    return htmlContent;
+  }
+
+  const parsedDocument = new DOMParser().parseFromString(htmlContent, 'text/html');
+  sanitizeElementTree(parsedDocument);
+  return `<!DOCTYPE html>${parsedDocument.documentElement.outerHTML}`;
+};
+
 export const buildHtmlPreviewSrcDoc = (
   htmlContent: string,
   options: { baseFontSize?: number; themeId?: string } = {},
 ): string => {
-  let srcDoc: string;
-
   if (!htmlContent) {
-    srcDoc = `<!DOCTYPE html><html><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
+    const srcDoc = `<!DOCTYPE html><html><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
     return prepareHtmlPreviewSrcDoc(srcDoc, options);
   }
 
-  if (/<\/body>/i.test(htmlContent)) {
-    srcDoc = htmlContent.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
-    return prepareHtmlPreviewSrcDoc(srcDoc, options);
-  }
-
-  if (/<\/html>/i.test(htmlContent)) {
-    srcDoc = htmlContent.replace(/<\/html>/i, `${PREVIEW_BRIDGE_SCRIPT}</html>`);
-    return prepareHtmlPreviewSrcDoc(srcDoc, options);
-  }
-
-  srcDoc = `<!DOCTYPE html><html><body>${htmlContent}${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
+  const sanitized = sanitizePreviewHtml(htmlContent);
+  const srcDoc = sanitized.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
   return prepareHtmlPreviewSrcDoc(srcDoc, options);
 };
 
-export const buildStreamingHtmlPreviewSrcDoc = (
-  options: { baseFontSize?: number; themeId?: string } = {},
-): string => {
+export const buildStreamingHtmlPreviewSrcDoc = (options: { baseFontSize?: number; themeId?: string } = {}): string => {
   const srcDoc = `<!DOCTYPE html><html><body><div data-amc-stream-preview-root="true"></div>${PREVIEW_BRIDGE_SCRIPT}${STREAMING_PREVIEW_RUNNER_SCRIPT}</body></html>`;
   return prepareHtmlPreviewSrcDoc(srcDoc, options);
 };

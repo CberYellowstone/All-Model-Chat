@@ -213,6 +213,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
             payload: { instruction: 'Continue', state: { selected: 'B' } },
           },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });
@@ -431,6 +432,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
         new MessageEvent('message', {
           data: { channel: 'amc-webui-html-preview', event: 'resize', height: 960 },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });
@@ -458,6 +460,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
         new MessageEvent('message', {
           data: { channel: 'amc-webui-html-preview', event: 'resize', height: 960 },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });
@@ -498,6 +501,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
         new MessageEvent('message', {
           data: { channel: 'amc-webui-html-preview', event: 'resize', height: 960 },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });
@@ -537,6 +541,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
         new MessageEvent('message', {
           data: { channel: 'amc-webui-html-preview', event: 'resize', height: 960 },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });
@@ -598,6 +603,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
         new MessageEvent('message', {
           data: { channel: 'amc-webui-html-preview', event: 'resize', height: 960 },
           source: iframe?.contentWindow,
+          origin: 'null',
         }),
       );
     });

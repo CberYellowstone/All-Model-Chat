@@ -30,7 +30,7 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain("frame-src 'none'");
     expect(srcDoc).toContain("object-src 'none'");
     expect(srcDoc).toContain("base-uri 'none'");
-    expect(srcDoc.indexOf('http-equiv="Content-Security-Policy"')).toBeLessThan(srcDoc.indexOf('cdn.example/app.js'));
+    expect(srcDoc.indexOf('http-equiv="Content-Security-Policy"')).toBeLessThan(srcDoc.indexOf('example.com/demo.png'));
   });
 
   it('allows sandboxed artifact previews to load HTTPS runtime assets', () => {
@@ -255,5 +255,22 @@ describe('htmlPreview utilities', () => {
     expect(container.textContent).toContain('Visible');
 
     cleanup();
+  });
+
+  it('strips scripts and inline event handlers from artifact HTML before rendering', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      '<section><script>alert(1)</script><button onclick="alert(2)">Run</button><img src="javascript:alert(3)" alt="x"></section>',
+    );
+
+    expect(srcDoc).not.toContain('<script>alert(1)</script>');
+    expect(srcDoc).not.toContain('onclick=');
+    expect(srcDoc).not.toContain('javascript:alert(3)');
+    expect(srcDoc).toContain('Run');
+  });
+
+  it('injects a horizontal-scroll fallback so wide artifacts are not clipped', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc('<section>wide</section>');
+
+    expect(srcDoc).toContain('body{overflow-x:auto;}');
   });
 });

@@ -113,11 +113,10 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     frameHeightState.heightCacheKey === heightCacheKey
       ? frameHeightState.height
       : readCachedFrameHeight(heightCacheKey, streamingHeightCacheKey);
-  const finalSrcDoc = useMemo(() => buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId }), [
-    baseFontSize,
-    html,
-    themeId,
-  ]);
+  const finalSrcDoc = useMemo(
+    () => buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId }),
+    [baseFontSize, html, themeId],
+  );
   const srcDoc = isLoading ? streamingSrcDoc : finalSrcDoc;
 
   useLayoutEffect(() => {
@@ -186,6 +185,11 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     const handleMessage = (event: MessageEvent<HtmlPreviewBridgeMessage>) => {
       const data = event.data;
       if (!data || data.channel !== HTML_PREVIEW_MESSAGE_CHANNEL) {
+        return;
+      }
+
+      // Sandboxed iframes without allow-same-origin post messages from the opaque origin "null".
+      if (event.origin !== 'null') {
         return;
       }
 

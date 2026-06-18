@@ -74,7 +74,9 @@ describe('ArtifactFrame', () => {
 
   it('injects transparent Live Artifact theme tokens into streaming artifact documents', () => {
     act(() => {
-      renderer.root.render(<ArtifactFrame html="<section><p>Artifact text</p></section>" themeId="graphite" isLoading />);
+      renderer.root.render(
+        <ArtifactFrame html="<section><p>Artifact text</p></section>" themeId="graphite" isLoading />,
+      );
     });
 
     const iframe = renderer.container.querySelector('iframe');
@@ -121,6 +123,7 @@ describe('ArtifactFrame', () => {
               },
             },
             source: iframe!.contentWindow,
+            origin: 'null',
           }),
         );
       });
@@ -315,6 +318,7 @@ describe('ArtifactFrame', () => {
               },
             },
             source: iframe!.contentWindow,
+            origin: 'null',
           }),
         );
       });
