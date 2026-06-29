@@ -22,6 +22,8 @@ const TEXT = {
   h3: 15,
 };
 
+const HEADING_FONT_SIZE_BY_DEPTH: Record<number, number> = { 1: TEXT.h1, 2: TEXT.h2 };
+
 const LINE_HEIGHT = 5.8;
 const CODE_LINE_HEIGHT = 5;
 const TEXT_STROKE_WIDTH = 0.06;
@@ -185,7 +187,7 @@ export class MarkdownPdfRenderer {
 
   private renderHeading(node: MarkdownNode) {
     const depth = Number((node as MarkdownNode & { depth?: number }).depth ?? 1);
-    const fontSize = depth === 1 ? TEXT.h1 : depth === 2 ? TEXT.h2 : TEXT.h3;
+    const fontSize = HEADING_FONT_SIZE_BY_DEPTH[depth] ?? TEXT.h3;
     const text = normalizeWhitespace((node.children ?? []).map(collectInlineText).join(''));
     if (!text) return;
 
