@@ -1,4 +1,4 @@
-export const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
+const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
 
 export const normalizeAnthropicBaseUrl = (baseUrl?: string | null): string =>
   (baseUrl?.trim() || DEFAULT_ANTHROPIC_BASE_URL).replace(/\/+$/, '');

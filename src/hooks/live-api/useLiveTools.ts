@@ -1,4 +1,5 @@
 import { useCallback, useRef, type MutableRefObject } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import type { LiveServerMessage, Session as LiveSession } from '@google/genai';
 import type { LiveClientFunctions, UploadedFile } from '@/types';
 import { toStructuredToolResponse } from '@/features/chat-tools/toolResponse';
@@ -80,7 +81,7 @@ export const useLiveTools = ({ clientFunctions, sessionRef, onGeneratedFiles }: 
               functionResponses.push({
                 id: callId,
                 name: callName,
-                response: { error: toolError instanceof Error ? toolError.message : String(toolError) },
+                response: { error: getErrorMessage(toolError) },
               });
             }
           } else {

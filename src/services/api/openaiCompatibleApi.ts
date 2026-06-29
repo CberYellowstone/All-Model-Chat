@@ -1,4 +1,5 @@
 import type { UsageMetadata } from '@google/genai';
+import { toError } from '@/utils/errorMessage';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildOpenAICompatibleRequestBody } from './openaiCompatibleMessages';
@@ -108,7 +109,7 @@ export const sendOpenAICompatibleMessageNonStream: NonStreamMessageSender = asyn
     );
   } catch (error) {
     logService.error('OpenAI-compatible non-stream request failed:', error);
-    onError(error instanceof Error ? error : new Error(String(error)));
+    onError(toError(error));
   }
 };
 
@@ -167,6 +168,6 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
     onComplete(finalUsage, undefined, undefined);
   } catch (error) {
     logService.error('OpenAI-compatible stream request failed:', error);
-    onError(error instanceof Error ? error : new Error(String(error)));
+    onError(toError(error));
   }
 };

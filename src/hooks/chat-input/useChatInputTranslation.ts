@@ -1,4 +1,5 @@
 import { logService } from '@/services/logService';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { AppSettings, ChatSettings } from '@/types';
 import { translateTextApi } from '@/services/api/generation/textApi';
@@ -50,7 +51,7 @@ export const useChatInputTranslation = ({
       setInputText(translatedText);
     } catch (error) {
       logService.error('Input translation failed:', error);
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error);
       setAppFileError(t('translateFailedWithMessage').replace('{message}', message));
     } finally {
       setTranslating(false);

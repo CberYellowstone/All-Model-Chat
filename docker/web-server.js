@@ -1,5 +1,5 @@
-// Minimal static + reverse-proxy server standing in for nginx (Dockerfile.web).
-// Replicates docker/nginx.conf behaviour:
+// Minimal static + reverse-proxy server for the Docker web container (Dockerfile.web).
+// Serves the web container:
 //   - serves static files from /usr/share/nginx/html with SPA fallback to index.html
 //   - proxies /api/* to http://api:3001 (path preserved, body + response streamed)
 //   - generates /runtime-config.js at startup from RUNTIME_* env vars
@@ -13,7 +13,7 @@ const PORT = Number(process.env.PORT || 80);
 const ROOT = process.env.WEB_ROOT || '/usr/share/nginx/html';
 const API_UPSTREAM = process.env.API_UPSTREAM || 'http://api:3001';
 
-// --- runtime-config.js generation (mirrors docker/web-entrypoint.sh) ---
+// --- runtime-config.js generation ---
 const toBool = (value) => /^(1|true|yes|on)$/i.test(String(value || '').trim());
 const trim = (value) => String(value || '').trim();
 const jsonStringOrNull = (value) => {
@@ -128,7 +128,7 @@ function serveStatic(req, res) {
   const ext = path.extname(filePath).toLowerCase();
   const headers = { 'content-type': MIME[ext] || 'application/octet-stream' };
 
-  // Cache policy mirrors nginx.conf
+  // Cache policy
   if (pathname === '/runtime-config.js') {
     headers['cache-control'] = 'no-store';
   } else if (pathname.startsWith('/assets/')) {

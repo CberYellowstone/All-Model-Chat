@@ -7,7 +7,7 @@ import { CATEGORY_STYLES, getResolutionColor } from '@/utils/fileDisplayStyles';
 import { formatFileSize } from '@/utils/fileSize';
 import { getFileCardMeta } from '@/components/shared/file-preview/fileCardMeta';
 import { useI18n } from '@/contexts/I18nContext';
-import { FileThumbnail } from '@/components/chat/input/FileThumbnail';
+import { FileThumbnail } from '@/components/chat/input/files/FileThumbnail';
 
 interface FileDisplayProps {
   file: UploadedFile;

@@ -4,6 +4,7 @@ import { logService } from '@/services/logService';
 import { setupTestRenderer } from '@/test/render/renderer';
 import {
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
+  HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
@@ -291,6 +292,36 @@ describe('ArtifactFrame', () => {
       },
       '*',
     );
+  });
+
+  it('writes data-amc-copy text to the clipboard from the parent when the sandbox reports a copy event', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<section><p>Artifact</p></section>" />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+            event: HTML_PREVIEW_COPY_EVENT,
+            payload: { text: 'npm install katex' },
+          },
+          source: iframe!.contentWindow,
+          origin: 'null',
+        }),
+      );
+    });
+
+    expect(writeText).toHaveBeenCalledWith('npm install katex');
   });
 
   it('logs preview diagnostics reported by the sandboxed iframe', () => {

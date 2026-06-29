@@ -1,4 +1,5 @@
 import { type MutableRefObject, useCallback } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import {
   type AppSettings,
   type SavedChatSession,
@@ -211,7 +212,7 @@ export const useChatStreamHandler = ({
         streamingStore.clear(generationId);
 
         if (onSuccess && !abortController.signal.aborted) {
-          setTimeout(() => onSuccess(generationId, streamState.content), 0);
+          deferToNextTick(() => onSuccess(generationId, streamState.content));
         }
       };
 

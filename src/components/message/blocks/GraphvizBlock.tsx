@@ -7,6 +7,8 @@ import { DiagramWrapper } from './parts/DiagramWrapper';
 import { useI18n } from '@/contexts/I18nContext';
 import { isDarkThemeId } from '@/utils/themeMode';
 
+const GRAPHVIZ_EXPORT_SCALE = 5;
+
 const graphvizCache = new Map<string, string>();
 type VizInstance = {
   renderSVGElement: (code: string) => SVGSVGElement | Promise<SVGSVGElement>;
@@ -215,7 +217,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
     setIsDownloading(true);
     try {
       const { exportSvgAsImage } = await import('@/utils/export/image');
-      await exportSvgAsImage(svgContent, `graphviz-diagram-${Date.now()}.jpg`, 5, 'image/jpeg');
+      await exportSvgAsImage(svgContent, `graphviz-diagram-${Date.now()}.jpg`, GRAPHVIZ_EXPORT_SCALE, 'image/jpeg');
     } catch (error) {
       setError(error instanceof Error ? error.message : t('diagramExportFailed'));
     } finally {

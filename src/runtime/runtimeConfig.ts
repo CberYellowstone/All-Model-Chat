@@ -5,7 +5,6 @@ type RuntimeConfigKey =
   | 'useCustomApiConfig'
   | 'useApiProxy'
   | 'apiProxyUrl'
-  | 'projectUrl'
   | 'pyodideBaseUrl';
 
 type RuntimeConfigShape = Partial<Record<RuntimeConfigKey, unknown>>;

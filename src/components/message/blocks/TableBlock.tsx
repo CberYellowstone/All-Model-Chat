@@ -8,6 +8,7 @@ import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
+import { Z_INDEX_TABLE_FULLSCREEN } from '@/constants/layout';
 import {
   MENU_ITEM_BUTTON_CLASS,
   MENU_ITEM_COMPACT_BUTTON_CLASS,
@@ -138,7 +139,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         data-table-fullscreen-overlay="true"
         role="dialog"
         aria-modal="true"
-        className="fixed inset-0 z-[2200] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-10 overflow-auto overscroll-contain flex flex-col items-center animate-in fade-in duration-200"
+        className={`fixed inset-0 ${Z_INDEX_TABLE_FULLSCREEN} bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-10 overflow-auto overscroll-contain flex flex-col items-center animate-in fade-in duration-200`}
       >
         <div className="fixed top-4 right-4 flex gap-2 z-50">
           <button

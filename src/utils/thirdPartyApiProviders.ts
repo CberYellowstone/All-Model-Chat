@@ -30,7 +30,7 @@ export const THIRD_PARTY_PROVIDER_LABELS: Record<ThirdPartyProviderId, string> =
   custom: 'Custom',
 };
 
-export const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPartyProviderConfig> = {
+const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPartyProviderConfig> = {
   openai: {
     apiKey: null,
     baseUrl: 'https://api.openai.com/v1',
@@ -289,32 +289,3 @@ export const updateActiveThirdPartyProviderConfig = (
   thirdPartyApi: ThirdPartyApiSettings,
   updates: Partial<ThirdPartyProviderConfig>,
 ): ThirdPartyApiSettings => updateThirdPartyProviderConfig(thirdPartyApi, thirdPartyApi.activeProvider, updates);
-
-type LegacyOpenAICompatibleSettingsCheckTarget = {
-  apiMode?: unknown;
-  isOpenAICompatibleApiEnabled?: unknown;
-  openaiCompatibleApiKey?: unknown;
-  openaiCompatibleBaseUrl?: unknown;
-  openaiCompatibleModelId?: unknown;
-  openaiCompatibleModels?: unknown;
-};
-
-export const hasLegacyOpenAICompatibleSettings = (settings: LegacyOpenAICompatibleSettingsCheckTarget): boolean =>
-  settings.apiMode === 'openai-compatible' ||
-  settings.isOpenAICompatibleApiEnabled === true ||
-  'openaiCompatibleApiKey' in settings ||
-  'openaiCompatibleBaseUrl' in settings ||
-  'openaiCompatibleModelId' in settings ||
-  'openaiCompatibleModels' in settings;
-
-export const buildLegacyOpenAICompatibleMigrationPayload = (
-  settings: Pick<
-    AppSettings,
-    'openaiCompatibleApiKey' | 'openaiCompatibleBaseUrl' | 'openaiCompatibleModelId' | 'openaiCompatibleModels'
-  >,
-) => ({
-  apiKey: settings.openaiCompatibleApiKey,
-  baseUrl: settings.openaiCompatibleBaseUrl,
-  modelId: settings.openaiCompatibleModelId,
-  models: settings.openaiCompatibleModels,
-});

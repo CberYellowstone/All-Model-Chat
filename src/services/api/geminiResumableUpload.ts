@@ -1,10 +1,12 @@
 import type { File as GeminiFile } from '@google/genai';
 import { logService } from '@/services/logService';
+import { safeJsonParse } from '@/utils/safeJsonParse';
 
 const ABORT_ERROR_MESSAGE = 'Upload cancelled by user.';
 const MAX_UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024;
 const MAX_UPLOAD_RETRIES_PER_CHUNK = 2;
 const UPLOAD_RETRY_BASE_DELAY_MS = 100;
+const RETRYABLE_UPLOAD_STATUS_CODES = new Set([408, 429]);
 
 export const createUploadAbortError = () => {
   const abortError = new Error(ABORT_ERROR_MESSAGE);
@@ -73,14 +75,7 @@ const parseRawHeaders = (rawHeaders: string): Record<string, string> => {
   return headers;
 };
 
-const parseJsonPayload = (value: string): unknown => {
-  if (!value) return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
+const parseJsonPayload = (value: string): unknown => (value ? safeJsonParse(value, null) : null);
 
 const createUploadHttpError = (status: number, responseText: string) => {
   const message = responseText
@@ -95,7 +90,8 @@ const isRetryableUploadError = (error: unknown): boolean => {
   if (error instanceof Error && error.name === 'AbortError') return false;
   const status = (error as { status?: number } | null)?.status;
   if (!status) return true;
-  return status === 408 || status === 429 || status >= 500;
+  // 408 Request Timeout / 429 Too Many Requests / 5xx Server Error are worth retrying.
+  return RETRYABLE_UPLOAD_STATUS_CODES.has(status) || status >= 500;
 };
 
 const waitForUploadRetry = (attempt: number, signal: AbortSignal) =>

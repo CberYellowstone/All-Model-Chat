@@ -55,7 +55,7 @@ describe('docx preview extraction', () => {
     await expect(extractDocxText(file)).resolves.toEqual({ text: 'Extracted text', messages: [] });
 
     expect(MockWorker.instances).toHaveLength(1);
-    expect(String(MockWorker.instances[0]?.scriptUrl)).toContain('docxPreview.worker');
+    expect(String(MockWorker.instances[0]?.scriptUrl)).toContain('docxPreviewWorker');
     expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 });

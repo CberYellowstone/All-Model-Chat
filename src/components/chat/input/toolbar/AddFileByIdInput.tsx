@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Link } from 'lucide-react';
-import { InputBar } from './InputBar';
+import { InlineSubmitInput } from './InlineSubmitInput';
 
 interface AddFileByIdInputProps {
   fileIdInput: string;
@@ -22,7 +22,7 @@ export const AddFileByIdInput: React.FC<AddFileByIdInputProps> = ({
 }) => {
   const { t } = useI18n();
   return (
-    <InputBar
+    <InlineSubmitInput
       value={fileIdInput}
       onChange={setFileIdInput}
       onSubmit={onAddFileByIdSubmit}

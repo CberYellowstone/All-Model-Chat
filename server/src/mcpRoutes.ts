@@ -8,6 +8,7 @@ import {
   sanitizeStringArray,
   sanitizeStringRecord,
 } from '../../shared/mcpServerConfig.js';
+import { isRecord } from '../../shared/predicates.js';
 
 const MCP_TOOLS_PATH = '/api/mcp/tools';
 const MCP_CALL_PATH = '/api/mcp/call';
@@ -36,9 +37,6 @@ type McpServerParseResult =
         error: string;
       };
     };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const readRequestBody = async (request: IncomingMessage): Promise<string> => {
   const chunks: Buffer[] = [];

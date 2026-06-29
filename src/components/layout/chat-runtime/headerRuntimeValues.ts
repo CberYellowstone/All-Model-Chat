@@ -19,15 +19,15 @@ const buildHeaderModels = (
 ) => {
   const seenIds = new Set<string>();
   const geminiModels = apiModels.map((model) => ({ ...model, apiMode: 'gemini-native' as const }));
-  const thirdPartyModels =
-    appSettings.isThirdPartyApiEnabled === true
-      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ config }) =>
-          config.models.map((model) => ({
-            ...model,
-            apiMode: 'third-party' as const,
-          })),
-        )
-      : [];
+  // Third-party models show in the header whenever their provider is enabled,
+  // regardless of the top-level apiMode selector — picking one switches modes.
+  const thirdPartyModels = getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+    config.models.map((model) => ({
+      ...model,
+      apiMode: 'third-party' as const,
+      providerId: id,
+    })),
+  );
 
   return [...geminiModels, ...thirdPartyModels].filter((model) => {
     if (seenIds.has(model.id)) {
@@ -73,17 +73,18 @@ export const useChatHeaderRuntimeValues = ({
 
   const currentModelName = getCurrentModelDisplayName();
   const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
-  const thirdPartyEnabled = appSettings.isThirdPartyApiEnabled === true;
   // Map of modelId → providerId for all enabled third-party models.
   const thirdPartyModelProviders = useMemo(() => {
     const map = new Map<string, string>();
-    if (thirdPartyEnabled) {
-      getEnabledThirdPartyProviders(appSettings).forEach(({ id, config }) => {
-        config.models.forEach((model) => map.set(model.id, id));
+    getEnabledThirdPartyProviders(appSettings).forEach(({ id, config }) => {
+      config.models.forEach((model) => {
+        if (!map.has(model.id)) {
+          map.set(model.id, id);
+        }
       });
-    }
+    });
     return map;
-  }, [appSettings, thirdPartyEnabled]);
+  }, [appSettings]);
   const thirdPartyModelIds = useMemo(() => new Set(thirdPartyModelProviders.keys()), [thirdPartyModelProviders]);
   const geminiModelIds = useMemo(() => new Set(chatState.apiModels.map((model) => model.id)), [chatState.apiModels]);
   const headerAvailableModels = useMemo(
@@ -98,17 +99,14 @@ export const useChatHeaderRuntimeValues = ({
       const isThirdPartyModel = thirdPartyModelIds.has(modelId);
       const isGeminiModel = geminiModelIds.has(modelId);
 
-      if (
-        thirdPartyEnabled &&
-        isThirdPartyModel &&
-        (!isGeminiModel || isOpenAICompatibleMode)
-      ) {
+      if (isThirdPartyModel && (!isGeminiModel || isOpenAICompatibleMode)) {
         const providerId = (thirdPartyModelProviders.get(modelId) ?? null) as ThirdPartyProviderId | null;
         setAppSettings((prev) => {
           const targetProvider = providerId ?? prev.thirdPartyApi.activeProvider;
           return {
             ...prev,
             apiMode: 'third-party',
+            isThirdPartyApiEnabled: true,
             thirdPartyApi: {
               ...prev.thirdPartyApi,
               // Switch activeProvider to the one that owns this model so the
@@ -140,7 +138,6 @@ export const useChatHeaderRuntimeValues = ({
       chatState,
       geminiModelIds,
       isOpenAICompatibleMode,
-      thirdPartyEnabled,
       thirdPartyModelIds,
       thirdPartyModelProviders,
       setAppSettings,

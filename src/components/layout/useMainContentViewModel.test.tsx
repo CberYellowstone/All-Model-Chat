@@ -150,8 +150,8 @@ describe('chat runtime values', () => {
 
     expect(header.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party' },
-      { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party', providerId: 'openai' },
     ]);
     expect(header.selectedModelId).toBe('gpt-5.5');
     expect(header.currentModelName).toBe('GPT-5.5');
@@ -189,7 +189,7 @@ describe('chat runtime values', () => {
 
     expect(header.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
     ]);
     expect(header.selectedModelId).toBe('gemini-3-flash-preview');
 
@@ -248,6 +248,59 @@ describe('chat runtime values', () => {
       unmount();
       vi.useRealTimers();
     }
+  });
+
+  it('shows enabled third-party models in the header even when the top-level mode is Gemini-native', () => {
+    const defaults = createDefaultThirdPartyApiSettings();
+    const app = buildApp({
+      appSettings: {
+        ...createAppSettings(),
+        isThirdPartyApiEnabled: false,
+        apiMode: 'gemini-native',
+        modelId: 'gemini-3-flash-preview',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...defaults.providers,
+            openai: {
+              apiKey: null,
+              baseUrl: defaults.providers.openai.baseUrl,
+              modelId: 'gpt-5.5',
+              models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+              protocol: 'openai-compatible',
+              enabled: true,
+            },
+          },
+        },
+      } as AppViewModel['appSettings'],
+      getCurrentModelDisplayName: vi.fn(() => 'Gemini 3 Flash Preview'),
+    });
+    const { result, unmount } = renderChatHeaderRuntime(app);
+    const header = result.current;
+
+    expect(header.availableModels).toEqual([
+      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+    ]);
+    expect(header.selectedModelId).toBe('gemini-3-flash-preview');
+
+    act(() => {
+      header.onSelectModel('gpt-5.5');
+    });
+
+    expect(app.chatState.handleSelectModelInHeader).not.toHaveBeenCalled();
+    expect(app.setAppSettings).toHaveBeenCalledOnce();
+    const updater = vi.mocked(app.setAppSettings).mock.calls[0][0];
+    expect(typeof updater).toBe('function');
+    if (typeof updater !== 'function') {
+      throw new Error('Expected setAppSettings updater');
+    }
+    const updated = updater(app.appSettings);
+    expect(updated.apiMode).toBe('third-party');
+    expect((updated as AppViewModel['appSettings']).isThirdPartyApiEnabled).toBe(true);
+    expect((updated as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-5.5');
+
+    unmount();
   });
 
   it('keeps third-party provider models hidden while the provider switch is off', () => {

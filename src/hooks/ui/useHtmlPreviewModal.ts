@@ -5,7 +5,7 @@ import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { sanitizeFilename, triggerDownload } from '@/utils/export/core';
 import { useFullscreen } from './useFullscreen';
 import {
-  buildHtmlPreviewSrcDoc,
+  buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -299,7 +299,7 @@ export const useHtmlPreviewModal = ({
       iframeRef.current.srcdoc = ' ';
       requestAnimationFrame(() => {
         if (iframeRef.current) {
-          iframeRef.current.srcdoc = buildHtmlPreviewSrcDoc(htmlContent);
+          iframeRef.current.srcdoc = buildUnrestrictedHtmlPreviewSrcDoc(htmlContent);
         }
       });
     }

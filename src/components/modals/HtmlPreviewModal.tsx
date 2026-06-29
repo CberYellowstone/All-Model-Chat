@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useWindowContext } from '@/contexts/WindowContext';
+import { Z_INDEX_MODAL_BACKDROP } from '@/constants/layout';
 import { useHtmlPreviewModal } from '@/hooks/ui/useHtmlPreviewModal';
 import { HtmlPreviewHeader } from './html-preview/HtmlPreviewHeader';
 import { HtmlPreviewContent } from './html-preview/HtmlPreviewContent';
@@ -64,8 +65,8 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
   // If direct fullscreen launch is active, hide the modal chrome to prevent flash,
   // but keep it in the DOM so the iframe can be fullscreened.
   const containerClass = isDirectFullscreenLaunch
-    ? 'fixed inset-0 z-[2100] opacity-0 pointer-events-none'
-    : 'fixed inset-0 bg-black/80 flex items-center justify-center z-[2100]';
+    ? `fixed inset-0 ${Z_INDEX_MODAL_BACKDROP} opacity-0 pointer-events-none`
+    : `fixed inset-0 bg-black/80 flex items-center justify-center ${Z_INDEX_MODAL_BACKDROP}`;
 
   return createPortal(
     <div

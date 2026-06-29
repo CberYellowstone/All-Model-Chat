@@ -9,8 +9,6 @@ import { createDisabledMermaidDiagramPlugin } from './vite/disabledMermaidDiagra
 import { createLocalApiPlugin } from './vite/localApiPlugin';
 import { LAMEJS_WORKER_COPY_SOURCE, PDF_WORKER_COPY_SOURCE } from './vite/staticAssets';
 
-export { getManualChunk } from './vite/chunks';
-
 export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, '.', '');
   const analyzerPlugin =

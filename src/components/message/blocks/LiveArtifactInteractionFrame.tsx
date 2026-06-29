@@ -14,6 +14,8 @@ import {
   type LiveArtifactInteractionValue,
 } from '@/utils/liveArtifactInteraction';
 
+const FIELD_ERROR_CLASS = 'mt-1 block text-[0.75em] text-[var(--theme-text-danger)]';
+
 interface LiveArtifactInteractionFrameProps {
   spec: LiveArtifactInteractionSpec;
   baseFontSize?: number;
@@ -251,7 +253,7 @@ const LiveArtifactInteractionForm: React.FC<LiveArtifactInteractionFormProps> = 
             ))}
           </div>
           {error && (
-            <span id={errorId} className="mt-1 block text-[0.75em] text-[var(--theme-text-danger)]">
+            <span id={errorId} className={FIELD_ERROR_CLASS}>
               {error}
             </span>
           )}
@@ -282,7 +284,7 @@ const LiveArtifactInteractionForm: React.FC<LiveArtifactInteractionFormProps> = 
               </span>
             )}
             {error && (
-              <span id={errorId} className="mt-1 block text-[0.75em] text-[var(--theme-text-danger)]">
+              <span id={errorId} className={FIELD_ERROR_CLASS}>
                 {error}
               </span>
             )}

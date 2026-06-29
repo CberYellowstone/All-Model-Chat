@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import { useI18n } from '@/contexts/I18nContext';
 import { ScrollText, Sparkles } from 'lucide-react';
 import { type SavedScenario } from '@/types';
@@ -44,7 +45,7 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ initialScenario,
     }));
     setNewMessageContent('');
     setNewMessageRole(newMessageRole === 'user' ? 'model' : 'user');
-    setTimeout(() => inputRef.current?.focus(), 0);
+    deferToNextTick(() => inputRef.current?.focus());
   };
 
   const handleUpdateMessage = (id: string, content: string) => {

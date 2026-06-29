@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useWindowContext } from '@/contexts/WindowContext';
+import { Z_INDEX_MODAL_BACKDROP } from '@/constants/layout';
 
 interface ModalProps {
   isOpen: boolean;
@@ -220,7 +221,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div
       ref={backdropRef}
       data-modal-backdrop="true"
-      className={`fixed inset-0 z-[2100] flex items-center justify-center ${noPadding ? '' : 'p-2 sm:p-4'} ${backdropClassName}`}
+      className={`fixed inset-0 ${Z_INDEX_MODAL_BACKDROP} flex items-center justify-center ${noPadding ? '' : 'p-2 sm:p-4'} ${backdropClassName}`}
       onClick={handleBackdropClick}
     >
       <div

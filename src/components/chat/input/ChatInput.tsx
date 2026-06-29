@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { ChatInputArea } from './ChatInputArea';
 import { ChatInputFileModals } from './ChatInputFileModals';
-import { ChatInputModals } from './ChatInputModals';
+import { ChatInputCoreModals } from './ChatInputCoreModals';
 import { useChatInputContext } from './ChatInputContext';
 import { ChatInputProvider } from './ChatInputProvider';
 
@@ -22,7 +22,7 @@ const ChatInputContent: React.FC = () => {
 
   return (
     <>
-      <ChatInputModals
+      <ChatInputCoreModals
         showRecorder={modalsState.showRecorder}
         onAudioRecord={modalsState.handleAudioRecord}
         onRecorderCancel={() => {

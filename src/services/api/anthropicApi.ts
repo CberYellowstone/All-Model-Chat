@@ -1,4 +1,5 @@
 import type { UsageMetadata } from '@google/genai';
+import { toError } from '@/utils/errorMessage';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildAnthropicRequestBody } from './anthropicMessages';
@@ -92,7 +93,7 @@ export const sendAnthropicMessageNonStream: NonStreamMessageSender = async (
     onComplete(text ? [{ text }] : [], undefined, mapAnthropicUsage(payload.usage), undefined, undefined);
   } catch (error) {
     logService.error('Anthropic non-stream request failed:', error);
-    onError(error instanceof Error ? error : new Error(String(error)));
+    onError(toError(error));
   }
 };
 
@@ -143,6 +144,6 @@ export const sendAnthropicMessageStream: StreamMessageSender = async (
     onComplete(finalUsage, undefined, undefined);
   } catch (error) {
     logService.error('Anthropic stream request failed:', error);
-    onError(error instanceof Error ? error : new Error(String(error)));
+    onError(toError(error));
   }
 };

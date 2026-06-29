@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import { useVoiceInput } from './useVoiceInput';
 import { useSlashCommands } from './useSlashCommands';
 import { useChatInputCore } from './useChatInputCore';
@@ -233,7 +234,7 @@ export const useChatInput = () => {
   const handleToggleToolAndFocus = useCallback(
     (toggleFunc: () => void) => {
       toggleFunc();
-      setTimeout(() => inputState.textareaRef.current?.focus(), 0);
+      deferToNextTick(() => inputState.textareaRef.current?.focus());
     },
     [inputState.textareaRef],
   );

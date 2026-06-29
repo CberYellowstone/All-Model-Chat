@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import {
   User,
   AlertTriangle,
@@ -25,7 +26,7 @@ const AvatarWrapper: React.FC<{
 }> = ({ children, onClick, showEditOverlay, label }) => (
   <button
     type="button"
-    className="relative group/avatar cursor-pointer rounded-full bg-transparent p-0 border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)]"
+    className={`relative group/avatar cursor-pointer rounded-full bg-transparent p-0 border-0 ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}
     onClick={onClick}
     aria-label={label}
     title={label}

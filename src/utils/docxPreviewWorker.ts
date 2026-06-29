@@ -1,4 +1,5 @@
 import * as mammoth from 'mammoth';
+import { getErrorMessage } from './errorMessage';
 
 type DocxWorkerResponse =
   | {
@@ -40,7 +41,7 @@ self.onmessage = async (event: MessageEvent<Blob>) => {
   } catch (error) {
     postResponse({
       type: 'error',
-      error: error instanceof Error ? error.message : String(error),
+      error: getErrorMessage(error),
     });
   }
 };

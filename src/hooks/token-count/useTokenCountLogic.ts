@@ -1,4 +1,5 @@
 import { logService } from '@/services/logService';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { type UploadedFile, type AppSettings } from '@/types';
 import { buildContentParts } from '@/utils/chat/builder';
@@ -128,7 +129,7 @@ export const useTokenCountLogic = ({
         setTokenCount(count);
       } catch (tokenCountError) {
         logService.error('Token calculation failed', tokenCountError);
-        const message = tokenCountError instanceof Error ? tokenCountError.message : String(tokenCountError);
+        const message = getErrorMessage(tokenCountError);
         setError(t('tokenCountErrorWithMessage').replace('{message}', message));
       } finally {
         setIsLoading(false);

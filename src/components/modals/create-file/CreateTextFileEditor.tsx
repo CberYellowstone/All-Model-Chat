@@ -1,9 +1,9 @@
 import React from 'react';
-import { useCreateFileEditor } from './create-file/useCreateFileEditor';
-import { CreateFileHeader } from './create-file/CreateFileHeader';
-import { CreateFileBody } from './create-file/CreateFileBody';
-import { CreateFileFooter } from './create-file/CreateFileFooter';
-import { TextEditorModalShell } from './TextEditorModalShell';
+import { useCreateFileEditor } from './useCreateFileEditor';
+import { CreateFileHeader } from './CreateFileHeader';
+import { CreateFileBody } from './CreateFileBody';
+import { CreateFileFooter } from './CreateFileFooter';
+import { TextEditorModalShell } from '@/components/modals/TextEditorModalShell';
 
 interface CreateTextFileEditorProps {
   onConfirm: (content: string | Blob, filename: string) => void;

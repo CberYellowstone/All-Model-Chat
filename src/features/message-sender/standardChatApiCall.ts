@@ -1,4 +1,5 @@
 import { createChatHistoryForApi } from '@/utils/chat/builder';
+import { toError } from '@/utils/errorMessage';
 import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
@@ -68,7 +69,7 @@ const routeThrownStreamError = async (run: () => Promise<void>, streamOnError: (
   try {
     await run();
   } catch (error) {
-    streamOnError(error instanceof Error ? error : new Error(String(error)));
+    streamOnError(toError(error));
   }
 };
 
@@ -381,7 +382,7 @@ export const performStandardChatApiCall = async ({
         toolLoopResult.generatedFiles,
       );
     } catch (error) {
-      streamOnError(error instanceof Error ? error : new Error(String(error)));
+      streamOnError(toError(error));
     }
     return;
   }

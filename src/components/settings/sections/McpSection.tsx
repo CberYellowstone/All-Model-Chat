@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { AppSettings, McpServerAuthType, McpServerConfig, McpServerTransport } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
@@ -124,7 +125,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
         ...prev,
         [key]: {
           status: 'error',
-          error: error instanceof Error ? error.message : String(error),
+          error: getErrorMessage(error),
         },
       }));
     }

@@ -6,6 +6,8 @@ import { getCorsHeaders, sendJson } from './cors.js';
 export const LOCAL_CLIPBOARD_IMAGE_PATH = '/api/local-clipboard-image';
 
 const MAX_LOCAL_CLIPBOARD_IMAGE_BYTES = 25 * 1024 * 1024;
+const CLIPBOARD_BASE64_BUFFER_FACTOR = 2;
+const CLIPBOARD_BUFFER_PADDING_BYTES = 1024;
 const PNG_HEX_PREFIX = '89504e470d0a1a0a';
 const MACOS_CLIPBOARD_PNG_SCRIPT = `
 (() => {
@@ -60,7 +62,8 @@ export async function readMacOsClipboardPng(
   try {
     const result = await execFileImpl('osascript', ['-l', 'JavaScript', '-e', MACOS_CLIPBOARD_PNG_SCRIPT], {
       encoding: 'utf8',
-      maxBuffer: MAX_LOCAL_CLIPBOARD_IMAGE_BYTES * 2 + 1024,
+      // Base64 expands bytes ~2x; add padding for the JSON wrapper overhead.
+      maxBuffer: MAX_LOCAL_CLIPBOARD_IMAGE_BYTES * CLIPBOARD_BASE64_BUFFER_FACTOR + CLIPBOARD_BUFFER_PADDING_BYTES,
     });
     stdout = result.stdout;
   } catch {

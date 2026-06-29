@@ -1,13 +1,14 @@
 import type { FunctionCall, Part, UsageMetadata } from '@google/genai';
+import { getErrorMessage } from '@/utils/errorMessage';
 import type { ChatHistoryItem, StandardClientFunctions, UploadedFile } from '@/types';
 import { toStructuredToolResponse } from '@/features/chat-tools/toolResponse';
 import { mergeUsageMetadata, mergeUrlContextMetadata } from '@/features/chat-streaming/messageStreamMetadata';
 import {
   getGroundingChunkSource,
-  isRecord,
   type GroundingChunkLike,
   type GroundingSource,
 } from '@/utils/groundingMetadata';
+import { isRecord } from '../../../shared/predicates';
 
 interface StandardToolTurnResult {
   modelContent: ChatHistoryItem;
@@ -257,7 +258,7 @@ export const runStandardToolLoop = async ({
             id: call.id,
             name: call.name,
             response: {
-              error: error instanceof Error ? error.message : String(error),
+              error: getErrorMessage(error),
             },
           },
         });

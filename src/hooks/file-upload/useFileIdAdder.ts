@@ -1,4 +1,5 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import {
   type AppSettings,
   type ChatSettings as IndividualChatSettings,
@@ -172,9 +173,7 @@ export const useFileIdAdder = ({
           return;
         }
         logService.error(`Error fetching file metadata for ID ${fileApiId}`, { error });
-        setAppFileError(
-          t('fileIdAdderFetchError').replace('{message}', error instanceof Error ? error.message : String(error)),
-        );
+        setAppFileError(t('fileIdAdderFetchError').replace('{message}', getErrorMessage(error)));
         setSelectedFiles((prev) =>
           prev.map((selectedFile) =>
             selectedFile.id === tempId

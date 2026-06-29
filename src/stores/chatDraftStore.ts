@@ -6,6 +6,7 @@ import {
   registerPersistedStoreSync,
   removePersistentStorageItem,
 } from './persistentStorage';
+import { safeJsonParse } from '@/utils/safeJsonParse';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 
 const CHAT_DRAFT_STORE_STORAGE_KEY = 'all_model_chat_drafts_v1';
@@ -50,12 +51,8 @@ const readLegacyQuotes = (key: string): string[] => {
     return [];
   }
 
-  try {
-    const parsed = JSON.parse(rawQuotes);
-    return Array.isArray(parsed) ? parsed.filter((quote): quote is string => typeof quote === 'string') : [];
-  } catch {
-    return [];
-  }
+  const parsed = safeJsonParse<unknown>(rawQuotes, []);
+  return Array.isArray(parsed) ? parsed.filter((quote): quote is string => typeof quote === 'string') : [];
 };
 
 const normalizeDraft = (draft: Partial<ChatDraft> | undefined): ChatDraft => ({

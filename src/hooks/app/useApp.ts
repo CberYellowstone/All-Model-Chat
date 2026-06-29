@@ -1,4 +1,5 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { useAppSettings } from '@/hooks/core/useAppSettings';
 import { useChat } from '@/hooks/chat/useChat';
 import { useAppUi } from '@/hooks/core/useAppUi';
@@ -198,9 +199,7 @@ export const useApp = (): AppViewModel => {
         setIsExportModalOpen(false);
       } catch (error) {
         logService.error(`Chat export failed (format: ${format})`, { error });
-        alert(
-          t('exportFailedWithMessage').replace('{message}', error instanceof Error ? error.message : String(error)),
-        );
+        alert(t('exportFailedWithMessage').replace('{message}', getErrorMessage(error)));
       } finally {
         setExportStatus('idle');
       }

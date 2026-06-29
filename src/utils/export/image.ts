@@ -1,4 +1,5 @@
 import { logService } from '@/services/logService';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 
 import { sanitizeDocumentStylesForPngExport } from './cssColorSanitizer';
@@ -106,7 +107,7 @@ export const exportElementAsPng = async (
     }
   } catch (error) {
     logService.error('html2canvas error:', error);
-    alert(options.messages.exportFailed(error instanceof Error ? error.message : String(error)));
+    alert(options.messages.exportFailed(getErrorMessage(error)));
     return false;
   }
 };

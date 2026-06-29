@@ -100,6 +100,27 @@ describe('buildModelCatalogSections', () => {
 
     expect(buildModelCatalogSections(entries).map((section) => section.key)).toEqual(['pinned', 'tts', 'image']);
   });
+
+  it('splits third-party models into per-provider subsections', () => {
+    const entries = buildModelCatalog([
+      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', apiMode: 'gemini-native' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'third-party', providerId: 'openai' },
+      { id: 'claude-fable-5', name: 'Claude Fable 5', apiMode: 'third-party', providerId: 'anthropic' },
+      { id: 'qwen3.7-max', name: 'Qwen3.7 Max', apiMode: 'third-party', providerId: 'qwen' },
+    ]);
+
+    const sections = buildModelCatalogSections(entries);
+
+    expect(sections.map((section) => ({ key: section.key, label: section.label }))).toEqual([
+      { key: 'gemini-native', label: undefined },
+      { key: 'third-party:openai', label: 'OpenAI' },
+      { key: 'third-party:anthropic', label: 'Anthropic' },
+      { key: 'third-party:qwen', label: 'Qwen' },
+    ]);
+    expect(
+      sections.find((section) => section.key === 'third-party:anthropic')?.entries.map((entry) => entry.id),
+    ).toEqual(['claude-fable-5']);
+  });
 });
 
 describe('getQuickSwitchModelIds', () => {

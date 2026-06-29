@@ -49,8 +49,8 @@ export const useLiveConfig = ({
   return useMemo(() => {
     const capabilities = getCachedModelCapabilities(chatSettings.modelId);
 
-    // Live Translate 模型走专用 config：translationConfig + transcription，
-    // 无 voiceConfig / tools / compression / thinking
+    // Live Translate models use a dedicated config (translationConfig + transcription);
+    // voiceConfig / tools / compression / thinking do not apply.
     if (capabilities.isLiveTranslate) {
       const { targetLanguageCode, echoTargetLanguage } = liveTranslateConfig ?? {
         targetLanguageCode: 'en',

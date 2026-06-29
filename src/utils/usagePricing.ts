@@ -1,6 +1,9 @@
 import type { ApiUsageExactPricing, ApiUsageModalityTokenCount, ApiUsageRecord } from '@/services/db/dbService';
+import { normalizeModelId } from './modelId';
 
-const normalizeModelId = (modelId: string) => modelId.replace(/^models\//, '');
+const TOKENS_PER_MILLION = 1_000_000;
+/** Gemini 3.1 Pro applies higher per-token rates once combined prompt+cache tokens exceed this threshold. */
+const PRO_MODEL_TIER_THRESHOLD_TOKENS = 200_000;
 
 const IMAGE_GENERATION_PRICING: Record<string, { perImage: number } | null> = {
   'imagen-4.0-fast-generate-001': { perImage: 0.02 },
@@ -39,21 +42,13 @@ const MODALITY_TEXT_PRICING: Record<
     cache: { TEXT: 0.2 },
     response: { TEXT: 12 },
     tool: { TEXT: 2 },
-    thresholdTokens: 200_000,
+    thresholdTokens: PRO_MODEL_TIER_THRESHOLD_TOKENS,
     promptAboveThreshold: { TEXT: 4 },
     cacheAboveThreshold: { TEXT: 0.4 },
     responseAboveThreshold: { TEXT: 18 },
     toolAboveThreshold: { TEXT: 4 },
   },
 };
-
-const TTS_PRICING: Record<
-  string,
-  {
-    promptTextPerMillion: number;
-    responseAudioPerMillion: number;
-  } | null
-> = {};
 
 const sumTokensByRate = (
   details: ApiUsageModalityTokenCount[] | undefined,
@@ -73,7 +68,7 @@ const sumTokensByRate = (
     if (rate === undefined) {
       return null;
     }
-    total += (detail.tokenCount / 1_000_000) * rate;
+    total += (detail.tokenCount / TOKENS_PER_MILLION) * rate;
   }
   return total;
 };
@@ -92,28 +87,8 @@ const calculateFromExactPricing = (modelId: string, exactPricing: ApiUsageExactP
     return exactPricing.generatedImageCount * imagePricing.perImage;
   }
 
-  if (exactPricing.requestKind === 'tts') {
-    const ttsPricing = TTS_PRICING[normalizedModelId];
-    if (!ttsPricing) {
-      return null;
-    }
-
-    const promptDetails = exactPricing.promptTokensDetails;
-    const responseDetails = exactPricing.responseTokensDetails;
-    if (!hasAnyDetails(promptDetails) || !hasAnyDetails(responseDetails)) {
-      return null;
-    }
-
-    const promptCost = sumTokensByRate(promptDetails, { TEXT: ttsPricing.promptTextPerMillion });
-    const responseCost = sumTokensByRate(responseDetails, { AUDIO: ttsPricing.responseAudioPerMillion });
-
-    if (promptCost === null || responseCost === null) {
-      return null;
-    }
-
-    return promptCost + responseCost;
-  }
-
+  // 'tts' requestKind intentionally falls through to the modality table, which has
+  // no TTS model entries — TTS pricing was removed and stays unavailable (see tests).
   const modalityPricing = MODALITY_TEXT_PRICING[normalizedModelId];
   if (!modalityPricing) {
     return null;

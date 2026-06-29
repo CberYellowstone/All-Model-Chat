@@ -21,10 +21,10 @@ vi.mock('@/components/message/Message', async () => {
   return createMessageRowMock();
 });
 
-vi.mock('@/components/modals/FileConfigurationModal', async () => {
+vi.mock('@/components/modals/FileConfigModal', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
-  return createNullComponentMock('FileConfigurationModal');
+  return createNullComponentMock('FileConfigModal');
 });
 
 vi.mock('./message-list/hooks/useMessageListUi', async () => {

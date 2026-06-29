@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import { type UploadedFile, type SavedChatSession, type ChatSettings } from '@/types';
 import { logService } from '@/services/logService';
 import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
@@ -118,7 +119,7 @@ export const useChatEffects = ({
 
   useEffect(() => {
     if (isSwitchingModel) {
-      const timer = setTimeout(() => setIsSwitchingModel(false), 0);
+      const timer = deferToNextTick(() => setIsSwitchingModel(false));
       return () => clearTimeout(timer);
     }
     return undefined;

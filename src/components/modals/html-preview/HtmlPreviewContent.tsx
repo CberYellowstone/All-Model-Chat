@@ -1,7 +1,7 @@
 import { logService } from '@/services/logService';
 import React, { type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { buildHtmlPreviewSrcDoc } from '@/utils/html-preview/previewDocument';
+import { buildUnrestrictedHtmlPreviewSrcDoc } from '@/utils/html-preview/previewDocument';
 
 interface HtmlPreviewContentProps {
   iframeRef: RefObject<HTMLIFrameElement>;
@@ -27,7 +27,7 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRe
 
       <iframe
         ref={iframeRef}
-        srcDoc={buildHtmlPreviewSrcDoc(htmlContent)}
+        srcDoc={buildUnrestrictedHtmlPreviewSrcDoc(htmlContent)}
         title={t('htmlPreviewIframeTitle')}
         className="border-none bg-white shadow-sm origin-top-left"
         style={{
@@ -35,7 +35,7 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRe
           height: `${100 / scale}%`,
           transform: `scale(${scale})`,
         }}
-        sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+        sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
         onError={handleIframeError}
       />
     </div>

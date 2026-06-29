@@ -1,4 +1,5 @@
 import type { Part } from '@google/genai';
+import { getErrorMessage } from '@/utils/errorMessage';
 import {
   type AppSettings,
   type ChatMessage,
@@ -197,7 +198,7 @@ export const sendImageEditMessage = async ({
         } else {
           logService.error(`Image edit API call failed for index ${index}`, { error: result.reason });
           combinedText += `${prefix}${formatMessageSenderText(t('messageSenderImageEditRequestFailed'), {
-            message: result.reason instanceof Error ? result.reason.message : String(result.reason),
+            message: getErrorMessage(result.reason),
           })}\n\n`;
         }
       });

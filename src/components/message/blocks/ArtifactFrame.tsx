@@ -7,6 +7,7 @@ import {
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
+  HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
@@ -29,7 +30,7 @@ interface ArtifactFrameProps {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'escape' | 'resize' | 'followup' | 'selection' | 'diagnostic';
+  event?: 'ready' | 'escape' | 'resize' | 'followup' | 'selection' | 'copy' | 'diagnostic';
   height?: number;
   payload?: unknown;
 };
@@ -214,6 +215,21 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
         }
 
         onFollowUp?.(payload);
+        return;
+      }
+
+      if (data.event === HTML_PREVIEW_COPY_EVENT) {
+        const copyText =
+          data.payload && typeof data.payload === 'object' && 'text' in data.payload
+            ? (data.payload as { text?: unknown }).text
+            : undefined;
+        if (typeof copyText === 'string' && copyText.trim()) {
+          // The sandboxed iframe lacks allow-same-origin, so navigator.clipboard
+          // is unavailable there; the parent page writes to the clipboard instead.
+          targetWindow.navigator.clipboard?.writeText(copyText).catch((error: unknown) => {
+            logService.warn('Failed to copy Live Artifact text:', error);
+          });
+        }
         return;
       }
 

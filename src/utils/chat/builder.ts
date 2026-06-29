@@ -8,14 +8,6 @@ import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/fileTypeC
 import { usesRemoteFileReference } from './fileTransferStrategy';
 import { stripReasoningMarkup } from './reasoning';
 
-const PART_MEDIA_RESOLUTION_LEVEL = {
-  MEDIA_RESOLUTION_UNSPECIFIED: 'MEDIA_RESOLUTION_UNSPECIFIED',
-  MEDIA_RESOLUTION_LOW: 'MEDIA_RESOLUTION_LOW',
-  MEDIA_RESOLUTION_MEDIUM: 'MEDIA_RESOLUTION_MEDIUM',
-  MEDIA_RESOLUTION_HIGH: 'MEDIA_RESOLUTION_HIGH',
-  MEDIA_RESOLUTION_ULTRA_HIGH: 'MEDIA_RESOLUTION_ULTRA_HIGH',
-} as const;
-
 export const GEMINI_IMAGE_HISTORY_REHYDRATION_ERROR =
   'A previously generated image is missing from this image edit history. Please reattach the image or start a new image edit turn.';
 
@@ -29,6 +21,17 @@ const isGeminiImageHistoryTarget = (modelId?: string): boolean => {
     lowerId === 'gemini-3.1-flash-image-preview'
   );
 };
+
+// PART_MEDIA_RESOLUTION_LEVEL bridges the local MediaResolution string enum to
+// @google/genai's PartMediaResolutionLevel literal union via per-case `as const`
+// literals (a single-layer assertion) rather than a double cast through unknown.
+const PART_MEDIA_RESOLUTION_LEVEL = {
+  MEDIA_RESOLUTION_UNSPECIFIED: 'MEDIA_RESOLUTION_UNSPECIFIED',
+  MEDIA_RESOLUTION_LOW: 'MEDIA_RESOLUTION_LOW',
+  MEDIA_RESOLUTION_MEDIUM: 'MEDIA_RESOLUTION_MEDIUM',
+  MEDIA_RESOLUTION_HIGH: 'MEDIA_RESOLUTION_HIGH',
+  MEDIA_RESOLUTION_ULTRA_HIGH: 'MEDIA_RESOLUTION_ULTRA_HIGH',
+} as const;
 
 const toPartMediaResolutionLevel = (resolution: MediaResolution): PartMediaResolutionLevel => {
   switch (resolution) {
@@ -53,6 +56,160 @@ const normalizePartMediaResolution = (resolution: MediaResolution, isImage: bool
   return resolution;
 };
 
+interface FilePartBuildContext {
+  modelId?: string;
+  mediaResolution?: MediaResolution;
+  preferCodeExecutionFileInputs: boolean;
+}
+
+/** Builds a single ContentPart for one uploaded file (or null if it contributes nothing). */
+const buildFilePart = async (
+  file: UploadedFile,
+  context: FilePartBuildContext,
+): Promise<{ file: UploadedFile; part: ContentPart | null }> => {
+  const enrichedFile = { ...file };
+  let part: ContentPart | null = null;
+
+  if (file.isProcessing || file.error || file.uploadState !== 'active') {
+    return { file: enrichedFile, part };
+  }
+
+  const fileKindFlags = getFileKindFlags(file);
+  const { isImage, isVideo, isYoutube, isPdf } = fileKindFlags;
+  const isTextLike = isTextFile(file);
+  const supportsPartMediaResolution = !!context.modelId && isGemini3Model(context.modelId);
+
+  if (usesRemoteFileReference(file) && file.fileUri) {
+    // Remote file references are already available to Gemini by URI.
+    if (isYoutube) {
+      // YouTube URLs should be sent without a mimeType.
+      part = { fileData: { fileUri: file.fileUri } };
+    } else {
+      part = { fileData: { mimeType: file.type, fileUri: file.fileUri } };
+    }
+  } else {
+    // Local files are sent as text or inline data.
+    const fileSource = file.rawFile;
+    const urlSource = file.dataUrl;
+
+    if (isTextLike) {
+      if (context.preferCodeExecutionFileInputs) {
+        let base64DataForApi: string | undefined;
+
+        if (fileSource && fileSource instanceof Blob) {
+          try {
+            base64DataForApi = await blobToBase64(fileSource);
+          } catch (error) {
+            logService.error(`Failed to convert text file to base64 for ${file.name}`, { error });
+          }
+        } else if (urlSource) {
+          try {
+            const response = await fetch(urlSource);
+            const blob = await response.blob();
+            base64DataForApi = await blobToBase64(blob);
+
+            if (!enrichedFile.rawFile) {
+              enrichedFile.rawFile = new File([blob], file.name, { type: file.type || 'text/plain' });
+            }
+          } catch (error) {
+            logService.error(`Failed to fetch text blob and convert to base64 for ${file.name}`, { error });
+          }
+        }
+
+        if (base64DataForApi) {
+          part = {
+            inlineData: {
+              mimeType: file.type || 'text/plain',
+              data: base64DataForApi,
+            },
+          };
+        }
+      }
+
+      if (!part) {
+        let textContent = '';
+        if (fileSource && (fileSource instanceof File || fileSource instanceof Blob)) {
+          textContent = await fileToString(fileSource as File);
+        } else if (urlSource) {
+          // Fetch from URL when rawFile is missing.
+          const response = await fetch(urlSource);
+          textContent = await response.text();
+        }
+        if (textContent) {
+          part = { text: textContent };
+        }
+      }
+    } else {
+      // Only allow known inline media types to prevent API 400 errors.
+      if (fileKindFlags.isInlineData) {
+        let base64DataForApi: string | undefined;
+
+        if (fileSource && fileSource instanceof Blob) {
+          try {
+            base64DataForApi = await blobToBase64(fileSource);
+          } catch (error) {
+            logService.error(`Failed to convert rawFile to base64 for ${file.name}`, { error });
+          }
+        } else if (urlSource) {
+          try {
+            const response = await fetch(urlSource);
+            const blob = await response.blob();
+            base64DataForApi = await blobToBase64(blob);
+
+            // Recreate rawFile when persistence kept only a blob/data URL.
+            if (!enrichedFile.rawFile) {
+              enrichedFile.rawFile = new File([blob], file.name, { type: file.type });
+            }
+          } catch (error) {
+            logService.error(`Failed to fetch blob and convert to base64 for ${file.name}`, { error });
+          }
+        }
+
+        if (base64DataForApi) {
+          part = { inlineData: { mimeType: file.type, data: base64DataForApi } };
+        }
+      } else {
+        part = { text: `[Attachment: ${file.name} (Binary content not supported for direct reading)]` };
+      }
+    }
+  }
+
+  // Video metadata works for both inline and fileUri video/youtube parts.
+  if (part && (isVideo || isYoutube) && file.videoMetadata) {
+    part.videoMetadata = { ...part.videoMetadata };
+
+    if (file.videoMetadata.startOffset) {
+      part.videoMetadata.startOffset = file.videoMetadata.startOffset;
+    }
+    if (file.videoMetadata.endOffset) {
+      part.videoMetadata.endOffset = file.videoMetadata.endOffset;
+    }
+    if (file.videoMetadata.fps) {
+      part.videoMetadata.fps = file.videoMetadata.fps;
+    }
+  }
+
+  // File-level media resolution overrides the global setting.
+  const effectiveResolution = file.mediaResolution || context.mediaResolution;
+
+  if (
+    part &&
+    supportsPartMediaResolution &&
+    effectiveResolution &&
+    effectiveResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED
+  ) {
+    const isResolutionEligibleMedia = isImage || isVideo || isYoutube || isPdf;
+    const shouldAttachMediaResolution = isResolutionEligibleMedia && Boolean(part.fileData || part.inlineData);
+    if (shouldAttachMediaResolution) {
+      part.mediaResolution = {
+        level: toPartMediaResolutionLevel(normalizePartMediaResolution(effectiveResolution, isImage)),
+      };
+    }
+  }
+
+  return { file: enrichedFile, part };
+};
+
 export const buildContentParts = async (
   text: string,
   files?: UploadedFile[],
@@ -63,154 +220,9 @@ export const buildContentParts = async (
   contentParts: ContentPart[];
   enrichedFiles: UploadedFile[];
 }> => {
-  const filesToProcess = files || [];
+  const context: FilePartBuildContext = { modelId, mediaResolution, preferCodeExecutionFileInputs };
 
-  const supportsPartMediaResolution = !!modelId && isGemini3Model(modelId);
-
-  const processedResults = await Promise.all(
-    filesToProcess.map(async (file) => {
-      const enrichedFile = { ...file };
-      let part: ContentPart | null = null;
-
-      if (file.isProcessing || file.error || file.uploadState !== 'active') {
-        return { file: enrichedFile, part };
-      }
-
-      const fileKindFlags = getFileKindFlags(file);
-      const { isImage, isVideo, isYoutube, isPdf } = fileKindFlags;
-      const isTextLike = isTextFile(file);
-
-      if (usesRemoteFileReference(file) && file.fileUri) {
-        // Remote file references are already available to Gemini by URI.
-        if (isYoutube) {
-          // YouTube URLs should be sent without a mimeType.
-          part = { fileData: { fileUri: file.fileUri } };
-        } else {
-          part = { fileData: { mimeType: file.type, fileUri: file.fileUri } };
-        }
-      } else {
-        // Local files are sent as text or inline data.
-        const fileSource = file.rawFile;
-        const urlSource = file.dataUrl;
-
-        if (isTextLike) {
-          if (preferCodeExecutionFileInputs) {
-            let base64DataForApi: string | undefined;
-
-            if (fileSource && fileSource instanceof Blob) {
-              try {
-                base64DataForApi = await blobToBase64(fileSource);
-              } catch (error) {
-                logService.error(`Failed to convert text file to base64 for ${file.name}`, { error });
-              }
-            } else if (urlSource) {
-              try {
-                const response = await fetch(urlSource);
-                const blob = await response.blob();
-                base64DataForApi = await blobToBase64(blob);
-
-                if (!enrichedFile.rawFile) {
-                  enrichedFile.rawFile = new File([blob], file.name, { type: file.type || 'text/plain' });
-                }
-              } catch (error) {
-                logService.error(`Failed to fetch text blob and convert to base64 for ${file.name}`, { error });
-              }
-            }
-
-            if (base64DataForApi) {
-              part = {
-                inlineData: {
-                  mimeType: file.type || 'text/plain',
-                  data: base64DataForApi,
-                },
-              };
-            }
-          }
-
-          if (!part) {
-            let textContent = '';
-            if (fileSource && (fileSource instanceof File || fileSource instanceof Blob)) {
-              textContent = await fileToString(fileSource as File);
-            } else if (urlSource) {
-              // Fetch from URL when rawFile is missing.
-              const response = await fetch(urlSource);
-              textContent = await response.text();
-            }
-            if (textContent) {
-              part = { text: textContent };
-            }
-          }
-        } else {
-          // Only allow known inline media types to prevent API 400 errors.
-          if (fileKindFlags.isInlineData) {
-            let base64DataForApi: string | undefined;
-
-            if (fileSource && fileSource instanceof Blob) {
-              try {
-                base64DataForApi = await blobToBase64(fileSource);
-              } catch (error) {
-                logService.error(`Failed to convert rawFile to base64 for ${file.name}`, { error });
-              }
-            } else if (urlSource) {
-              try {
-                const response = await fetch(urlSource);
-                const blob = await response.blob();
-                base64DataForApi = await blobToBase64(blob);
-
-                // Recreate rawFile when persistence kept only a blob/data URL.
-                if (!enrichedFile.rawFile) {
-                  enrichedFile.rawFile = new File([blob], file.name, { type: file.type });
-                }
-              } catch (error) {
-                logService.error(`Failed to fetch blob and convert to base64 for ${file.name}`, { error });
-              }
-            }
-
-            if (base64DataForApi) {
-              part = { inlineData: { mimeType: file.type, data: base64DataForApi } };
-            }
-          } else {
-            part = { text: `[Attachment: ${file.name} (Binary content not supported for direct reading)]` };
-          }
-        }
-      }
-
-      // Video metadata works for both inline and fileUri video/youtube parts.
-      if (part && (isVideo || isYoutube) && file.videoMetadata) {
-        part.videoMetadata = { ...part.videoMetadata };
-
-        if (file.videoMetadata.startOffset) {
-          part.videoMetadata.startOffset = file.videoMetadata.startOffset;
-        }
-        if (file.videoMetadata.endOffset) {
-          part.videoMetadata.endOffset = file.videoMetadata.endOffset;
-        }
-        if (file.videoMetadata.fps) {
-          part.videoMetadata.fps = file.videoMetadata.fps;
-        }
-      }
-
-      // File-level media resolution overrides the global setting.
-      const effectiveResolution = file.mediaResolution || mediaResolution;
-
-      if (
-        part &&
-        supportsPartMediaResolution &&
-        effectiveResolution &&
-        effectiveResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED
-      ) {
-        const isResolutionEligibleMedia = isImage || isVideo || isYoutube || isPdf;
-        const shouldAttachMediaResolution = isResolutionEligibleMedia && Boolean(part.fileData || part.inlineData);
-        if (shouldAttachMediaResolution) {
-          part.mediaResolution = {
-            level: toPartMediaResolutionLevel(normalizePartMediaResolution(effectiveResolution, isImage)),
-          };
-        }
-      }
-
-      return { file: enrichedFile, part };
-    }),
-  );
+  const processedResults = await Promise.all((files || []).map((file) => buildFilePart(file, context)));
 
   const enrichedFiles = processedResults.map((result) => result.file);
   const dataParts = processedResults.flatMap((result): ContentPart[] => {

@@ -81,12 +81,12 @@ describe('runtimeConfig', () => {
 
   it('defaults Docker runtime config to BYOK instead of server-managed credentials', () => {
     const projectRoot = path.resolve(__dirname, '../..');
-    const webEntrypointSource = fs.readFileSync(path.join(projectRoot, 'docker/web-entrypoint.sh'), 'utf8');
+    const webServerSource = fs.readFileSync(path.join(projectRoot, 'docker/web-server.js'), 'utf8');
     const composeSource = fs.readFileSync(path.join(projectRoot, 'docker-compose.yml'), 'utf8');
     const envExampleSource = fs.readFileSync(path.join(projectRoot, '.env.example'), 'utf8');
 
-    expect(webEntrypointSource).toContain('RUNTIME_SERVER_MANAGED_API:-false');
-    expect(webEntrypointSource).toContain('RUNTIME_PYODIDE_BASE_URL');
+    expect(webServerSource).toContain('serverManagedApi: toBool(process.env.RUNTIME_SERVER_MANAGED_API)');
+    expect(webServerSource).toContain('RUNTIME_PYODIDE_BASE_URL');
     expect(composeSource).toContain('RUNTIME_SERVER_MANAGED_API:-false');
     expect(composeSource).toContain('RUNTIME_PYODIDE_BASE_URL');
     expect(envExampleSource).toContain('GEMINI_API_KEY=');

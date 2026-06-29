@@ -25,7 +25,7 @@ const markdownPdfExportPath = path.join(projectRoot, 'src/utils/export/markdownP
 const markdownPdfFontsPath = path.join(projectRoot, 'src/utils/export/markdownPdfFonts.ts');
 const markdownPdfImagesPath = path.join(projectRoot, 'src/utils/export/markdownPdfImages.ts');
 const markdownPdfRendererPath = path.join(projectRoot, 'src/utils/export/markdownPdfRenderer.ts');
-const chatInputModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputModals.tsx');
+const chatInputModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputCoreModals.tsx');
 const chatInputFileModalsPath = path.join(projectRoot, 'src/components/chat/input/ChatInputFileModals.tsx');
 const useCreateFileEditorPath = path.join(projectRoot, 'src/components/modals/create-file/useCreateFileEditor.ts');
 const clipboardDataPath = path.join(projectRoot, 'src/utils/chat-input/clipboardData.ts');
@@ -33,7 +33,7 @@ const useChatInputClipboardPath = path.join(projectRoot, 'src/hooks/chat-input/u
 const useSelectionPositionPath = path.join(projectRoot, 'src/hooks/text-selection/useSelectionPosition.ts');
 const tableBlockPath = path.join(projectRoot, 'src/components/message/blocks/TableBlock.tsx');
 const pdfRuntimePath = path.join(projectRoot, 'src/utils/pdfRuntime.ts');
-const pdfFileThumbnailPath = path.join(projectRoot, 'src/components/chat/input/PdfFileThumbnail.tsx');
+const pdfFileThumbnailPath = path.join(projectRoot, 'src/components/chat/input/files/PdfFileThumbnail.tsx');
 const usePdfViewerPath = path.join(projectRoot, 'src/hooks/ui/usePdfViewer.ts');
 const importContextLoadersPath = path.join(projectRoot, 'src/utils/import-context/loaders.ts');
 const useFileDragDropPath = path.join(projectRoot, 'src/hooks/file-upload/useFileDragDrop.ts');
@@ -201,7 +201,7 @@ describe('vite.config runtime ownership', () => {
     const useCreateFileEditorSource = fs.readFileSync(useCreateFileEditorPath, 'utf8');
 
     expect(chatInputModalsSource).not.toContain('import { CreateTextFileEditor }');
-    expect(chatInputModalsSource).toContain("import('@/components/modals/CreateTextFileEditor')");
+    expect(chatInputModalsSource).toContain("import('@/components/modals/create-file/CreateTextFileEditor')");
     expect(useCreateFileEditorSource).not.toContain("from '@/utils/export/markdownPdf'");
     expect(useCreateFileEditorSource).toContain("import('@/utils/export/markdownPdf')");
   });
@@ -217,8 +217,8 @@ describe('vite.config runtime ownership', () => {
     expect(chatInputModalsSource).toContain("import('@/components/modals/HelpModal')");
     expect(chatInputModalsSource).toContain("import('@/components/modals/TextEditorModal')");
 
-    expect(chatInputFileModalsSource).not.toContain("from '@/components/modals/FileConfigurationModal'");
-    expect(chatInputFileModalsSource).toContain("import('@/components/modals/FileConfigurationModal')");
+    expect(chatInputFileModalsSource).not.toContain("from '@/components/modals/FileConfigModal'");
+    expect(chatInputFileModalsSource).toContain("import('@/components/modals/FileConfigModal')");
   });
 
   it('keeps HTML-to-Markdown conversion out of the initial chat and message interaction bundles', () => {

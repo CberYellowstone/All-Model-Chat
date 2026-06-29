@@ -2,6 +2,7 @@ import type { UploadedFile } from '@/types';
 import { logService } from '@/services/logService';
 import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES } from '@/utils/codeExecution';
 import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/fileTypeClassification';
+import { normalizeModelId } from '@/utils/modelId';
 import type { MessageSenderTranslator } from './messageSenderTypes';
 
 interface MessageSendPermissions {
@@ -24,7 +25,7 @@ interface ValidateMessageBeforeSendOptions {
 type MessageSendValidationResult = { ok: true } | { ok: false; fileError?: string };
 
 const isHostedGemma4TextImageModel = (modelId: string): boolean => {
-  const normalizedModelId = modelId.toLowerCase().replace(/^models\//, '');
+  const normalizedModelId = normalizeModelId(modelId);
   return normalizedModelId === 'gemma-4-31b-it' || normalizedModelId === 'gemma-4-26b-a4b-it';
 };
 

@@ -16,7 +16,7 @@ describe('HtmlPreviewContent', () => {
     });
 
     const iframe = renderer.container.querySelector('iframe');
-    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-popups allow-modals allow-downloads');
+    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin');
     expect(iframe?.getAttribute('srcdoc')).toContain('parent.postMessage');
   });
 });

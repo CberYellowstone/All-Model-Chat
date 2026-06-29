@@ -42,19 +42,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.hasError) {
       const language =
         typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
-      const t = getTranslator(language);
+      const translator = getTranslator(language);
 
       return (
         <div className="flex h-full items-center justify-center bg-gray-900 p-8">
           <div className="max-w-md rounded-xl bg-gray-800 p-8 text-center shadow-2xl">
             <div className="mb-4 text-5xl">&#9888;&#65039;</div>
-            <h2 className="mb-2 text-xl font-bold text-white">{t('errorBoundaryTitle')}</h2>
-            <p className="mb-4 text-sm text-gray-400">{this.state.error?.message || t('errorBoundaryDescription')}</p>
+            <h2 className="mb-2 text-xl font-bold text-white">{translator('errorBoundaryTitle')}</h2>
+            <p className="mb-4 text-sm text-gray-400">{this.state.error?.message || translator('errorBoundaryDescription')}</p>
             <button
               onClick={this.handleReload}
               className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
             >
-              {t('errorBoundaryReload')}
+              {translator('errorBoundaryReload')}
             </button>
           </div>
         </div>

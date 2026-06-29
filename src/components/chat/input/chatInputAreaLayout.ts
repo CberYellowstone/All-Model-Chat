@@ -1,3 +1,8 @@
+import {
+  CHAT_INPUT_MAX_WIDTH_CLASS,
+  Z_INDEX_FULLSCREEN_CHAT_INPUT,
+} from '@/constants/layout';
+
 interface ChatInputAreaLayoutParams {
   isFullscreen: boolean;
   isPipActive?: boolean;
@@ -13,15 +18,18 @@ export const getChatInputAreaLayout = ({
   isRecording,
   inputDisabled,
 }: ChatInputAreaLayoutParams) => {
+  // inputDisabled only greys out the textarea; isUIBlocked additionally dims the
+  // whole wrapper and is skipped during send/record animations so the user still
+  // sees feedback while a request is in flight.
   const isUIBlocked = inputDisabled && !isAnimatingSend && !isRecording;
 
   const wrapperClass = isFullscreen
-    ? 'fixed inset-0 z-[2000] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation'
+    ? `fixed inset-0 ${Z_INDEX_FULLSCREEN_CHAT_INPUT} bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation`
     : `bg-transparent ${isUIBlocked ? 'opacity-30 pointer-events-none' : ''}`;
 
   const innerContainerClass = isFullscreen
     ? 'w-full max-w-6xl mx-auto flex flex-col h-full'
-    : `mx-auto w-full ${!isPipActive ? 'max-w-[44.35rem]' : ''} px-2 sm:px-3 pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]`;
+    : `mx-auto w-full ${!isPipActive ? CHAT_INPUT_MAX_WIDTH_CLASS : ''} px-2 sm:px-3 pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]`;
 
   const formClass = isFullscreen
     ? 'flex-grow flex flex-col relative min-h-0'

@@ -1,28 +1,7 @@
 import { logService } from '@/services/logService';
 import { useEffect, useState } from 'react';
 import { dbService, type AppDataSizeEstimate } from '@/services/db/dbService';
-
-const formatAppDataSize = (bytes: number): string => {
-  if (bytes <= 0) {
-    return '0 B';
-  }
-
-  if (bytes < 1024) {
-    return `${Math.round(bytes)} B`;
-  }
-
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let value = bytes / 1024;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-
-  const decimals = unitIndex === 0 ? 1 : 2;
-  return `${value.toFixed(decimals)} ${units[unitIndex]}`;
-};
+import { formatFileSize } from '@/utils/fileSize';
 
 interface AppDataSizeState {
   estimate: AppDataSizeEstimate | null;
@@ -61,7 +40,7 @@ export const useAppDataSize = (): AppDataSizeState => {
     estimate,
     isLoading,
     hasError,
-    formattedTotalSize: formatAppDataSize(estimate?.totalBytes ?? 0),
+    formattedTotalSize: estimate?.totalBytes ? formatFileSize(estimate.totalBytes) : '0 B',
     refresh,
   };
 };

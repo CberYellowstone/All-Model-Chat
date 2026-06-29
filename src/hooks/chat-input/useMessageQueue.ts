@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import type { UploadedFile } from '@/types';
 import { useChatStore } from '@/stores/chatStore';
 import {
@@ -115,7 +116,7 @@ export const useMessageQueue = ({
     setInputText(queuedSubmission.inputText);
     setQuotes(queuedSubmission.quotes);
     setSelectedFiles(queuedSubmission.files);
-    setTimeout(() => textareaRef.current?.focus(), 0);
+    deferToNextTick(() => textareaRef.current?.focus());
   }, [queuedSubmission, setInputText, setQuotes, setSelectedFiles, textareaRef]);
 
   const flushQueuedSubmission = useCallback(

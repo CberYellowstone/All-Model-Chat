@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { useI18n } from '@/contexts/I18nContext';
 import { ChevronDown, Shield } from 'lucide-react';
 import { type ApiMode, type AppSettings, type ModelOption } from '@/types';
@@ -118,7 +119,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
       return fetchedModels;
     } catch (error) {
       setModelFetchStatus('error');
-      setModelFetchMessage(error instanceof Error ? error.message : String(error));
+      setModelFetchMessage(getErrorMessage(error));
       return [];
     }
   };

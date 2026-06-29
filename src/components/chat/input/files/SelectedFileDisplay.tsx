@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import { type UploadedFile } from '@/types';
 import {
   Ban,
@@ -32,6 +33,13 @@ interface SelectedFileDisplayProps {
 
 const NEWLY_ACTIVE_FEEDBACK_MS = 800;
 
+const ACTION_BUTTON_CLASS =
+  'flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/90 text-[var(--theme-text-secondary)] shadow-sm transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)]';
+const MENU_ITEM_CLASS =
+  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] leading-tight text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]';
+const FILE_PREVIEW_BOX_CLASS =
+  'file-preview-box relative w-full aspect-square rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/30 flex items-center justify-center transition-colors group-hover:border-[var(--theme-border-focus)]/50';
+
 export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
   file,
   onRemove,
@@ -55,7 +63,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
       return undefined;
     }
 
-    const showTimer = window.setTimeout(() => setIsNewlyActive(true), 0);
+    const showTimer = deferToNextTick(() => setIsNewlyActive(true));
     const hideTimer = window.setTimeout(() => setIsNewlyActive(false), NEWLY_ACTIVE_FEEDBACK_MS);
 
     return () => {
@@ -97,10 +105,6 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
   const ErrorIcon = CATEGORY_STYLES['error'].Icon;
   const canCopyFileId = Boolean(file.fileApiName && isActive && !file.error);
   const configureButtonColorClass = file.mediaResolution ? getResolutionColor(file.mediaResolution) : '';
-  const actionButtonClass =
-    'flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/90 text-[var(--theme-text-secondary)] shadow-sm transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)]';
-  const menuItemClass =
-    'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] leading-tight text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]';
 
   return (
     <div
@@ -113,7 +117,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
               onPreview(file);
             }
           }}
-          className={`file-preview-box relative w-full aspect-square rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/30 flex items-center justify-center transition-colors group-hover:border-[var(--theme-border-focus)]/50 ${isActive && onPreview ? 'cursor-pointer hover:opacity-90' : ''}`}
+          className={`${FILE_PREVIEW_BOX_CLASS} ${isActive && onPreview ? 'cursor-pointer hover:opacity-90' : ''}`}
         >
           <div
             className={`absolute inset-0 overflow-hidden rounded-xl flex items-center justify-center p-2 transition-all duration-300 ${isUploading || isProcessing ? 'opacity-30 blur-[1px] scale-95' : 'opacity-100'}`}
@@ -198,7 +202,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
             }}
             title={isText ? t('selectedFileEditFile') : t('selectedFileConfigureFile')}
             aria-label={isText ? t('selectedFileEditFile') : t('selectedFileConfigureFile')}
-            className={`${actionButtonClass} ${configureButtonColorClass}`}
+            className={`${ACTION_BUTTON_CLASS} ${configureButtonColorClass}`}
           >
             <ConfigIcon size={14} strokeWidth={2} />
           </button>
@@ -214,7 +218,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
             }}
             title={t('selectedFileMoveTextToInput')}
             aria-label={t('selectedFileMoveTextToInput')}
-            className={actionButtonClass}
+            className={ACTION_BUTTON_CLASS}
           >
             <FileText size={14} strokeWidth={2} />
           </button>
@@ -232,7 +236,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
               aria-label={t('selectedFileMoreActions')}
               aria-haspopup="menu"
               aria-expanded={isOverflowOpen}
-              className={actionButtonClass}
+              className={ACTION_BUTTON_CLASS}
             >
               <Ellipsis size={15} strokeWidth={2.2} />
             </button>
@@ -243,7 +247,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
                 className="absolute right-0 top-8 z-40 min-w-36 overflow-hidden rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] py-1 shadow-lg"
               >
                 {canCopyFileId && (
-                  <button type="button" role="menuitem" onClick={handleCopyId} className={menuItemClass}>
+                  <button type="button" role="menuitem" onClick={handleCopyId} className={MENU_ITEM_CLASS}>
                     {idCopied ? <Check size={12} strokeWidth={3} /> : <Copy size={12} strokeWidth={2} />}
                     <span>{idCopied ? t('selectedFileIdCopied') : t('selectedFileCopyFileId')}</span>
                   </button>
@@ -265,7 +269,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
                 onRemove(file.id);
               }
             }}
-            className={`${actionButtonClass} hover:text-[var(--theme-text-danger)]`}
+            className={`${ACTION_BUTTON_CLASS} hover:text-[var(--theme-text-danger)]`}
             title={isCancellable ? t('selectedFileCancelUpload') : t('selectedFileRemoveFile')}
             aria-label={isCancellable ? t('selectedFileCancelUpload') : t('selectedFileRemoveFile')}
           >

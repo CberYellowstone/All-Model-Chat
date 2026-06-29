@@ -10,6 +10,8 @@ interface UseMessageListScrollProps {
 
 const CURRENT_TURN_VIEWPORT_OFFSET_PX = 96;
 const SCROLL_BOTTOM_THRESHOLD_PX = 150;
+const ANCHOR_SCROLL_DELAY_MS = 50;
+const RESTORE_SCROLL_DELAY_MS = 50;
 
 type StoredMessageScrollSnapshot = {
   messageId: string;
@@ -180,7 +182,7 @@ export const useMessageListScroll = ({
             behavior: 'smooth',
           });
           lastScrollTarget.current = targetIndex;
-        }, 50);
+        }, ANCHOR_SCROLL_DELAY_MS);
       }
     }
     prevMsgCount.current = messages.length;
@@ -357,7 +359,7 @@ export const useMessageListScroll = ({
             virtuosoRef.current?.scrollToIndex({ index: 'LAST', align: 'end' });
           }
           lastRestoredSessionIdRef.current = sessionIdForRestore;
-        }, 50);
+        }, RESTORE_SCROLL_DELAY_MS);
       }
     }
   }, [activeSessionId, messages, clearRestoreTimeout]);

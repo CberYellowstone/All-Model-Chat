@@ -6,6 +6,7 @@ import {
   MENU_ITEM_BUTTON_CLASS,
   MENU_ITEM_DEFAULT_STATE_CLASS,
   MENU_ITEM_DANGER_STATE_CLASS,
+  MENU_PANEL_CLASS,
 } from '@/constants/menuClasses';
 
 interface SessionItemMenuProps {
@@ -31,7 +32,7 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
   return (
     <div
       ref={menuRef}
-      className="absolute right-3 top-9 z-10 w-40 bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] rounded-md shadow-lg py-1"
+      className={`${MENU_PANEL_CLASS} top-9 z-10`}
     >
       <button onClick={onStartEdit} className={`${MENU_ITEM_BUTTON_CLASS} ${MENU_ITEM_DEFAULT_STATE_CLASS}`}>
         <SquarePen size={14} /> <span>{t('edit')}</span>

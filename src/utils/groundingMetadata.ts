@@ -1,3 +1,5 @@
+import { isRecord } from '../../shared/predicates';
+
 export interface GroundingSource {
   uri?: string;
   title?: string;
@@ -18,9 +20,6 @@ export interface GroundingChunkLike {
     text?: string;
   };
 }
-
-export const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
 
 export type MetadataWithCitations = {
   citations?: Array<{ uri?: string }>;

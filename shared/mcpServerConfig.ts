@@ -1,3 +1,5 @@
+import { isRecord } from './predicates.js';
+
 export type McpServerTransport = 'stdio' | 'http';
 export type McpServerAuthType = 'none' | 'bearer' | 'customHeaders';
 
@@ -18,9 +20,6 @@ export interface McpServerConfig {
   headers?: Record<string, string>;
   auth?: McpServerAuthConfig;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const sanitizeStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {

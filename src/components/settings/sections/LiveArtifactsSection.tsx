@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import { useI18n } from '@/contexts/I18nContext';
 import { ChevronDown, RotateCcw, Wand2 } from 'lucide-react';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
@@ -16,10 +17,7 @@ interface LiveArtifactsSectionProps {
   onUpdateSetting: SettingsUpdateHandler;
 }
 
-export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({
-  currentSettings,
-  onUpdateSetting,
-}) => {
+export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({ currentSettings, onUpdateSetting }) => {
   const { language, t } = useI18n();
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [builtInPromptState, setBuiltInPromptState] = useState({ key: '', value: '' });
@@ -74,7 +72,7 @@ export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({
             aria-expanded={isPromptExpanded}
             aria-controls="live-artifacts-prompt-panel"
             onClick={() => setIsPromptExpanded((prev) => !prev)}
-            className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-0 py-2 text-left text-sm font-medium text-[var(--theme-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)]"
+            className={`flex w-full min-w-0 items-center justify-between gap-3 rounded-lg px-0 py-2 text-left text-sm font-medium text-[var(--theme-text-primary)] ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}
           >
             <span>{t('settingsLiveArtifactsSystemPromptLabel')}</span>
             <ChevronDown

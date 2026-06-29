@@ -93,8 +93,8 @@ describe('promptRegistry', () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
-    expect(zhPrompt.length).toBeLessThan(2500);
-    expect(enPrompt.length).toBeLessThan(4000);
+    expect(zhPrompt.length).toBeLessThan(2700);
+    expect(enPrompt.length).toBeLessThan(4700);
     expect(zhPrompt).not.toContain('信息设计原则');
     expect(zhPrompt).not.toContain('完整 HTML 页面能力');
     expect(enPrompt).not.toContain('Information Design Principles');

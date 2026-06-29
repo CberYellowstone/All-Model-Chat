@@ -9,6 +9,7 @@ import { AudioVisualizer } from '@/components/recorder/AudioVisualizer';
 import { RecorderControls } from '@/components/recorder/RecorderControls';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import { MODAL_CLOSE_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { formatClockTime } from '@/utils/formatClockTime';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AudioRecorderProps {
@@ -65,12 +66,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecord, onCancel
       return t('audioRecorderSystemAudioCaptureFailedWarning');
     }
     return warning;
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -160,7 +155,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecord, onCancel
         {viewState === 'recording' && (
           <div className="w-full flex flex-col items-center gap-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="font-mono text-4xl font-medium text-[var(--theme-text-primary)] tabular-nums tracking-wider">
-              {formatTime(recordingTime)}
+              {formatClockTime(recordingTime)}
             </div>
 
             <AudioVisualizer stream={stream} />
@@ -178,7 +173,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecord, onCancel
               <div className="text-xs text-[var(--theme-text-tertiary)] mb-1 uppercase tracking-wide">
                 {t('audioRecorderTotalDuration')}
               </div>
-              <div className="text-3xl font-mono text-[var(--theme-text-primary)]">{formatTime(recordingTime)}</div>
+              <div className="text-3xl font-mono text-[var(--theme-text-primary)]">
+                {formatClockTime(recordingTime)}
+              </div>
             </div>
             <AudioPlayer src={audioUrl} className="w-full" />
           </div>

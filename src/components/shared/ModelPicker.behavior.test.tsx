@@ -133,4 +133,32 @@ describe('ModelPicker behavior', () => {
     );
     expect(activeOption?.textContent).toContain('Gemini 3 Flash Preview');
   });
+
+  it('renders third-party models grouped by provider with brand labels', () => {
+    act(() => {
+      renderer.root.render(
+        renderPicker({
+          models: [
+            { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
+            { id: 'claude-fable-5', name: 'Claude Fable 5', apiMode: 'third-party', providerId: 'anthropic' },
+            { id: 'qwen3.7-max', name: 'Qwen3.7 Max', apiMode: 'third-party', providerId: 'qwen' },
+          ],
+          selectedId: 'gemini-3-flash-preview',
+        }),
+      );
+    });
+
+    act(() => {
+      renderer.container
+        .querySelector('[data-testid="model-picker-trigger"]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const thirdPartySections = renderer.container.querySelectorAll('[data-provider-section="third-party"]');
+    expect(thirdPartySections.length).toBe(2);
+    expect(thirdPartySections[0]?.textContent).toContain('Anthropic');
+    expect(thirdPartySections[0]?.textContent).toContain('Claude Fable 5');
+    expect(thirdPartySections[1]?.textContent).toContain('Qwen');
+    expect(thirdPartySections[1]?.textContent).toContain('Qwen3.7 Max');
+  });
 });

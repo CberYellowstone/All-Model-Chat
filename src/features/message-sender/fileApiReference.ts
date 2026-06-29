@@ -1,4 +1,5 @@
 import type { File as GeminiFile } from '@google/genai';
+import { getErrorMessage } from '@/utils/errorMessage';
 import type { UploadedFile } from '@/types';
 import { getFileMetadataApi, uploadFileApi } from '@/services/api/fileApi';
 import { getUploadLifecycleForGeminiState } from '@/utils/file-upload/fileUploadPolicy';
@@ -221,7 +222,7 @@ export const ensureFilesApiReferences = async ({
         {
           isProcessing: false,
           uploadState: 'failed',
-          error: error instanceof Error ? error.message : String(error),
+          error: getErrorMessage(error),
         },
         onFileUpdate,
       );

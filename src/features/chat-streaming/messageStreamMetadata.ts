@@ -1,5 +1,5 @@
 import type { ModalityTokenCount, UsageMetadata } from '@google/genai';
-import { isRecord } from '@/utils/groundingMetadata';
+import { isRecord } from '../../../shared/predicates';
 
 type UrlContextItem = {
   retrievedUrl?: string;

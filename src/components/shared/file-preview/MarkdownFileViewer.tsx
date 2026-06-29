@@ -9,6 +9,11 @@ import { extractMarkdownToc, type MarkdownTocItem } from './markdownToc';
 import { getMarkdownDocumentStats } from './markdownDocumentStats';
 import { VirtualSourceViewer } from './VirtualSourceViewer';
 
+const TOGGLE_BUTTON_BASE_CLASS =
+  'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors';
+const TOGGLE_BUTTON_ACTIVE_CLASS = 'bg-[var(--theme-bg-accent)] text-white shadow-sm';
+const TOGGLE_BUTTON_INACTIVE_CLASS = 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]';
+
 interface MarkdownFileViewerProps {
   file: UploadedFile;
   content?: string | null;
@@ -253,7 +258,7 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
           <div className="flex items-center gap-1 rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] p-1">
             <button
               type="button"
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${!showSource ? 'bg-[var(--theme-bg-accent)] text-white shadow-sm' : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'}`}
+              className={`${TOGGLE_BUTTON_BASE_CLASS} ${!showSource ? TOGGLE_BUTTON_ACTIVE_CLASS : TOGGLE_BUTTON_INACTIVE_CLASS}`}
               onClick={() => {
                 updateMode('preview');
                 setForcePreviewState({ storageKey, value: true });
@@ -266,7 +271,7 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
             </button>
             <button
               type="button"
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${showSource ? 'bg-[var(--theme-bg-accent)] text-white shadow-sm' : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'}`}
+              className={`${TOGGLE_BUTTON_BASE_CLASS} ${showSource ? TOGGLE_BUTTON_ACTIVE_CLASS : TOGGLE_BUTTON_INACTIVE_CLASS}`}
               onClick={() => updateMode('source')}
               title={t('markdownPreviewSourceShortcut')}
             >

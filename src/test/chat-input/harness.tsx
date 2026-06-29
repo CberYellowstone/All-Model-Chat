@@ -213,8 +213,8 @@ vi.mock('@/stores/chatStore', () => {
   return { useChatStore };
 });
 
-vi.mock('@/components/chat/input/ChatInputModals', () => ({
-  ChatInputModals: () => null,
+vi.mock('@/components/chat/input/ChatInputCoreModals', () => ({
+  ChatInputCoreModals: () => null,
 }));
 
 vi.mock('@/components/chat/input/ChatInputFileModals', () => ({

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconYoutube } from '@/components/icons';
-import { InputBar } from './InputBar';
+import { InlineSubmitInput } from './InlineSubmitInput';
 
 interface AddUrlInputProps {
   urlInput: string;
@@ -22,7 +22,7 @@ export const AddUrlInput: React.FC<AddUrlInputProps> = ({
 }) => {
   const { t } = useI18n();
   return (
-    <InputBar
+    <InlineSubmitInput
       value={urlInput}
       onChange={setUrlInput}
       onSubmit={onAddUrlSubmit}

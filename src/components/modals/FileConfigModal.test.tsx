@@ -4,13 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { setupStoreStateReset } from '@/test/stores/reset';
-import { FileConfigurationModal } from './FileConfigurationModal';
+import { FileConfigModal } from './FileConfigModal';
 import { type UploadedFile } from '@/types';
 
 const projectRoot = path.resolve(__dirname, '../../..');
-const modalPath = path.join(projectRoot, 'src/components/modals/FileConfigurationModal.tsx');
+const modalPath = path.join(projectRoot, 'src/components/modals/FileConfigModal.tsx');
 
-describe('FileConfigurationModal', () => {
+describe('FileConfigModal', () => {
   const renderer = setupTestRenderer({ providers: { language: 'en' } });
   setupStoreStateReset();
 
@@ -21,7 +21,7 @@ describe('FileConfigurationModal', () => {
   const renderModal = (file: UploadedFile, onSave = vi.fn(), onClose = vi.fn(), isGemini3 = false) => {
     act(() => {
       renderer.root.render(
-        <FileConfigurationModal isOpen onClose={onClose} file={file} onSave={onSave} isGemini3={isGemini3} />,
+        <FileConfigModal isOpen onClose={onClose} file={file} onSave={onSave} isGemini3={isGemini3} />,
       );
     });
 

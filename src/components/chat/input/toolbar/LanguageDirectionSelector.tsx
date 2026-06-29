@@ -34,9 +34,11 @@ export const LanguageDirectionSelector: React.FC = () => {
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q));
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return options;
+    return options.filter(
+      (o) => o.label.toLowerCase().includes(normalizedQuery) || o.code.toLowerCase().includes(normalizedQuery),
+    );
   }, [options, query]);
 
   const currentLabel = liveTranslateLanguageLabel(targetLanguageCode, language);

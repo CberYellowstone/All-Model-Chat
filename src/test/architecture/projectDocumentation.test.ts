@@ -52,17 +52,17 @@ describe('project documentation structure', () => {
   });
 
   it('serves module workers with a JavaScript MIME type in Docker', () => {
-    const nginxConfig = readProjectFile('docker/nginx.conf');
+    const webServerSource = readProjectFile('docker/web-server.js');
 
-    expect(nginxConfig).toMatch(/location\s+~\s+\\\.mjs\$/);
-    expect(nginxConfig).toMatch(/types\s*\{[\s\S]*application\/javascript\s+[^;}]*\bmjs\b[\s\S]*\}/);
-    expect(nginxConfig).toMatch(/location\s+~\s+\\\.mjs\$[\s\S]*Cache-Control "no-cache"/);
+    expect(webServerSource).toMatch(/['"]\.mjs['"]:\s*['"]application\/javascript/);
+    expect(webServerSource).toMatch(/ext === ['"]\.mjs['"][\s\S]*no-cache/);
   });
 
   it('does not serve the SPA shell for missing hashed assets', () => {
-    const nginxConfig = readProjectFile('docker/nginx.conf');
+    const webServerSource = readProjectFile('docker/web-server.js');
 
-    expect(nginxConfig).toMatch(/location\s+\^~\s+\/assets\/[\s\S]*try_files\s+\$uri\s+=404/);
+    expect(webServerSource).toMatch(/path\.extname\(pathname\)\s*===\s*''/);
+    expect(webServerSource).toMatch(/writeHead\(404\)/);
   });
 
   it('describes local Python package loading precisely', () => {

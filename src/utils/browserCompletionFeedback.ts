@@ -10,6 +10,11 @@ type WindowWithWebkitAudioContext = Window &
     webkitAudioContext?: typeof AudioContext;
   };
 
+const NOTE_E5_FREQUENCY = 659.25;
+const NOTE_C5_FREQUENCY = 523.25;
+const FIRST_NOTE_DURATION_S = 0.15;
+const SECOND_NOTE_DURATION_S = 0.2;
+
 export const showNotification = async (title: string, options?: NotificationOptions) => {
   if (!('Notification' in window)) {
     logService.warn('This browser does not support desktop notification');
@@ -82,8 +87,8 @@ export const playCompletionSound = () => {
       oscillator.stop(audioContext.currentTime + startTime + duration);
     };
 
-    playNote(659.25, 0, 0.15);
-    playNote(523.25, 0.15, 0.2);
+    playNote(NOTE_E5_FREQUENCY, 0, FIRST_NOTE_DURATION_S);
+    playNote(NOTE_C5_FREQUENCY, FIRST_NOTE_DURATION_S, SECOND_NOTE_DURATION_S);
   } catch (error) {
     logService.error('Error playing completion sound', error);
   }

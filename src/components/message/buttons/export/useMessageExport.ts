@@ -1,4 +1,5 @@
 import { logService } from '@/services/logService';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { useState } from 'react';
 import { type ChatMessage } from '@/types';
 import { serializeMessageForPortableExport } from '@/utils/chat/session';
@@ -135,12 +136,7 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
       onSuccess?.();
     } catch (exportError) {
       logService.error(`Failed to export message as ${type.toUpperCase()}:`, exportError);
-      alert(
-        t('exportFailedWithMessage').replace(
-          '{message}',
-          exportError instanceof Error ? exportError.message : String(exportError),
-        ),
-      );
+      alert(t('exportFailedWithMessage').replace('{message}', getErrorMessage(exportError)));
     } finally {
       setExportingType(null);
     }

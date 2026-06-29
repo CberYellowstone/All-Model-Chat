@@ -2,6 +2,7 @@ import { Type, type Schema } from '@google/genai';
 import type { McpServerConfig, StandardClientFunctions } from '@/types';
 import { callMcpTool, fetchMcpTools, type McpToolDefinition, type McpToolsResponse } from '@/services/api/mcpApi';
 import { toMcpFunctionName } from './mcpToolNames';
+import { isRecord } from '../../../shared/predicates';
 
 interface CreateMcpClientFunctionsOptions {
   servers: McpServerConfig[];
@@ -14,9 +15,6 @@ interface CreateMcpClientFunctionsOptions {
     abortSignal?: AbortSignal,
   ) => Promise<unknown>;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const toSchemaType = (value: unknown): Type | undefined => {
   switch (value) {

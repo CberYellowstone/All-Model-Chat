@@ -1,4 +1,4 @@
-export interface MarkdownDocumentStats {
+interface MarkdownDocumentStats {
   characters: number;
   lines: number;
   words: number;

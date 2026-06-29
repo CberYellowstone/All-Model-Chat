@@ -6,6 +6,7 @@ import {
   readPersistentStorageItem,
   registerPersistedStoreSync,
 } from './persistentStorage';
+import { safeJsonParse } from '@/utils/safeJsonParse';
 
 const MODEL_PREFERENCES_STORE_STORAGE_KEY = 'all_model_chat_model_preferences_v1';
 
@@ -31,17 +32,7 @@ interface ModelPreferencesActions {
   cacheModelSettings: (modelId: string, settings: CachedModelSettings) => void;
 }
 
-const parseJson = (rawValue: string | null): unknown => {
-  if (!rawValue) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(rawValue);
-  } catch {
-    return undefined;
-  }
-};
+const parseJson = (rawValue: string | null): unknown => (rawValue ? safeJsonParse(rawValue, undefined) : undefined);
 
 const isApiMode = (value: unknown): value is ApiMode => value === 'gemini-native' || value === 'openai-compatible';
 

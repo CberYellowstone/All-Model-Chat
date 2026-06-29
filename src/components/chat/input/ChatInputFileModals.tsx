@@ -9,10 +9,7 @@ import {
 import { isMarkdownFile } from '@/utils/fileTypeClassification';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 
-const LazyFileConfigurationModal = lazyNamedComponent(
-  () => import('@/components/modals/FileConfigurationModal'),
-  'FileConfigurationModal',
-);
+const LazyFileConfigModal = lazyNamedComponent(() => import('@/components/modals/FileConfigModal'), 'FileConfigModal');
 const LazyTokenCountModal = lazyNamedComponent(() => import('@/components/modals/TokenCountModal'), 'TokenCountModal');
 const LazyFilePreviewModal = lazyNamedComponent(
   () => import('@/components/modals/FilePreviewModal'),
@@ -75,7 +72,7 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
     <>
       {configuringFile && (
         <Suspense fallback={null}>
-          <LazyFileConfigurationModal
+          <LazyFileConfigModal
             isOpen={!!configuringFile}
             onClose={() => setConfiguringFile(null)}
             file={configuringFile}

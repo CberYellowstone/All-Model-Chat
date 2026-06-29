@@ -1,6 +1,7 @@
 import type { ApiMode, ModelOption } from '@/types';
 import { getModelCapabilities, isGeminiRoboticsModel } from './modelCapabilities';
 import { sortModels } from './modelSorting';
+import { THIRD_PARTY_PROVIDER_IDS, THIRD_PARTY_PROVIDER_LABELS } from './thirdPartyApiProviders';
 
 type ModelCatalogGroup = 'pinned' | 'standard';
 type ModelCatalogCategory = 'text' | 'live' | 'tts' | 'image' | 'robotics' | 'other';
@@ -11,6 +12,7 @@ interface ModelCatalogSection {
   entries: ModelCatalogEntry[];
   key: string;
   providerKey?: ModelCatalogProviderKey;
+  label?: string;
 }
 
 interface ModelCatalogEntry {
@@ -116,20 +118,43 @@ export const filterModelCatalog = (entries: ModelCatalogEntry[], query: string):
 export const buildModelCatalogSections = (entries: ModelCatalogEntry[]): ModelCatalogSection[] => {
   const hasProviderSections = entries.some((entry) => entry.model.apiMode);
   if (hasProviderSections) {
-    const providerOrder: ModelCatalogProviderKey[] = ['gemini-native', 'openai-compatible', 'third-party'];
+    const sections: ModelCatalogSection[] = [];
+    const baseProviderOrder: ModelCatalogProviderKey[] = ['gemini-native', 'openai-compatible'];
 
-    return providerOrder.reduce<ModelCatalogSection[]>((sections, providerKey) => {
+    baseProviderOrder.forEach((providerKey) => {
       const providerEntries = entries.filter((entry) => entry.model.apiMode === providerKey);
       if (providerEntries.length > 0) {
-        sections.push({
-          key: providerKey,
-          providerKey,
-          entries: providerEntries,
-        });
+        sections.push({ key: providerKey, providerKey, entries: providerEntries });
       }
+    });
 
-      return sections;
-    }, []);
+    // Split third-party models into per-provider subsections so OpenAI / Anthropic /
+    // Qwen ... stay distinguishable instead of collapsing into one merged bucket.
+    const thirdPartyEntries = entries.filter((entry) => entry.model.apiMode === 'third-party');
+    if (thirdPartyEntries.length > 0) {
+      THIRD_PARTY_PROVIDER_IDS.forEach((providerId) => {
+        const providerEntries = thirdPartyEntries.filter((entry) => entry.model.providerId === providerId);
+        if (providerEntries.length > 0) {
+          sections.push({
+            key: `third-party:${providerId}`,
+            providerKey: 'third-party',
+            label: THIRD_PARTY_PROVIDER_LABELS[providerId],
+            entries: providerEntries,
+          });
+        }
+      });
+
+      // Defensive: any third-party entries whose providerId is missing/unknown.
+      const knownProviders = new Set<string>(THIRD_PARTY_PROVIDER_IDS);
+      const orphanEntries = thirdPartyEntries.filter(
+        (entry) => !entry.model.providerId || !knownProviders.has(entry.model.providerId),
+      );
+      if (orphanEntries.length > 0) {
+        sections.push({ key: 'third-party', providerKey: 'third-party', entries: orphanEntries });
+      }
+    }
+
+    return sections;
   }
 
   const pinned = entries.filter((entry) => entry.group === 'pinned');
@@ -181,5 +206,7 @@ export const getTabCycleModelIds = (models: ModelOption[], configuredIds?: strin
   const configuredSet = new Set(configuredIds);
   const filteredIds = orderedIds.filter((id) => configuredSet.has(id));
 
-  return filteredIds.length > 0 ? filteredIds : defaultIds.length > 0 ? defaultIds : orderedIds;
+  if (filteredIds.length > 0) return filteredIds;
+  if (defaultIds.length > 0) return defaultIds;
+  return orderedIds;
 };

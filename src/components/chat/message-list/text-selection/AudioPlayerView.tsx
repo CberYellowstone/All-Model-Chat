@@ -2,6 +2,7 @@ import React, { useState, type RefObject } from 'react';
 import { GripVertical, X, Pause, Play } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
+import { formatClockTime } from '@/utils/formatClockTime';
 
 interface AudioPlayerViewProps {
   audioUrl: string | null;
@@ -22,13 +23,6 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-
-  const formatTime = (time: number) => {
-    if (!time || Number.isNaN(time) || !Number.isFinite(time)) return '0:00';
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const progressPercent =
     duration > 0 && Number.isFinite(duration) ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
@@ -148,10 +142,10 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
           className="flex w-12 flex-shrink-0 flex-col items-end gap-0.5 pl-1.5 font-mono text-[10px] leading-none tabular-nums"
         >
           <span data-audio-time-readout className="text-[var(--theme-text-primary)]">
-            {formatTime(currentTime)}
+            {formatClockTime(currentTime)}
           </span>
           <span data-audio-time-readout className="text-[var(--theme-text-tertiary)]">
-            {formatTime(duration)}
+            {formatClockTime(duration)}
           </span>
         </div>
       </div>

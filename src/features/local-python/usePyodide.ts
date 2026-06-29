@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { getPyodideService, type PyodideFile } from './loadPyodideService';
 
 interface PyodideState {
@@ -106,7 +107,7 @@ export const usePyodide = (codeKey?: string) => {
           output: null,
           image: null,
           files: [],
-          error: executionError instanceof Error ? executionError.message : String(executionError),
+          error: getErrorMessage(executionError),
           hasRun: true,
         };
         setState(errorState);

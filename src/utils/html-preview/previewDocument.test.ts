@@ -3,6 +3,7 @@ import {
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
+  HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
@@ -89,6 +90,16 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain('JSON.parse');
   });
 
+  it('injects a declarative copy bridge that relays data-amc-copy clicks', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      `<section><button data-amc-copy="npm install katex">Copy</button></section>`,
+    );
+
+    expect(srcDoc).toContain('data-amc-copy');
+    expect(srcDoc).toContain("closest('[data-amc-copy]')");
+    expect(srcDoc).toContain('"copy"');
+  });
+
   it('injects bridge helpers for collecting current declarative artifact state', () => {
     const srcDoc = buildHtmlPreviewSrcDoc(
       `<section data-amc-followup-scope>
@@ -155,6 +166,57 @@ describe('htmlPreview utilities', () => {
         channel: HTML_PREVIEW_MESSAGE_CHANNEL,
         event: 'followup',
         payload: { instruction: '生成参考文献' },
+      });
+    } finally {
+      document.body.innerHTML = '';
+      window.postMessage = originalPostMessage;
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+  });
+
+  it('relays data-amc-copy attribute text and falls back to button text', () => {
+    const messages: unknown[] = [];
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      `<section><button data-amc-copy="npm install katex">Copy</button></section>`,
+    );
+    const scriptContent = srcDoc.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+    expect(scriptContent).toBeDefined();
+
+    const originalPostMessage = window.postMessage;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+
+    window.postMessage = ((message: unknown) => {
+      messages.push(message);
+    }) as Window['postMessage'];
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    }) as Window['requestAnimationFrame'];
+    window.cancelAnimationFrame = (() => {}) as Window['cancelAnimationFrame'];
+
+    try {
+      document.body.innerHTML = '<section><button data-amc-copy="npm install katex">Copy</button></section>';
+      window.eval(scriptContent!);
+      document.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(messages).toContainEqual({
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_COPY_EVENT,
+        payload: { text: 'npm install katex' },
+      });
+
+      // Empty attribute falls back to the button's own text content.
+      messages.length = 0;
+      document.body.innerHTML = '<section><button data-amc-copy>SELECT *</button>';
+      window.eval(scriptContent!);
+      document.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(messages).toContainEqual({
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_COPY_EVENT,
+        payload: { text: 'SELECT *' },
       });
     } finally {
       document.body.innerHTML = '';

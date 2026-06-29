@@ -11,7 +11,7 @@ export const isDocxFile = (file: { name: string; type: string }) => {
 
 export const extractDocxText = async (file: Blob): Promise<ExtractDocxTextResult> => {
   return new Promise<ExtractDocxTextResult>((resolve, reject) => {
-    const worker = new Worker(new URL('./docxPreview.worker.ts', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('./docxPreviewWorker.ts', import.meta.url), { type: 'module' });
 
     const cleanup = () => {
       worker.terminate();

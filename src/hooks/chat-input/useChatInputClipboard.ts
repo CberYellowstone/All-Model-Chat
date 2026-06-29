@@ -1,4 +1,5 @@
 import { useCallback, type MutableRefObject, type RefObject } from 'react';
+import { deferToNextTick } from '@/utils/deferToNextTick';
 import type { AppSettings, UploadedFile } from '@/types';
 import { processChatInputClipboardData, shouldHandleChatInputClipboardData } from '@/utils/chat-input/clipboardData';
 import { useI18n } from '@/contexts/I18nContext';
@@ -288,7 +289,7 @@ export const useChatInputClipboard = ({
 
   const handleClearInput = useCallback(() => {
     setInputText('');
-    setTimeout(() => textareaRef.current?.focus(), 0);
+    deferToNextTick(() => textareaRef.current?.focus());
   }, [setInputText, textareaRef]);
 
   return {

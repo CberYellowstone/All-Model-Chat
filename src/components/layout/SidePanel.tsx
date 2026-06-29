@@ -5,6 +5,7 @@ import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload, sanitizeFilename } from '@/utils/export/core';
 import { useIsMobile } from '@/hooks/useDevice';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
+import { Z_INDEX_SIDE_PANEL_MOBILE, Z_INDEX_TOPMOST_OVERLAY } from '@/constants/layout';
 import { useI18n } from '@/contexts/I18nContext';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 
@@ -196,14 +197,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
   return (
     <>
       {isResizing && (
-        <div className="fixed inset-0 z-[9999] bg-transparent cursor-col-resize" style={{ touchAction: 'none' }} />
+        <div className={`fixed inset-0 ${Z_INDEX_TOPMOST_OVERLAY} bg-transparent cursor-col-resize`} style={{ touchAction: 'none' }} />
       )}
 
       <div
         ref={sidebarRef}
         className={`
                     h-full flex flex-col bg-[var(--theme-bg-secondary)] border-l border-[var(--theme-border-primary)] shadow-2xl relative transition-none flex-shrink-0 z-40 slide-in-right-animate
-                    ${isMobile ? 'fixed inset-0 w-full z-[3000]' : ''} 
+                    ${isMobile ? `fixed inset-0 w-full ${Z_INDEX_SIDE_PANEL_MOBILE}` : ''}
                 `}
         style={{ width: isMobile ? '100%' : `${width}px` }}
       >

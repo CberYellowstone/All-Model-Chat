@@ -1,4 +1,5 @@
 import { logService } from '@/services/logService';
+import { getErrorMessage } from './errorMessage';
 /**
  * Captures the current screen content as an image Blob.
  * Handles browser support checks, stream acquisition, and fallback to video element capture.
@@ -17,6 +18,8 @@ interface ScreenCaptureMessages {
   unsupported: string;
   startFailed: (message: string) => string;
 }
+
+const VIDEO_METADATA_TIMEOUT_MS = 3000;
 
 const getScreenImageCaptureConstructor = (): ScreenImageCaptureConstructor | undefined => {
   const imageCapture: unknown = Reflect.get(globalThis, 'ImageCapture');
@@ -38,7 +41,7 @@ export const captureScreenImage = async (messages: ScreenCaptureMessages): Promi
     });
   } catch (error) {
     const errorName = error instanceof DOMException ? error.name : undefined;
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = getErrorMessage(error);
     logService.error('Error starting screen capture:', error);
     if (errorName !== 'NotAllowedError') {
       alert(messages.startFailed(errorMessage));
@@ -131,7 +134,7 @@ export const captureScreenImage = async (messages: ScreenCaptureMessages): Promi
         video.srcObject = stream;
         metadataTimeout = window.setTimeout(() => {
           fail(new Error('Timed out waiting for captured video metadata.'));
-        }, 3000);
+        }, VIDEO_METADATA_TIMEOUT_MS);
         video.onloadedmetadata = async () => {
           try {
             if (!video) {

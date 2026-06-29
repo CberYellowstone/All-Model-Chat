@@ -1,5 +1,9 @@
 import { isImageMimeType } from '@/utils/fileTypeClassification';
 
+const FALLBACK_IMAGE_WIDTH = 1200;
+const FALLBACK_IMAGE_HEIGHT = 675;
+const IMAGE_SIZE_TIMEOUT_MS = 3000;
+
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -52,18 +56,21 @@ export const fetchImageAsDataUrl = async (src: string): Promise<string | null> =
 export const getImageSize = (src: string): Promise<{ width: number; height: number }> =>
   new Promise((resolve) => {
     const image = new Image();
-    const timeout = window.setTimeout(() => resolve({ width: 1200, height: 675 }), 3000);
+    const timeout = window.setTimeout(
+      () => resolve({ width: FALLBACK_IMAGE_WIDTH, height: FALLBACK_IMAGE_HEIGHT }),
+      IMAGE_SIZE_TIMEOUT_MS,
+    );
 
     image.onload = () => {
       window.clearTimeout(timeout);
       resolve({
-        width: image.naturalWidth || image.width || 1200,
-        height: image.naturalHeight || image.height || 675,
+        width: image.naturalWidth || image.width || FALLBACK_IMAGE_WIDTH,
+        height: image.naturalHeight || image.height || FALLBACK_IMAGE_HEIGHT,
       });
     };
     image.onerror = () => {
       window.clearTimeout(timeout);
-      resolve({ width: 1200, height: 675 });
+      resolve({ width: FALLBACK_IMAGE_WIDTH, height: FALLBACK_IMAGE_HEIGHT });
     };
     image.src = src;
   });

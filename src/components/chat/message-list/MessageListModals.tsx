@@ -15,10 +15,7 @@ const LazyMarkdownPreviewModal = lazyNamedComponent(
   () => import('@/components/modals/MarkdownPreviewModal'),
   'MarkdownPreviewModal',
 );
-const LazyFileConfigurationModal = lazyNamedComponent(
-  () => import('@/components/modals/FileConfigurationModal'),
-  'FileConfigurationModal',
-);
+const LazyFileConfigModal = lazyNamedComponent(() => import('@/components/modals/FileConfigModal'), 'FileConfigModal');
 
 interface MessageListConfiguringFile {
   file: UploadedFile;
@@ -99,7 +96,7 @@ export const MessageListModals: React.FC<MessageListModalsProps> = ({
 
     {configuringFile && (
       <Suspense fallback={null}>
-        <LazyFileConfigurationModal
+        <LazyFileConfigModal
           isOpen={!!configuringFile}
           onClose={() => setConfiguringFile(null)}
           file={configuringFile.file}

@@ -7,7 +7,7 @@ import { VideoConfig } from './file-config/VideoConfig';
 import { FileConfigFooter } from './file-config/FileConfigFooter';
 import { getFileKindFlags } from '@/utils/fileTypeClassification';
 
-interface FileConfigurationModalProps {
+interface FileConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   file: UploadedFile | null;
@@ -79,11 +79,11 @@ const normalizeVideoFps = (value: string): number | undefined => {
   return Number.isFinite(fps) && fps > 0 && fps <= 24 ? fps : undefined;
 };
 
-type FileConfigurationModalContentProps = Omit<FileConfigurationModalProps, 'file'> & {
+type FileConfigModalContentProps = Omit<FileConfigModalProps, 'file'> & {
   file: UploadedFile;
 };
 
-const FileConfigurationModalContent: React.FC<FileConfigurationModalContentProps> = ({
+const FileConfigModalContent: React.FC<FileConfigModalContentProps> = ({
   isOpen,
   onClose,
   file,
@@ -172,10 +172,10 @@ const FileConfigurationModalContent: React.FC<FileConfigurationModalContentProps
   );
 };
 
-export const FileConfigurationModal: React.FC<FileConfigurationModalProps> = (props) => {
+export const FileConfigModal: React.FC<FileConfigModalProps> = (props) => {
   const { file, isOpen } = props;
 
   if (!file) return null;
 
-  return <FileConfigurationModalContent key={`${file.id}:${isOpen ? 'open' : 'closed'}`} {...props} file={file} />;
+  return <FileConfigModalContent key={`${file.id}:${isOpen ? 'open' : 'closed'}`} {...props} file={file} />;
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { RadioTower } from 'lucide-react';
 import type { AppSettings } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
@@ -208,7 +209,7 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
       setTestStatus('success');
     } catch (error) {
       setTestStatus('error');
-      setTestMessage(error instanceof Error ? error.message : String(error));
+      setTestMessage(getErrorMessage(error));
     }
   };
 

@@ -1,6 +1,7 @@
 {
   "entry": ["server/src/index.ts", "src/pwa/sw.ts"],
   "ignore": [
+    "docker/web-server.js",
     "public/runtime-config.js",
     "src/utils/export/dom.ts",
     "src/utils/export/files.ts",

@@ -140,14 +140,32 @@ The project currently focuses on one main application shape: a **Vite + React SP
 - Text-only chats supplement `TEXT -> TEXT` modal evidence locally, so pricing can be shown for supported Gemini text models.
 - Historical records with incomplete pricing evidence continue to show `-`.
 
-### More
+### Cross-tab Synchronization
 
-- Cross-tab synchronization through BroadcastChannel, with Web Locks protecting IndexedDB writes.
-- Custom keyboard shortcuts.
-- Configurable safety settings across harassment, hate speech, sexual content, dangerous content, and civic integrity categories, with Off, Block None, Block Few, Block Some, and Block Most levels.
-- Onyx and Pearl themes with system theme support.
-- Import/export for chat history, settings, and scenarios.
-- Session grouping, full-text session search, and a developer log panel.
+- Cross-tab synchronization through BroadcastChannel, with Web Locks API protecting IndexedDB writes.
+- Ensures data consistency when operating across multiple tabs simultaneously.
+
+### Custom Keyboard Shortcuts
+
+- Built-in keyboard shortcuts for new chat, opening logs, switching models, Picture-in-Picture, and more.
+- All shortcuts are fully customizable.
+
+### Safety Settings
+
+- Five safety filter categories: harassment, hate speech, sexual content, dangerous content, and civic integrity.
+- Each category can be independently configured with levels: Off / Block None / Block Few / Block Some / Block Most.
+
+### Theme System
+
+- Built-in Onyx (dark) and Pearl (light) themes.
+- Supports automatic switching to follow the system theme.
+
+### Data Management
+
+- Full import/export for chat history, settings, and scenarios.
+- Session grouping management.
+- Session search (title + full-text content search).
+- Developer log panel (API call monitoring, token usage statistics).
 
 ---
 
@@ -239,7 +257,7 @@ Notes:
 | `RUNTIME_API_PROXY_URL`         | Default Gemini proxy URL for the frontend                                                        | Public runtime config | `/api/gemini`                               |
 | `RUNTIME_PYODIDE_BASE_URL`      | Optional Pyodide runtime asset URL; when blank, same-origin `/pyodide/` is used                  | Public runtime config | Empty                                       |
 
-The `RUNTIME_*` values are written into `runtime-config.js` at container startup and are readable by the browser. Only put public configuration there. The public/runtime-config.js template is used for static builds and keeps custom API configuration and proxy mode disabled by default; Docker overwrites it through `docker/web-entrypoint.sh` using the defaults above.
+The `RUNTIME_*` values are written into `runtime-config.js` at container startup and are readable by the browser. Only put public configuration there. The public/runtime-config.js template is used for static builds and keeps custom API configuration and proxy mode disabled by default; Docker overwrites it through `docker/web-server.js` at container startup using the defaults above.
 
 MCP `stdio` and private/local HTTP access are disabled by default. Enable `ENABLE_MCP_STDIO=true` or `ENABLE_MCP_PRIVATE_HTTP=true` only for trusted self-hosted deployments.
 

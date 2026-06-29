@@ -7,7 +7,7 @@ import { TextEditorModalShell } from './TextEditorModalShell';
 
 const projectRoot = path.resolve(__dirname, '../../..');
 const textEditorModalPath = path.join(projectRoot, 'src/components/modals/TextEditorModal.tsx');
-const createTextFileEditorPath = path.join(projectRoot, 'src/components/modals/CreateTextFileEditor.tsx');
+const createTextFileEditorPath = path.join(projectRoot, 'src/components/modals/create-file/CreateTextFileEditor.tsx');
 
 describe('TextEditorModalShell', () => {
   const renderer = setupTestRenderer({ providers: {} });
@@ -40,7 +40,7 @@ describe('TextEditorModalShell', () => {
     const createTextFileEditorSource = fs.readFileSync(createTextFileEditorPath, 'utf8');
 
     expect(textEditorModalSource).toContain("from './TextEditorModalShell'");
-    expect(createTextFileEditorSource).toContain("from './TextEditorModalShell'");
+    expect(createTextFileEditorSource).toContain("@/components/modals/TextEditorModalShell");
     expect(textEditorModalSource).toContain('<TextEditorModalShell');
     expect(createTextFileEditorSource).toContain('<TextEditorModalShell');
   });

@@ -24,10 +24,8 @@ import {
   sanitizeStringArray,
   sanitizeStringRecord,
 } from '../../shared/mcpServerConfig';
+import { isRecord } from '../../shared/predicates';
 import { THEME_IDS } from '@/utils/themeMode';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parseUnknownWithDefault = <Output>(schema: z.ZodType<Output>, fallback: Output): z.ZodType<Output> =>
   z

@@ -1,4 +1,5 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { type AppSettings, type SavedChatSession, type SavedScenario, type ChatGroup, type ChatMessage } from '@/types';
 import { logService } from '@/services/logService';
 import { generateUniqueId } from '@/utils/chat/ids';
@@ -101,12 +102,7 @@ export const useDataImport = ({
           }
         } catch (error) {
           logService.error(`Failed to import ${expectedType}`, { error });
-          alert(
-            t('settingsImportErrorWithMessage').replace(
-              '{message}',
-              error instanceof Error ? error.message : String(error),
-            ),
-          );
+          alert(t('settingsImportErrorWithMessage').replace('{message}', getErrorMessage(error)));
         }
       };
       reader.onerror = (event) => {

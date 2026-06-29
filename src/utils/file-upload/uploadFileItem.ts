@@ -1,4 +1,5 @@
 import type { MutableRefObject } from 'react';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { type AppSettings, type UploadedFile, type MediaResolution } from '@/types';
 import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { logService } from '@/services/logService';
@@ -176,10 +177,7 @@ export const uploadFileItem = async ({
         ),
       );
     } catch (uploadError) {
-      let errorMsg = t('uploadFailedWithMessage').replace(
-        '{message}',
-        uploadError instanceof Error ? uploadError.message : String(uploadError),
-      );
+      let errorMsg = t('uploadFailedWithMessage').replace('{message}', getErrorMessage(uploadError));
       let uploadStateUpdate: UploadedFile['uploadState'] = 'failed';
 
       if (uploadError instanceof Error && uploadError.name === 'AbortError') {

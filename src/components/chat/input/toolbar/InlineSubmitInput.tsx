@@ -4,7 +4,7 @@ import { ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import { useI18n } from '@/contexts/I18nContext';
 
-interface InputBarProps {
+interface InlineSubmitInputProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
@@ -20,7 +20,7 @@ interface InputBarProps {
   ariaLabel?: string;
 }
 
-export const InputBar: React.FC<InputBarProps> = ({
+export const InlineSubmitInput: React.FC<InlineSubmitInputProps> = ({
   value,
   onChange,
   onSubmit,

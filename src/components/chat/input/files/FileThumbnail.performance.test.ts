@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 
-const projectRoot = path.resolve(__dirname, '../../../..');
-const fileThumbnailPath = path.join(projectRoot, 'src/components/chat/input/FileThumbnail.tsx');
+const projectRoot = path.resolve(__dirname, '../../../../..');
+const fileThumbnailPath = path.join(projectRoot, 'src/components/chat/input/files/FileThumbnail.tsx');
 
 describe('FileThumbnail performance boundaries', () => {
   it('keeps react-pdf out of the eager upload-card thumbnail bundle', () => {

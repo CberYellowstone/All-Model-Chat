@@ -13,6 +13,8 @@ interface ScrollNavigationProps {
 }
 
 const SINGLE_CLICK_DELAY_MS = 180;
+const SCROLL_NAV_BUTTON_CLASS =
+  'p-2.5 rounded-full bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)] transition-colors duration-200 focus:outline-none pointer-events-auto shadow-md';
 
 export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({
   showUp,
@@ -78,17 +80,7 @@ export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({
         <button
           onClick={(event) => handleSingleClick(event, prevClickTimeoutRef, onScrollToPrev)}
           onDoubleClick={() => handleDoubleClick(prevClickTimeoutRef, onScrollToTop)}
-          className="
-                        p-2.5 rounded-full 
-                        bg-[var(--theme-bg-secondary)]
-                        border border-[var(--theme-border-secondary)] 
-                        text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 
-                        hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)]
-                        transition-colors duration-200
-                        focus:outline-none
-                        pointer-events-auto
-                        shadow-md
-                    "
+          className={SCROLL_NAV_BUTTON_CLASS}
           aria-label={t('scrollPreviousTurn')}
           title={t('scrollPreviousTurn')}
         >
@@ -99,17 +91,7 @@ export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({
         <button
           onClick={(event) => handleSingleClick(event, nextClickTimeoutRef, onScrollToNext)}
           onDoubleClick={() => handleDoubleClick(nextClickTimeoutRef, onScrollToBottom)}
-          className="
-                        p-2.5 rounded-full 
-                        bg-[var(--theme-bg-secondary)]
-                        border border-[var(--theme-border-secondary)] 
-                        text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 
-                        hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)]
-                        transition-colors duration-200
-                        focus:outline-none
-                        pointer-events-auto
-                        shadow-md
-                    "
+          className={SCROLL_NAV_BUTTON_CLASS}
           aria-label={t('scrollNextTurn')}
           title={t('scrollNextTurn')}
         >

@@ -8,11 +8,11 @@ const LazyHelpModal = lazyNamedComponent(() => import('@/components/modals/HelpM
 const LazyTextEditorModal = lazyNamedComponent(() => import('@/components/modals/TextEditorModal'), 'TextEditorModal');
 
 const LazyCreateTextFileEditor = lazyNamedComponent(
-  () => import('@/components/modals/CreateTextFileEditor'),
+  () => import('@/components/modals/create-file/CreateTextFileEditor'),
   'CreateTextFileEditor',
 );
 
-interface ChatInputModalsProps {
+interface ChatInputCoreModalsProps {
   showRecorder: boolean;
   onAudioRecord: (file: File) => Promise<void>;
   onRecorderCancel: () => void;
@@ -45,7 +45,7 @@ Pace: [e.g. Fast]
 Speaker 1: Kore
 Speaker 2: Puck`;
 
-export const ChatInputModals: React.FC<ChatInputModalsProps> = ({
+export const ChatInputCoreModals: React.FC<ChatInputCoreModalsProps> = ({
   showRecorder,
   onAudioRecord,
   onRecorderCancel,

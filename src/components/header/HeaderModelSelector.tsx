@@ -5,6 +5,11 @@ import { useI18n } from '@/contexts/I18nContext';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { ModelPicker } from '@/components/shared/ModelPicker';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
+import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
+
+const MODEL_TRIGGER_BUTTON_CLASS = `min-h-9 flex items-center gap-2 rounded-xl px-2 sm:px-3 bg-transparent hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] font-medium text-base transition-all duration-200 ease-out ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS} disabled:opacity-70 disabled:cursor-not-allowed border border-transparent hover:border-[var(--theme-border-secondary)] active:bg-[var(--theme-bg-tertiary)]`;
+
+const THINKING_TOGGLE_BUTTON_CLASS = `h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-200 ease-out ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`;
 
 interface HeaderModelSelectorProps {
   currentModelName?: string;
@@ -79,7 +84,7 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
           <button
             onClick={() => setIsOpen(!isOpen)}
             disabled={isSelectorDisabled}
-            className={`min-h-9 flex items-center gap-2 rounded-xl px-2 sm:px-3 bg-transparent hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] font-medium text-base transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)] disabled:opacity-70 disabled:cursor-not-allowed border border-transparent hover:border-[var(--theme-border-secondary)] active:bg-[var(--theme-bg-tertiary)] ${isSwitchingModel ? 'animate-pulse' : ''}`}
+            className={`${MODEL_TRIGGER_BUTTON_CLASS} ${isSwitchingModel ? 'animate-pulse' : ''}`}
             title={`${t('headerModelSelectorTooltipCurrent')}: ${currentModelName}. ${t('headerModelSelectorTooltipAction')}`}
             aria-label={`${t('headerModelAriaLabelCurrent')}: ${currentModelName}. ${t('headerModelAriaLabelAction')}`}
             aria-haspopup="listbox"
@@ -106,7 +111,7 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
                 }
                 onSetThinkingLevel(isFastState ? 'HIGH' : targetFastLevel);
               }}
-              className={`h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)] ${
+              className={`${THINKING_TOGGLE_BUTTON_CLASS} ${
                 isFastState
                   ? 'text-yellow-500 hover:bg-[var(--theme-bg-tertiary)]'
                   : 'text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'

@@ -12,6 +12,9 @@ import { TextEditorModal } from '@/components/modals/TextEditorModal';
 import { ThinkingControl } from '@/components/settings/controls/thinking/ThinkingControl';
 import { AVAILABLE_TTS_VOICES } from '@/constants/voiceOptions';
 
+const RANGE_SLIDER_CLASS =
+  'w-full h-1.5 bg-[var(--theme-border-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-bg-accent)] hover:accent-[var(--theme-bg-accent-hover)]';
+
 interface GenerationSectionProps {
   isOpenAICompatibleMode?: boolean;
   modelId: string;
@@ -178,7 +181,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
             step="0.05"
             value={temperature}
             onChange={(event) => onUpdateSetting('temperature', parseFloat(event.target.value))}
-            className="w-full h-1.5 bg-[var(--theme-border-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-bg-accent)] hover:accent-[var(--theme-bg-accent-hover)]"
+            className={RANGE_SLIDER_CLASS}
           />
         </div>
 
@@ -203,7 +206,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
             step="0.05"
             value={topP}
             onChange={(event) => onUpdateSetting('topP', parseFloat(event.target.value))}
-            className="w-full h-1.5 bg-[var(--theme-border-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-bg-accent)] hover:accent-[var(--theme-bg-accent-hover)]"
+            className={RANGE_SLIDER_CLASS}
           />
         </div>
 
@@ -229,7 +232,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
               step="1"
               value={topK}
               onChange={(event) => onUpdateSetting('topK', parseInt(event.target.value, 10))}
-              className="w-full h-1.5 bg-[var(--theme-border-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-bg-accent)] hover:accent-[var(--theme-bg-accent-hover)]"
+              className={RANGE_SLIDER_CLASS}
             />
           </div>
         )}

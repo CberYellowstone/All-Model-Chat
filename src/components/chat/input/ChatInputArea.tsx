@@ -8,8 +8,9 @@ import { ChatFilePreviewList } from './area/ChatFilePreviewList';
 import { ChatTextArea } from './area/ChatTextArea';
 import { LiveStatusBanner } from './LiveStatusBanner';
 import { QueuedSubmissionCard } from './QueuedSubmissionCard';
-import { HiddenFileInputs } from './HiddenFileInputs';
+import { HiddenFileInputs } from './files/HiddenFileInputs';
 import { getChatInputAreaLayout } from './chatInputAreaLayout';
+import { CHAT_INPUT_MAX_WIDTH_CLASS, FOCUS_BLOCKING_SELECTOR } from '@/constants/layout';
 import { useI18n } from '@/contexts/I18nContext';
 import { useChatInputContext } from './ChatInputContext';
 
@@ -52,12 +53,9 @@ export const ChatInputArea: React.FC = () => {
     isRecording: !!isRecording,
     inputDisabled,
   });
-  const focusBlockingSelector =
-    'button, a, input, textarea, select, label, summary, audio, video, [role="button"], [role="menuitem"], [contenteditable="true"]';
-
   const handleInputShellClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target;
-    if (target instanceof Element && target.closest(focusBlockingSelector)) {
+    if (target instanceof Element && target.closest(FOCUS_BLOCKING_SELECTOR)) {
       return;
     }
 
@@ -87,7 +85,7 @@ export const ChatInputArea: React.FC = () => {
           className="fixed h-px w-px opacity-0 pointer-events-none"
         />
       )}
-      <div className="mx-auto w-full max-w-[44.35rem] px-2 sm:px-3">
+      <div className={`mx-auto w-full ${CHAT_INPUT_MAX_WIDTH_CLASS} px-2 sm:px-3`}>
         {chatInput.showEmptyStateSuggestions && capabilities.permissions.canGenerateSuggestions && !isFullscreen && (
           <ChatSuggestions
             show={chatInput.showEmptyStateSuggestions}

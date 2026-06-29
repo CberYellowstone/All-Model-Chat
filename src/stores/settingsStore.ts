@@ -10,6 +10,7 @@ import { dbService } from '@/services/db/dbService';
 import { normalizeLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
 import { type ConcreteThemeId } from '@/utils/themeMode';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
+import { CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';
 
 const LEGACY_DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-3-flash-preview';
 
@@ -113,7 +114,7 @@ function getSettingsChannel(): BroadcastChannel | null {
   }
 
   if (!settingsChannel) {
-    settingsChannel = new BroadcastChannel('all_model_chat_sync_v1');
+    settingsChannel = new BroadcastChannel(CHAT_SYNC_CHANNEL_NAME);
   }
 
   return settingsChannel;

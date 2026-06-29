@@ -1,4 +1,5 @@
 import { executeConfiguredApiRequest } from '@/services/api/apiExecutor';
+import { getErrorMessage } from '@/utils/errorMessage';
 import { getHttpOptionsForContents } from '@/services/api/geminiApiVersion';
 import { logService } from '@/services/logService';
 import type { ContentListUnion, CountTokensConfig, CountTokensResponse, Part } from '@google/genai';
@@ -76,7 +77,7 @@ export const countTokensApi = async (
         response = await requestTokenCount(contents, sanitizedConfig);
       } catch (error) {
         if (sanitizedConfig && isUnsupportedCountTokensConfigError(error)) {
-          const originalErrorMessage = error instanceof Error ? error.message : String(error);
+          const originalErrorMessage = getErrorMessage(error);
 
           logService.warn('Retrying token count without unsupported Gemini Developer API config.', {
             category: 'MODEL',
@@ -98,7 +99,7 @@ export const countTokensApi = async (
               category: 'MODEL',
               data: {
                 modelId,
-                originalError: retryError instanceof Error ? retryError.message : String(retryError),
+                originalError: getErrorMessage(retryError),
               },
             });
 
@@ -109,7 +110,7 @@ export const countTokensApi = async (
             category: 'MODEL',
             data: {
               modelId,
-              originalError: error instanceof Error ? error.message : String(error),
+              originalError: getErrorMessage(error),
             },
           });
 

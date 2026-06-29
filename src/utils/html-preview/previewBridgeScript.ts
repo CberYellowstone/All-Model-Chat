@@ -1,4 +1,4 @@
-import { HTML_PREVIEW_DIAGNOSTIC_EVENT, HTML_PREVIEW_MESSAGE_CHANNEL } from './previewMessageProtocol';
+import { HTML_PREVIEW_COPY_EVENT, HTML_PREVIEW_DIAGNOSTIC_EVENT, HTML_PREVIEW_MESSAGE_CHANNEL } from './previewMessageProtocol';
 
 export const PREVIEW_BRIDGE_SCRIPT = `<script>
 (() => {
@@ -316,7 +316,24 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
     };
   };
 
+  const readCopyText = (target) => {
+    if (!(target instanceof Element)) return null;
+    const trigger = target.closest('[data-amc-copy]');
+    if (!trigger) return null;
+    const value = trigger.getAttribute('data-amc-copy');
+    if (value !== null && value.trim()) return value.trim();
+    const label = trigger.textContent ? trigger.textContent.trim() : '';
+    return label || null;
+  };
+
   document.addEventListener('click', (event) => {
+    const copyText = readCopyText(event.target);
+    if (copyText) {
+      event.preventDefault();
+      notify(${JSON.stringify(HTML_PREVIEW_COPY_EVENT)}, { text: copyText });
+      return;
+    }
+
     const payload = readFollowupPayload(event.target);
     if (!payload) return;
 

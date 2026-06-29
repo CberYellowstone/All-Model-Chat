@@ -10,4 +10,6 @@
 
 `toolbar/` contains model-specific configuration controls shown above the text area.
 
+`files/` contains selected-file display, file thumbnails (image + PDF), and the hidden file `<input>` elements.
+
 Keep new leaf controls inside the matching subdirectory. Keep orchestration in `ChatInputProvider.tsx` or the `hooks/chat-input` boundary, then pass it through `ChatInputContext.tsx`.

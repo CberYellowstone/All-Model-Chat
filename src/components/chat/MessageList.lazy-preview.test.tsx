@@ -34,7 +34,7 @@ const mockedModuleIds = [
   'react-virtuoso',
   '../message/Message',
   '../modals/FilePreviewModal',
-  '../modals/FileConfigurationModal',
+  '../modals/FileConfigModal',
   './message-list/hooks/useMessageListScroll',
   './message-list/ScrollNavigation',
   './message-list/TextSelectionToolbar',
@@ -64,7 +64,7 @@ const loadMessageList = async (moduleLoadTracker: { count: number }) => {
     });
   });
 
-  vi.doMock('@/components/modals/FileConfigurationModal', () => createNullComponentMock('FileConfigurationModal'));
+  vi.doMock('@/components/modals/FileConfigModal', () => createNullComponentMock('FileConfigModal'));
 
   vi.doMock('./message-list/hooks/useMessageListScroll', () => createMessageListScrollMock());
 

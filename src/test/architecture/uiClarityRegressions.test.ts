@@ -11,7 +11,7 @@ describe('UI clarity regressions', () => {
       'components/message/code/InlineCode.tsx',
       'components/modals/HelpModal.tsx',
       'components/modals/AudioRecorder.tsx',
-      'components/modals/CreateTextFileEditor.tsx',
+      'components/modals/create-file/CreateTextFileEditor.tsx',
       'components/modals/create-file/CreateFileBody.tsx',
       'components/message/content/thoughts/ThinkingActions.tsx',
       'components/settings/controls/model-selector/ModelListView.tsx',
@@ -27,7 +27,7 @@ describe('UI clarity regressions', () => {
 
   it('keeps tooltip and small floating controls off scale transforms', () => {
     const tooltipStyles = readSourceFile('styles/main.css');
-    const selectedFileDisplay = readSourceFile('components/chat/input/SelectedFileDisplay.tsx');
+    const selectedFileDisplay = readSourceFile('components/chat/input/files/SelectedFileDisplay.tsx');
     const sessionItem = readSourceFile('components/sidebar/SessionItem.tsx');
     const codeBlock = readSourceFile('components/message/blocks/CodeBlock.tsx');
 
@@ -42,7 +42,7 @@ describe('UI clarity regressions', () => {
     const files = [
       'components/shared/file-preview/FloatingToolbar.tsx',
       'components/chat/input/area/ChatSuggestions.tsx',
-      'components/chat/input/SelectedFileDisplay.tsx',
+      'components/chat/input/files/SelectedFileDisplay.tsx',
       'components/pwa/PwaUpdateBanner.tsx',
       'components/message/blocks/CodeBlock.tsx',
       'components/message/blocks/TableBlock.tsx',

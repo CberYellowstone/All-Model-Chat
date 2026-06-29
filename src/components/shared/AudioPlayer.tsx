@@ -2,6 +2,7 @@ import { logService } from '@/services/logService';
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Download } from 'lucide-react';
 import { triggerDownload } from '@/utils/export/core';
+import { formatClockTime } from '@/utils/formatClockTime';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AudioPlayerProps {
@@ -80,13 +81,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, autoPlay = false,
     triggerDownload(src, `audio-${Date.now()}.wav`);
   };
 
-  const formatTime = (time: number) => {
-    if (!time || isNaN(time)) return '0:00';
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
@@ -138,8 +132,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, autoPlay = false,
           </div>
 
           <div className="flex justify-between text-[10px] font-mono text-[var(--theme-text-tertiary)] tabular-nums select-none">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{formatClockTime(currentTime)}</span>
+            <span>{formatClockTime(duration)}</span>
           </div>
         </div>
 
