@@ -1,9 +1,11 @@
 import type { UsageMetadata } from '@google/genai';
+import { readResponseErrorMessage } from '@/utils/errorMessage';
 import { toError } from '@/utils/errorMessage';
+import { deduplicateModelsById } from '@/utils/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildAnthropicRequestBody } from './anthropicMessages';
-import { extractAnthropicMessageText, readAnthropicErrorMessage } from './anthropicResponses';
+import { extractAnthropicMessageText } from './anthropicResponses';
 import { readAnthropicStreamEvents } from './anthropicStream';
 import {
   asAnthropicChatConfig,
@@ -43,17 +45,14 @@ export const fetchAnthropicModels = async (
 ): Promise<ModelOption[]> => {
   const response = await fetch(buildAnthropicModelsUrl(baseUrl), createGetRequestInit(apiKey, abortSignal));
   if (!response.ok) {
-    throw new Error(await readAnthropicErrorMessage(response));
+    throw new Error(await readResponseErrorMessage(response, 'Anthropic'));
   }
   const payload = (await response.json()) as AnthropicModelsResponsePayload;
-  const seenIds = new Set<string>();
-  return (payload.data ?? []).reduce<ModelOption[]>((models, item) => {
-    const modelId = typeof item.id === 'string' ? item.id.trim() : '';
-    if (!modelId || seenIds.has(modelId)) return models;
-    seenIds.add(modelId);
-    models.push({ id: modelId, name: modelId });
-    return models;
-  }, []);
+  const rawModels = (payload.data ?? [])
+    .map((item) => (typeof item.id === 'string' ? item.id.trim() : ''))
+    .filter((id) => id.length > 0)
+    .map((id) => ({ id, name: id }));
+  return deduplicateModelsById(rawModels);
 };
 
 export const sendAnthropicMessageNonStream: NonStreamMessageSender = async (
@@ -82,7 +81,7 @@ export const sendAnthropicMessageNonStream: NonStreamMessageSender = async (
       ),
     );
     if (!response.ok) {
-      throw new Error(await readAnthropicErrorMessage(response));
+      throw new Error(await readResponseErrorMessage(response, 'Anthropic'));
     }
     const payload = (await response.json()) as AnthropicResponsePayload;
     if (abortSignal.aborted) {
@@ -126,7 +125,7 @@ export const sendAnthropicMessageStream: StreamMessageSender = async (
       ),
     );
     if (!response.ok) {
-      throw new Error(await readAnthropicErrorMessage(response));
+      throw new Error(await readResponseErrorMessage(response, 'Anthropic'));
     }
     await readAnthropicStreamEvents(response, abortSignal, (event: AnthropicStreamEvent) => {
       if (event.type === 'content_block_delta' && event.delta?.text) {

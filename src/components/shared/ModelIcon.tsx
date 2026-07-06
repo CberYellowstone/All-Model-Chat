@@ -21,8 +21,15 @@ export const getModelIcon = (model: ModelOption | undefined) => {
   if (!model) return <Box size={MODEL_ICON_SIZE} className="text-[var(--theme-text-tertiary)]" strokeWidth={1.5} />;
   const { id, isPinned } = model;
   const normalizedId = id.toLowerCase();
-  const { isNativeAudioModel, isTtsModel, isRealImagenModel, isGemini3ImageModel, isFlashImageModel, isGemmaModel } =
-    getCachedModelCapabilities(id);
+  const {
+    isNativeAudioModel,
+    isTtsModel,
+    isRealImagenModel,
+    isGemini3ImageModel,
+    isGemini31FlashImageModel,
+    isFlashImageModel,
+    isGemmaModel,
+  } = getCachedModelCapabilities(id);
 
   if (isNativeAudioModel) {
     return (
@@ -46,7 +53,7 @@ export const getModelIcon = (model: ModelOption | undefined) => {
     );
   }
 
-  if (isGemini3ImageModel || isFlashImageModel) {
+  if (isGemini3ImageModel || isGemini31FlashImageModel || isFlashImageModel) {
     return (
       <Banana size={MODEL_ICON_SIZE} className="text-yellow-500 dark:text-yellow-400 flex-shrink-0" strokeWidth={1.5} />
     );

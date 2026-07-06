@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { extractAnthropicMessageText, readAnthropicErrorMessage } from './anthropicResponses';
+import { extractAnthropicMessageText } from './anthropicResponses';
 import type { AnthropicResponsePayload } from './anthropicTypes';
+import { readResponseErrorMessage } from '@/utils/errorMessage';
 
 describe('anthropicResponses', () => {
   it('joins text content blocks', () => {
@@ -19,12 +20,12 @@ describe('anthropicResponses', () => {
 
   it('reads error message from JSON body', async () => {
     const response = new Response(JSON.stringify({ error: { message: 'Invalid key' } }), { status: 401 });
-    expect(await readAnthropicErrorMessage(response)).toBe('Invalid key');
+    expect(await readResponseErrorMessage(response, 'Anthropic')).toBe('Invalid key');
   });
 
   it('falls back to status text when body empty', async () => {
     const response = new Response('', { status: 500 });
-    const msg = await readAnthropicErrorMessage(response);
+    const msg = await readResponseErrorMessage(response, 'Anthropic');
     expect(msg).toContain('500');
   });
 });

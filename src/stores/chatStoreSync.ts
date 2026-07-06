@@ -73,19 +73,23 @@ export function setupChatStoreSync({
 
         const { activeSessionId } = store.getState();
         if (syncMessage.sessionId === activeSessionId) {
-          getSession(syncMessage.sessionId).then((session) => {
-            if (session) {
-              const rehydrated = rehydrateSession(session);
-              store.getState().setActiveMessages(rehydrated.messages);
-              store
-                .getState()
-                .setSavedSessions((previousSessions) =>
-                  previousSessions.map((savedSession) =>
-                    savedSession.id === syncMessage.sessionId ? { ...rehydrated, messages: [] } : savedSession,
-                  ),
-                );
-            }
-          });
+          getSession(syncMessage.sessionId)
+            .then((session) => {
+              if (session) {
+                const rehydrated = rehydrateSession(session);
+                store.getState().setActiveMessages(rehydrated.messages);
+                store
+                  .getState()
+                  .setSavedSessions((previousSessions) =>
+                    previousSessions.map((savedSession) =>
+                      savedSession.id === syncMessage.sessionId ? { ...rehydrated, messages: [] } : savedSession,
+                    ),
+                  );
+              }
+            })
+            .catch((error) => {
+              logService.error('[Sync] Failed to reload session', { error });
+            });
         } else {
           store.getState().refreshSessions();
         }

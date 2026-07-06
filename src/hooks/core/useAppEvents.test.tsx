@@ -264,14 +264,20 @@ describe('useAppEvents PWA lifecycle', () => {
     unmount();
   });
 
-  it('switches to an OpenAI-compatible model when it is included in the configured Tab cycle', async () => {
+  it('switches to a third-party model when it is included in the configured Tab cycle', async () => {
     const handleSelectModelInHeader = vi.fn();
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
       apiMode: 'gemini-native',
-      isOpenAICompatibleApiEnabled: true,
-      openaiCompatibleModelId: 'gpt-4.1',
+      isThirdPartyApiEnabled: true,
+      thirdPartyApi: {
+        activeProvider: 'openai',
+        providers: {
+          ...createDefaultThirdPartyApiSettings().providers,
+          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1' },
+        },
+      },
       tabModelCycleIds: ['gpt-5.5'],
     });
     const textarea = document.createElement('textarea');
@@ -289,7 +295,7 @@ describe('useAppEvents PWA lifecycle', () => {
         }),
         availableModels: [
           { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true, apiMode: 'gemini-native' },
-          { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'openai-compatible' },
+          { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party' },
         ],
         handleSelectModelInHeader,
         setIsLogViewerOpen: vi.fn(),
@@ -311,8 +317,7 @@ describe('useAppEvents PWA lifecycle', () => {
     const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
     expect(updateSettings(geminiSettings)).toEqual(
       expect.objectContaining({
-        apiMode: 'openai-compatible',
-        openaiCompatibleModelId: 'gpt-5.5',
+        apiMode: 'third-party',
         modelId: geminiSettings.modelId,
       }),
     );
@@ -321,15 +326,25 @@ describe('useAppEvents PWA lifecycle', () => {
     unmount();
   });
 
-  it('cycles from Gemini to an OpenAI-compatible model stored in settings when the event model list only contains Gemini models', async () => {
+  it('cycles from Gemini to a third-party model stored in settings when the event model list only contains Gemini models', async () => {
     const handleSelectModelInHeader = vi.fn();
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
       apiMode: 'gemini-native',
-      isOpenAICompatibleApiEnabled: true,
-      openaiCompatibleModelId: 'gpt-4.1',
-      openaiCompatibleModels: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+      isThirdPartyApiEnabled: true,
+      thirdPartyApi: {
+        activeProvider: 'openai',
+        providers: {
+          ...createDefaultThirdPartyApiSettings().providers,
+          openai: {
+            ...createDefaultThirdPartyApiSettings().providers.openai,
+            modelId: 'gpt-4.1',
+            enabled: true,
+            models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+          },
+        },
+      },
       tabModelCycleIds: ['gemini-3.1-pro-preview', 'gemini-3-flash-preview', 'gpt-5.5'],
     });
     const textarea = document.createElement('textarea');
@@ -369,8 +384,7 @@ describe('useAppEvents PWA lifecycle', () => {
     const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
     expect(updateSettings(geminiSettings)).toEqual(
       expect.objectContaining({
-        apiMode: 'openai-compatible',
-        openaiCompatibleModelId: 'gpt-5.5',
+        apiMode: 'third-party',
         modelId: geminiSettings.modelId,
       }),
     );

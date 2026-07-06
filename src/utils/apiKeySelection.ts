@@ -1,7 +1,6 @@
 import { type AppSettings, type ChatSettings } from '@/types';
 import { API_KEY_LAST_USED_INDEX_KEY } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
-import { isOpenAICompatibleApiActive } from './openaiCompatibleMode';
 import { isThirdPartyApiActive } from './thirdPartyApiActive';
 import { getThirdPartyProviderConfig } from './thirdPartyApiProviders';
 
@@ -20,7 +19,7 @@ export const isServerManagedApiEnabledForProxyRequests = (appSettings: ServerMan
     appSettings.apiProxyUrl?.trim()
   );
 
-type ApiKeyRequestMode = 'active' | 'gemini-native' | 'openai-compatible' | 'third-party';
+type ApiKeyRequestMode = 'active' | 'gemini-native' | 'third-party';
 
 type GetKeyForRequestOptions = {
   skipIncrement?: boolean;
@@ -33,10 +32,7 @@ const resolveApiKeyRequestMode = (appSettings: AppSettings, apiMode: ApiKeyReque
     return apiMode;
   }
 
-  if (isThirdPartyApiActive(appSettings)) {
-    return 'third-party';
-  }
-  return isOpenAICompatibleApiActive(appSettings) ? 'openai-compatible' : 'gemini-native';
+  return isThirdPartyApiActive(appSettings) ? 'third-party' : 'gemini-native';
 };
 
 const getActiveApiConfig = (
@@ -51,12 +47,6 @@ const getActiveApiConfig = (
       };
     }
   ).env;
-
-  if (resolveApiKeyRequestMode(appSettings, apiMode) === 'openai-compatible') {
-    return {
-      apiKeysString: appSettings.openaiCompatibleApiKey || importEnv?.VITE_OPENAI_API_KEY || null,
-    };
-  }
 
   if (resolveApiKeyRequestMode(appSettings, apiMode) === 'third-party') {
     const activeProvider = getThirdPartyProviderConfig(appSettings);
@@ -90,9 +80,8 @@ export const getKeyForRequest = (
   const { skipIncrement = false } = options;
   const { skipUsageLogging = false } = options;
   const apiKeyRequestMode = resolveApiKeyRequestMode(appSettings, options.apiMode);
-  const isOpenAICompatibleMode = apiKeyRequestMode === 'openai-compatible';
   const shouldUseServerManagedMarker =
-    !isOpenAICompatibleMode && isServerManagedApiEnabledForProxyRequests(appSettings);
+    apiKeyRequestMode !== 'third-party' && isServerManagedApiEnabledForProxyRequests(appSettings);
 
   const logUsage = (key: string) => {
     if (appSettings.useCustomApiConfig && !skipUsageLogging) {
@@ -169,7 +158,7 @@ export const getGeminiKeyForRequest = (
   currentChatSettings: ChatSettings,
   options: Omit<GetKeyForRequestOptions, 'apiMode'> = {},
 ): { key: string; isNewKey: boolean } | { error: string } => {
-  const keySettings = isOpenAICompatibleApiActive(appSettings)
+  const keySettings = isThirdPartyApiActive(appSettings)
     ? { ...currentChatSettings, lockedApiKey: null }
     : currentChatSettings;
 

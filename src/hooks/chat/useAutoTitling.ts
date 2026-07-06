@@ -58,7 +58,6 @@ const buildAutoTitleAttemptKey = (
     hashAttemptValue(session.settings.lockedApiKey),
     language,
     appSettings.apiMode,
-    appSettings.isOpenAICompatibleApiEnabled ? 'openai-compatible' : 'gemini-native',
     appSettings.useCustomApiConfig ? 'custom-api' : 'env-api',
     appSettings.serverManagedApi ? 'server-managed' : 'browser-managed',
     appSettings.useApiProxy ? 'proxy' : 'direct',

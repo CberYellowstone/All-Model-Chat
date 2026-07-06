@@ -186,10 +186,7 @@ export const resolveProviderForModelId = (
 };
 
 export const buildProviderAwareModelList = (
-  appSettings: Pick<
-    AppSettings,
-    'isThirdPartyApiEnabled' | 'isOpenAICompatibleApiEnabled' | 'openaiCompatibleModels' | 'thirdPartyApi'
-  >,
+  appSettings: Pick<AppSettings, 'isThirdPartyApiEnabled' | 'thirdPartyApi'>,
   baseModels: ModelOption[],
 ): ModelOption[] => {
   const thirdPartyModels =
@@ -202,15 +199,8 @@ export const buildProviderAwareModelList = (
           })),
         )
       : [];
-  const openaiCompatibleModels =
-    appSettings.isThirdPartyApiEnabled !== true && appSettings.isOpenAICompatibleApiEnabled === true
-      ? appSettings.openaiCompatibleModels.map((model) => ({
-          ...model,
-          apiMode: 'openai-compatible' as const,
-        }))
-      : [];
 
-  return deduplicateModelsById([...baseModels, ...thirdPartyModels, ...openaiCompatibleModels]);
+  return deduplicateModelsById([...baseModels, ...thirdPartyModels]);
 };
 
 const sanitizeThirdPartyProviderConfig = (

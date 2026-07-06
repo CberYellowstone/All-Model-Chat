@@ -1,4 +1,5 @@
 import type { ModelOption } from '@/types';
+import { deduplicateModelsById, sanitizeModelOptions } from '@/utils/modelSorting';
 
 export interface EditableOpenAICompatibleModelRow {
   id: string;
@@ -45,7 +46,6 @@ export const normalizeOpenAICompatibleModelRows = (
     return normalizedRows;
   }, []);
 };
-
 export const buildOpenAICompatibleModelOptions = (rows: EditableOpenAICompatibleModelRow[]): ModelOption[] =>
   normalizeOpenAICompatibleModelRows(rows).map((row, index) =>
     createOpenAICompatibleModelOption(row.id, row.name, index === 0),
@@ -104,16 +104,10 @@ export const parsePastedOpenAICompatibleModelIds = (text: string): string[] => {
 };
 
 export const dedupeOpenAICompatibleModelOptions = (models: ModelOption[]): ModelOption[] => {
-  const seenModelIds = new Set<string>();
-
-  return models.reduce<ModelOption[]>((dedupedModels, model) => {
-    const modelId = model.id.trim();
-    if (!modelId || seenModelIds.has(modelId)) {
-      return dedupedModels;
-    }
-
-    seenModelIds.add(modelId);
-    dedupedModels.push(createOpenAICompatibleModelOption(modelId, model.name, !!model.isPinned));
-    return dedupedModels;
-  }, []);
+  const sanitized = sanitizeModelOptions(models);
+  return deduplicateModelsById(sanitized).map((model) => ({
+    id: model.id,
+    name: model.name,
+    ...(model.isPinned ? { isPinned: true } : {}),
+  }));
 };

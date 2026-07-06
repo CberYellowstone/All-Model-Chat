@@ -1,10 +1,24 @@
 const DANGEROUS_PREVIEW_SELECTOR = 'script, iframe, object, embed';
 const DANGEROUS_PREVIEW_URL_ATTRIBUTES = ['src', 'href'] as const;
-const DANGEROUS_PREVIEW_URL_PROTOCOL = 'javascript:';
+const DANGEROUS_PREVIEW_URL_PROTOCOLS = ['javascript:', 'vbscript:', 'file:'];
+const DANGEROUS_PREVIEW_DATA_PROTOCOL = 'data:';
+const DANGEROUS_PREVIEW_DATA_IMAGE_PREFIX = 'data:image/';
 const DANGEROUS_PREVIEW_ATTRIBUTE_NAMES = ['srcdoc'] as const;
 const DANGEROUS_PREVIEW_ATTRIBUTE_PREFIXES = ['on'] as const;
 
 const includesAttribute = (values: readonly string[], attributeName: string) => values.includes(attributeName);
+
+const isDangerousUrlValue = (attributeName: string, attributeValue: string) => {
+  if (!includesAttribute(DANGEROUS_PREVIEW_URL_ATTRIBUTES, attributeName)) {
+    return false;
+  }
+
+  if (attributeValue.startsWith(DANGEROUS_PREVIEW_DATA_PROTOCOL)) {
+    return !attributeValue.startsWith(DANGEROUS_PREVIEW_DATA_IMAGE_PREFIX);
+  }
+
+  return DANGEROUS_PREVIEW_URL_PROTOCOLS.some((protocol) => attributeValue.startsWith(protocol));
+};
 
 const shouldRemovePreviewAttribute = (attributeName: string, attributeValue: string) => {
   if (
@@ -14,10 +28,7 @@ const shouldRemovePreviewAttribute = (attributeName: string, attributeValue: str
     return true;
   }
 
-  return (
-    includesAttribute(DANGEROUS_PREVIEW_URL_ATTRIBUTES, attributeName) &&
-    attributeValue.startsWith(DANGEROUS_PREVIEW_URL_PROTOCOL)
-  );
+  return isDangerousUrlValue(attributeName, attributeValue);
 };
 
 const removeDangerousPreviewAttribute = (element: Element, attribute: Attr) => {
@@ -44,9 +55,23 @@ export const sanitizeElementTree = (root: ParentNode) => {
 export const STREAM_SANITIZER_SCRIPT = `
   const dangerousSelector = ${JSON.stringify(DANGEROUS_PREVIEW_SELECTOR)};
   const dangerousUrlAttributes = ${JSON.stringify(DANGEROUS_PREVIEW_URL_ATTRIBUTES)};
-  const dangerousUrlProtocol = ${JSON.stringify(DANGEROUS_PREVIEW_URL_PROTOCOL)};
+  const dangerousUrlProtocols = ${JSON.stringify(DANGEROUS_PREVIEW_URL_PROTOCOLS)};
+  const dangerousDataProtocol = ${JSON.stringify(DANGEROUS_PREVIEW_DATA_PROTOCOL)};
+  const dangerousDataImagePrefix = ${JSON.stringify(DANGEROUS_PREVIEW_DATA_IMAGE_PREFIX)};
   const dangerousAttributeNames = ${JSON.stringify(DANGEROUS_PREVIEW_ATTRIBUTE_NAMES)};
   const dangerousAttributePrefixes = ${JSON.stringify(DANGEROUS_PREVIEW_ATTRIBUTE_PREFIXES)};
+
+  const isDangerousUrlValue = (attributeName, attributeValue) => {
+    if (!dangerousUrlAttributes.includes(attributeName)) {
+      return false;
+    }
+
+    if (attributeValue.startsWith(dangerousDataProtocol)) {
+      return !attributeValue.startsWith(dangerousDataImagePrefix);
+    }
+
+    return dangerousUrlProtocols.some((protocol) => attributeValue.startsWith(protocol));
+  };
 
   const shouldRemoveAttribute = (attributeName, attributeValue) => {
     if (
@@ -56,7 +81,7 @@ export const STREAM_SANITIZER_SCRIPT = `
       return true;
     }
 
-    return dangerousUrlAttributes.includes(attributeName) && attributeValue.startsWith(dangerousUrlProtocol);
+    return isDangerousUrlValue(attributeName, attributeValue);
   };
 
   const sanitizeElementTree = (parent) => {

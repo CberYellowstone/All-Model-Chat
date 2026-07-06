@@ -26,8 +26,14 @@ const isNativeAudioModel = (modelId: string): boolean => {
 
 const isGemini31FlashLiveModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-3.1-flash-live');
 
-const isGemini31FlashImageModel = (modelId: string): boolean =>
-  modelId.toLowerCase().includes('gemini-3.1-flash-image');
+const isGemini31FlashImageModel = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  // Includes both gemini-3.1-flash-image-preview and gemini-3.1-flash-lite-image.
+  return lowerId.includes('gemini-3.1-flash-image') || lowerId.includes('gemini-3.1-flash-lite-image');
+};
+
+const isGemini31FlashLiteImageModel = (modelId: string): boolean =>
+  modelId.toLowerCase().includes('gemini-3.1-flash-lite-image');
 
 const isTtsModel = (modelId: string): boolean => modelId.toLowerCase().includes('tts');
 
@@ -132,29 +138,38 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   if (realImagenModel) {
     supportedAspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'];
   } else if (isGemini31FlashImageModel(modelId)) {
-    supportedAspectRatios = [
-      'Auto',
-      '1:1',
-      '1:4',
-      '1:8',
-      '16:9',
-      '9:16',
-      '4:1',
-      '4:3',
-      '3:4',
-      '3:2',
-      '2:3',
-      '4:5',
-      '5:4',
-      '8:1',
-      '21:9',
-    ];
+    if (isGemini31FlashLiteImageModel(modelId)) {
+      // gemini-3.1-flash-lite-image: only 1K resolution, 10 aspect ratios (no Auto, no 1:4/1:8/4:1/8:1)
+      supportedAspectRatios = ['1:1', '3:2', '2:3', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'];
+    } else {
+      // gemini-3.1-flash-image-preview: 14 aspect ratios including 1:4, 1:8, 4:1, 8:1
+      supportedAspectRatios = [
+        'Auto',
+        '1:1',
+        '1:4',
+        '1:8',
+        '16:9',
+        '9:16',
+        '4:1',
+        '4:3',
+        '3:4',
+        '3:2',
+        '2:3',
+        '4:5',
+        '5:4',
+        '8:1',
+        '21:9',
+      ];
+    }
   } else if (gemini3ImageModel || flashImageModel) {
     supportedAspectRatios = ['Auto', '1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '4:5', '5:4', '21:9'];
   }
 
   let supportedImageSizes: string[] | undefined;
-  if (isGemini31FlashImageModel(modelId)) {
+  if (isGemini31FlashLiteImageModel(modelId)) {
+    // gemini-3.1-flash-lite-image: only 1K resolution
+    supportedImageSizes = ['1K'];
+  } else if (isGemini31FlashImageModel(modelId)) {
     supportedImageSizes = ['512', '1K', '2K', '4K'];
   } else if (gemini3ImageModel) {
     supportedImageSizes = ['1K', '2K', '4K'];

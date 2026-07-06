@@ -1,4 +1,5 @@
 import type { McpServerConfig } from '@/types';
+import { readResponseErrorMessage } from '@/utils/errorMessage';
 
 export interface McpToolDefinition {
   name: string;
@@ -83,14 +84,7 @@ export interface McpServerCapabilities {
   }>;
 }
 
-const readErrorMessage = async (response: Response): Promise<string> => {
-  try {
-    const body = (await response.json()) as { error?: unknown };
-    return typeof body.error === 'string' ? body.error : `MCP request failed with ${response.status}.`;
-  } catch {
-    return `MCP request failed with ${response.status}.`;
-  }
-};
+const readErrorMessage = (response: Response): Promise<string> => readResponseErrorMessage(response, 'MCP request');
 
 export const fetchMcpTools = async (
   servers: McpServerConfig[],

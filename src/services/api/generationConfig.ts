@@ -187,7 +187,11 @@ async function buildGenerationConfigFromOptions({
     return generationConfig;
   }
 
-  if (modelId === 'gemini-3-pro-image-preview' || modelId === 'gemini-3.1-flash-image-preview') {
+  if (
+    modelId === 'gemini-3-pro-image-preview' ||
+    modelId === 'gemini-3.1-flash-image-preview' ||
+    modelId === 'gemini-3.1-flash-lite-image'
+  ) {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {
       imageSize: normalizedImageSize || '1K',
     };
@@ -200,17 +204,20 @@ async function buildGenerationConfigFromOptions({
       imageConfig,
     };
 
-    if (modelId === 'gemini-3.1-flash-image-preview') {
+    if (modelId === 'gemini-3.1-flash-image-preview' || modelId === 'gemini-3.1-flash-lite-image') {
       generationConfig.thinkingConfig = {
         includeThoughts: true,
-        // Gemini 3.1 Flash Image exposes only minimal/high thinking levels.
+        // Gemini 3.1 Flash Image / Lite expose only minimal/high thinking levels.
         thinkingLevel: toSdkThinkingLevel(thinkingLevel === 'HIGH' ? 'HIGH' : 'MINIMAL', 'MINIMAL'),
       };
     }
 
     const tools: NonNullable<GenerationConfig['tools']> = [];
-    if (isGoogleSearchEnabled) tools.push(googleSearchTool);
-    if (isGoogleMapsEnabled) tools.push(buildGoogleMapsTool());
+    // gemini-3.1-flash-lite-image does not support Google Search or Maps grounding.
+    if (modelId !== 'gemini-3.1-flash-lite-image') {
+      if (isGoogleSearchEnabled) tools.push(googleSearchTool);
+      if (isGoogleMapsEnabled) tools.push(buildGoogleMapsTool());
+    }
     if (tools.length > 0) generationConfig.tools = tools;
 
     if (systemInstruction) generationConfig.systemInstruction = systemInstruction;

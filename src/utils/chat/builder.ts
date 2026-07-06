@@ -18,7 +18,8 @@ const isGeminiImageHistoryTarget = (modelId?: string): boolean => {
   return (
     lowerId.includes('gemini-2.5-flash-image') ||
     lowerId === 'gemini-3-pro-image-preview' ||
-    lowerId === 'gemini-3.1-flash-image-preview'
+    lowerId === 'gemini-3.1-flash-image-preview' ||
+    lowerId === 'gemini-3.1-flash-lite-image'
   );
 };
 

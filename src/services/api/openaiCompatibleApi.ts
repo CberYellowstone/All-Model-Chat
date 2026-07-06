@@ -1,13 +1,11 @@
 import type { UsageMetadata } from '@google/genai';
+import { readResponseErrorMessage } from '@/utils/errorMessage';
 import { toError } from '@/utils/errorMessage';
+import { deduplicateModelsById } from '@/utils/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildOpenAICompatibleRequestBody } from './openaiCompatibleMessages';
-import {
-  extractOpenAICompatibleMessageText,
-  extractOpenAICompatibleReasoningText,
-  readOpenAICompatibleErrorMessage,
-} from './openaiCompatibleResponses';
+import { extractOpenAICompatibleMessageText, extractOpenAICompatibleReasoningText } from './openaiCompatibleResponses';
 import { readOpenAICompatibleStreamEvents } from './openaiCompatibleStream';
 import {
   asOpenAICompatibleConfig,
@@ -43,22 +41,15 @@ export const fetchOpenAICompatibleModels = async (
   const response = await fetch(buildOpenAICompatibleModelsUrl(baseUrl), createGetRequestInit(apiKey, abortSignal));
 
   if (!response.ok) {
-    throw new Error(await readOpenAICompatibleErrorMessage(response));
+    throw new Error(await readResponseErrorMessage(response, 'OpenAI-compatible'));
   }
 
   const payload = (await response.json()) as OpenAIModelsResponsePayload;
-  const seenIds = new Set<string>();
-
-  return (payload.data ?? []).reduce<ModelOption[]>((models, item) => {
-    const modelId = typeof item.id === 'string' ? item.id.trim() : '';
-    if (!modelId || seenIds.has(modelId)) {
-      return models;
-    }
-
-    seenIds.add(modelId);
-    models.push({ id: modelId, name: modelId });
-    return models;
-  }, []);
+  const rawModels = (payload.data ?? [])
+    .map((item) => (typeof item.id === 'string' ? item.id.trim() : ''))
+    .filter((id) => id.length > 0)
+    .map((id) => ({ id, name: id }));
+  return deduplicateModelsById(rawModels);
 };
 
 export const sendOpenAICompatibleMessageNonStream: NonStreamMessageSender = async (
@@ -90,7 +81,7 @@ export const sendOpenAICompatibleMessageNonStream: NonStreamMessageSender = asyn
     );
 
     if (!response.ok) {
-      throw new Error(await readOpenAICompatibleErrorMessage(response));
+      throw new Error(await readResponseErrorMessage(response, 'OpenAI-compatible'));
     }
 
     const payload = (await response.json()) as OpenAIResponsePayload;
@@ -145,7 +136,7 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
     );
 
     if (!response.ok) {
-      throw new Error(await readOpenAICompatibleErrorMessage(response));
+      throw new Error(await readResponseErrorMessage(response, 'OpenAI-compatible'));
     }
 
     await readOpenAICompatibleStreamEvents(response, abortSignal, (payload) => {

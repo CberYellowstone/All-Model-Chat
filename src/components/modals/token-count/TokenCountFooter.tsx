@@ -4,6 +4,7 @@ import { Loader2, Trash2, RefreshCw } from 'lucide-react';
 
 interface TokenCountFooterProps {
   tokenCount: number | null;
+  videoTokenEstimate?: number | null;
   isLoading: boolean;
   hasContent: boolean;
   onClear: () => void;
@@ -12,6 +13,7 @@ interface TokenCountFooterProps {
 
 export const TokenCountFooter: React.FC<TokenCountFooterProps> = ({
   tokenCount,
+  videoTokenEstimate,
   isLoading,
   hasContent,
   onClear,
@@ -28,6 +30,23 @@ export const TokenCountFooter: React.FC<TokenCountFooterProps> = ({
             </span>
             <span className="text-2xl font-bold text-[var(--theme-text-link)] font-mono tabular-nums">
               {tokenCount.toLocaleString()}{' '}
+              <span className="text-sm font-sans font-normal text-[var(--theme-text-secondary)]">
+                {t('tokensUnit')}
+              </span>
+            </span>
+            {videoTokenEstimate ? (
+              <span className="text-xs text-[var(--theme-text-tertiary)] mt-0.5">
+                {t('tokenModalVideoEstimate')}: {videoTokenEstimate.toLocaleString()}
+              </span>
+            ) : null}
+          </div>
+        ) : videoTokenEstimate ? (
+          <div className="flex flex-col animate-in fade-in slide-in-from-bottom-2">
+            <span className="text-xs text-[var(--theme-text-tertiary)] font-medium uppercase tracking-wide">
+              {t('tokenModalVideoEstimate')}
+            </span>
+            <span className="text-2xl font-bold text-[var(--theme-text-link)] font-mono tabular-nums">
+              {videoTokenEstimate.toLocaleString()}{' '}
               <span className="text-sm font-sans font-normal text-[var(--theme-text-secondary)]">
                 {t('tokensUnit')}
               </span>

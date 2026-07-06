@@ -46,7 +46,9 @@ const readRequestBody = async (request: IncomingMessage): Promise<string> => {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     totalBytes += buffer.byteLength;
     if (totalBytes > MAX_MCP_REQUEST_BYTES) {
-      throw new Error('MCP request body is too large.');
+      const error = new Error('MCP request body is too large.');
+      error.name = 'HttpError';
+      throw error;
     }
     chunks.push(buffer);
   }
@@ -503,7 +505,13 @@ export const handleMcpRequest = async (
       return true;
     }
 
-    sendJson(request, response, 500, { error: `MCP request failed: ${getErrorMessage(error)}` }, allowedOrigins);
+    if (error instanceof Error && error.name === 'HttpError') {
+      sendJson(request, response, 413, { error: error.message }, allowedOrigins);
+      return true;
+    }
+
+    console.error('[mcp] request failed:', error);
+    sendJson(request, response, 500, { error: 'MCP request failed.' }, allowedOrigins);
   }
 
   return true;

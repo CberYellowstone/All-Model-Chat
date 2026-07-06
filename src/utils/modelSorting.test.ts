@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type ModelOption } from '@/types';
-import { resolveSupportedModelId, sanitizeModelOptions, sortModels } from './modelSorting';
+import { deduplicateModelsById, resolveSupportedModelId, sanitizeModelOptions, sortModels } from './modelSorting';
 
 describe('sortModels', () => {
   it('sorts pinned models before unpinned', () => {
@@ -73,6 +73,28 @@ describe('sortModels', () => {
     ];
     sortModels(models);
     expect(models[0].id).toBe('b');
+  });
+});
+
+describe('deduplicateModelsById', () => {
+  it('keeps first occurrence of each id, preserves order', () => {
+    const result = deduplicateModelsById([
+      { id: 'a', name: 'A' },
+      { id: 'b', name: 'B' },
+      { id: 'a', name: 'A dup' },
+      { id: 'c', name: 'C' },
+    ]);
+    expect(result.map((m) => m.id)).toEqual(['a', 'b', 'c']);
+    expect(result.map((m) => m.name)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('does not trim/normalize (caller must sanitize first)', () => {
+    const result = deduplicateModelsById([
+      { id: '  x  ', name: 'X' },
+      { id: 'x', name: 'Y' },
+    ]);
+    // '  x  ' and 'x' are different keys here — by design
+    expect(result.map((m) => m.id)).toEqual(['  x  ', 'x']);
   });
 });
 

@@ -104,15 +104,12 @@ export const useGlobalShortcuts = ({
           activeElement instanceof Element && activeElement.matches(CHAT_INPUT_TEXTAREA_SELECTOR);
         if (isChatTextareaFocused || !isGenerallyInputFocused) {
           event.preventDefault();
-          const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
-          const activeThirdPartyProvider =
-            isOpenAICompatibleMode && appSettings.apiMode === 'third-party'
-              ? getThirdPartyProviderConfig(appSettings)
-              : null;
-          const currentModelId = isOpenAICompatibleMode
-            ? activeThirdPartyProvider
-              ? activeThirdPartyProvider.modelId
-              : appSettings.openaiCompatibleModelId
+          const isThirdPartyMode = isThirdPartyApiActive(appSettings);
+          const activeThirdPartyProvider = isThirdPartyMode
+            ? getThirdPartyProviderConfig(appSettings)
+            : null;
+          const currentModelId = isThirdPartyMode
+            ? activeThirdPartyProvider?.modelId ?? currentChatSettings.modelId
             : currentChatSettings.modelId;
           const tabCycleModels = buildTabCycleAvailableModels(appSettings, availableModels);
           const cycleModels = getTabCycleModelIds(tabCycleModels, appSettings.tabModelCycleIds);
@@ -129,7 +126,6 @@ export const useGlobalShortcuts = ({
                 ...prev,
                 apiMode: 'third-party',
                 isThirdPartyApiEnabled: true,
-                isOpenAICompatibleApiEnabled: true,
                 thirdPartyApi: updateActiveThirdPartyProviderConfig(prev.thirdPartyApi, {
                   modelId: newModelId,
                 }),
@@ -137,16 +133,7 @@ export const useGlobalShortcuts = ({
               return;
             }
 
-            if (appSettings.isOpenAICompatibleApiEnabled === true && targetModel?.apiMode === 'openai-compatible') {
-              setAppSettings((prev) => ({
-                ...prev,
-                apiMode: 'openai-compatible',
-                openaiCompatibleModelId: newModelId,
-              }));
-              return;
-            }
-
-            if (isOpenAICompatibleMode) {
+            if (isThirdPartyMode) {
               setAppSettings((prev) => ({
                 ...prev,
                 apiMode: 'gemini-native',

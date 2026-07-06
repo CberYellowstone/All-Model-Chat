@@ -1,19 +1,5 @@
 import type { OpenAIResponsePayload } from './openaiCompatibleTypes';
 
-export const readOpenAICompatibleErrorMessage = async (response: Response): Promise<string> => {
-  const text = await response.text();
-  if (!text) {
-    return `OpenAI-compatible request failed with status ${response.status}`;
-  }
-
-  try {
-    const parsed = JSON.parse(text) as OpenAIResponsePayload;
-    return parsed.error?.message || text;
-  } catch {
-    return text;
-  }
-};
-
 export const extractOpenAICompatibleMessageText = (payload: OpenAIResponsePayload): string => {
   const content = payload.choices?.[0]?.message?.content;
 

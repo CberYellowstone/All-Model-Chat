@@ -1,13 +1,14 @@
 import { logService } from '@/services/logService';
 import { getErrorMessage } from '@/utils/errorMessage';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type UploadedFile, type AppSettings } from '@/types';
+import { type UploadedFile, type AppSettings, MediaResolution } from '@/types';
 import { buildContentParts } from '@/utils/chat/builder';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { cleanupFilePreviewUrl, cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
 import { countTokensApi } from '@/services/api/generation/tokenApi';
+import { estimateVideoTokensForFiles } from '@/utils/tokenEstimation';
 import {
   appendFunctionDeclarationsToTools,
   buildGenerationConfig,
@@ -78,6 +79,7 @@ export const useTokenCountLogic = ({
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedModelId, setSelectedModelId] = useState(currentModelId);
   const [tokenCount, setTokenCount] = useState<number | null>(null);
+  const [videoTokenEstimate, setVideoTokenEstimate] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +140,23 @@ export const useTokenCountLogic = ({
     [appSettings, latestStoredSettings, t],
   );
 
+  // Local, instant estimate for the video portion only. Surfaced separately
+  // from the server count so the UI can show something before the network
+  // round-trip completes (and as a fallback if it fails).
+  const recomputeVideoEstimate = useCallback(
+    async (fls: UploadedFile[], modelId: string, resolution: MediaResolution | undefined) => {
+      try {
+        const effectiveResolution = resolution ?? MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED;
+        const estimate = await estimateVideoTokensForFiles(fls, modelId, effectiveResolution);
+        setVideoTokenEstimate(estimate > 0 ? estimate : null);
+      } catch (error) {
+        logService.error('Video token estimate failed', error);
+        setVideoTokenEstimate(null);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (isOpen) {
       setText(initialText);
@@ -152,6 +171,13 @@ export const useTokenCountLogic = ({
       }
     }
   }, [isOpen, initialText, initialFiles, currentModelId, performCalculation]);
+
+  // Recompute the local video estimate whenever files, model, or resolution
+  // change. Cheap and instant, runs alongside the server countTokens call.
+  useEffect(() => {
+    if (!isOpen) return;
+    recomputeVideoEstimate(files, selectedModelId, appSettings.mediaResolution);
+  }, [isOpen, files, selectedModelId, appSettings.mediaResolution, recomputeVideoEstimate]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -203,6 +229,7 @@ export const useTokenCountLogic = ({
     files,
     selectedModelId,
     tokenCount,
+    videoTokenEstimate,
     isLoading,
     error,
     fileInputRef,

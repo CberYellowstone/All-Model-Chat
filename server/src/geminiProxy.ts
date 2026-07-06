@@ -138,6 +138,9 @@ export async function proxyGeminiRequest(
     method,
     headers: buildProxyHeaders(request, apiKeyForProxy),
     signal: abortController.signal,
+    // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a private network host
+    // after the input URL passed validation.
+    redirect: 'manual',
   };
 
   if (hasBody) {
@@ -161,8 +164,18 @@ export async function proxyGeminiRequest(
       return;
     }
 
-    const message = error instanceof Error ? error.message : 'Unknown upstream error';
-    sendJson(request, response, 502, { error: `Gemini upstream request failed: ${message}` }, config.allowedOrigins);
+    console.error('[gemini] upstream request failed:', error);
+    sendJson(request, response, 502, { error: 'Gemini upstream request failed.' }, config.allowedOrigins);
+    return;
+  }
+
+  // Block redirects: Gemini's API does not legitimately redirect, and a 3xx here would mean
+  // we did not follow it (good) but the upstream attempted to point us elsewhere.
+  if (upstreamResponse.status >= 300 && upstreamResponse.status < 400) {
+    request.off('aborted', abortUpstream);
+    response.off('close', abortUpstream);
+    console.error('[gemini] upstream returned redirect:', upstreamResponse.status);
+    sendJson(request, response, 502, { error: 'Gemini upstream returned an unexpected redirect.' }, config.allowedOrigins);
     return;
   }
 

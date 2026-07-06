@@ -16,12 +16,23 @@ interface HiddenFileInputsProps {
   fileInputs: ChatInputFileInputs;
 }
 
-export const HiddenFileInputs: React.FC<HiddenFileInputsProps> = ({ fileInputs }) => (
+export const HiddenFileInputs: React.FC<HiddenFileInputsProps> = ({
+  fileInputs: {
+    fileInputRef,
+    imageInputRef,
+    folderInputRef,
+    zipInputRef,
+    cameraInputRef,
+    handleFileChange,
+    handleFolderChange,
+    handleZipChange,
+  },
+}) => (
   <>
     <input
       type="file"
-      ref={fileInputs.fileInputRef}
-      onChange={fileInputs.handleFileChange}
+      ref={fileInputRef}
+      onChange={handleFileChange}
       accept={SUPPORTED_UPLOAD_MIME_TYPES.join(',')}
       className="hidden"
       aria-hidden="true"
@@ -29,8 +40,8 @@ export const HiddenFileInputs: React.FC<HiddenFileInputsProps> = ({ fileInputs }
     />
     <input
       type="file"
-      ref={fileInputs.imageInputRef}
-      onChange={fileInputs.handleFileChange}
+      ref={imageInputRef}
+      onChange={handleFileChange}
       accept={SUPPORTED_IMAGE_MIME_TYPES.join(',')}
       className="hidden"
       aria-hidden="true"
@@ -38,8 +49,8 @@ export const HiddenFileInputs: React.FC<HiddenFileInputsProps> = ({ fileInputs }
     />
     <input
       type="file"
-      ref={fileInputs.folderInputRef}
-      onChange={fileInputs.handleFolderChange}
+      ref={folderInputRef}
+      onChange={handleFolderChange}
       className="hidden"
       aria-hidden="true"
       {...({ webkitdirectory: '', directory: '' } as { webkitdirectory: string; directory: string })}
@@ -47,16 +58,16 @@ export const HiddenFileInputs: React.FC<HiddenFileInputsProps> = ({ fileInputs }
     />
     <input
       type="file"
-      ref={fileInputs.zipInputRef}
-      onChange={fileInputs.handleZipChange}
+      ref={zipInputRef}
+      onChange={handleZipChange}
       accept=".zip"
       className="hidden"
       aria-hidden="true"
     />
     <input
       type="file"
-      ref={fileInputs.cameraInputRef}
-      onChange={fileInputs.handleFileChange}
+      ref={cameraInputRef}
+      onChange={handleFileChange}
       accept="image/*"
       capture="environment"
       className="hidden"

@@ -31,6 +31,7 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
     files,
     selectedModelId,
     tokenCount,
+    videoTokenEstimate,
     isLoading,
     error,
     fileInputRef,
@@ -124,6 +125,7 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
 
       <TokenCountFooter
         tokenCount={tokenCount}
+        videoTokenEstimate={videoTokenEstimate}
         isLoading={isLoading}
         hasContent={!!text.trim() || files.length > 0}
         onClear={clearAll}

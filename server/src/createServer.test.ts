@@ -225,7 +225,7 @@ describe('createServer', () => {
 
     expect(response.status).toBe(502);
     expect(body).toEqual({
-      error: 'Gemini upstream request failed: network down',
+      error: 'Gemini upstream request failed.',
     });
   });
 

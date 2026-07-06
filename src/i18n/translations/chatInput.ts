@@ -175,6 +175,7 @@ export const chatInputTranslations = {
   tokenModalInput: { en: 'Content', zh: '内容' },
   tokenModalPlaceholder: { en: 'Paste text here to count tokens...', zh: '在此粘贴文本以计算 Token…' },
   tokenModalEstimatedTokens: { en: 'Estimated Tokens', zh: '预估 Token' },
+  tokenModalVideoEstimate: { en: 'Video estimate', zh: '视频估算' },
   tokenModalReady: { en: 'Ready to calculate', zh: '准备计算' },
   tokenModalClearAll: { en: 'Clear All', zh: '全部清空' },
   tokenModalFiles: { en: 'Files', zh: '文件' },

@@ -86,15 +86,24 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('uses the dedicated OpenAI-compatible key without mutating Gemini API keys', () => {
+  it('uses the dedicated third-party provider key without mutating Gemini API keys', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: 'openai-key',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: {
+              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
+              apiKey: 'openai-key',
+            },
+          },
+        },
       },
       chatSettings,
     );
@@ -105,15 +114,21 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('reports a missing key for OpenAI-compatible mode when only Gemini keys exist', () => {
+  it('reports a missing key for third-party mode when the active provider has none', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: null,
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai, apiKey: null },
+          },
+        },
       },
       chatSettings,
     );
@@ -121,15 +136,14 @@ describe('getKeyForRequest', () => {
     expect(result).toEqual({ error: 'API Key not configured.' });
   });
 
-  it('uses Gemini key handling when OpenAI-compatible mode is stored but the provider switch is off', () => {
+  it('uses Gemini key handling when third-party mode is stored but the provider switch is off', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isOpenAICompatibleApiEnabled: false,
-        apiMode: 'openai-compatible',
+        isThirdPartyApiEnabled: false,
+        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: 'openai-key',
       },
       chatSettings,
     );
@@ -158,15 +172,24 @@ describe('getKeyForRequest', () => {
     expect(logService.recordApiKeyUsage).not.toHaveBeenCalled();
   });
 
-  it('can force Gemini key handling while OpenAI-compatible mode is active', () => {
+  it('can force Gemini key handling while third-party mode is active', () => {
     const result = getGeminiKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: 'openai-key',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: {
+              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
+              apiKey: 'openai-key',
+            },
+          },
+        },
       },
       {
         ...chatSettings,
@@ -181,15 +204,24 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('does not fall back to the OpenAI-compatible key when forcing Gemini key handling', () => {
+  it('does not fall back to the third-party provider key when forcing Gemini key handling', () => {
     const result = getGeminiKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isOpenAICompatibleApiEnabled: true,
-        apiMode: 'openai-compatible',
+        isThirdPartyApiEnabled: true,
+        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: null,
-        openaiCompatibleApiKey: 'openai-key',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: {
+              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
+              apiKey: 'openai-key',
+            },
+          },
+        },
       },
       chatSettings,
       { skipIncrement: true },
