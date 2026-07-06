@@ -2,6 +2,7 @@ import { useState, useEffect, type FC } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Info, Lightbulb } from 'lucide-react';
 import { REQUIRED_THINKING_MODEL_IDS, THINKING_BUDGET_RANGES } from '@/constants/modelConfiguration';
+import { normalizeModelId } from '@/utils/modelId';
 import { Tooltip } from '@/components/shared/Tooltip';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import { ThinkingModeSelector } from './ThinkingModeSelector';
@@ -34,7 +35,7 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
   const supportsThinkingLevel = capabilities.supportsThinkingLevel;
   const isFlash3 = capabilities.isGemini3FlashModel;
   const isRobotics = capabilities.isGeminiRoboticsModel;
-  const isGemini3ProImage = modelId === 'gemini-3-pro-image-preview';
+  const isGemini3ProImage = normalizeModelId(modelId) === 'gemini-3-pro-image-preview';
   const isImageThinkingLevelOnly = capabilities.isGemini31FlashImageModel;
   const isGemma = capabilities.isGemmaModel;
   const isTtsModel = capabilities.isTtsModel;

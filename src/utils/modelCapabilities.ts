@@ -1,5 +1,6 @@
 import { REQUIRED_THINKING_MODEL_IDS, MODELS_SUPPORTING_RAW_MODE } from '@/constants/modelConfiguration';
 import type { ThinkingLevel } from '@/types';
+import { normalizeModelId } from './modelId';
 
 export const isGemini3Model = (modelId: string): boolean => {
   if (!modelId) return false;
@@ -47,7 +48,8 @@ const supportsThinkingLevel = (modelId: string): boolean => {
 };
 
 const isGemini3ImageModel = (modelId: string): boolean =>
-  modelId === 'gemini-3-pro-image-preview' || modelId === 'gemini-3.1-flash-image-preview';
+  normalizeModelId(modelId) === 'gemini-3-pro-image-preview' ||
+  normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview';
 
 const isFlashImageModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-2.5-flash-image');
 

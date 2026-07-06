@@ -2,6 +2,7 @@ import { type ChatMessage, type ContentPart, type UploadedFile, type ChatHistory
 import type { PartMediaResolutionLevel } from '@google/genai';
 import { logService } from '@/services/logService';
 import { isGemini3Model } from '@/utils/modelCapabilities';
+import { normalizeModelId } from '@/utils/modelId';
 import { blobToBase64, fileToString } from '@/utils/fileEncoding';
 import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/fileTypeClassification';
 
@@ -14,12 +15,12 @@ export const GEMINI_IMAGE_HISTORY_REHYDRATION_ERROR =
 const isGeminiImageHistoryTarget = (modelId?: string): boolean => {
   if (!modelId) return false;
 
-  const lowerId = modelId.toLowerCase();
+  const normalizedId = normalizeModelId(modelId);
   return (
-    lowerId.includes('gemini-2.5-flash-image') ||
-    lowerId === 'gemini-3-pro-image-preview' ||
-    lowerId === 'gemini-3.1-flash-image-preview' ||
-    lowerId === 'gemini-3.1-flash-lite-image'
+    normalizedId.includes('gemini-2.5-flash-image') ||
+    normalizedId === 'gemini-3-pro-image-preview' ||
+    normalizedId === 'gemini-3.1-flash-image-preview' ||
+    normalizedId === 'gemini-3.1-flash-lite-image'
   );
 };
 

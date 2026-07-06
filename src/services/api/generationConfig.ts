@@ -24,6 +24,7 @@ import {
   normalizeAspectRatioForModel,
   normalizeImageSizeForModel,
 } from '@/utils/modelCapabilities';
+import { normalizeModelId } from '@/utils/modelId';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 
 const IMAGE_TEXT_MODALITIES = ['IMAGE', 'TEXT'];
@@ -99,7 +100,7 @@ type InternalBuildGenerationConfigOptions = {
 };
 
 const buildGoogleSearchToolForModel = (modelId: string): Tool =>
-  modelId === 'gemini-3.1-flash-image-preview'
+  normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview'
     ? {
         googleSearch: {
           searchTypes: {
@@ -172,7 +173,7 @@ async function buildGenerationConfigFromOptions({
   const normalizedImageSize = normalizeImageSizeForModel(modelId, imageSize);
   const googleSearchTool = buildGoogleSearchToolForModel(modelId);
 
-  if (modelId === 'gemini-2.5-flash-image-preview' || modelId === 'gemini-2.5-flash-image') {
+  if (normalizeModelId(modelId) === 'gemini-2.5-flash-image-preview' || normalizeModelId(modelId) === 'gemini-2.5-flash-image') {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {};
     if (normalizedAspectRatio && normalizedAspectRatio !== 'Auto') {
       imageConfig.aspectRatio = normalizedAspectRatio;
@@ -188,9 +189,9 @@ async function buildGenerationConfigFromOptions({
   }
 
   if (
-    modelId === 'gemini-3-pro-image-preview' ||
-    modelId === 'gemini-3.1-flash-image-preview' ||
-    modelId === 'gemini-3.1-flash-lite-image'
+    normalizeModelId(modelId) === 'gemini-3-pro-image-preview' ||
+    normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' ||
+    normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image'
   ) {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {
       imageSize: normalizedImageSize || '1K',
@@ -204,7 +205,7 @@ async function buildGenerationConfigFromOptions({
       imageConfig,
     };
 
-    if (modelId === 'gemini-3.1-flash-image-preview' || modelId === 'gemini-3.1-flash-lite-image') {
+    if (normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' || normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image') {
       generationConfig.thinkingConfig = {
         includeThoughts: true,
         // Gemini 3.1 Flash Image / Lite expose only minimal/high thinking levels.
@@ -214,7 +215,7 @@ async function buildGenerationConfigFromOptions({
 
     const tools: NonNullable<GenerationConfig['tools']> = [];
     // gemini-3.1-flash-lite-image does not support Google Search or Maps grounding.
-    if (modelId !== 'gemini-3.1-flash-lite-image') {
+    if (normalizeModelId(modelId) !== 'gemini-3.1-flash-lite-image') {
       if (isGoogleSearchEnabled) tools.push(googleSearchTool);
       if (isGoogleMapsEnabled) tools.push(buildGoogleMapsTool());
     }

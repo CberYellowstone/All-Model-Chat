@@ -80,7 +80,7 @@ export const validateMessageBeforeSend = ({
   }
 
   if (isImageEditModel || isGemini3Image) {
-    const allowsPdfReferences = activeModelId === 'gemini-3.1-flash-image-preview';
+    const allowsPdfReferences = normalizeModelId(activeModelId) === 'gemini-3.1-flash-image-preview';
     const hasUnsupportedAttachments = files.some((file) => {
       if (isImageMimeType(file.type)) return false;
       if (allowsPdfReferences && isPdfMimeType(file.type)) return false;
