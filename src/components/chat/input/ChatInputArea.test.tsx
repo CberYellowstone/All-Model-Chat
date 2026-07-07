@@ -26,9 +26,15 @@ describe('ChatInputArea default spacing', () => {
   it('widens the non-fullscreen composer shell by ten percent', () => {
     const source = fs.readFileSync(chatInputAreaPath, 'utf8');
     const layoutSource = fs.readFileSync(chatInputAreaLayoutPath, 'utf8');
+    const constantsSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../constants/layout.ts'),
+      'utf8',
+    );
 
-    expect(source).toContain('max-w-[44.35rem]');
-    expect(layoutSource).toContain('max-w-[44.35rem]');
+    // ponytail: width class extracted to CHAT_INPUT_MAX_WIDTH_CLASS in constants/layout.ts
+    expect(constantsSource).toContain("CHAT_INPUT_MAX_WIDTH_CLASS = 'max-w-[44.35rem]'");
+    expect(source).toContain('CHAT_INPUT_MAX_WIDTH_CLASS');
+    expect(layoutSource).toContain('CHAT_INPUT_MAX_WIDTH_CLASS');
     expect(source).not.toContain('max-w-[40.32rem]');
     expect(layoutSource).not.toContain('max-w-[40.32rem]');
   });
@@ -54,8 +60,14 @@ describe('ChatInputArea default spacing', () => {
 
   it('focuses the textarea when users tap the non-interactive input shell', () => {
     const source = fs.readFileSync(chatInputAreaPath, 'utf8');
+    const layoutSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../constants/layout.ts'),
+      'utf8',
+    );
 
-    expect(source).toContain('const focusBlockingSelector =');
+    // ponytail: selector extracted to FOCUS_BLOCKING_SELECTOR in constants/layout.ts
+    expect(layoutSource).toContain('export const FOCUS_BLOCKING_SELECTOR =');
+    expect(source).toContain('FOCUS_BLOCKING_SELECTOR');
     expect(source).toContain('onClick={handleInputShellClick}');
   });
 
