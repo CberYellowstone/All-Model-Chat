@@ -2,6 +2,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { getDefaultEnvironment, StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import type {
   McpClientBridge,
   McpPrompt,
@@ -12,6 +14,17 @@ import type {
 } from './mcpTypes.js';
 
 const MCP_REQUEST_TIMEOUT_MS = 60_000;
+
+// ponytail: synced from package.json so clientInfo stays current; clientInfo is
+// informational only, so degrade to 0.0.0 instead of crashing on a missing file
+const APP_VERSION = (() => {
+  try {
+    const { version } = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+    return typeof version === 'string' ? version : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
 
 function createHttpHeaders(server: McpServerConfig): Record<string, string> | undefined {
   const headers = { ...(server.headers ?? {}) };
@@ -34,7 +47,6 @@ function createTransport(server: McpServerConfig): Transport {
       command: server.command,
       args: server.args ?? [],
       env: server.env ? { ...getDefaultEnvironment(), ...server.env } : undefined,
-      stderr: 'pipe',
     });
   }
 
@@ -52,7 +64,7 @@ function createTransport(server: McpServerConfig): Transport {
 async function withConnectedClient<T>(server: McpServerConfig, run: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client({
     name: 'amc-webui',
-    version: '1.8.11',
+    version: APP_VERSION,
   });
   const transport = createTransport(server);
 

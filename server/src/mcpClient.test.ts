@@ -57,6 +57,11 @@ vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
   StreamableHTTPClientTransport: sdkMocks.streamableHttpTransportConstructor,
 }));
 
+// ponytail: decouple version assertion from the real package.json
+vi.mock('node:fs', () => ({
+  readFileSync: () => JSON.stringify({ version: '9.9.9-test' }),
+}));
+
 describe('createMcpClientBridge', () => {
   beforeEach(() => {
     sdkMocks.clientInstances.length = 0;
@@ -128,6 +133,10 @@ describe('createMcpClientBridge', () => {
     expect(client.listTools).toHaveBeenNthCalledWith(1, undefined, { timeout: 60_000 });
     expect(client.listTools).toHaveBeenNthCalledWith(2, { cursor: 'page-2' }, { timeout: 60_000 });
     expect(client.close).toHaveBeenCalledOnce();
+    expect(sdkMocks.clientConstructor).toHaveBeenCalledWith({
+      name: 'amc-webui',
+      version: '9.9.9-test',
+    });
   });
 
   it('lists resources, resource templates, and prompts across paginated SDK responses', async () => {
