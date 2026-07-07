@@ -292,7 +292,7 @@ export const createChatHistoryForApi = async (
             apiParts
               .filter((apiPart) => !(stripThinking && apiPart.thought))
               .map(async (apiPart) => {
-                const partCopy = JSON.parse(JSON.stringify(apiPart));
+                const partCopy = structuredClone(apiPart);
 
                 if (stripThinking && message.role === 'model' && typeof partCopy.text === 'string') {
                   const strippedText = stripReasoningMarkup(partCopy.text);

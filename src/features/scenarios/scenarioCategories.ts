@@ -1,18 +1,5 @@
 import { type ScenarioCategory } from '@/types';
-import { Brain, Heart, Sparkles, Shield, MessageSquare, type LucideIcon } from 'lucide-react';
-
-interface CategoryMeta {
-  /** Tailwind classes for the icon chip: text color + translucent background. */
-  chipClass: string;
-  /** Solid translucent bar color for the card left accent. */
-  barClass: string;
-  /** Default lucide icon for the category. */
-  icon: LucideIcon;
-  /** Default emoji used when a scenario has no explicit emoji. */
-  emoji: string;
-  /** Translation key for the category label. */
-  labelKey: string;
-}
+import { Brain, Heart, Sparkles, Shield, MessageSquare } from 'lucide-react';
 
 /**
  * Visual + display metadata per scenario category. Colors are plain Tailwind
@@ -21,12 +8,17 @@ interface CategoryMeta {
  * are driven entirely via `var(--theme-*)`), so we use translucent `x/10`
  * backgrounds that read well on both light and dark themes.
  */
-export const CATEGORY_META: Record<ScenarioCategory, CategoryMeta> = {
+export const CATEGORY_META = {
   assistant: {
+    /** Tailwind classes for the icon chip: text color + translucent background. */
     chipClass: 'text-sky-600 bg-sky-500/10',
+    /** Solid translucent bar color for the card left accent. */
     barClass: 'bg-sky-500',
+    /** Default lucide icon for the category. */
     icon: Brain,
+    /** Default emoji used when a scenario has no explicit emoji. */
     emoji: '🧠',
+    /** Translation key for the category label. */
     labelKey: 'scenariosCategoryAssistant',
   },
   roleplay: {
@@ -58,6 +50,8 @@ export const CATEGORY_META: Record<ScenarioCategory, CategoryMeta> = {
     labelKey: 'scenariosCategoryCustom',
   },
 };
+
+type CategoryMeta = (typeof CATEGORY_META)[ScenarioCategory];
 
 export const DEFAULT_CATEGORY: ScenarioCategory = 'custom';
 

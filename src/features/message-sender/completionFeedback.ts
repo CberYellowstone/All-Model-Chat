@@ -5,16 +5,6 @@ import { playCompletionSound, showNotification } from '@/utils/browserCompletion
 const DEFAULT_NOTIFICATION_BODY = 'Media or tool response received';
 const MAX_NOTIFICATION_BODY_LENGTH = 150;
 
-export interface CompletionNotification {
-  title: string;
-  body: string;
-}
-
-export interface CompletionFeedback {
-  sound?: boolean;
-  notification?: CompletionNotification;
-}
-
 type CompletionFeedbackSettings = Pick<AppSettings, 'isCompletionNotificationEnabled' | 'isCompletionSoundEnabled'>;
 
 export const buildCompletionNotificationBody = (
@@ -26,6 +16,11 @@ export const buildCompletionNotificationBody = (
     ? `${content.substring(0, MAX_NOTIFICATION_BODY_LENGTH)}...`
     : content;
 };
+
+export interface CompletionFeedback {
+  sound?: boolean;
+  notification?: { title: string; body: string };
+}
 
 export const emitCompletionFeedback = async (
   settings: CompletionFeedbackSettings,

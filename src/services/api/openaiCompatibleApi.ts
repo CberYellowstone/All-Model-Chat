@@ -1,6 +1,5 @@
 import type { UsageMetadata } from '@google/genai';
-import { readResponseErrorMessage } from '@/utils/errorMessage';
-import { toError } from '@/utils/errorMessage';
+import { readResponseErrorMessage, toError } from '@/utils/errorMessage';
 import { deduplicateModelsById } from '@/utils/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
