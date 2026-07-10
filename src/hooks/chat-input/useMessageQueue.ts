@@ -203,7 +203,7 @@ export const useMessageQueue = ({
   }, [flushPendingSubmission]);
 
   useEffect(() => {
-    if (activeQueuedSubmission && !isLoading) {
+    if (activeQueuedSubmission && !isLoading && flushingQueuedSubmissionRef.current !== activeQueuedSubmission) {
       flushQueuedSubmission(activeQueuedSubmission);
     }
   }, [activeQueuedSubmission, flushQueuedSubmission, isLoading]);

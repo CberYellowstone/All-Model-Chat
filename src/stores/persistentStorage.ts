@@ -94,6 +94,21 @@ export const createPersistedStateStorage = ({
     }
   };
 
+  const flushAllPendingWrites = () => {
+    for (const key of Array.from(pendingWrites.keys())) {
+      flushWrite(key);
+    }
+  };
+
+  // Flush debounced writes on unload so a tab close / navigation doesn't lose the
+  // last queued setting or draft. Both events cover the same intent across browsers;
+  // registering once per storage instance is enough, and a duplicate flush is a no-op.
+  if (debounceMs > 0 && typeof window !== 'undefined') {
+    const onUnload = () => flushAllPendingWrites();
+    window.addEventListener('pagehide', onUnload);
+    window.addEventListener('beforeunload', onUnload);
+  }
+
   return {
     getItem: (key) => {
       try {

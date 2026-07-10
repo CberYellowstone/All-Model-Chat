@@ -131,10 +131,6 @@ const relativeToBase = (path: string, basePath: string, isDirectory: boolean): s
 };
 
 export const isIgnoredByGitignore = (path: string, matchers: IgnoreMatcher[], isDirectory = false): boolean => {
-  if (path.split('/').filter(Boolean).length < 2) {
-    return false;
-  }
-
   let ignored = false;
 
   for (const matcher of matchers) {
