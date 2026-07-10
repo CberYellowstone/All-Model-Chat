@@ -35,7 +35,11 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRe
           height: `${100 / scale}%`,
           transform: `scale(${scale})`,
         }}
-        sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin"
+        // SECURITY: allow-same-origin is intentionally omitted so the iframe runs under
+        // an opaque origin. Combined with allow-scripts this prevents model-generated
+        // HTML from reading parent localStorage (where API keys live) or the DOM.
+        // The bridge script communicates solely via postMessage, which works cross-origin.
+        sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
         onError={handleIframeError}
       />
     </div>

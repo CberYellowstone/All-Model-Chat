@@ -18,6 +18,22 @@ type UsageTrackerErrorReporter = (message: string, error: unknown) => void;
 const API_USAGE_STORAGE_KEY = 'chatApiUsageData';
 const TOKEN_USAGE_STORAGE_KEY = 'chatTokenUsageData';
 
+// SECURITY: API keys are persisted to localStorage only in masked form so that a
+// localStorage read (e.g. via an XSS or a compromised extension) cannot recover
+// the raw key. The mask preserves enough to identify which key was used (prefix
+// + suffix) while hiding the secret portion. Raw keys are never stored.
+export const maskApiKeyForStorage = (apiKey: string): string => {
+  if (!apiKey) return '';
+  // Sentinel keys (e.g. server-managed marker) are stored as-is — they are not secrets.
+  if (apiKey.startsWith('__') && apiKey.endsWith('__')) return apiKey;
+
+  const trimmed = apiKey.trim();
+  if (trimmed.length <= 10) {
+    return `${trimmed.slice(0, 2)}••••`;
+  }
+  return `${trimmed.slice(0, 6)}••••${trimmed.slice(-4)}`;
+};
+
 class ApiKeyUsageTracker {
   private usage: Map<string, number> = new Map();
   private listeners: Set<ApiKeyListener> = new Set();
@@ -29,8 +45,9 @@ class ApiKeyUsageTracker {
   public record(apiKey: string) {
     if (!apiKey) return;
 
-    const currentCount = this.usage.get(apiKey) || 0;
-    this.usage.set(apiKey, currentCount + 1);
+    const maskedKey = maskApiKeyForStorage(apiKey);
+    const currentCount = this.usage.get(maskedKey) || 0;
+    this.usage.set(maskedKey, currentCount + 1);
     this.save();
     this.notify();
   }

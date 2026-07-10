@@ -4,6 +4,7 @@ import { KeyRound, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { type AppSettings, type ChatSettings } from '@/types';
 import { parseApiKeys } from '@/utils/apiKeySelection';
+import { maskApiKeyForStorage } from '@/services/logUsageTracker';
 
 import { ObfuscatedApiKey } from './ObfuscatedApiKey';
 
@@ -15,8 +16,12 @@ interface ApiUsageTabProps {
 
 export const ApiUsageTab: React.FC<ApiUsageTabProps> = ({ apiKeyUsage, appSettings, currentChatSettings }) => {
   const { t } = useI18n();
-  // Sanitize keys to match how they are logged in utils/apiKeySelection.ts (strip quotes, split by newlines/commas)
-  const allApiKeys = parseApiKeys(appSettings.apiKey);
+  // Usage is recorded against the masked form of each key (see maskApiKeyForStorage);
+  // mask the configured keys the same way so the lookup matches.
+  const allApiKeys = parseApiKeys(appSettings.apiKey).map(maskApiKeyForStorage);
+  const lockedKeyMasked = currentChatSettings.lockedApiKey
+    ? maskApiKeyForStorage(currentChatSettings.lockedApiKey)
+    : null;
 
   const displayApiKeyUsage = new Map<string, number>();
 
@@ -40,7 +45,7 @@ export const ApiUsageTab: React.FC<ApiUsageTabProps> = ({ apiKeyUsage, appSettin
           .sort(([, a], [, b]) => b - a)
           .map(([key, count], index) => {
             const percentage = totalApiUsage > 0 ? (count / totalApiUsage) * 100 : 0;
-            const isActive = currentChatSettings.lockedApiKey === key;
+            const isActive = lockedKeyMasked === key;
             return (
               <div
                 key={key}

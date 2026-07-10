@@ -60,6 +60,7 @@ describe('useHtmlPreviewModal', () => {
       window.dispatchEvent(
         new MessageEvent('message', {
           data: { channel: HTML_PREVIEW_MESSAGE_CHANNEL, event: 'ready' },
+          origin: 'null',
           source: contentWindowStub,
         }),
       );
@@ -95,6 +96,7 @@ describe('useHtmlPreviewModal', () => {
       window.dispatchEvent(
         new MessageEvent('message', {
           data: { channel: HTML_PREVIEW_MESSAGE_CHANNEL, event: 'escape' },
+          origin: 'null',
           source: contentWindowStub,
         }),
       );
@@ -150,6 +152,7 @@ describe('useHtmlPreviewModal', () => {
             event: 'followup',
             payload: { instruction: 'Continue', state: { selected: 'B' } },
           },
+          origin: 'null',
           source: contentWindowStub,
         }),
       );
@@ -216,6 +219,7 @@ describe('useHtmlPreviewModal', () => {
                 },
               },
             },
+            origin: 'null',
             source: contentWindowStub,
           }),
         );
@@ -330,6 +334,7 @@ describe('useHtmlPreviewModal', () => {
               event: HTML_PREVIEW_DIAGNOSTIC_EVENT,
               payload: { type: 'csp-violation', blockedURI: 'https://cdn.example/app.js' },
             },
+            origin: 'null',
             source: contentWindowStub,
           }),
         );
@@ -376,6 +381,7 @@ describe('useHtmlPreviewModal', () => {
       window.dispatchEvent(
         new MessageEvent('message', {
           data: { channel: HTML_PREVIEW_MESSAGE_CHANNEL, event: 'ready' },
+          origin: 'null',
           source: contentWindowStub,
         }),
       );

@@ -143,6 +143,12 @@ export const useHtmlPreviewModal = ({
         return;
       }
 
+      // SECURITY: the sandboxed iframe posts from the opaque origin "null".
+      // Reject messages from any other origin to prevent spoofing.
+      if (event.origin !== 'null') {
+        return;
+      }
+
       const iframeWindow = iframeRef.current?.contentWindow;
       if (iframeWindow && event.source !== iframeWindow) {
         return;

@@ -1,9 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 import { type SideViewContent, type UploadedFile } from '@/types';
 import { DiagramWrapper } from './parts/DiagramWrapper';
 import { useI18n } from '@/contexts/I18nContext';
 import { isDarkThemeId } from '@/utils/themeMode';
+
+// Strip script tags and event handlers from mermaid-rendered SVG before injection.
+// With securityLevel 'strict', mermaid already escapes HTML labels; this is a
+// defense-in-depth guard against any residual script/foreignObject injection.
+const sanitizeMermaidSvg = (svg: string): string =>
+  DOMPurify.sanitize(svg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['foreignObject'],
+    FORBID_TAGS: ['script'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+  });
 
 interface MermaidBlockProps {
   code: string;
@@ -44,7 +56,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({
         mermaid.initialize({
           startOnLoad: false,
           theme: isDarkThemeId(themeId) ? 'dark' : 'default',
-          securityLevel: 'loose',
+          securityLevel: 'strict',
           fontFamily: 'inherit',
         });
 
@@ -52,9 +64,10 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({
 
         if (!isMounted) return;
 
-        setSvg(renderedSvg);
+        const sanitizedSvg = sanitizeMermaidSvg(renderedSvg);
+        setSvg(sanitizedSvg);
 
-        const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(renderedSvg)))}`;
+        const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(sanitizedSvg)))}`;
         setDiagramFile({
           id,
           name: 'mermaid-diagram.svg',
