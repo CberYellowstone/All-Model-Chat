@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { logService } from '@/services/logService';
 
 export const usePictureInPicture = (
@@ -9,6 +9,7 @@ export const usePictureInPicture = (
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
   const sidebarStateBeforePipRef = useRef<boolean>(isHistorySidebarOpen);
+  const pipWindowRef = useRef<Window | null>(null);
 
   const closePip = useCallback(() => {
     if (pipWindow) {
@@ -66,15 +67,22 @@ export const usePictureInPicture = (
       );
 
       setPipWindow(pipWin);
+      pipWindowRef.current = pipWin;
       setPipContainer(container);
       logService.info('PiP window opened.');
     } catch (error) {
       logService.error('Error opening Picture-in-Picture window:', error);
       setPipWindow(null);
+      pipWindowRef.current = null;
       setPipContainer(null);
       setIsHistorySidebarOpenTransient(sidebarStateBeforePipRef.current);
     }
   }, [isHistorySidebarOpen, isPipSupported, pipWindow, setIsHistorySidebarOpenTransient]);
+
+  // Keep pipWindowRef in sync with state so the unmount cleanup can close it.
+  useEffect(() => {
+    pipWindowRef.current = pipWindow;
+  }, [pipWindow]);
 
   const togglePip = useCallback(() => {
     if (pipWindow) {
@@ -83,6 +91,22 @@ export const usePictureInPicture = (
       openPip();
     }
   }, [pipWindow, openPip, closePip]);
+
+  // If the owning component unmounts while a PiP window is open (and the
+  // pagehide event hasn't fired yet), close it so we don't leak a floating
+  // window with an orphaned React portal and stale sidebar-collapse state.
+  useEffect(() => {
+    return () => {
+      if (pipWindowRef.current) {
+        try {
+          pipWindowRef.current.close();
+        } catch {
+          // Ignore — the window may already be closed.
+        }
+        pipWindowRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     isPipSupported,

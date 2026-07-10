@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ClipboardCopy, Download, Edit3, Save, X } from 'lucide-react';
 import { IconMarkdown } from '@/components/icons';
 import { type UploadedFile } from '@/types';
@@ -37,6 +37,15 @@ export const MarkdownPreviewModal: React.FC<MarkdownPreviewModalProps> = ({
   const [loadedContent, setLoadedContent] = useState(file?.textContent ?? '');
   const [editedName, setEditedName] = useState(file?.name ?? '');
   const [isCopied, setIsCopied] = useState(false);
+  const copyFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimerRef.current) {
+        clearTimeout(copyFeedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   const contentForActions = isEditing ? editedContent : loadedContent || file?.textContent || '';
   const savedContent = loadedContent || file?.textContent || '';
@@ -52,7 +61,10 @@ export const MarkdownPreviewModal: React.FC<MarkdownPreviewModalProps> = ({
     try {
       await navigator.clipboard.writeText(contentForActions);
       setIsCopied(true);
-      window.setTimeout(() => setIsCopied(false), COPY_FEEDBACK_MS);
+      if (copyFeedbackTimerRef.current) {
+        clearTimeout(copyFeedbackTimerRef.current);
+      }
+      copyFeedbackTimerRef.current = setTimeout(() => setIsCopied(false), COPY_FEEDBACK_MS);
     } catch (error) {
       logService.error('Failed to copy markdown content:', error);
     }

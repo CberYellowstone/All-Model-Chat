@@ -9,7 +9,21 @@ import { isDarkThemeId } from '@/utils/themeMode';
 
 const GRAPHVIZ_EXPORT_SCALE = 5;
 
+const GRAPHVIZ_CACHE_LIMIT = 64;
 const graphvizCache = new Map<string, string>();
+
+// LRU eviction: Map preserves insertion order, so deleting the oldest entry
+// before re-inserting on access keeps the cache bounded. Mirrors the capped
+// caches used by pyodideService and ArtifactFrame.
+const touchGraphvizCache = (key: string, value: string) => {
+  graphvizCache.delete(key);
+  graphvizCache.set(key, value);
+  while (graphvizCache.size > GRAPHVIZ_CACHE_LIMIT) {
+    const oldestKey = graphvizCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    graphvizCache.delete(oldestKey);
+  }
+};
 type VizInstance = {
   renderSVGElement: (code: string) => SVGSVGElement | Promise<SVGSVGElement>;
 };
@@ -93,6 +107,8 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
   const renderGraph = useCallback(async () => {
     if (graphvizCache.has(cacheKey)) {
       const cachedSvg = graphvizCache.get(cacheKey)!;
+      // LRU refresh: move this entry to most-recently-used.
+      touchGraphvizCache(cacheKey, cachedSvg);
       setSvgContent(cachedSvg);
       setIsRendering(false);
       setError('');
@@ -164,7 +180,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
       svgElement.style.display = 'block';
 
       const svgString = svgElement.outerHTML;
-      graphvizCache.set(cacheKey, svgString);
+      touchGraphvizCache(cacheKey, svgString);
       setSvgContent(svgString);
 
       const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;

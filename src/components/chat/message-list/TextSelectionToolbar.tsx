@@ -87,7 +87,10 @@ export const TextSelectionToolbar: React.FC<TextSelectionToolbarProps> = ({
     e.stopPropagation();
     if (await writeSelectionTextToClipboard(selectedCopyText || selectedText)) {
       showCopiedFeedback();
-      setTimeout(() => {
+      if (copyResetTimeoutRef.current) {
+        window.clearTimeout(copyResetTimeoutRef.current);
+      }
+      copyResetTimeoutRef.current = window.setTimeout(() => {
         clearSelection();
       }, 1000);
     }

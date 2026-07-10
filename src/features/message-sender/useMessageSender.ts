@@ -63,6 +63,8 @@ export const useMessageSender = (props: MessageSenderProps) => {
     personGeneration,
     userScrolledUpRef,
     activeSessionId,
+    sessionKeyMapRef,
+    language,
   } = props;
   const senderStoreActions = useMemo(() => createSenderStoreActions(), []);
   const { updateAndPersistSessions, setActiveSessionId, setSessionLoading, activeJobs } = senderStoreActions;
@@ -266,8 +268,19 @@ export const useMessageSender = (props: MessageSenderProps) => {
 
       await sendStandardMessage({
         props: {
-          ...props,
+          appSettings,
           currentChatSettings: sessionToUpdate,
+          messages,
+          setEditingMessageId,
+          setAppFileError,
+          aspectRatio,
+          imageSize,
+          imageOutputMode,
+          personGeneration,
+          userScrolledUpRef,
+          activeSessionId,
+          sessionKeyMapRef,
+          language,
           ...senderStoreActions,
         },
         getStreamHandlers,
@@ -296,12 +309,13 @@ export const useMessageSender = (props: MessageSenderProps) => {
       personGeneration,
       userScrolledUpRef,
       activeSessionId,
+      sessionKeyMapRef,
+      language,
       updateAndPersistSessions,
       setActiveSessionId,
       getStreamHandlers,
       runMessageLifecycle,
       senderStoreActions,
-      props,
       prepareModelRequest,
       t,
     ],

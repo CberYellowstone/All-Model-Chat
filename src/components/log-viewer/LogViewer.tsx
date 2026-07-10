@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { logService } from '@/services/logService';
 import type { LogEntry, TokenUsageStats } from '@/types/logging';
 import { type AppSettings, type ChatSettings } from '@/types';
@@ -43,9 +43,16 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   const [activeUsageTab, setActiveUsageTab] = useState<'overview' | 'tokens' | 'api'>(initialUsageTab);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  // Guards against the fetch-on-open effect re-entering: previously `fetchLogs`
+  // depended on [logs.length, isLoading], and every setIsLoading transition
+  // recreated the callback, which retriggered the open effect — an infinite fetch loop.
+  const isFetchingRef = useRef(false);
+  const hasFetchedOnOpenRef = useRef(false);
+
   const fetchLogs = useCallback(
     async (reset = false) => {
-      if (isLoading && !reset) return;
+      if (isFetchingRef.current && !reset) return;
+      isFetchingRef.current = true;
       setIsLoading(true);
       try {
         const currentCount = reset ? 0 : logs.length;
@@ -63,11 +70,28 @@ export const LogViewer: React.FC<LogViewerProps> = ({
 
         setHasMore(newLogs.length === 100);
       } finally {
+        isFetchingRef.current = false;
         setIsLoading(false);
       }
     },
-    [logs.length, isLoading],
+    [logs.length],
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      // Fetch exactly once per open transition — never retrigger on logs.length/isLoading changes.
+      hasFetchedOnOpenRef.current = false;
+    } else {
+      hasFetchedOnOpenRef.current = false;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && !hasFetchedOnOpenRef.current) {
+      hasFetchedOnOpenRef.current = true;
+      fetchLogs(true);
+    }
+  }, [isOpen, fetchLogs]);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,15 +101,11 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   }, [initialTab, initialUsageTab, isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchLogs(true);
-    }
-  }, [fetchLogs, isOpen]);
-
-  useEffect(() => {
     if (!isOpen) return;
     const unsubscribe = logService.subscribe((newLiveLogs) => {
-      setLogs((prev) => [...newLiveLogs, ...prev]);
+      // Cap in-memory growth so a chatty session can't make the viewer unresponsive.
+      const MAX_IN_MEMORY_LOGS = 5000;
+      setLogs((prev) => [...newLiveLogs, ...prev].slice(0, MAX_IN_MEMORY_LOGS));
     });
     return () => unsubscribe();
   }, [isOpen]);
