@@ -279,7 +279,11 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   }, [targetWindow]);
 
   return (
-    <div data-live-artifact-frame="true" className="group/artifact relative my-3 w-full overflow-visible">
+    <div
+      data-live-artifact-frame="true"
+      data-artifact-source={html}
+      className="group/artifact relative my-3 w-full overflow-visible"
+    >
       <div
         data-live-artifact-viewport="true"
         className="relative overflow-hidden rounded-lg bg-transparent"

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeCssColorFunctionsForPngExport } from './cssColorSanitizer';
+import { prepareElementForExport } from './dom';
 
 describe('sanitizeCssColorFunctionsForPngExport', () => {
   it('converts Tailwind oklch palette variables into rgba', () => {
@@ -39,5 +40,75 @@ describe('sanitizeCssColorFunctionsForPngExport', () => {
     expect(sanitized).not.toContain('color-mix');
     expect(sanitized).toContain('rgba(24, 24, 27, 0.2)');
     expect(sanitized).toContain('rgba(39, 39, 42, 0.6)');
+  });
+});
+
+describe('prepareElementForExport', () => {
+  // Builds a Live Artifact frame the same way React renders <div data-artifact-source={html}>:
+  // the attribute is set via setAttribute (properly escaped), not parsed from an innerHTML string,
+  // so the raw HTML source survives getAttribute() round-trips.
+  const buildArtifactFrame = (html: string, height = '200px'): HTMLElement => {
+    const frame = document.createElement('div');
+    frame.setAttribute('data-live-artifact-frame', 'true');
+    frame.setAttribute('data-artifact-source', html);
+
+    const viewport = document.createElement('div');
+    viewport.setAttribute('data-live-artifact-viewport', 'true');
+    viewport.style.height = height;
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+    iframe.setAttribute('srcdoc', '<div>Artifact</div>');
+    viewport.appendChild(iframe);
+    frame.appendChild(viewport);
+    return frame;
+  };
+
+  it('preserves iframe srcdoc when forPng=false (HTML export path)', async () => {
+    const container = document.createElement('div');
+    container.appendChild(buildArtifactFrame('<div>Hello</div>'));
+
+    const clone = await prepareElementForExport(container, {
+      expandDetails: false,
+      forPng: false,
+    });
+
+    const iframe = clone.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
+    expect(iframe?.getAttribute('srcdoc')).toContain('<div>Artifact</div>');
+  });
+
+  it('replaces iframe srcdoc with static snapshot when forPng=true (PNG export path)', async () => {
+    const container = document.createElement('div');
+    container.appendChild(buildArtifactFrame('<div>Hello Artifact</div>'));
+
+    const clone = await prepareElementForExport(container, {
+      expandDetails: false,
+      forPng: true,
+    });
+
+    const iframe = clone.querySelector('iframe');
+    expect(iframe).toBeNull();
+
+    const snapshotContainer = clone.querySelector('.is-exporting-png');
+    expect(snapshotContainer).not.toBeNull();
+    expect(snapshotContainer?.textContent).toContain('Hello Artifact');
+  });
+
+  it('skips iframe replacement when data-artifact-source is missing', async () => {
+    const container = document.createElement('div');
+    const frame = buildArtifactFrame('<div>With Source</div>');
+    frame.removeAttribute('data-artifact-source');
+    container.appendChild(frame);
+
+    const clone = await prepareElementForExport(container, {
+      expandDetails: false,
+      forPng: true,
+    });
+
+    const iframe = clone.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute('srcdoc')).toContain('Artifact');
   });
 });

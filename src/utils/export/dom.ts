@@ -1,8 +1,32 @@
 import { logService } from '@/services/logService';
 import { sanitizeCssColorFunctionsForPngExport } from './cssColorSanitizer';
 import { isDarkThemeId } from '@/utils/themeMode';
+import { createStaticPreviewSnapshotContainer } from '@/utils/html-preview/previewDocument';
 
 const DEFAULT_EXPORT_WIDTH = '800px';
+
+// SECURITY: values interpolated into the export snapshot's innerHTML / inline styles
+// must be sanitized so a malicious theme CSS variable or body class name cannot break
+// out of the style attribute or inject markup. Allow only CSS-color-ish tokens
+// (hex, rgb/rgba/oklch/hsl, var(), named colors) and CSS-class-name characters.
+const CSS_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|rgb\([^()]*\)|rgba\([^()]*\)|hsl\([^()]*\)|hsla\([^()]*\)|oklch\([^()]*\)|transparent|currentColor|[a-z]+)$/i;
+const CSS_CLASS_PATTERN = /^[a-zA-Z0-9 _-]*$/;
+const THEME_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+const sanitizeExportCssColor = (value: string): string => {
+  const trimmed = value.trim();
+  return CSS_COLOR_PATTERN.test(trimmed) ? trimmed : 'transparent';
+};
+
+const sanitizeExportClassNames = (value: string): string => {
+  const trimmed = value.trim();
+  return CSS_CLASS_PATTERN.test(trimmed) ? trimmed : '';
+};
+
+const sanitizeExportThemeId = (value: string): string => {
+  const trimmed = value.trim();
+  return THEME_ID_PATTERN.test(trimmed) ? trimmed : '';
+};
 
 const isExportableStylesheetContentType = (contentType: string): boolean =>
   contentType.includes('text/css') || contentType.includes('application/octet-stream');
@@ -80,6 +104,47 @@ const embedImagesInClone = async (clone: HTMLElement): Promise<void> => {
 };
 
 /**
+ * Replaces sandboxed Live Artifact iframes with same-origin static snapshots.
+ *
+ * `cloneNode(true)` copies the `<iframe>` tag but not its rendered document, and
+ * html2canvas cannot render cross-origin/sandboxed iframe content — so the
+ * artifact would export as a blank box. Instead, we read the inert source HTML
+ * stashed on the frame by `ArtifactFrame` and rebuild it as a same-origin
+ * container via `createStaticPreviewSnapshotContainer`, preserving the measured
+ * viewport height so the exported layout matches the on-screen bubble.
+ */
+const replaceLiveArtifactIframes = (clone: HTMLElement, targetDocument: Document): void => {
+  const artifactFrames = Array.from(clone.querySelectorAll('[data-live-artifact-frame="true"]'));
+  for (const frame of artifactFrames) {
+    const html = frame.getAttribute('data-artifact-source') ?? '';
+    if (!html.trim()) continue;
+
+    const viewport = frame.querySelector<HTMLElement>('[data-live-artifact-viewport="true"]');
+    const measuredHeight = viewport?.style.height ?? null;
+
+    const { container } = createStaticPreviewSnapshotContainer(html, targetDocument);
+
+    // The snapshot container is positioned off-screen by default; reset it so it
+    // flows inline within the exported transcript instead of being hidden.
+    Object.assign(container.style, {
+      position: 'static',
+      transform: 'none',
+      left: 'auto',
+      top: 'auto',
+      width: '100%',
+      maxWidth: '100%',
+      pointerEvents: 'auto',
+      zIndex: 'auto',
+    });
+    if (measuredHeight) {
+      container.style.height = measuredHeight;
+    }
+
+    frame.replaceWith(container);
+  }
+};
+
+/**
  * Creates an isolated DOM container for exporting, injecting current styles and theme.
  */
 export const createSnapshotContainer = async (
@@ -96,17 +161,19 @@ export const createSnapshotContainer = async (
   tempContainer.style.boxSizing = 'border-box';
 
   const allStyles = await gatherPageStyles();
-  const bodyClasses = document.body.className;
+  const bodyClasses = sanitizeExportClassNames(document.body.className);
 
   let rootBgColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-primary').trim();
   if (!rootBgColor) {
     rootBgColor = isDarkThemeId(themeId) ? '#09090b' : '#FFFFFF';
   }
+  const safeBgColor = sanitizeExportCssColor(rootBgColor);
+  const safeThemeId = sanitizeExportThemeId(themeId);
 
   tempContainer.innerHTML = `
         ${allStyles}
-        <div class="theme-${themeId} ${bodyClasses} is-exporting-png" style="background-color: ${rootBgColor}; color: var(--theme-text-primary); min-height: 100vh;">
-            <div style="background-color: ${rootBgColor}; padding: 0;">
+        <div class="theme-${safeThemeId} ${bodyClasses} is-exporting-png" style="background-color: ${safeBgColor}; color: var(--theme-text-primary); min-height: 100vh;">
+            <div style="background-color: ${safeBgColor}; padding: 0;">
                 <div class="exported-chat-container" style="width: 100%; max-width: 100%; margin: 0 auto;">
                 </div>
             </div>
@@ -131,7 +198,7 @@ export const createSnapshotContainer = async (
         document.body.removeChild(tempContainer);
       }
     },
-    rootBgColor,
+    rootBgColor: safeBgColor,
   };
 };
 
@@ -177,12 +244,16 @@ export const createExportDOMHeader = (title: string, metaLeft: string, metaRight
  * Clones, cleans, and prepares a DOM element for export (HTML or PNG).
  * Handles removing interactive elements, expanding content, embedding images,
  * and normalizing layout artifacts from virtualization.
+ *
+ * @param sourceElement The live DOM element to prepare for export.
+ * @param options.expandDetails Whether to expand collapsible sections (true for PNG).
+ * @param options.forPng Whether this is a PNG export path (triggers iframe replacement).
  */
 export const prepareElementForExport = async (
   sourceElement: HTMLElement,
-  options: { expandDetails?: boolean } = {},
+  options: { expandDetails?: boolean; forPng?: boolean } = {},
 ): Promise<HTMLElement> => {
-  const { expandDetails = true } = options;
+  const { expandDetails = true, forPng = false } = options;
 
   const clone = sourceElement.cloneNode(true) as HTMLElement;
 
@@ -274,6 +345,12 @@ export const prepareElementForExport = async (
 
       parent.replaceWith(details);
     });
+  }
+
+  // Replace sandboxed artifact iframes with same-origin static snapshots for PNG export.
+  // HTML export preserves the iframe srcdoc so the artifact remains runnable when reopened.
+  if (forPng) {
+    replaceLiveArtifactIframes(clone, sourceElement.ownerDocument);
   }
 
   // Embed blob and remote images before the clone leaves the live document.

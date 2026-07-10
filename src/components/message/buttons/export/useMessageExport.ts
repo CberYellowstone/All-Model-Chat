@@ -71,6 +71,7 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
 
         const cleanedContent = await prepareElementForExport(messageContentNode, {
           expandDetails: type === 'png',
+          forPng: type === 'png',
         });
 
         if (type === 'png') {
