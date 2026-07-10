@@ -127,10 +127,12 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
     });
   } catch (error) {
     onError(error instanceof Error ? error : new Error(String(error) || 'Unknown error during streaming.'));
+    return;
   } finally {
     logService.info('Streaming complete.', { usage: finalUsageMetadata, hasGrounding: !!finalGroundingMetadata });
-    onComplete(finalUsageMetadata, finalGroundingMetadata, finalUrlContextMetadata);
   }
+
+  onComplete(finalUsageMetadata, finalGroundingMetadata, finalUrlContextMetadata);
 };
 
 export const sendStatelessMessageNonStreamApi: NonStreamMessageSender = async (

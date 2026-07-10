@@ -189,6 +189,15 @@ export const useLiveAudio = () => {
     }
 
     if (processorRef.current) {
+      // AudioWorkletNode.disconnect() does not detach the MessagePort or remove the
+      // onmessage handler — clear both explicitly so queued messages don't fire after
+      // cleanup and the port doesn't leak.
+      try {
+        processorRef.current.port.onmessage = null;
+        processorRef.current.port.close();
+      } catch {
+        // Ignore — port may already be closed.
+      }
       processorRef.current.disconnect();
       processorRef.current = null;
     }

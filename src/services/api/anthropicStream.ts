@@ -41,27 +41,32 @@ export const readAnthropicStreamEvents = async (
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done || abortSignal.aborted) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done || abortSignal.aborted) break;
 
-    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
-    const parsed = parseAnthropicSseEvents(buffer);
-    buffer = parsed.rest;
-    for (const event of parsed.events) {
-      onEvent(event);
-      if (event.type === 'message_stop') {
-        return;
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      const parsed = parseAnthropicSseEvents(buffer);
+      buffer = parsed.rest;
+      for (const event of parsed.events) {
+        onEvent(event);
+        if (event.type === 'message_stop') {
+          return;
+        }
       }
     }
-  }
 
-  const tail = decoder.decode();
-  if (tail) {
-    buffer += tail.replace(/\r\n/g, '\n');
-  }
-  const parsed = parseAnthropicSseEvents(`${buffer}\n\n`);
-  for (const event of parsed.events) {
-    onEvent(event);
+    const tail = decoder.decode();
+    if (tail) {
+      buffer += tail.replace(/\r\n/g, '\n');
+    }
+    const parsed = parseAnthropicSseEvents(`${buffer}\n\n`);
+    for (const event of parsed.events) {
+      onEvent(event);
+    }
+  } finally {
+    // Release the reader so the underlying HTTP/TLS connection is returned to the pool.
+    await reader.cancel().catch(() => undefined);
   }
 };

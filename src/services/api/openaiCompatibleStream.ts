@@ -38,32 +38,46 @@ export const readOpenAICompatibleStreamEvents = async (
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done || abortSignal.aborted) {
-      break;
-    }
-
-    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
-    const parsed = parseSseDataLines(buffer);
-    buffer = parsed.rest;
-
-    for (const event of parsed.events) {
-      if (event === '[DONE]') {
-        return;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done || abortSignal.aborted) {
+        break;
       }
-      onEvent(JSON.parse(event) as OpenAIResponsePayload);
-    }
-  }
 
-  const tail = decoder.decode();
-  if (tail) {
-    buffer += tail.replace(/\r\n/g, '\n');
-  }
-  const parsed = parseSseDataLines(`${buffer}\n\n`);
-  for (const event of parsed.events) {
-    if (event !== '[DONE]') {
-      onEvent(JSON.parse(event) as OpenAIResponsePayload);
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      const parsed = parseSseDataLines(buffer);
+      buffer = parsed.rest;
+
+      for (const event of parsed.events) {
+        if (event === '[DONE]') {
+          return;
+        }
+        // Skip malformed SSE lines instead of aborting the whole stream.
+        try {
+          onEvent(JSON.parse(event) as OpenAIResponsePayload);
+        } catch {
+          // Ignore unparseable event and continue.
+        }
+      }
     }
+
+    const tail = decoder.decode();
+    if (tail) {
+      buffer += tail.replace(/\r\n/g, '\n');
+    }
+    const parsed = parseSseDataLines(`${buffer}\n\n`);
+    for (const event of parsed.events) {
+      if (event !== '[DONE]') {
+        try {
+          onEvent(JSON.parse(event) as OpenAIResponsePayload);
+        } catch {
+          // Ignore unparseable event and continue.
+        }
+      }
+    }
+  } finally {
+    // Release the reader so the underlying HTTP/TLS connection is returned to the pool.
+    await reader.cancel().catch(() => undefined);
   }
 };

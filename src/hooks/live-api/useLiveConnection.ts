@@ -287,6 +287,11 @@ export const useLiveConnection = ({
             }
 
             if (!isUserDisconnectRef.current) {
+              if (isProactiveReconnectRef.current) {
+                // A GoAway-initiated reconnect is already in flight (started by onclose).
+                // Avoid scheduling a second concurrent connect on top of it.
+                return;
+              }
               triggerReconnect();
             } else {
               if (connectionError.message) {
