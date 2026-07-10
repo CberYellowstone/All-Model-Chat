@@ -103,6 +103,10 @@ export const ensureFilesApiReferences = async ({
     }
 
     const currentFile = nextFiles.find((candidate) => candidate.id === file.id) ?? file;
+    if (!currentFile) {
+      // File was removed from nextFiles by an earlier iteration's patch; skip it.
+      continue;
+    }
     const fileApiName = currentFile.fileApiName;
     if (!fileApiName) {
       continue;
