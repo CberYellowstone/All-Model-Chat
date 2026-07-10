@@ -40,6 +40,10 @@ export interface McpClientBridge {
   callTool(server: McpServerConfig, toolName: string, args: Record<string, unknown>): Promise<unknown>;
   listResources?(server: McpServerConfig): Promise<McpResource[]>;
   listResourceTemplates?(server: McpServerConfig): Promise<McpResourceTemplate[]>;
+  listResourcesAndTemplates?(server: McpServerConfig): Promise<{
+    resources: McpResource[];
+    resourceTemplates: McpResourceTemplate[];
+  }>;
   readResource?(server: McpServerConfig, uri: string): Promise<unknown>;
   listPrompts?(server: McpServerConfig): Promise<McpPrompt[]>;
   getPrompt?(server: McpServerConfig, promptName: string, args: Record<string, string>): Promise<unknown>;

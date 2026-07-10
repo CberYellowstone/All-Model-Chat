@@ -308,6 +308,59 @@ describe('createServer', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('follows a safe image-redirect chain to the final image', async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (input: URL | RequestInfo) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.startsWith('https://cdn.example.com/signed')) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'https://cdn.example.com/final/diagram.png' },
+        });
+      }
+      return new Response(new Uint8Array([137, 80, 78, 71]), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      });
+    });
+    const app = createServer(
+      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
+      { fetchImpl },
+    );
+    const started = serverCleanup.track(await startHttpServer(app));
+
+    const response = await fetch(
+      `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/signed')}`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('image/png');
+    expect(calls).toContain('https://cdn.example.com/final/diagram.png');
+  });
+
+  it('rejects a redirect to a private network host', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(null, {
+        status: 302,
+        headers: { location: 'http://127.0.0.1/private.png' },
+      });
+    });
+    const app = createServer(
+      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
+      { fetchImpl },
+    );
+    const started = serverCleanup.track(await startHttpServer(app));
+
+    const response = await fetch(
+      `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/redirect')}`,
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: 'Image proxy target attempted an unsafe redirect.' });
+  });
+
   it('returns the local clipboard image when available', async () => {
     const readLocalClipboardImage = vi.fn(async () => ({
       data: Buffer.from([137, 80, 78, 71]),

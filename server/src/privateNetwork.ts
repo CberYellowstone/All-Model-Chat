@@ -8,7 +8,14 @@ const isPrivateIpv4 = (ip: string): boolean => {
     (first === 172 && second >= 16 && second <= 31) ||
     (first === 192 && second === 168) ||
     (first === 169 && second === 254) ||
-    first === 0
+    first === 0 ||
+    // Carrier-grade NAT (RFC 6598) — reachable on many networks and must be treated as private.
+    (first === 100 && second >= 64 && second <= 127) ||
+    // Benchmarking (RFC 2544) — 198.18.0.0/15.
+    (first === 198 && (second === 18 || second === 19)) ||
+    // Documentation ranges (RFC 5737) — not private per se, but not real upstreams.
+    (first === 192 && second === 0 && Number(ip.split('.')[2]) === 2) ||
+    (first === 203 && second === 0 && Number(ip.split('.')[2]) === 113)
   );
 };
 
@@ -33,7 +40,10 @@ export const isPrivateNetworkHostname = (hostname: string): boolean => {
     if (mappedIpv4 && net.isIP(mappedIpv4) === 4) {
       return isPrivateIpv4(mappedIpv4);
     }
-    return lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80:');
+    // IPv6 link-local is fe80::/10 (fe80 through febf). ULA is fc00::/7 (fc, fd).
+    const firstBlock = parseInt(lower.split(':')[0], 16);
+    const isLinkLocal = firstBlock >= 0xfe80 && firstBlock <= 0xfebf;
+    return lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || isLinkLocal;
   }
 
   return ['localhost', 'localhost.localdomain'].includes(normalizedHostname.toLowerCase());

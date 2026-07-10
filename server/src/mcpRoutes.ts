@@ -312,15 +312,16 @@ const handleListResources = async (
     }
 
     try {
-      if (!mcpClient.listResources || !mcpClient.listResourceTemplates) {
+      if (!mcpClient.listResourcesAndTemplates) {
         throw new Error('MCP resources are not supported by this API server.');
       }
 
+      const { resources, resourceTemplates } = await mcpClient.listResourcesAndTemplates(server);
       servers.push({
         serverId: server.id,
         serverName: server.name,
-        resources: await mcpClient.listResources(server),
-        resourceTemplates: await mcpClient.listResourceTemplates(server),
+        resources,
+        resourceTemplates,
       });
     } catch (error) {
       errors.push({

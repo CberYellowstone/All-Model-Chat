@@ -72,7 +72,23 @@ async function withConnectedClient<T>(server: McpServerConfig, run: (client: Cli
     await client.connect(transport, { timeout: MCP_REQUEST_TIMEOUT_MS });
     return await run(client);
   } finally {
-    await client.close().catch(() => undefined);
+    await client
+      .close()
+      .catch((error) => {
+        console.warn('[mcp] client.close() failed; subprocess may leak.', error);
+        return undefined;
+      })
+      .then(() => {
+        // Failsafe: if close() failed or threw, ensure the stdio child is reaped.
+        const candidate = (transport as { subprocess?: { kill?: (signal?: string) => void } }).subprocess;
+        if (candidate?.kill) {
+          try {
+            candidate.kill('SIGTERM');
+          } catch {
+            // Ignore — best-effort cleanup.
+          }
+        }
+      });
   }
 }
 
@@ -152,6 +168,48 @@ export const createMcpClientBridge = (): McpClientBridge => ({
       } while (cursor);
 
       return resourceTemplates;
+    }),
+
+  listResourcesAndTemplates: async (server) =>
+    withConnectedClient(server, async (client) => {
+      const resources: McpResource[] = [];
+      let resourcesCursor: string | undefined;
+
+      do {
+        const result = await client.listResources(resourcesCursor ? { cursor: resourcesCursor } : undefined, {
+          timeout: MCP_REQUEST_TIMEOUT_MS,
+        });
+        resources.push(
+          ...result.resources.map<McpResource>((resource) => ({
+            uri: resource.uri,
+            name: resource.name,
+            ...(resource.description ? { description: resource.description } : {}),
+            ...(resource.mimeType ? { mimeType: resource.mimeType } : {}),
+            ...(typeof resource.size === 'number' ? { size: resource.size } : {}),
+          })),
+        );
+        resourcesCursor = result.nextCursor;
+      } while (resourcesCursor);
+
+      const resourceTemplates: McpResourceTemplate[] = [];
+      let templatesCursor: string | undefined;
+
+      do {
+        const result = await client.listResourceTemplates(templatesCursor ? { cursor: templatesCursor } : undefined, {
+          timeout: MCP_REQUEST_TIMEOUT_MS,
+        });
+        resourceTemplates.push(
+          ...result.resourceTemplates.map<McpResourceTemplate>((template) => ({
+            uriTemplate: template.uriTemplate,
+            name: template.name,
+            ...(template.description ? { description: template.description } : {}),
+            ...(template.mimeType ? { mimeType: template.mimeType } : {}),
+          })),
+        );
+        templatesCursor = result.nextCursor;
+      } while (templatesCursor);
+
+      return { resources, resourceTemplates };
     }),
 
   readResource: async (server, uri) =>

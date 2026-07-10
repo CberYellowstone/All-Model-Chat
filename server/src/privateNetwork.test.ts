@@ -17,11 +17,31 @@ describe('isPrivateNetworkHostname', () => {
     expect(isPrivateNetworkHostname('1.1.1.1')).toBe(false);
   });
 
-  it('blocks IPv6 loopback and ULA', () => {
+  it('blocks CGNAT, benchmark, and documentation IPv4 ranges', () => {
+    // Carrier-grade NAT 100.64.0.0/10
+    expect(isPrivateNetworkHostname('100.64.0.1')).toBe(true);
+    expect(isPrivateNetworkHostname('100.127.255.254')).toBe(true);
+    expect(isPrivateNetworkHostname('100.63.0.1')).toBe(false);
+    expect(isPrivateNetworkHostname('100.128.0.1')).toBe(false);
+    // Benchmarking 198.18.0.0/15
+    expect(isPrivateNetworkHostname('198.18.0.1')).toBe(true);
+    expect(isPrivateNetworkHostname('198.19.255.254')).toBe(true);
+    expect(isPrivateNetworkHostname('198.17.0.1')).toBe(false);
+    expect(isPrivateNetworkHostname('198.20.0.1')).toBe(false);
+    // Documentation ranges (RFC 5737)
+    expect(isPrivateNetworkHostname('192.0.2.1')).toBe(true);
+    expect(isPrivateNetworkHostname('203.0.113.1')).toBe(true);
+  });
+
+  it('blocks IPv6 loopback, ULA, and full link-local range', () => {
     expect(isPrivateNetworkHostname('::1')).toBe(true);
     expect(isPrivateNetworkHostname('fc00::1')).toBe(true);
     expect(isPrivateNetworkHostname('fd12:3456::1')).toBe(true);
     expect(isPrivateNetworkHostname('fe80::1')).toBe(true);
+    // fe80::/10 covers fe80 through febf, not just the fe80: prefix.
+    expect(isPrivateNetworkHostname('fe90::1')).toBe(true);
+    expect(isPrivateNetworkHostname('febf::1')).toBe(true);
+    expect(isPrivateNetworkHostname('fec0::1')).toBe(false);
   });
 
   it('blocks IPv4-mapped IPv6 addresses (the rebinding bypass)', () => {

@@ -408,21 +408,23 @@ describe('MCP routes', () => {
   });
 
   it('lists MCP resources and prompts for enabled HTTP servers', async () => {
-    const listResources = vi.fn(async () => [
-      {
-        uri: 'file:///tmp/readme.md',
-        name: 'README',
-        description: 'Project notes',
-        mimeType: 'text/markdown',
-      },
-    ]);
-    const listResourceTemplates = vi.fn(async () => [
-      {
-        uriTemplate: 'file:///{path}',
-        name: 'Workspace file',
-        description: 'Read a workspace file by path',
-      },
-    ]);
+    const listResourcesAndTemplates = vi.fn(async () => ({
+      resources: [
+        {
+          uri: 'file:///tmp/readme.md',
+          name: 'README',
+          description: 'Project notes',
+          mimeType: 'text/markdown',
+        },
+      ],
+      resourceTemplates: [
+        {
+          uriTemplate: 'file:///{path}',
+          name: 'Workspace file',
+          description: 'Read a workspace file by path',
+        },
+      ],
+    }));
     const listPrompts = vi.fn(async () => [
       {
         name: 'summarize',
@@ -439,8 +441,7 @@ describe('MCP routes', () => {
         mcpClient: {
           listTools: vi.fn(),
           callTool: vi.fn(),
-          listResources,
-          listResourceTemplates,
+          listResourcesAndTemplates,
           listPrompts,
           readResource: vi.fn(),
           getPrompt: vi.fn(),
@@ -465,8 +466,7 @@ describe('MCP routes', () => {
     const resourcesBody = (await resourcesResponse.json()) as Record<string, unknown>;
 
     expect(resourcesResponse.status).toBe(200);
-    expect(listResources).toHaveBeenCalledWith(server);
-    expect(listResourceTemplates).toHaveBeenCalledWith(server);
+    expect(listResourcesAndTemplates).toHaveBeenCalledWith(server);
     expect(resourcesBody).toEqual({
       servers: [
         {
@@ -536,8 +536,7 @@ describe('MCP routes', () => {
         mcpClient: {
           listTools: vi.fn(),
           callTool: vi.fn(),
-          listResources: vi.fn(),
-          listResourceTemplates: vi.fn(),
+          listResourcesAndTemplates: vi.fn(),
           listPrompts: vi.fn(),
           readResource,
           getPrompt,
