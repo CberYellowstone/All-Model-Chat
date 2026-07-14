@@ -1,10 +1,14 @@
-import { AudioWaveform, Banana, Box, Image as ImageIcon, Layers3, ScanEye, Sparkles, Speech } from 'lucide-react';
+import { Box, Sparkles } from 'lucide-react';
 
+import geminiIconUrl from '@/assets/model-icons/gemini.svg';
+import gemmaIconUrl from '@/assets/model-icons/gemma.svg';
+import imagenIconUrl from '@/assets/model-icons/imagen.svg';
+import nanoBananaIconUrl from '@/assets/model-icons/nanobanana.svg';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
-import { isGeminiRoboticsModel } from '@/utils/modelCapabilities';
 import { type ModelOption, type ThirdPartyProviderId } from '@/types';
 
-const MODEL_ICON_SIZE = 18;
+/** Brand SVGs read smaller than stroke icons at the same px; 22 keeps list rows balanced. */
+const MODEL_ICON_SIZE = 22;
 
 const THIRD_PARTY_PROVIDER_ICON_COLOR: Partial<Record<ThirdPartyProviderId, string>> = {
   openai: 'text-emerald-500 dark:text-emerald-400',
@@ -17,82 +21,91 @@ const THIRD_PARTY_PROVIDER_ICON_COLOR: Partial<Record<ThirdPartyProviderId, stri
   custom: 'text-slate-500 dark:text-slate-400',
 };
 
-export const getModelIcon = (model: ModelOption | undefined) => {
-  if (!model) return <Box size={MODEL_ICON_SIZE} className="text-[var(--theme-text-tertiary)]" strokeWidth={1.5} />;
-  const { id, isPinned } = model;
-  const normalizedId = id.toLowerCase();
+type ModelBrandIconKey = 'gemini' | 'gemma' | 'nanobanana' | 'imagen';
+
+const BRAND_ICON_SRC: Record<ModelBrandIconKey, string> = {
+  gemini: geminiIconUrl,
+  gemma: gemmaIconUrl,
+  nanobanana: nanoBananaIconUrl,
+  imagen: imagenIconUrl,
+};
+
+const BRAND_ICON_ALT: Record<ModelBrandIconKey, string> = {
+  gemini: 'Gemini',
+  gemma: 'Gemma',
+  nanobanana: 'Nano Banana',
+  imagen: 'Imagen',
+};
+
+const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIconKey; size?: number }) => (
+  <img
+    src={BRAND_ICON_SRC[brand]}
+    alt={BRAND_ICON_ALT[brand]}
+    width={size}
+    height={size}
+    draggable={false}
+    data-model-brand-icon={brand}
+    className="flex-shrink-0 object-contain"
+    style={{ width: size, height: size }}
+  />
+);
+
+const resolveBrandIcon = (model: ModelOption): ModelBrandIconKey | null => {
+  const normalizedId = model.id.toLowerCase();
   const {
-    isNativeAudioModel,
-    isTtsModel,
     isRealImagenModel,
     isGemini3ImageModel,
     isGemini31FlashImageModel,
     isFlashImageModel,
+    isImageGenerationModel,
     isGemmaModel,
-  } = getCachedModelCapabilities(id);
+  } = getCachedModelCapabilities(model.id);
 
-  if (isNativeAudioModel) {
-    return (
-      <AudioWaveform
-        size={MODEL_ICON_SIZE}
-        className="text-amber-500 dark:text-amber-400 flex-shrink-0"
-        strokeWidth={1.5}
-      />
-    );
+  if (isRealImagenModel || normalizedId.includes('imagen')) {
+    return 'imagen';
   }
 
-  if (isTtsModel) {
-    return (
-      <Speech size={MODEL_ICON_SIZE} className="text-purple-500 dark:text-purple-400 flex-shrink-0" strokeWidth={1.5} />
-    );
+  // Nano Banana family: Gemini native image models (Pro / 2 / Lite / legacy Flash Image)
+  if (
+    isGemini3ImageModel ||
+    isGemini31FlashImageModel ||
+    isFlashImageModel ||
+    isImageGenerationModel ||
+    (normalizedId.includes('gemini') && normalizedId.includes('image')) ||
+    normalizedId.includes('nano-banana') ||
+    normalizedId.includes('nanobanana')
+  ) {
+    return 'nanobanana';
   }
 
-  if (isRealImagenModel) {
-    return (
-      <ImageIcon size={MODEL_ICON_SIZE} className="text-rose-500 dark:text-rose-400 flex-shrink-0" strokeWidth={1.5} />
-    );
+  if (isGemmaModel || normalizedId.includes('gemma')) {
+    return 'gemma';
   }
 
-  if (isGemini3ImageModel || isGemini31FlashImageModel || isFlashImageModel) {
-    return (
-      <Banana size={MODEL_ICON_SIZE} className="text-yellow-500 dark:text-yellow-400 flex-shrink-0" strokeWidth={1.5} />
-    );
-  }
-
-  if (isGeminiRoboticsModel(id)) {
-    return (
-      <ScanEye
-        size={MODEL_ICON_SIZE}
-        className="text-emerald-500 dark:text-emerald-400 flex-shrink-0"
-        strokeWidth={1.5}
-      />
-    );
-  }
-
-  if (isGemmaModel) {
-    return (
-      <Layers3
-        size={MODEL_ICON_SIZE}
-        className="text-violet-500 dark:text-violet-400 flex-shrink-0"
-        strokeWidth={1.5}
-      />
-    );
-  }
-
+  // All other Gemini family models (Flash/Pro/Lite/Live/TTS/Robotics/Audio, etc.)
   if (normalizedId.includes('gemini')) {
-    return (
-      <Sparkles size={MODEL_ICON_SIZE} className="text-sky-500 dark:text-sky-400 flex-shrink-0" strokeWidth={1.5} />
-    );
+    return 'gemini';
+  }
+
+  return null;
+};
+
+export const getModelIcon = (model: ModelOption | undefined) => {
+  if (!model) {
+    return <Box size={MODEL_ICON_SIZE} className="text-[var(--theme-text-tertiary)]" strokeWidth={1.5} />;
+  }
+
+  const brand = resolveBrandIcon(model);
+  if (brand) {
+    return <BrandModelIcon brand={brand} />;
   }
 
   if (model.providerId) {
     const color = THIRD_PARTY_PROVIDER_ICON_COLOR[model.providerId] ?? 'text-[var(--theme-text-tertiary)]';
-    return (
-      <Box size={MODEL_ICON_SIZE} className={`${color} flex-shrink-0`} strokeWidth={1.5} />
-    );
+    return <Box size={MODEL_ICON_SIZE} className={`${color} flex-shrink-0`} strokeWidth={1.5} />;
   }
 
-  if (isPinned) {
+  if (model.isPinned) {
     return (
       <Sparkles size={MODEL_ICON_SIZE} className="text-sky-500 dark:text-sky-400 flex-shrink-0" strokeWidth={1.5} />
     );

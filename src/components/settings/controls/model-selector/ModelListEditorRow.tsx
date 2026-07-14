@@ -30,7 +30,9 @@ export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({
   return (
     <div className="group rounded-lg border border-transparent bg-[var(--theme-bg-primary)]/35 p-2">
       <div className="flex items-center gap-2">
-        <div className="w-8 flex justify-center text-[var(--theme-text-tertiary)]">{getModelIcon(model)}</div>
+        <div className="w-9 flex justify-center items-center text-[var(--theme-text-tertiary)]">
+          {getModelIcon(model)}
+        </div>
         <input
           type="text"
           value={model.id}
