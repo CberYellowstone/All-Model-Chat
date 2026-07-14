@@ -294,7 +294,9 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
           srcDoc={srcDoc}
           title={t('htmlPreviewTitle')}
           className="h-full w-full border-0 bg-transparent"
-          sandbox="allow-scripts allow-forms"
+          // SECURITY: allow-same-origin is intentionally omitted (opaque origin).
+          // allow-popups enables target="_blank" external links in Live Artifacts.
+          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
           allow="clipboard-write"
           scrolling="no"
           onLoad={() => {

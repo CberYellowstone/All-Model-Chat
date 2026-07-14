@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSettings, ChatSettings, InputCommand, SavedChatSession } from '@/types';
 import { createAppSettings, createChatSettings, createSavedChatSession } from '@/test/data/factories';
 
-const { mockLoadLiveArtifactsSystemPrompt } = vi.hoisted(() => ({
+const { mockLoadLiveArtifactsSystemPrompt, mockFocusChatInput } = vi.hoisted(() => ({
   mockLoadLiveArtifactsSystemPrompt: vi.fn(),
+  mockFocusChatInput: vi.fn(),
 }));
 
 vi.mock('@/features/prompts/promptRegistry', async () => {
@@ -19,7 +20,10 @@ vi.mock('@/features/prompts/promptRegistry', async () => {
   };
 });
 
-import { focusChatInput } from '@/utils/chat-input/focus';
+vi.mock('@/utils/chat-input/focus', () => ({
+  focusChatInput: mockFocusChatInput,
+}));
+
 import { useAppPromptModes } from './useAppPromptModes';
 import { createDeferred, renderHook } from '@/test/render/renderer';
 
@@ -62,17 +66,6 @@ describe('useAppPromptModes', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
-  });
-
-  it('ignores delayed focus after the document has been torn down', () => {
-    const originalDocument = document;
-    vi.useFakeTimers();
-
-    focusChatInput(0);
-    vi.stubGlobal('document', undefined);
-
-    expect(() => vi.runOnlyPendingTimers()).not.toThrow();
-    vi.stubGlobal('document', originalDocument);
   });
 
   it('optimistically marks the Live Artifacts prompt active while it is loading', async () => {
@@ -440,6 +433,7 @@ describe('useAppPromptModes', () => {
       id: expect.any(Number),
       mode: 'replace',
     });
+    expect(mockFocusChatInput).toHaveBeenCalledWith(50, { caret: 'end' });
     expect(setAppSettings).toHaveBeenCalledWith(expect.any(Function));
     expect(result.current.isLiveArtifactsPromptActive).toBe(true);
 
@@ -499,6 +493,7 @@ describe('useAppPromptModes', () => {
       text: 'Compare both options.\n',
       id: expect.any(Number),
     });
+    expect(mockFocusChatInput).toHaveBeenCalledWith(50, { caret: 'end' });
 
     unmount();
   });

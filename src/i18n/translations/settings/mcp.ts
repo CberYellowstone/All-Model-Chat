@@ -16,7 +16,11 @@ const mcpSettings = {
   settingsMcpServerId: { en: 'Server ID', zh: '服务器 ID' },
   settingsMcpTransport: { en: 'Transport', zh: '传输方式' },
   settingsMcpTransportStdio: { en: 'stdio', zh: 'stdio' },
-  settingsMcpTransportHttp: { en: 'HTTP', zh: 'HTTP' },
+  settingsMcpTransportHttp: {
+    en: 'HTTP (Streamable, SSE fallback)',
+    zh: 'HTTP（Streamable，失败回退 SSE）',
+  },
+  settingsMcpTransportSse: { en: 'SSE (legacy)', zh: 'SSE（旧版）' },
   settingsMcpCommand: { en: 'Command', zh: '命令' },
   settingsMcpUrl: { en: 'URL', zh: 'URL' },
   settingsMcpArgs: { en: 'Arguments', zh: '参数' },

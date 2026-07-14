@@ -47,4 +47,6 @@ export interface McpClientBridge {
   readResource?(server: McpServerConfig, uri: string): Promise<unknown>;
   listPrompts?(server: McpServerConfig): Promise<McpPrompt[]>;
   getPrompt?(server: McpServerConfig, promptName: string, args: Record<string, string>): Promise<unknown>;
+  /** Close pooled sessions (stdio children / HTTP connections). */
+  dispose?(): Promise<void>;
 }

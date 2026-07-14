@@ -57,17 +57,78 @@ export const useChatInputGlobalEffects = ({
       return;
     }
 
-    setTimeout(() => {
+    // Wait for the controlled textarea value to commit before placing the caret.
+    // setTimeout(0) alone can race React's state update and leave the caret at index 0.
+    let cancelled = false;
+    let retryTimeoutId: number | null = null;
+
+    const placeCaretAtEnd = (): boolean => {
       const textarea = textareaRef.current;
-      if (!textarea) {
-        return;
+      if (!textarea || cancelled) {
+        return false;
+      }
+
+      // For replace commands, ensure the new value is present before locking the caret.
+      if (
+        (commandedInput.mode === undefined || commandedInput.mode === 'replace') &&
+        textarea.value !== commandedInput.text
+      ) {
+        return false;
       }
 
       textarea.focus();
       const textLength = textarea.value.length;
       textarea.setSelectionRange(textLength, textLength);
       textarea.scrollTop = textarea.scrollHeight;
-    }, 0);
+      return true;
+    };
+
+    const schedulePlaceCaret = () => {
+      if (cancelled) {
+        return;
+      }
+
+      if (placeCaretAtEnd()) {
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        if (cancelled) {
+          return;
+        }
+
+        if (placeCaretAtEnd()) {
+          return;
+        }
+
+        // Final fallback once React has almost certainly flushed the value update.
+        retryTimeoutId = window.setTimeout(() => {
+          if (cancelled) {
+            return;
+          }
+
+          const textarea = textareaRef.current;
+          if (!textarea) {
+            return;
+          }
+
+          textarea.focus();
+          const textLength = textarea.value.length;
+          textarea.setSelectionRange(textLength, textLength);
+          textarea.scrollTop = textarea.scrollHeight;
+        }, 0);
+      });
+    };
+
+    const frameId = requestAnimationFrame(schedulePlaceCaret);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frameId);
+      if (retryTimeoutId !== null) {
+        window.clearTimeout(retryTimeoutId);
+      }
+    };
   }, [commandedInput, insertText, setInputText, setQuotes, textareaRef]);
 
   useEffect(() => {

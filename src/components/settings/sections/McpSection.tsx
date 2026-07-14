@@ -99,6 +99,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
       return;
     }
 
+    // http | sse share URL/auth fields
     updateServer(serverIndex, {
       transport,
       url: server.url ?? '',
@@ -240,6 +241,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                     >
                       <option value="stdio">{t('settingsMcpTransportStdio')}</option>
                       <option value="http">{t('settingsMcpTransportHttp')}</option>
+                      <option value="sse">{t('settingsMcpTransportSse')}</option>
                     </select>
                   </label>
 
@@ -260,7 +262,9 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                         value={server.url ?? ''}
                         onChange={(event) => updateServer(index, { url: event.target.value })}
                         className={`${inputBaseClasses} ${SETTINGS_INPUT_CLASS} font-mono`}
-                        placeholder="https://example.com/mcp"
+                        placeholder={
+                          server.transport === 'sse' ? 'https://example.com/sse' : 'https://example.com/mcp'
+                        }
                       />
                     </label>
                   )}

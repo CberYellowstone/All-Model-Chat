@@ -282,14 +282,16 @@ export const performStandardChatApiCall = async ({
       return pyodideService.runPython(code, options);
     },
   });
+  const enabledMcpServers = (appSettings.mcpServers ?? []).filter((server) => server.enabled);
   const isMcpEnabledForTurn =
     finalRole === 'user' &&
     !isRawMode &&
     !isImageGenerationModel(apiModelId) &&
-    (appSettings.mcpServers?.length ?? 0) > 0;
+    enabledMcpServers.length > 0;
+  // Discovery is resilient: failures log and yield {} so chat continues without MCP tools.
   const mcpClientFunctions = isMcpEnabledForTurn
     ? await createMcpClientFunctions({
-        servers: appSettings.mcpServers ?? [],
+        servers: enabledMcpServers,
         abortSignal: newAbortController.signal,
       })
     : {};

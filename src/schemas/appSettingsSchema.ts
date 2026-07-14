@@ -168,7 +168,7 @@ const sanitizeMcpServers = (value: unknown, fallback: McpServerConfig[]): McpSer
     const id = typeof item.id === 'string' ? item.id.trim() : '';
     const name = typeof item.name === 'string' ? item.name.trim() : '';
     const transport = item.transport;
-    if (!id || !name || (transport !== 'stdio' && transport !== 'http')) {
+    if (!id || !name || (transport !== 'stdio' && transport !== 'http' && transport !== 'sse')) {
       return [];
     }
 
@@ -192,7 +192,7 @@ const sanitizeMcpServers = (value: unknown, fallback: McpServerConfig[]): McpSer
       if (env) server.env = env;
     }
 
-    if (transport === 'http') {
+    if (transport === 'http' || transport === 'sse') {
       const url = typeof item.url === 'string' ? item.url.trim() : '';
       if (!url || !isValidMcpHttpUrl(url)) {
         return [];

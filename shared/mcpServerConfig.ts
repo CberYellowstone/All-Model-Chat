@@ -1,6 +1,6 @@
 import { isRecord } from './predicates.js';
 
-export type McpServerTransport = 'stdio' | 'http';
+export type McpServerTransport = 'stdio' | 'http' | 'sse';
 export type McpServerAuthType = 'none' | 'bearer' | 'customHeaders';
 
 export interface McpServerAuthConfig {

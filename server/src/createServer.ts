@@ -41,7 +41,12 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const readLocalClipboardImage = dependencies.readLocalClipboardImage ?? readMacOsClipboardPng;
-  const mcpClient = dependencies.mcpClient ?? createMcpClientBridge();
+  const mcpClient =
+    dependencies.mcpClient ??
+    createMcpClientBridge({
+      allowPrivateHttp: resolvedConfig.enableMcpPrivateHttp,
+      fetchImpl,
+    });
 
   return http.createServer(async (request, response) => {
     try {

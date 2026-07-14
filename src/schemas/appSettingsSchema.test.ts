@@ -109,6 +109,13 @@ describe('appSettingsSchema', () => {
             token: 'remote-token',
           },
         },
+        {
+          id: 'legacy-sse',
+          name: 'Legacy SSE',
+          enabled: true,
+          transport: 'sse',
+          url: 'https://mcp.example.com/sse',
+        },
       ],
     });
 
@@ -137,6 +144,13 @@ describe('appSettingsSchema', () => {
           type: 'bearer',
           token: 'remote-token',
         },
+      },
+      {
+        id: 'legacy-sse',
+        name: 'Legacy SSE',
+        enabled: true,
+        transport: 'sse',
+        url: 'https://mcp.example.com/sse',
       },
     ]);
   });

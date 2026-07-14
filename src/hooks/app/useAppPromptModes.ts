@@ -282,7 +282,8 @@ export const useAppPromptModes = ({
         }
 
         setCommandedInput({ text: `${text}\n`, id: Date.now(), mode: 'replace' });
-        focusChatInput(0);
+        // Keep the caret on the trailing blank line so the user can continue typing.
+        focusChatInput(50, { caret: 'end' });
         return;
       }
 
@@ -292,7 +293,7 @@ export const useAppPromptModes = ({
       }
 
       setCommandedInput({ text: `${text}\n`, id: Date.now() });
-      focusChatInput(0);
+      focusChatInput(50, { caret: 'end' });
     },
     [
       activeSessionId,

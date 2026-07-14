@@ -86,7 +86,7 @@ const parseMcpServer = (value: unknown, options: McpRouteOptions): McpServerPars
   const name = typeof value.name === 'string' ? value.name.trim() : '';
   const enabled = value.enabled === true;
   const transport = value.transport;
-  if (!id || !name || (transport !== 'stdio' && transport !== 'http')) {
+  if (!id || !name || (transport !== 'stdio' && transport !== 'http' && transport !== 'sse')) {
     return { ok: false };
   }
 
@@ -115,6 +115,7 @@ const parseMcpServer = (value: unknown, options: McpRouteOptions): McpServerPars
     return { ok: true, server };
   }
 
+  // http | sse
   const url = typeof value.url === 'string' ? value.url.trim() : '';
   if (!url) {
     return { ok: false };
@@ -241,8 +242,12 @@ const handleCallTool = async (
     return;
   }
 
-  const result = await mcpClient.callTool(server, toolName, args);
-  sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  try {
+    const result = await mcpClient.callTool(server, toolName, args);
+    sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  } catch (error) {
+    sendJson(request, response, 502, { error: getErrorMessage(error) }, allowedOrigins);
+  }
 };
 
 const parseServersFromListBody = async (
@@ -371,8 +376,12 @@ const handleReadResource = async (
     return;
   }
 
-  const result = await mcpClient.readResource(server, uri);
-  sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  try {
+    const result = await mcpClient.readResource(server, uri);
+    sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  } catch (error) {
+    sendJson(request, response, 502, { error: getErrorMessage(error) }, allowedOrigins);
+  }
 };
 
 const handleListPrompts = async (
@@ -451,8 +460,12 @@ const handleGetPrompt = async (
     return;
   }
 
-  const result = await mcpClient.getPrompt(server, promptName, args);
-  sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  try {
+    const result = await mcpClient.getPrompt(server, promptName, args);
+    sendJson(request, response, 200, { result: result as Record<string, unknown> }, allowedOrigins);
+  } catch (error) {
+    sendJson(request, response, 502, { error: getErrorMessage(error) }, allowedOrigins);
+  }
 };
 
 export const handleMcpRequest = async (
