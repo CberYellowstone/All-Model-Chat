@@ -93,11 +93,6 @@ export interface EditImageRequestConfig {
   personGeneration?: ImagePersonGeneration;
 }
 
-export interface GenerateImagesRequestOptions {
-  numberOfImages?: number;
-  personGeneration?: ImagePersonGeneration;
-}
-
 export interface ThoughtSupportingPart extends Part {
   thought?: boolean;
 }

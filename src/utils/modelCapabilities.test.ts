@@ -92,7 +92,6 @@ describe('getModelCapabilities', () => {
     const ttsCapabilities = getModelCapabilities('gemini-3.1-flash-tts-preview');
     const liveCapabilities = getModelCapabilities('gemini-3.1-flash-live-preview');
     const geminiImageCapabilities = getModelCapabilities('gemini-3.1-flash-image-preview');
-    const imagenCapabilities = getModelCapabilities('imagen-4.0-generate-preview');
 
     expect(textCapabilities.permissions).toMatchObject({
       canAcceptAttachments: true,
@@ -122,31 +121,16 @@ describe('getModelCapabilities', () => {
       canGenerateSuggestions: false,
       requiresTextPrompt: true,
     });
-    expect(imagenCapabilities.permissions).toMatchObject({
-      canAcceptAttachments: false,
-      canUseGoogleSearch: false,
-      canUseTokenCount: true,
-      requiresTextPrompt: true,
-    });
   });
 
   it('exposes the latest Gemini 3.1 Flash Image ratios and sizes', () => {
     const capabilities = getModelCapabilities('gemini-3.1-flash-image-preview');
 
     expect(capabilities.isImageGenerationModel).toBe(true);
+    expect(capabilities).not.toHaveProperty('isRealImagenModel');
     expect(capabilities).not.toHaveProperty('isImagenModel');
     expect(capabilities.supportedAspectRatios).toEqual(expect.arrayContaining(['1:4', '4:1', '1:8', '8:1']));
     expect(capabilities.supportedImageSizes).toEqual(expect.arrayContaining(['512', '1K', '2K', '4K']));
-  });
-
-  it('distinguishes actual Imagen models from the broader image-generation capability', () => {
-    const imagenCapabilities = getModelCapabilities('imagen-4.0-generate-preview');
-    const geminiImageCapabilities = getModelCapabilities('gemini-3.1-flash-image-preview');
-
-    expect(imagenCapabilities.isRealImagenModel).toBe(true);
-    expect(imagenCapabilities.isImageGenerationModel).toBe(true);
-    expect(geminiImageCapabilities.isRealImagenModel).toBe(false);
-    expect(geminiImageCapabilities.isImageGenerationModel).toBe(true);
   });
 });
 

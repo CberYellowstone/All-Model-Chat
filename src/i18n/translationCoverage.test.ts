@@ -53,13 +53,8 @@ describe('translation coverage for protected UI surfaces', () => {
     expect(t('messageSenderErrorWithPrefix').replace('{prefix}', '错误').replace('{message}', 'X')).toBe('错误：X');
     expect(t('messageSenderApiKeyNotConfigured')).toBe('未在设置中配置 API 密钥。');
     expect(t('messageSenderTtsErrorPrefix')).toBe('语音生成错误');
-    expect(t('messageSenderImageGenErrorPrefix')).toBe('图像生成错误');
     expect(t('messageSenderImageEditErrorPrefix')).toBe('图像编辑错误');
     expect(t('messageSenderAudioReadyTitle')).toBe('音频已生成');
-    expect(t('messageSenderImageReadyTitle')).toBe('图片已生成');
-    expect(t('messageSenderGeneratedImagesForPrompt').replace('{prompt}', 'A').replace('{count}', '2')).toBe(
-      '已为“A”生成 2 张图片',
-    );
     expect(t('messageSenderImageEditResultPrefix').replace('{index}', '2')).toBe('图片 2：');
     expect(t('messageSenderImageEditPartialNote').replace('{count}', '1').replace('{reason}', '原因。')).toBe(
       '*[提示：4 张图片中仅 1 张生成成功。原因。]*',
@@ -441,10 +436,6 @@ describe('translation coverage for protected UI surfaces', () => {
         snippets: ['TTS Error', 'Audio Ready'],
       },
       {
-        file: 'src/features/message-sender/imageGenerationStrategy.ts',
-        snippets: ['Image Gen Error', 'Image Ready', 'Generated '],
-      },
-      {
         file: 'src/features/message-sender/imageEditStrategy.ts',
         snippets: [
           'Image Edit Error',
@@ -650,6 +641,7 @@ describe('translation coverage for protected UI surfaces', () => {
           '"Wait for files to finish processing."',
           '"This image model supports image attachments only."',
           '"Imagen models support text prompts only."',
+          '"This model does not support file attachments."',
           "'No model selected.'",
           '"API Key Error"',
         ],

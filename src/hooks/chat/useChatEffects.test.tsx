@@ -75,7 +75,7 @@ describe('useChatEffects', () => {
     hook.unmount();
   });
 
-  it('clamps stale image settings when switching from Nano Banana 2 to Imagen', () => {
+  it('clamps stale image settings when switching from Nano Banana 2 to Nano Banana Lite', () => {
     const setAspectRatio = vi.fn();
     const setImageSize = vi.fn();
     const props = createProps({
@@ -91,7 +91,7 @@ describe('useChatEffects', () => {
     const hook = renderHook(() => useChatEffects(props));
 
     props.currentChatSettings = createChatSettings({
-      modelId: 'imagen-4.0-generate-001',
+      modelId: 'gemini-3.1-flash-lite-image',
     });
 
     hook.rerender();

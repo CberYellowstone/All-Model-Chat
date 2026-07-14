@@ -210,7 +210,6 @@ describe('codebase maintainability guardrails', () => {
     for (const relativePath of [
       'src/features/message-sender/standardChatStrategy.ts',
       'src/features/message-sender/ttsStrategy.ts',
-      'src/features/message-sender/imageGenerationStrategy.ts',
       'src/features/message-sender/imageEditStrategy.ts',
     ]) {
       const source = readProjectFile(relativePath);

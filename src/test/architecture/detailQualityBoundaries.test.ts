@@ -32,6 +32,7 @@ describe('detail quality boundaries', () => {
     expect(useMessageSenderSource).toContain('validateMessageBeforeSend({');
     expect(useMessageSenderSource).not.toContain('const imageReferenceCount = filesToUse.filter');
     expect(useMessageSenderSource).not.toContain('messageSenderImagenTextOnly');
+    expect(useMessageSenderSource).not.toContain('messageSenderAttachmentsNotSupported');
   });
 
   it('keeps API adapters independent of chat-streaming reducer internals', () => {

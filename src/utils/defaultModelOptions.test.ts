@@ -24,6 +24,12 @@ describe('getDefaultModelOptions', () => {
     expect(ttsIds).toEqual(['gemini-3.1-flash-tts-preview']);
   });
 
+  it('does not include removed Imagen models', () => {
+    const models = getDefaultModelOptions();
+
+    expect(models.some((model) => model.id.includes('imagen'))).toBe(false);
+  });
+
   it('does not include removed Gemini 2.5 Flash preview models', () => {
     const models = getDefaultModelOptions();
 

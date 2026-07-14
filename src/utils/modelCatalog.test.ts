@@ -60,13 +60,15 @@ describe('filterModelCatalog', () => {
   const entries = buildModelCatalog([
     { id: 'gemini-3.1-flash-live-preview', name: 'Gemini 3.1 Flash Live Preview' },
     { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS Preview' },
-    { id: 'imagen-4.0-generate-001', name: 'Imagen 4.0' },
+    { id: 'gemini-3.1-flash-image-preview', name: 'Nano Banana 2' },
   ]);
 
   it('matches name, id, and capability tags', () => {
     expect(filterModelCatalog(entries, 'tts').map((entry) => entry.id)).toEqual(['gemini-3.1-flash-tts-preview']);
     expect(filterModelCatalog(entries, 'live').map((entry) => entry.id)).toEqual(['gemini-3.1-flash-live-preview']);
-    expect(filterModelCatalog(entries, 'imagen').map((entry) => entry.id)).toEqual(['imagen-4.0-generate-001']);
+    expect(filterModelCatalog(entries, 'nano').map((entry) => entry.id)).toEqual([
+      'gemini-3.1-flash-image-preview',
+    ]);
   });
 });
 
@@ -95,7 +97,7 @@ describe('buildModelCatalogSections', () => {
     const entries = buildModelCatalog([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', isPinned: true },
       { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS' },
-      { id: 'imagen-4.0-generate-001', name: 'Imagen 4.0' },
+      { id: 'gemini-3.1-flash-image-preview', name: 'Nano Banana 2' },
     ]);
 
     expect(buildModelCatalogSections(entries).map((section) => section.key)).toEqual(['pinned', 'tts', 'image']);

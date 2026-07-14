@@ -53,13 +53,10 @@ const isGemini3ImageModel = (modelId: string): boolean =>
 
 const isFlashImageModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-2.5-flash-image');
 
-const isRealImagenModel = (modelId: string): boolean => modelId.toLowerCase().includes('imagen');
-
 export const isImageGenerationModel = (modelId: string): boolean =>
-  isRealImagenModel(modelId) ||
   isFlashImageModel(modelId) ||
   isGemini3ImageModel(modelId) ||
-  (modelId.toLowerCase().includes('image') && !modelId.toLowerCase().includes('imagen'));
+  modelId.toLowerCase().includes('image');
 
 export interface ModelInteractionPermissions {
   canAcceptAttachments: boolean;
@@ -92,7 +89,6 @@ export interface ModelCapabilities {
   isGeminiRoboticsModel: boolean;
   isGemini3ImageModel: boolean;
   isFlashImageModel: boolean;
-  isRealImagenModel: boolean;
   isImageGenerationModel: boolean;
   isTtsModel: boolean;
   isNativeAudioModel: boolean;
@@ -109,7 +105,6 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   const supportsThinkingLevelSelection = supportsThinkingLevel(modelId);
   const gemini3ImageModel = isGemini3ImageModel(modelId);
   const flashImageModel = isFlashImageModel(modelId);
-  const realImagenModel = isRealImagenModel(modelId);
   const ttsModel = isTtsModel(modelId);
   const nativeAudioModel = isNativeAudioModel(modelId);
   const flashModel = lowerId.includes('flash');
@@ -117,10 +112,10 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   const gemini3FlashModel = isGemini3 && flashModel;
   const gemini31FlashLiveModel = isGemini31FlashLiveModel(modelId);
   const roboticsModel = isGeminiRoboticsModel(modelId);
-  const imageGenerationModel = realImagenModel || flashImageModel || gemini3ImageModel;
+  const imageGenerationModel = isImageGenerationModel(modelId);
   const canUseTextChatTools = !nativeAudioModel && !imageGenerationModel && !ttsModel;
   const permissions: ModelInteractionPermissions = {
-    canAcceptAttachments: !realImagenModel && !ttsModel && !nativeAudioModel,
+    canAcceptAttachments: !ttsModel && !nativeAudioModel,
     canUseTools: canUseTextChatTools || nativeAudioModel || gemini3ImageModel || imageGenerationModel,
     canUseGoogleSearch: canUseTextChatTools || nativeAudioModel || gemini3ImageModel,
     canUseGoogleMaps: canUseTextChatTools || nativeAudioModel || gemini3ImageModel,
@@ -137,9 +132,7 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
   };
 
   let supportedAspectRatios: string[] | undefined;
-  if (realImagenModel) {
-    supportedAspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'];
-  } else if (isGemini31FlashImageModel(modelId)) {
+  if (isGemini31FlashImageModel(modelId)) {
     if (isGemini31FlashLiteImageModel(modelId)) {
       // gemini-3.1-flash-lite-image: only 1K resolution, 10 aspect ratios (no Auto, no 1:4/1:8/4:1/8:1)
       supportedAspectRatios = ['1:1', '3:2', '2:3', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'];
@@ -175,8 +168,6 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     supportedImageSizes = ['512', '1K', '2K', '4K'];
   } else if (gemini3ImageModel) {
     supportedImageSizes = ['1K', '2K', '4K'];
-  } else if (realImagenModel && !modelId.toLowerCase().includes('fast')) {
-    supportedImageSizes = ['1K', '2K'];
   }
 
   return {
@@ -193,7 +184,6 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     isGeminiRoboticsModel: roboticsModel,
     isGemini3ImageModel: gemini3ImageModel,
     isFlashImageModel: flashImageModel,
-    isRealImagenModel: realImagenModel,
     isImageGenerationModel: imageGenerationModel,
     isTtsModel: ttsModel,
     isNativeAudioModel: nativeAudioModel,

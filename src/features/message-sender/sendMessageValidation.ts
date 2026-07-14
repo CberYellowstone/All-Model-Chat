@@ -122,8 +122,8 @@ export const validateMessageBeforeSend = ({
   }
 
   if (!permissions.canAcceptAttachments && files.length > 0) {
-    logService.warn('Send message blocked: Imagen models do not support file attachments.');
-    return { ok: false, fileError: t('messageSenderImagenTextOnly') };
+    logService.warn('Send message blocked: current model does not support file attachments.');
+    return { ok: false, fileError: t('messageSenderAttachmentsNotSupported') };
   }
 
   return { ok: true };

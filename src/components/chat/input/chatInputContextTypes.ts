@@ -325,7 +325,6 @@ export interface ChatInputActionsContextValue {
   onToggleToolAndFocus: (toggleFunc: () => void) => void;
   onCountTokens: () => void;
   isImageGenerationModel: boolean;
-  isRealImagenModel: boolean;
   isNativeAudioModel: boolean;
   canAddYouTubeVideo: boolean;
   isLoading: boolean;

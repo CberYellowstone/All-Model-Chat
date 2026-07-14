@@ -23,12 +23,11 @@ const attachIconSize = 20;
 const menuIconSize = 18;
 
 export const AttachmentMenu: React.FC = () => {
-  const { onAttachmentAction, disabled, isImageGenerationModel, isRealImagenModel, canAddYouTubeVideo } =
-    useChatInputActionsContext();
+  const { onAttachmentAction, disabled, isImageGenerationModel, canAddYouTubeVideo } = useChatInputActionsContext();
   const { t } = useI18n();
   const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
     usePortaledMenu({ constrainHeight: true });
-  const isAttachmentDisabled = disabled || isRealImagenModel;
+  const isAttachmentDisabled = disabled;
 
   const handleAction = (action: AttachmentAction) => {
     closeMenu();

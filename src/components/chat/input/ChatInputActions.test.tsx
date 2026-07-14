@@ -14,7 +14,6 @@ const sendControlsMock = vi.fn();
 const mockCapabilities = vi.hoisted(() => ({
   value: {
     isImageGenerationModel: false,
-    isRealImagenModel: false,
     isNativeAudioModel: false,
   },
 }));
@@ -25,8 +24,8 @@ vi.mock('./AttachmentMenu', async () => {
 
   return {
     AttachmentMenu: () => {
-      const { disabled, isRealImagenModel } = useChatInputActionsContext();
-      const props = { disabled: disabled || isRealImagenModel };
+      const { disabled } = useChatInputActionsContext();
+      const props = { disabled };
 
       attachmentMenuMock(props);
       return <div data-testid="attachment-menu" data-disabled={String(props.disabled)} />;
@@ -146,7 +145,6 @@ describe('ChatInputActions', () => {
     const { actionOverrides, composerOverrides } = splitRenderOverrides(props);
     const actionsValue = createChatInputActionsContextValue({
       isImageGenerationModel: mockCapabilities.value.isImageGenerationModel,
-      isRealImagenModel: mockCapabilities.value.isRealImagenModel,
       isNativeAudioModel: mockCapabilities.value.isNativeAudioModel,
       ...actionOverrides,
     });
@@ -209,7 +207,6 @@ describe('ChatInputActions', () => {
   beforeEach(() => {
     mockCapabilities.value = {
       isImageGenerationModel: false,
-      isRealImagenModel: false,
       isNativeAudioModel: false,
     };
     originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
@@ -225,23 +222,10 @@ describe('ChatInputActions', () => {
     vi.restoreAllMocks();
   });
 
-  it('disables attachments for Imagen models', () => {
-    mockCapabilities.value = {
-      ...mockCapabilities.value,
-      isImageGenerationModel: true,
-      isRealImagenModel: true,
-    };
-
-    renderActions();
-
-    expect(attachmentMenuMock).toHaveBeenCalledWith(expect.objectContaining({ disabled: true }));
-  });
-
   it('keeps attachments enabled for Gemini image models that support reference images', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
       isImageGenerationModel: true,
-      isRealImagenModel: false,
     };
 
     renderActions();

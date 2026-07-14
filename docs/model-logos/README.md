@@ -17,7 +17,6 @@ Downloaded for local preview of brand marks related to default models.
 
 ## Missing
 
-- **Imagen**: no dedicated official graphic logo found
 - **Per-model variants** (Flash/Pro/Lite/etc.): no separate logos
 
 Open `index.html` in a browser for a gallery.

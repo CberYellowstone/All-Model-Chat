@@ -60,13 +60,13 @@ const AspectRatioIcon = ({ ratio, className }: { ratio: string; className?: stri
 
 const defaultAspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4', '2:3', '3:2', '4:5', '5:4', '21:9'];
 
-interface ImagenAspectRatioSelectorProps {
+interface AspectRatioSelectorProps {
   aspectRatio: string;
   setAspectRatio: (ratio: string) => void;
   supportedRatios?: string[];
 }
 
-export const ImagenAspectRatioSelector: React.FC<ImagenAspectRatioSelectorProps> = ({
+export const AspectRatioSelector: React.FC<AspectRatioSelectorProps> = ({
   aspectRatio,
   setAspectRatio,
   supportedRatios,

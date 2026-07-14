@@ -91,10 +91,10 @@ describe('calculateApiUsageRecordPriceUsd', () => {
     expect(calculateApiUsageRecordPriceUsd(record)).toBeNull();
   });
 
-  it('prices Imagen 4 exactly from generated image count', () => {
+  it('leaves legacy image_generate usage records unpriced after Imagen removal', () => {
     const record: ApiUsageRecord = {
       timestamp: Date.now(),
-      modelId: 'imagen-4.0-generate-001',
+      modelId: 'legacy-image-generate',
       promptTokens: 0,
       completionTokens: 0,
       totalTokens: 0,
@@ -105,7 +105,7 @@ describe('calculateApiUsageRecordPriceUsd', () => {
       },
     };
 
-    expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(0.08, 6);
+    expect(calculateApiUsageRecordPriceUsd(record)).toBeNull();
   });
 
   it('prices Gemini 3.1 Pro exactly when modality evidence exists', () => {

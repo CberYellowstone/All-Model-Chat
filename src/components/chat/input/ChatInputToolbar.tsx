@@ -1,10 +1,9 @@
 import React from 'react';
 import { AddFileByIdInput } from './toolbar/AddFileByIdInput';
 import { AddUrlInput } from './toolbar/AddUrlInput';
-import { ImagenAspectRatioSelector } from './toolbar/ImagenAspectRatioSelector';
+import { AspectRatioSelector } from './toolbar/AspectRatioSelector';
 import { ImageSizeSelector } from './toolbar/ImageSizeSelector';
 import { ImageOutputModeSelector } from './toolbar/ImageOutputModeSelector';
-import { PersonGenerationSelector } from './toolbar/PersonGenerationSelector';
 import { QuadImageToggle } from './toolbar/QuadImageToggle';
 import { TtsVoiceSelector } from './toolbar/TtsVoiceSelector';
 import { LanguageDirectionSelector } from './toolbar/LanguageDirectionSelector';
@@ -41,7 +40,6 @@ const ChatInputToolbarComponent: React.FC = () => {
   const {
     isImageGenerationModel,
     isGemini3ImageModel,
-    isRealImagenModel,
     isTtsModel,
     isNativeAudioModel,
     isLiveTranslate,
@@ -54,8 +52,6 @@ const ChatInputToolbarComponent: React.FC = () => {
   const setImageSize = useChatStore((state) => state.setImageSize);
   const imageOutputMode = useChatStore((state) => state.imageOutputMode);
   const setImageOutputMode = useChatStore((state) => state.setImageOutputMode);
-  const personGeneration = useChatStore((state) => state.personGeneration);
-  const setPersonGeneration = useChatStore((state) => state.setPersonGeneration);
   const fileError = useChatStore((state) => state.appFileError);
   const ttsVoice = currentChatSettings.ttsVoice;
   const mediaResolution = currentChatSettings.mediaResolution;
@@ -65,8 +61,7 @@ const ChatInputToolbarComponent: React.FC = () => {
     setCurrentChatSettings((prev) => ({ ...prev, mediaResolution: resolution }));
   const showAspectRatio = (isImageGenerationModel || isGemini3ImageModel) && !!aspectRatio;
   const showImageSize = supportedImageSizes && supportedImageSizes.length > 0 && !!imageSize;
-  const showImageOutputMode = isImageGenerationModel && !isRealImagenModel && !!imageOutputMode;
-  const showPersonGeneration = isRealImagenModel && !!personGeneration;
+  const showImageOutputMode = isImageGenerationModel && !!imageOutputMode;
   const showQuadToggle = (isImageGenerationModel || isGemini3ImageModel) && generateQuadImages !== undefined;
 
   // Allow voice selection for TTS and Native Audio (Live) models, except Live Translate
@@ -83,7 +78,6 @@ const ChatInputToolbarComponent: React.FC = () => {
     showAspectRatio ||
     showImageSize ||
     showImageOutputMode ||
-    showPersonGeneration ||
     showQuadToggle ||
     canShowTtsVoice ||
     canShowLanguageDirection ||
@@ -97,7 +91,6 @@ const ChatInputToolbarComponent: React.FC = () => {
       {(showAspectRatio ||
         showImageSize ||
         showImageOutputMode ||
-        showPersonGeneration ||
         showQuadToggle ||
         canShowTtsVoice ||
         canShowLanguageDirection ||
@@ -140,7 +133,7 @@ const ChatInputToolbarComponent: React.FC = () => {
             />
           )}
           {showAspectRatio && (
-            <ImagenAspectRatioSelector
+            <AspectRatioSelector
               aspectRatio={aspectRatio!}
               setAspectRatio={setAspectRatio!}
               supportedRatios={supportedAspectRatios}
@@ -155,9 +148,6 @@ const ChatInputToolbarComponent: React.FC = () => {
           )}
           {showImageOutputMode && (
             <ImageOutputModeSelector imageOutputMode={imageOutputMode!} setImageOutputMode={setImageOutputMode!} />
-          )}
-          {showPersonGeneration && (
-            <PersonGenerationSelector personGeneration={personGeneration!} setPersonGeneration={setPersonGeneration!} />
           )}
           {showQuadToggle && <QuadImageToggle enabled={generateQuadImages!} onToggle={onToggleQuadImages!} />}
         </div>

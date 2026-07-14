@@ -16,7 +16,6 @@ import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import { getThirdPartyProviderModelId } from '@/utils/thirdPartyApiProviders';
 
 import { ensureFilesApiReferences, formatFileReferenceErrorMessage } from './fileApiReference';
-import { sendImageGenerationMessage } from './imageGenerationStrategy';
 import { sendImageEditMessage } from './imageEditStrategy';
 import { prepareFilesForOpenAICompatibleMode } from './openaiCompatibleFiles';
 import { validateMessageBeforeSend } from './sendMessageValidation';
@@ -114,12 +113,11 @@ export const useMessageSender = (props: MessageSenderProps) => {
         : sessionToUpdate.modelId;
       const capabilities = getModelCapabilities(activeModelId);
       const isTtsModel = capabilities.isTtsModel;
-      const isRealImagenModel = capabilities.isRealImagenModel;
       const isImageEditModel = capabilities.isFlashImageModel;
       const isGemini3Image = capabilities.isGemini3ImageModel;
       const permissions = capabilities.permissions ?? {
-        canAcceptAttachments: !isRealImagenModel,
-        requiresTextPrompt: isTtsModel || isRealImagenModel || isImageEditModel || isGemini3Image,
+        canAcceptAttachments: !isTtsModel && !capabilities.isNativeAudioModel,
+        requiresTextPrompt: isTtsModel || isImageEditModel || isGemini3Image,
       };
 
       logService.info(`Sending message with model ${activeModelId}`, {
@@ -206,28 +204,6 @@ export const useMessageSender = (props: MessageSenderProps) => {
           appSettings,
           currentChatSettings: sessionToUpdate,
           text: textToUse.trim(),
-          shouldLockKey,
-          updateAndPersistSessions,
-          setActiveSessionId,
-          runMessageLifecycle,
-          t,
-        });
-        if (editingMessageId) setEditingMessageId(null);
-        return;
-      }
-
-      if (isRealImagenModel) {
-        await sendImageGenerationMessage({
-          keyToUse,
-          activeSessionId,
-          generationId,
-          abortController: newAbortController,
-          appSettings,
-          currentChatSettings: sessionToUpdate,
-          text: textToUse.trim(),
-          aspectRatio,
-          imageSize,
-          personGeneration,
           shouldLockKey,
           updateAndPersistSessions,
           setActiveSessionId,

@@ -61,23 +61,27 @@ describe('naming and structure optimization guardrails', () => {
     expect(modelCapabilitiesSource).toContain('export interface ModelCapabilities');
     expect(modelCapabilitiesSource).toContain('isImageGenerationModel');
     expect(modelCapabilitiesSource).not.toContain('isImagenModel');
+    expect(modelCapabilitiesSource).not.toContain('isRealImagenModel');
     expect(modelCapabilitiesSource).not.toContain('isImageModel =');
     expect(chatInputContextTypesSource).toContain("import type { ModelCapabilities } from '@/utils/modelCapabilities'");
     expect(chatInputContextTypesSource).toContain('isImageGenerationModel: boolean;');
+    expect(chatInputContextTypesSource).not.toContain('isRealImagenModel');
     expect(chatInputContextTypesSource).not.toContain('isImageModel: boolean;');
     expect(chatInputContextTypesSource).not.toContain('interface ChatInputCapabilities');
     expect(chatInputAvailabilitySource).toContain("import type { ModelCapabilities } from '@/utils/modelCapabilities'");
     expect(chatInputAvailabilitySource).not.toContain('interface ChatInputCapabilities');
   });
 
-  it('splits TTS and image generation sender strategies by media type', () => {
+  it('splits TTS and image edit sender strategies by media type', () => {
     const useMessageSenderSource = readProjectFile('src/features/message-sender/useMessageSender.ts');
 
     expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/ttsStrategy.ts'))).toBe(true);
-    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageGenerationStrategy.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageEditStrategy.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageGenerationStrategy.ts'))).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/ttsImagenStrategy.ts'))).toBe(false);
     expect(useMessageSenderSource).toContain("from './ttsStrategy'");
-    expect(useMessageSenderSource).toContain("from './imageGenerationStrategy'");
+    expect(useMessageSenderSource).toContain("from './imageEditStrategy'");
+    expect(useMessageSenderSource).not.toContain('imageGenerationStrategy');
     expect(useMessageSenderSource).not.toContain('ttsImagenStrategy');
     expect(useMessageSenderSource).not.toContain('sendTtsImagenMessage');
   });

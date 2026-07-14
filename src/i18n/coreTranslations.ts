@@ -20,8 +20,8 @@ const shellFeatureTranslations: TranslationMap = {
   mediaResolution_high: { en: 'High (Detail)', zh: '高（细节）' },
   mediaResolution_ultra_high: { en: 'Ultra High (Images only)', zh: '超高（仅限图片）' },
   settings_generateQuadImages_tooltip: {
-    en: 'When enabled, prompts sent to an Imagen model will generate four independent image variations at once. This will consume more API credits.',
-    zh: '启用后，使用 Imagen 模型将一次性生成四张独立的图片变体。这将消耗更多 API 用量。',
+    en: 'When enabled, image-generation prompts will produce four independent variations at once. This will consume more API credits.',
+    zh: '启用后，图片生成提示词将一次性生成四张独立变体。这将消耗更多 API 用量。',
   },
   aboutUpdateReady: { en: 'Update ready to refresh', zh: '发现可用更新' },
   pwaUpdateRefreshPrompt: {

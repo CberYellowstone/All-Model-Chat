@@ -94,8 +94,8 @@ const modelSettings = {
   },
   settingsGenerateQuadImagesLabel: { en: 'Quad Image Generation', zh: '四图生成模式' },
   settingsGenerateQuadImagesTooltip: {
-    en: 'When enabled, prompts sent to an Imagen model will generate four independent image variations at once. This will consume more API credits.',
-    zh: '启用后，使用 Imagen 模型将一次性生成四张独立的图片变体。这将消耗更多 API 用量。',
+    en: 'When enabled, image-generation prompts will produce four independent variations at once. This will consume more API credits.',
+    zh: '启用后，图片生成提示词将一次性生成四张独立变体。这将消耗更多 API 用量。',
   },
   settingsLiveArtifactsSystemPromptLabel: { en: 'Live Artifacts Prompt', zh: 'Live Artifacts 提示词' },
   settingsLiveArtifactsSystemPromptPlaceholder: {

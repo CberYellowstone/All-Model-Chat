@@ -5,12 +5,6 @@ const TOKENS_PER_MILLION = 1_000_000;
 /** Gemini 3.1 Pro applies higher per-token rates once combined prompt+cache tokens exceed this threshold. */
 const PRO_MODEL_TIER_THRESHOLD_TOKENS = 200_000;
 
-const IMAGE_GENERATION_PRICING: Record<string, { perImage: number } | null> = {
-  'imagen-4.0-fast-generate-001': { perImage: 0.02 },
-  'imagen-4.0-generate-001': { perImage: 0.04 },
-  'imagen-4.0-ultra-generate-001': { perImage: 0.06 },
-};
-
 const MODALITY_TEXT_PRICING: Record<
   string,
   {
@@ -79,12 +73,10 @@ const hasAnyDetails = (details: ApiUsageModalityTokenCount[] | undefined) =>
 const calculateFromExactPricing = (modelId: string, exactPricing: ApiUsageExactPricing): number | null => {
   const normalizedModelId = normalizeModelId(modelId);
 
+  // Per-image Imagen pricing was removed with Imagen model support. Historical
+  // image_generate usage records stay unpriced.
   if (exactPricing.requestKind === 'image_generate') {
-    const imagePricing = IMAGE_GENERATION_PRICING[normalizedModelId];
-    if (!imagePricing || !exactPricing.generatedImageCount) {
-      return null;
-    }
-    return exactPricing.generatedImageCount * imagePricing.perImage;
+    return null;
   }
 
   // 'tts' requestKind intentionally falls through to the modality table, which has

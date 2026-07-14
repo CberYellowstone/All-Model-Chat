@@ -2,7 +2,6 @@ import { Box, Sparkles } from 'lucide-react';
 
 import geminiIconUrl from '@/assets/model-icons/gemini.svg';
 import gemmaIconUrl from '@/assets/model-icons/gemma.svg';
-import imagenIconUrl from '@/assets/model-icons/imagen.svg';
 import nanoBananaIconUrl from '@/assets/model-icons/nanobanana.svg';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import { type ModelOption, type ThirdPartyProviderId } from '@/types';
@@ -21,20 +20,18 @@ const THIRD_PARTY_PROVIDER_ICON_COLOR: Partial<Record<ThirdPartyProviderId, stri
   custom: 'text-slate-500 dark:text-slate-400',
 };
 
-type ModelBrandIconKey = 'gemini' | 'gemma' | 'nanobanana' | 'imagen';
+type ModelBrandIconKey = 'gemini' | 'gemma' | 'nanobanana';
 
 const BRAND_ICON_SRC: Record<ModelBrandIconKey, string> = {
   gemini: geminiIconUrl,
   gemma: gemmaIconUrl,
   nanobanana: nanoBananaIconUrl,
-  imagen: imagenIconUrl,
 };
 
 const BRAND_ICON_ALT: Record<ModelBrandIconKey, string> = {
   gemini: 'Gemini',
   gemma: 'Gemma',
   nanobanana: 'Nano Banana',
-  imagen: 'Imagen',
 };
 
 const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIconKey; size?: number }) => (
@@ -53,17 +50,12 @@ const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIc
 const resolveBrandIcon = (model: ModelOption): ModelBrandIconKey | null => {
   const normalizedId = model.id.toLowerCase();
   const {
-    isRealImagenModel,
     isGemini3ImageModel,
     isGemini31FlashImageModel,
     isFlashImageModel,
     isImageGenerationModel,
     isGemmaModel,
   } = getCachedModelCapabilities(model.id);
-
-  if (isRealImagenModel || normalizedId.includes('imagen')) {
-    return 'imagen';
-  }
 
   // Nano Banana family: Gemini native image models (Pro / 2 / Lite / legacy Flash Image)
   if (

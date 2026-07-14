@@ -21,10 +21,9 @@ describe('sortModels', () => {
     expect(result[0].name).toBe('A Model');
   });
 
-  it('sorts pinned by category weight: standard < native-audio < tts < image < imagen', () => {
+  it('sorts pinned by category weight: standard < native-audio < tts < image', () => {
     const models: ModelOption[] = [
       { id: 'gemini-tts', name: 'TTS', isPinned: true },
-      { id: 'gemini-imagen', name: 'Imagen', isPinned: true },
       { id: 'gemini-flash', name: 'Flash', isPinned: true },
       { id: 'gemini-image', name: 'Image', isPinned: true },
       { id: 'gemini-native-audio', name: 'Audio', isPinned: true },
@@ -35,7 +34,6 @@ describe('sortModels', () => {
       'gemini-native-audio',
       'gemini-tts',
       'gemini-image',
-      'gemini-imagen',
     ]);
   });
 

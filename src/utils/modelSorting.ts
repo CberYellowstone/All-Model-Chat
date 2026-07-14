@@ -53,7 +53,6 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
   const getCategoryWeight = (id: string) => {
     const capabilities = getModelCapabilities(id);
     if (capabilities.isTtsModel) return 3;
-    if (capabilities.isRealImagenModel) return 5;
     if (isImageGenerationModel(id)) return 4;
     if (capabilities.isNativeAudioModel) return 2;
     return 1;

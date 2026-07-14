@@ -104,21 +104,6 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     name: 'Nano Banana Lite',
     groups: ['image'],
   },
-  {
-    id: 'imagen-4.0-fast-generate-001',
-    name: 'Imagen 4.0 Fast',
-    groups: ['image'],
-  },
-  {
-    id: 'imagen-4.0-generate-001',
-    name: 'Imagen 4.0',
-    groups: ['image'],
-  },
-  {
-    id: 'imagen-4.0-ultra-generate-001',
-    name: 'Imagen 4.0 Ultra',
-    groups: ['image'],
-  },
 ];
 
 const getRegisteredModels = (group: ModelRegistryGroup) =>
