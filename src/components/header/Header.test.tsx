@@ -118,8 +118,9 @@ describe('Header', () => {
 
     const header = renderer.container.querySelector('header');
 
-    expect(header?.className).toContain('py-[0.32rem]');
-    expect(header?.className).toContain('sm:py-[0.48rem]');
+    expect(header?.className).toContain('py-[0.4rem]');
+    expect(header?.className).toContain('sm:py-[0.52rem]');
+    expect(header?.className).not.toContain('border-b');
     expect(header?.className.split(/\s+/)).not.toContain('p-2');
     expect(header?.className.split(/\s+/)).not.toContain('sm:p-3');
   });

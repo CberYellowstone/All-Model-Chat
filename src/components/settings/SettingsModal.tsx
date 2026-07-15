@@ -14,6 +14,13 @@ import {
   splitScopedSettingsUpdate,
 } from '@/components/layout/mainContentModels';
 import { useSettingsTransferActions } from '@/hooks/data-management/useSettingsTransferActions';
+import { X } from 'lucide-react';
+import {
+  SETTINGS_SEGMENTED_ACTIVE_CLASS,
+  SETTINGS_SEGMENTED_IDLE_CLASS,
+  SETTINGS_SEGMENTED_TRACK_CLASS,
+} from '@/constants/designTokens';
+import { MODAL_CLOSE_BUTTON_CLASS } from '@/constants/buttonClasses';
 
 interface SettingsModalProps extends SettingsTransferProps {
   isOpen: boolean;
@@ -178,39 +185,47 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onScroll={handleContentScroll}
             className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8"
           >
-            <div className="hidden md:block max-w-3xl mx-auto w-full pb-4 md:pb-6">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold text-[var(--theme-text-primary)]">
+            <div className="max-w-3xl mx-auto w-full pb-4 md:pb-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="hidden md:block text-xl font-semibold text-[var(--theme-text-primary)] min-w-0 truncate">
                   {activeTabLabelKey ? t(activeTabLabelKey) : ''}
                 </h2>
-                {activeTabUsesScope && (
-                  <div className="flex items-center rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/40 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setSettingsScope('defaults')}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                        visibleScope === 'defaults'
-                          ? 'bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] shadow-sm'
-                          : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
-                      }`}
-                    >
-                      {t('settingsScopeDefaults')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => canEditCurrentChat && setSettingsScope('currentChat')}
-                      disabled={!canEditCurrentChat}
-                      title={!canEditCurrentChat ? t('settingsScopeCurrentChatUnavailable') : undefined}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                        visibleScope === 'currentChat'
-                          ? 'bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] shadow-sm'
-                          : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
-                      }`}
-                    >
-                      {t('settingsScopeCurrentChat')}
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+                  {activeTabUsesScope && (
+                    <div className={SETTINGS_SEGMENTED_TRACK_CLASS} role="group" aria-label={t('settingsScopeDefaults')}>
+                      <button
+                        type="button"
+                        onClick={() => setSettingsScope('defaults')}
+                        className={
+                          visibleScope === 'defaults' ? SETTINGS_SEGMENTED_ACTIVE_CLASS : SETTINGS_SEGMENTED_IDLE_CLASS
+                        }
+                      >
+                        {t('settingsScopeDefaults')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => canEditCurrentChat && setSettingsScope('currentChat')}
+                        disabled={!canEditCurrentChat}
+                        title={!canEditCurrentChat ? t('settingsScopeCurrentChatUnavailable') : undefined}
+                        className={
+                          visibleScope === 'currentChat'
+                            ? SETTINGS_SEGMENTED_ACTIVE_CLASS
+                            : SETTINGS_SEGMENTED_IDLE_CLASS
+                        }
+                      >
+                        {t('settingsScopeCurrentChat')}
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={`${MODAL_CLOSE_BUTTON_CLASS} hidden md:inline-flex`}
+                    aria-label={t('close')}
+                  >
+                    <X size={18} strokeWidth={2} />
+                  </button>
+                </div>
               </div>
             </div>
             <SettingsContent

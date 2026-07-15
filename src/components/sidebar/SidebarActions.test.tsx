@@ -117,8 +117,8 @@ describe('SidebarActions', () => {
       expect(shortcut.className).not.toContain('border');
     }
     for (const actionRow of actionRows) {
-      expect(actionRow.className).toContain('h-8');
-      expect(actionRow.className).toContain('rounded-full');
+      expect(actionRow.className).toContain('h-9');
+      expect(actionRow.className).toContain('rounded-lg');
       expect(actionRow.className).not.toContain('hover:border');
       expect(actionRow).not.toHaveAttribute('title');
     }

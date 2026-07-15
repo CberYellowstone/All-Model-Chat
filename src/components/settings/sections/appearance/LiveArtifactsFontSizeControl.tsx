@@ -8,6 +8,11 @@ import {
   LIVE_ARTIFACTS_CUSTOM_FONT_SIZE_MIN,
   clampLiveArtifactsCustomFontSize,
 } from '@/utils/liveArtifactsFontSize';
+import {
+  SETTINGS_SECTION_CARD_CLASS,
+  SETTINGS_SECTION_LABEL_CLASS,
+  SETTINGS_VALUE_BADGE_CLASS,
+} from '@/constants/designTokens';
 
 interface LiveArtifactsFontSizeControlProps {
   settings: AppSettings;
@@ -19,12 +24,12 @@ export const LiveArtifactsFontSizeControl: React.FC<LiveArtifactsFontSizeControl
   const customFontSize = clampLiveArtifactsCustomFontSize(settings.liveArtifactsCustomFontSize ?? 16);
 
   return (
-    <div className="space-y-3">
+    <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-3`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <label
             htmlFor="live-artifacts-custom-font-size"
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]"
+            className={`flex items-center gap-2 ${SETTINGS_SECTION_LABEL_CLASS}`}
           >
             <Type size={14} strokeWidth={1.5} />
             {t('settingsLiveArtifactsFontSize')}
@@ -33,9 +38,7 @@ export const LiveArtifactsFontSizeControl: React.FC<LiveArtifactsFontSizeControl
             <Info size={14} className="text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
           </Tooltip>
         </div>
-        <span className="rounded-md bg-[var(--theme-bg-tertiary)] px-2 py-0.5 font-mono text-sm text-[var(--theme-text-link)]">
-          {customFontSize}px
-        </span>
+        <span className={SETTINGS_VALUE_BADGE_CLASS}>{customFontSize}px</span>
       </div>
       <input
         id="live-artifacts-custom-font-size"

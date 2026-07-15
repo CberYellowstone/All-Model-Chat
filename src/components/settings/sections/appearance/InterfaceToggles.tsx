@@ -2,6 +2,7 @@ import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { ToggleItem } from '@/components/shared/ToggleItem';
 import { type AppSettings } from '@/types';
+import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/constants/designTokens';
 
 interface InterfaceTogglesProps {
   settings: AppSettings;
@@ -33,12 +34,10 @@ export const InterfaceToggles: React.FC<InterfaceTogglesProps> = ({ settings, on
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] mb-2">
-          {t('settingsInputToolbar')}
-        </label>
-        <div className="grid grid-cols-1 gap-1">
+    <div className="space-y-4">
+      <div className={SETTINGS_SECTION_CARD_CLASS}>
+        <label className={`block ${SETTINGS_SECTION_LABEL_CLASS} mb-2`}>{t('settingsInputToolbar')}</label>
+        <div className="divide-y divide-[var(--theme-border-secondary)]/40">
           <ToggleItem
             label={t('settingsShowInputTranslationButtonLabel')}
             checked={settings.showInputTranslationButton ?? false}
@@ -60,11 +59,9 @@ export const InterfaceToggles: React.FC<InterfaceTogglesProps> = ({ settings, on
         </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] mb-2">
-          {t('settingsBehaviorDisplay')}
-        </label>
-        <div className="grid grid-cols-1 gap-1">
+      <div className={SETTINGS_SECTION_CARD_CLASS}>
+        <label className={`block ${SETTINGS_SECTION_LABEL_CLASS} mb-2`}>{t('settingsBehaviorDisplay')}</label>
+        <div className="divide-y divide-[var(--theme-border-secondary)]/40">
           <ToggleItem
             label={t('headerStream')}
             checked={settings.isStreamingEnabled}

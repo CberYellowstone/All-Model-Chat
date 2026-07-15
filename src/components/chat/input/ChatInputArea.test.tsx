@@ -127,8 +127,8 @@ describe('ChatInputArea default spacing', () => {
     const source = fs.readFileSync(chatInputAreaLayoutPath, 'utf8');
 
     expect(source).toContain('relative z-10 mx-5 mb-[-22px] -translate-y-1.5');
-    expect(source).toContain(
-      'shadow-lg transition-colors duration-200 focus-within:border-[var(--theme-border-focus)] relative z-20',
-    );
+    expect(source).toContain('focus-within:border-[var(--theme-border-focus)]');
+    expect(source).toContain('relative z-20');
+    expect(source).toContain('rounded-[1.625rem]');
   });
 });

@@ -84,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'} px-2 py-[0.32rem] sm:px-3 sm:py-[0.48rem] flex items-center justify-between gap-2 sm:gap-3 flex-shrink-0 relative z-20`}
+      className={`${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'} px-2 py-[0.4rem] sm:px-3 sm:py-[0.52rem] flex items-center justify-between gap-2 sm:gap-3 flex-shrink-0 relative z-20`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <button

@@ -43,6 +43,10 @@ const ONYX_THEME_COLORS: ThemeColors = {
   scrollbarThumb: '#27272a',
   scrollbarTrack: 'transparent',
 
+  // Selection
+  selectionBg: 'rgba(59, 130, 246, 0.4)',
+  selectionText: '#f4f4f5',
+
   // Icons
   iconUser: '#ffffff',
   iconModel: '#38bdf8', // Sky 400
@@ -60,17 +64,17 @@ const ONYX_THEME_COLORS: ThemeColors = {
 const PEARL_THEME_COLORS: ThemeColors = {
   // Backgrounds
   bgPrimary: '#FFFFFF',
-  bgSecondary: '#f9f9f9',
-  bgTertiary: '#ECECF1',
-  bgAccent: '#40414F',
+  bgSecondary: '#f7f7f8',
+  bgTertiary: '#ececf1',
+  bgAccent: '#343541',
   bgAccentHover: '#202123',
   bgDanger: '#DF3434',
   bgDangerHover: '#B32929',
   bgInput: '#FFFFFF',
   bgCodeBlock: '#F7F7F8',
   bgCodeBlockHeader: 'rgba(236, 236, 241, 0.9)',
-  bgUserMessage: '#f3f4f6', // Light Gray
-  bgModelMessage: '#FFFFFF', // White
+  bgUserMessage: '#eef0f4', // Slightly deeper gray for contrast on white
+  bgModelMessage: '#FFFFFF',
   bgErrorMessage: '#FEE',
   bgSuccess: 'rgba(22, 163, 74, 0.1)',
   textSuccess: '#16a34a',
@@ -79,39 +83,43 @@ const PEARL_THEME_COLORS: ThemeColors = {
   bgWarning: 'rgba(212, 167, 44, 0.1)',
   textWarning: '#825F0A',
 
-  // Text - Darkened significantly for high contrast
-  textPrimary: '#000000', // Pure Black
-  textSecondary: '#000000', // Pure Black (was #333333)
-  textTertiary: '#666666', // Dark Gray (was #333333, lightened slightly for placeholder distinction)
+  // Text — restored hierarchy (primary / secondary / tertiary)
+  textPrimary: '#18181b', // Zinc 900
+  textSecondary: '#52525b', // Zinc 600
+  textTertiary: '#71717a', // Zinc 500
   textAccent: '#FFFFFF',
-  textDanger: '#DF3434', // Red (was #FFFFFF, which is invisible on light backgrounds)
-  textLink: '#2563eb', // Blue 600 (was #000000)
-  textCode: '#000000', // Black (was #40414f)
-  bgUserMessageText: '#000000',
-  bgModelMessageText: '#000000',
+  textDanger: '#DF3434',
+  textLink: '#2563eb',
+  textCode: '#18181b',
+  bgUserMessageText: '#18181b',
+  bgModelMessageText: '#18181b',
   bgErrorMessageText: '#DF3434',
 
   // Borders
-  borderPrimary: '#E5E5E5',
-  borderSecondary: '#D9D9E3',
-  borderFocus: '#40414F',
+  borderPrimary: '#e8e8ed',
+  borderSecondary: '#d9d9e3',
+  borderFocus: '#343541',
 
   // Scrollbar
   scrollbarThumb: '#D9D9E3',
   scrollbarTrack: '#F7F7F8',
 
+  // Selection
+  selectionBg: 'rgba(37, 99, 235, 0.22)',
+  selectionText: '#0f172a',
+
   // Icons
-  iconUser: '#202123',
-  iconModel: '#10a37f',
+  iconUser: '#343541',
+  iconModel: '#0d9488',
   iconError: '#DF3434',
-  iconThought: '#323232',
-  iconSettings: '#000000', // Pure Black (was #323232)
+  iconThought: '#71717a',
+  iconSettings: '#52525b',
   iconClearChat: '#FFFFFF',
   iconSend: '#FFFFFF',
-  iconAttach: '#323232',
+  iconAttach: '#52525b',
   iconStop: '#FFFFFF',
-  iconEdit: '#323232',
-  iconHistory: '#000000', // Pure Black (was #323232)
+  iconEdit: '#52525b',
+  iconHistory: '#52525b',
 };
 
 const GRAPHITE_THEME_COLORS: ThemeColors = {
@@ -156,6 +164,10 @@ const GRAPHITE_THEME_COLORS: ThemeColors = {
   // Scrollbar
   scrollbarThumb: '#626262',
   scrollbarTrack: 'transparent',
+
+  // Selection
+  selectionBg: 'rgba(212, 212, 212, 0.45)',
+  selectionText: '#171717',
 
   // Icons
   iconUser: '#ffffff',

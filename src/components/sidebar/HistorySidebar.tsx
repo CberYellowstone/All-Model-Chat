@@ -99,7 +99,9 @@ const SessionListGroup = ({
 }) => {
   return (
     <div>
-      <div className="px-3 pt-4 pb-1 text-sm font-medium text-[var(--theme-text-primary)]">{title}</div>
+      <div className="px-3 pt-4 pb-1 text-xs font-medium tracking-wide text-[var(--theme-text-tertiary)]">
+        {title}
+      </div>
       <LimitedSessionList sessions={sessions} sessionItemProps={sessionItemProps} />
     </div>
   );

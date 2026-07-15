@@ -41,6 +41,10 @@ export interface ThemeColors {
   scrollbarThumb: string;
   scrollbarTrack: string;
 
+  // Text selection (theme-aware highlight)
+  selectionBg: string;
+  selectionText: string;
+
   // Icons
   iconUser: string;
   iconModel: string;

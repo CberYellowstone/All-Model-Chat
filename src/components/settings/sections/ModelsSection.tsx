@@ -178,7 +178,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
             onUpdateSetting={updateSetting}
           />
 
-          <div className="rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)]/30 p-4">
+          <div className="rounded-xl border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-secondary)]/35 p-4">
             <button
               type="button"
               onClick={() => setIsSafetyExpanded((prev) => !prev)}

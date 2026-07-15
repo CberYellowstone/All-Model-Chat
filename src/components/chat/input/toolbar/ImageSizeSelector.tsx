@@ -1,5 +1,6 @@
 import React from 'react';
-import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
+import { useI18n } from '@/contexts/I18nContext';
+import { ToolbarSegmentedControl } from './ToolbarSegmentedControl';
 
 interface ImageSizeSelectorProps {
   imageSize: string;
@@ -7,27 +8,27 @@ interface ImageSizeSelectorProps {
   supportedSizes?: string[];
 }
 
-export const ImageSizeSelector: React.FC<ImageSizeSelectorProps> = ({ imageSize, setImageSize, supportedSizes }) => {
+export const ImageSizeSelector: React.FC<ImageSizeSelectorProps> = ({
+  imageSize,
+  setImageSize,
+  supportedSizes,
+}) => {
+  const { t } = useI18n();
   const sizes = supportedSizes || [];
-  if (sizes.length === 0) return null;
+  // Single fixed size is not a choice — hide the control.
+  if (sizes.length <= 1) return null;
 
   return (
-    <div className="mb-2">
-      <div className="flex items-center gap-x-2">
-        {sizes.map((sizeValue) => {
-          const isSelected = imageSize === sizeValue;
-          return (
-            <button
-              key={sizeValue}
-              onClick={() => setImageSize(sizeValue)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS} ${isSelected ? 'bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] border border-[var(--theme-border-secondary)]' : 'text-[var(--theme-text-tertiary)] hover:bg-[var(--theme-bg-secondary)]/50'}`}
-              title={`Set resolution to ${sizeValue}`}
-            >
-              {sizeValue}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <ToolbarSegmentedControl
+      aria-label={t('imageSizeTitle')}
+      value={imageSize}
+      onChange={setImageSize}
+      options={sizes.map((sizeValue) => ({
+        value: sizeValue,
+        label: sizeValue,
+        title: `${t('imageSizeSetTitle')} ${sizeValue}`,
+        'aria-label': `${t('imageSizeSetTitle')} ${sizeValue}`,
+      }))}
+    />
   );
 };

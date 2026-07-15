@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, MousePointer2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { SUGGESTIONS_KEYS } from '@/constants/welcomeSuggestions';
+import { SUGGESTION_CHIP_ACTIVE_CLASS, SUGGESTION_CHIP_CLASS } from '@/constants/designTokens';
 import { SuggestionIcon } from './SuggestionIcon';
 import { type translations } from '@/i18n/translations';
 
@@ -60,7 +61,7 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
 
   return (
     <div
-      className="relative group/suggestions mb-1"
+      className="relative group/suggestions mb-3 sm:mb-4"
       onMouseEnter={() => setIsSuggestionsHovered(true)}
       onMouseLeave={() => setIsSuggestionsHovered(false)}
     >
@@ -81,14 +82,7 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                   onSuggestionClick(text);
                 }
               }}
-              className="
-                                flex items-center gap-[0.3rem] sm:gap-[0.4rem] px-[0.6rem] py-[0.4rem] sm:px-[0.8rem] sm:py-[0.5rem] rounded-lg sm:rounded-xl
-                                bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)]
-                                border border-[var(--theme-border-secondary)]
-                                text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]
-                                text-xs sm:text-sm font-medium whitespace-nowrap
-                                transition-all shadow-sm
-                            "
+              className={SUGGESTION_CHIP_CLASS}
             >
               <SuggestionIcon iconName={suggestion.icon} />
               <span>{t(suggestion.titleKey as keyof typeof translations)}</span>
@@ -100,18 +94,9 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                   <button
                     type="button"
                     onClick={onToggleBBox}
-                    className={`
-                                            flex items-center gap-[0.3rem] sm:gap-[0.4rem] px-[0.6rem] py-[0.4rem] sm:px-[0.8rem] sm:py-[0.5rem] rounded-lg sm:rounded-xl
-                                            border border-[var(--theme-border-secondary)]
-                                            text-xs sm:text-sm font-medium whitespace-nowrap
-                                            transition-all shadow-sm
-                                            ${
-                                              isBBoxModeActive
-                                                ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] border-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)]'
-                                                : 'bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
-                                            }
-                                        `}
+                    className={isBBoxModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
                     aria-label={t('bboxButtonTitle')}
+                    aria-pressed={!!isBBoxModeActive}
                     title={t('bboxButtonTitle')}
                   >
                     <SuggestionIcon iconName="Scan" />
@@ -122,18 +107,9 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                   <button
                     type="button"
                     onClick={onToggleGuide}
-                    className={`
-                                            flex items-center gap-[0.3rem] sm:gap-[0.4rem] px-[0.6rem] py-[0.4rem] sm:px-[0.8rem] sm:py-[0.5rem] rounded-lg sm:rounded-xl
-                                            border border-[var(--theme-border-secondary)]
-                                            text-xs sm:text-sm font-medium whitespace-nowrap
-                                            transition-all shadow-sm
-                                            ${
-                                              isGuideModeActive
-                                                ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] border-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)]'
-                                                : 'bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
-                                            }
-                                        `}
+                    className={isGuideModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
                     aria-label={t('guideButtonTitle')}
+                    aria-pressed={!!isGuideModeActive}
                     title={t('guideButtonTitle')}
                   >
                     <MousePointer2 size={13} />

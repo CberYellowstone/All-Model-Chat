@@ -40,15 +40,15 @@ body,
   flex-direction: column;
 }
 
-/* Custom Selection Color (Yellow Note Style) */
+/* Theme-aware text selection */
 ::selection {
-  background-color: #fde047; /* Yellow-300 */
-  color: #1f2937; /* Gray-800 for readability */
+  background-color: var(--theme-selection-bg, rgba(37, 99, 235, 0.22));
+  color: var(--theme-selection-text, #0f172a);
 }
 
 ::-moz-selection {
-  background-color: #fde047;
-  color: #1f2937;
+  background-color: var(--theme-selection-bg, rgba(37, 99, 235, 0.22));
+  color: var(--theme-selection-text, #0f172a);
 }
 
 /* Custom Scrollbar */
@@ -120,7 +120,9 @@ body,
   bottom: calc(100% + 0.5rem);
   left: 0;
   opacity: 0;
-  transition: opacity 0.2s var(--ease-out-expo);
+  transition:
+    opacity 0.18s var(--ease-out-expo) 0.12s,
+    visibility 0s linear 0.3s;
   border: 1px solid var(--theme-border-secondary);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
   font-size: 0.75rem;
@@ -133,6 +135,9 @@ body,
 .tooltip-container:hover .tooltip-text {
   visibility: visible;
   opacity: 1;
+  transition:
+    opacity 0.18s var(--ease-out-expo) 0.12s,
+    visibility 0s linear 0s;
 }
 
 /* 

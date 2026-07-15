@@ -2,6 +2,11 @@ import React from 'react';
 import { Type } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { type AppSettings } from '@/types';
+import {
+  SETTINGS_SECTION_CARD_CLASS,
+  SETTINGS_SECTION_LABEL_CLASS,
+  SETTINGS_VALUE_BADGE_CLASS,
+} from '@/constants/designTokens';
 
 interface FontSizeControlProps {
   settings: AppSettings;
@@ -11,14 +16,12 @@ interface FontSizeControlProps {
 export const FontSizeControl: React.FC<FontSizeControlProps> = ({ settings, onUpdate }) => {
   const { t } = useI18n();
   return (
-    <div className="space-y-4">
+    <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-4`}>
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-2">
+        <label className={`${SETTINGS_SECTION_LABEL_CLASS} flex items-center gap-2`}>
           <Type size={14} strokeWidth={1.5} /> {t('settingsFontSize')}
         </label>
-        <span className="text-sm font-mono text-[var(--theme-text-link)] bg-[var(--theme-bg-tertiary)] px-2 py-0.5 rounded-md">
-          {settings.baseFontSize}px
-        </span>
+        <span className={SETTINGS_VALUE_BADGE_CLASS}>{settings.baseFontSize}px</span>
       </div>
       <input
         type="range"

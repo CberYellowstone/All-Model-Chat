@@ -88,7 +88,7 @@ export const ScenarioMessageList: React.FC<ScenarioMessageListProps> = ({
                                     rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-sm shadow-sm whitespace-pre-wrap break-words border transition-all
                                     ${
                                       isUser
-                                        ? 'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] border-transparent rounded-tr-sm'
+                                        ? 'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] border-[var(--theme-border-secondary)]/40'
                                         : 'bg-[var(--theme-bg-input)] border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] rounded-tl-sm hover:border-[var(--theme-border-focus)]'
                                     }
                                 `}

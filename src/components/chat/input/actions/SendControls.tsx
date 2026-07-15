@@ -58,16 +58,19 @@ export const SendControls: React.FC = () => {
 
   const isDisabled = !isLoading && !isUpload && !canSend;
 
-  let bgClass = 'bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)]';
+  // Ready = solid accent; empty = ghost outline so the primary action still reads as a control.
+  let bgClass =
+    'bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)] shadow-sm';
 
   if (isDisabled && !isUpload) {
-    bgClass = 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-tertiary)] cursor-not-allowed';
+    bgClass =
+      'bg-transparent border border-[var(--theme-border-secondary)] text-[var(--theme-text-tertiary)] cursor-not-allowed shadow-none';
   } else if (isStop) {
-    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)]';
+    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
   } else if (isEdit) {
-    bgClass = 'bg-amber-500 hover:bg-amber-600 text-white';
+    bgClass = 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm';
   } else if (isUpload) {
-    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)]';
+    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
   }
 
   const shapeClass = isStop ? '!rounded-[10px]' : '!rounded-full';
@@ -174,7 +177,7 @@ export const SendControls: React.FC = () => {
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         disabled={!isStop && isDisabled}
-        className={`${CHAT_INPUT_BUTTON_CLASS} ${SEND_BUTTON_SIZE_CLASS} ${bgClass} ${shapeClass} relative overflow-hidden transition-colors duration-150 shadow-sm`}
+        className={`${CHAT_INPUT_BUTTON_CLASS} ${SEND_BUTTON_SIZE_CLASS} ${bgClass} ${shapeClass} relative overflow-hidden transition-colors duration-150`}
         aria-label={label}
         title={title}
       >

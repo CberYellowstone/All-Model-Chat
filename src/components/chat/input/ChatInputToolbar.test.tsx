@@ -80,6 +80,7 @@ describe('ChatInputToolbar', () => {
     renderToolbar();
 
     expect(imageOutputModeSelectorMock).toHaveBeenCalled();
+    expect(renderer.container.querySelector('[data-testid="image-settings-cluster"]')).not.toBeNull();
   });
 
   it('hides image output mode selector for non-image models', () => {
@@ -91,5 +92,6 @@ describe('ChatInputToolbar', () => {
     renderToolbar();
 
     expect(imageOutputModeSelectorMock).not.toHaveBeenCalled();
+    expect(renderer.container.querySelector('[data-testid="image-settings-cluster"]')).toBeNull();
   });
 });

@@ -12,6 +12,7 @@ import { Clapperboard } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useChatInputToolbarContext } from './ChatInputContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { TOOLBAR_IMAGE_CLUSTER_CLASS } from '@/constants/designTokens';
 
 const ChatInputToolbarComponent: React.FC = () => {
   const { t } = useI18n();
@@ -60,9 +61,11 @@ const ChatInputToolbarComponent: React.FC = () => {
   const setMediaResolution = (resolution: typeof mediaResolution) =>
     setCurrentChatSettings((prev) => ({ ...prev, mediaResolution: resolution }));
   const showAspectRatio = (isImageGenerationModel || isGemini3ImageModel) && !!aspectRatio;
-  const showImageSize = supportedImageSizes && supportedImageSizes.length > 0 && !!imageSize;
+  // Only show size control when the user has a real choice.
+  const showImageSize = !!supportedImageSizes && supportedImageSizes.length > 1 && !!imageSize;
   const showImageOutputMode = isImageGenerationModel && !!imageOutputMode;
   const showQuadToggle = (isImageGenerationModel || isGemini3ImageModel) && generateQuadImages !== undefined;
+  const showImageCluster = showAspectRatio || showImageSize || showImageOutputMode || showQuadToggle;
 
   // Allow voice selection for TTS and Native Audio (Live) models, except Live Translate
   // which shows a language-direction selector instead.
@@ -87,30 +90,29 @@ const ChatInputToolbarComponent: React.FC = () => {
     showAddByUrlInput;
 
   return (
-    <div className={`flex flex-col gap-1.5 ${hasVisibleContent ? 'mb-1' : ''}`}>
-      {(showAspectRatio ||
-        showImageSize ||
-        showImageOutputMode ||
-        showQuadToggle ||
+    <div className={`flex flex-col gap-1.5 ${hasVisibleContent ? 'mb-1.5' : ''}`}>
+      {(showImageCluster ||
         canShowTtsVoice ||
         canShowLanguageDirection ||
-        canShowMediaResolution) && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        canShowMediaResolution ||
+        isTtsModel) && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
           {canShowTtsVoice && <TtsVoiceSelector ttsVoice={ttsVoice} setTtsVoice={setTtsVoice} />}
           {canShowLanguageDirection && <LanguageDirectionSelector />}
           {isTtsModel && (
             <button
+              type="button"
               onClick={onEditTtsContext}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${
+              className={`flex items-center gap-2 h-9 px-3 rounded-lg text-xs font-medium transition-colors duration-150 border focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${
                 ttsContext && ttsContext.trim()
-                  ? 'bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-link)] border-[var(--theme-border-focus)] font-medium'
+                  ? 'bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-link)] border-[var(--theme-border-focus)]'
                   : 'bg-[var(--theme-bg-input)] text-[var(--theme-text-primary)] border-[var(--theme-border-secondary)] hover:border-[var(--theme-border-focus)]'
               }`}
               title={t('ttsDirectorNotesTitle')}
             >
               <div className="flex items-center gap-2">
                 <Clapperboard
-                  size={16}
+                  size={14}
                   strokeWidth={1.5}
                   className={
                     ttsContext && ttsContext.trim()
@@ -132,24 +134,33 @@ const ChatInputToolbarComponent: React.FC = () => {
               isNativeAudioModel={isNativeAudioModel}
             />
           )}
-          {showAspectRatio && (
-            <AspectRatioSelector
-              aspectRatio={aspectRatio!}
-              setAspectRatio={setAspectRatio!}
-              supportedRatios={supportedAspectRatios}
-            />
+          {showImageCluster && (
+            <div className={TOOLBAR_IMAGE_CLUSTER_CLASS} data-testid="image-settings-cluster">
+              {showAspectRatio && (
+                <AspectRatioSelector
+                  aspectRatio={aspectRatio!}
+                  setAspectRatio={setAspectRatio!}
+                  supportedRatios={supportedAspectRatios}
+                />
+              )}
+              {showImageSize && (
+                <ImageSizeSelector
+                  imageSize={imageSize!}
+                  setImageSize={setImageSize!}
+                  supportedSizes={supportedImageSizes}
+                />
+              )}
+              {showImageOutputMode && (
+                <ImageOutputModeSelector
+                  imageOutputMode={imageOutputMode!}
+                  setImageOutputMode={setImageOutputMode!}
+                />
+              )}
+              {showQuadToggle && (
+                <QuadImageToggle enabled={generateQuadImages!} onToggle={onToggleQuadImages!} />
+              )}
+            </div>
           )}
-          {showImageSize && (
-            <ImageSizeSelector
-              imageSize={imageSize!}
-              setImageSize={setImageSize!}
-              supportedSizes={supportedImageSizes}
-            />
-          )}
-          {showImageOutputMode && (
-            <ImageOutputModeSelector imageOutputMode={imageOutputMode!} setImageOutputMode={setImageOutputMode!} />
-          )}
-          {showQuadToggle && <QuadImageToggle enabled={generateQuadImages!} onToggle={onToggleQuadImages!} />}
         </div>
       )}
       {fileError && (

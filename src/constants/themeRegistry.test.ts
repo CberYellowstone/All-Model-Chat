@@ -44,4 +44,18 @@ describe('themeRegistry', () => {
       graphite!.colors.textLink,
     ].forEach(expectNeutralGray);
   });
+
+  it('restores pearl text hierarchy and theme-aware selection tokens', () => {
+    const pearl = AVAILABLE_THEMES.find((theme) => theme.id === 'pearl');
+    const onyx = AVAILABLE_THEMES.find((theme) => theme.id === 'onyx');
+
+    expect(pearl).toBeDefined();
+    expect(onyx).toBeDefined();
+    expect(pearl!.colors.textPrimary).not.toBe(pearl!.colors.textSecondary);
+    expect(pearl!.colors.textSecondary).not.toBe(pearl!.colors.textTertiary);
+    expect(pearl!.colors.textPrimary).toBe('#18181b');
+    expect(pearl!.colors.textSecondary).toBe('#52525b');
+    expect(pearl!.colors.selectionBg).toBeTruthy();
+    expect(onyx!.colors.selectionBg).toContain('59, 130, 246');
+  });
 });

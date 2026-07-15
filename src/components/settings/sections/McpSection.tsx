@@ -359,7 +359,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                   </div>
                 )}
                 {capabilityState?.status === 'error' && (
-                  <div className="mt-4 rounded-md border border-[var(--theme-border-danger)] bg-[var(--theme-bg-danger)]/10 p-3 text-xs text-[var(--theme-text-danger)]">
+                  <div className="mt-4 rounded-md border border-[var(--theme-text-danger)]/30 bg-[var(--theme-bg-danger)]/10 p-3 text-xs text-[var(--theme-text-danger)]">
                     {capabilityState.error}
                   </div>
                 )}

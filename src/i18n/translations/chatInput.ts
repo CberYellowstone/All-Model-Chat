@@ -3,6 +3,8 @@ export const chatInputTranslations = {
   chatInputPlaceholder: { en: 'Ask anything...', zh: '询问任何问题' },
   chatInputTextareaAria: { en: 'Chat message input', zh: '聊天消息输入框' },
   aspectRatioTitle: { en: 'Aspect Ratio', zh: '宽高比' },
+  imageSizeTitle: { en: 'Image size', zh: '图片尺寸' },
+  imageSizeSetTitle: { en: 'Set size to', zh: '设置尺寸为' },
   imageOutputModeTitle: { en: 'Output Mode', zh: '输出模式' },
   imageOutputModeTextAndImage: { en: 'Text + Image', zh: '文本 + 图片' },
   imageOutputModeImageOnly: { en: 'Image Only', zh: '仅图片' },

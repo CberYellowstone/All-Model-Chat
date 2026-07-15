@@ -17,6 +17,10 @@ interface SelectProps {
   wrapperClassName?: string;
   dropdownClassName?: string;
   direction?: 'up' | 'down';
+  /** default = form control; compact = chat-input toolbar height (h-9, text-xs). */
+  size?: 'default' | 'compact';
+  /** Optional class override for the trigger button (appended after size styles). */
+  triggerClassName?: string;
 }
 
 type SelectOption = {
@@ -39,6 +43,8 @@ export const Select: React.FC<SelectProps> = ({
   wrapperClassName,
   dropdownClassName,
   direction = 'down',
+  size = 'default',
+  triggerClassName,
 }) => {
   const { t } = useI18n();
   const listboxId = useId();
@@ -218,7 +224,11 @@ export const Select: React.FC<SelectProps> = ({
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`w-full p-2.5 text-left border rounded-lg flex items-center justify-between transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${disabled ? 'opacity-60 cursor-not-allowed bg-[var(--theme-bg-secondary)]' : 'cursor-pointer bg-[var(--theme-bg-input)] hover:border-[var(--theme-border-focus)]'} border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] text-sm`}
+          className={
+            size === 'compact'
+              ? `w-full h-9 px-2.5 py-0 text-left border rounded-lg flex items-center justify-between transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${disabled ? 'opacity-60 cursor-not-allowed bg-[var(--theme-bg-secondary)]' : 'cursor-pointer bg-[var(--theme-bg-input)] hover:border-[var(--theme-border-focus)]'} border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] text-xs font-medium ${triggerClassName || ''}`
+              : `w-full p-2.5 text-left border rounded-lg flex items-center justify-between transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${disabled ? 'opacity-60 cursor-not-allowed bg-[var(--theme-bg-secondary)]' : 'cursor-pointer bg-[var(--theme-bg-input)] hover:border-[var(--theme-border-focus)]'} border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] text-sm ${triggerClassName || ''}`
+          }
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-controls={isOpen ? listboxId : undefined}

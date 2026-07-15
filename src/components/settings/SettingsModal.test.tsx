@@ -80,23 +80,33 @@ describe('SettingsModal', () => {
   it('renders shortcuts in its own sidebar group', async () => {
     await renderSettingsModal();
 
-    const groups = Array.from(document.querySelectorAll('[data-settings-group]')).map((group) =>
+    const groupTabLabels = Array.from(document.querySelectorAll('[data-settings-group]')).map((group) =>
       Array.from(group.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent?.trim()),
     );
 
-    expect(groups).toEqual([
+    expect(groupTabLabels).toEqual([
       ['Models', 'API', 'MCP', 'Interface & Interaction', 'Data & App'],
       ['Shortcuts'],
       ['About'],
     ]);
 
-    for (const group of document.querySelectorAll('[data-settings-group]')) {
-      expect(group.className).not.toContain('border-l');
-      expect(group.className).not.toContain('border-t');
-      expect(group.className).not.toContain('ml-1');
-      expect(group.className).not.toContain('pl-2');
-      expect(group.className).not.toContain('pt-3');
-    }
+    const groupElements = document.querySelectorAll('[data-settings-group]');
+    expect(groupElements[0]?.className).not.toContain('border-t');
+    // Secondary sidebar groups are visually separated from the primary set.
+    expect(groupElements[1]?.className).toContain('md:border-t');
+    expect(groupElements[1]?.className).toContain('md:pt-3');
+    expect(groupElements[2]?.className).toContain('md:border-t');
+  });
+
+  it('places the desktop close control in the content pane, not the sidebar', async () => {
+    await renderSettingsModal();
+
+    const closeButtons = Array.from(document.querySelectorAll('button[aria-label="Close"]'));
+    expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+
+    const contentClose = document.querySelector('main button[aria-label="Close"]');
+    expect(contentClose).not.toBeNull();
+    expect(contentClose?.className).toContain('md:inline-flex');
   });
 
   it('routes scoped chat changes to current chat settings', async () => {

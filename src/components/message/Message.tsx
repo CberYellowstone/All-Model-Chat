@@ -56,7 +56,7 @@ export const Message: React.FC<MessageProps> = React.memo((props) => {
   if (message.role === 'user') {
     bubbleClasses += 'w-fit px-4 py-3 sm:px-5 sm:py-4 shadow-sm ';
     bubbleClasses +=
-      'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] rounded-2xl rounded-tr-sm border border-transparent';
+      'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] rounded-2xl border border-[var(--theme-border-secondary)]/40';
   } else if (message.role === 'model') {
     bubbleClasses += `w-full py-0 text-[var(--theme-text-primary)] ${isModelThinkingOrHasThoughts ? 'sm:min-w-[320px]' : ''}`;
   } else {
