@@ -23,7 +23,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ onToggle, isOpen, 
         aria-label={`${sidebarToggleLabel} AMC WebUI`}
       >
         <img
-          src={isDarkThemeId(themeId) ? '/sidebar-logo-dark.png' : '/sidebar-logo.png'}
+          src={isDarkThemeId(themeId) ? '/app-logo-dark.png' : '/app-logo.png'}
           alt="AMC WebUI"
           className="h-8 w-auto object-contain"
         />

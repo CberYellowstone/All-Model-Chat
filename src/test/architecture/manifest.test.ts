@@ -27,8 +27,8 @@ describe('web manifest', () => {
 
     expect(manifest.icons).toEqual([
       { src: '/pwa-192.png', type: 'image/png', sizes: '192x192' },
-      { src: '/pwa-512.png', type: 'image/png', sizes: '512x512' },
-      { src: '/pwa-512-maskable.png', type: 'image/png', sizes: '512x512', purpose: 'any maskable' },
+      { src: '/pwa-512.png', type: 'image/png', sizes: '512x512', purpose: 'any' },
+      { src: '/pwa-512.png', type: 'image/png', sizes: '512x512', purpose: 'maskable' },
     ]);
 
     for (const icon of manifest.icons) {
@@ -36,6 +36,6 @@ describe('web manifest', () => {
       expect(fs.existsSync(path.join(projectRoot, 'public', icon.src.replace(/^\//, '')))).toBe(true);
     }
 
-    expect(manifest.icons.some((icon) => icon.purpose?.includes('maskable'))).toBe(true);
+    expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(true);
   });
 });

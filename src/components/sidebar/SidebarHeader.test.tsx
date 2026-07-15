@@ -20,7 +20,7 @@ describe('SidebarHeader', () => {
     const logoButton = getLogoButton();
     const logo = logoButton?.querySelector('img[alt="AMC WebUI"]');
 
-    expect(logo?.getAttribute('src')).toBe('/sidebar-logo.png');
+    expect(logo?.getAttribute('src')).toBe('/app-logo.png');
     expect(logoButton?.querySelector('svg')).toBeNull();
   });
 
@@ -31,7 +31,7 @@ describe('SidebarHeader', () => {
 
     const logo = getLogoButton()?.querySelector('img[alt="AMC WebUI"]');
 
-    expect(logo?.getAttribute('src')).toBe('/sidebar-logo-dark.png');
+    expect(logo?.getAttribute('src')).toBe('/app-logo-dark.png');
   });
 
   it('uses the dark sidebar logo for the graphite theme', () => {
@@ -41,7 +41,7 @@ describe('SidebarHeader', () => {
 
     const logo = getLogoButton()?.querySelector('img[alt="AMC WebUI"]');
 
-    expect(logo?.getAttribute('src')).toBe('/sidebar-logo-dark.png');
+    expect(logo?.getAttribute('src')).toBe('/app-logo-dark.png');
   });
 
   it('toggles the sidebar when the logo is clicked', () => {
