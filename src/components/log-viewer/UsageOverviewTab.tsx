@@ -41,7 +41,7 @@ const PriceValue: React.FC<{
     <span className="inline-flex flex-col items-end gap-0.5">
       <span>{hasPricedAmount ? formatPriceUsd(amount) : '—'}</span>
       {unavailableRequests > 0 && (
-        <span className="text-[11px] font-medium text-[var(--theme-text-tertiary)]">
+        <span className="text-xs font-medium text-[var(--theme-text-tertiary)]">
           {getUnavailablePriceLabel(unavailableRequests, language)}
         </span>
       )}

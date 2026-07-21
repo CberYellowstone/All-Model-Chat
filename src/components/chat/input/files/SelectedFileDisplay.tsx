@@ -36,7 +36,7 @@ const NEWLY_ACTIVE_FEEDBACK_MS = 800;
 const ACTION_BUTTON_CLASS =
   'flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/90 text-[var(--theme-text-secondary)] shadow-sm transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)]';
 const MENU_ITEM_CLASS =
-  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] leading-tight text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]';
+  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs leading-tight text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]';
 const FILE_PREVIEW_BOX_CLASS =
   'file-preview-box relative w-full aspect-square rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/30 flex items-center justify-center transition-colors group-hover:border-[var(--theme-border-focus)]/50';
 
@@ -159,13 +159,13 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
 
         <div className="mt-1.5 px-0.5 text-left w-full">
           <p
-            className="text-[11px] font-medium text-[var(--theme-text-primary)] truncate leading-tight"
+            className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight"
             title={file.name}
           >
             {file.name}
           </p>
           <p
-            className={`text-[9px] truncate leading-tight mt-0.5 flex items-center gap-1 ${isFailed ? 'text-[var(--theme-text-danger)] font-medium' : 'text-[var(--theme-text-tertiary)]'}`}
+            className={`text-xs truncate leading-tight mt-0.5 flex items-center gap-1 ${isFailed ? 'text-[var(--theme-text-danger)] font-medium' : 'text-[var(--theme-text-tertiary)]'}`}
             title={isFailed ? file.error : undefined}
           >
             {file.videoMetadata ? <Scissors size={8} className="text-[var(--theme-text-link)]" /> : null}
@@ -181,7 +181,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
                     : formatFileSize(file.size)}
           </p>
           {isUploading && file.uploadSpeed && (
-            <p className="text-[9px] truncate leading-tight mt-0.5 text-[var(--theme-text-link)]">{file.uploadSpeed}</p>
+            <p className="text-xs truncate leading-tight mt-0.5 text-[var(--theme-text-link)]">{file.uploadSpeed}</p>
           )}
         </div>
       </div>

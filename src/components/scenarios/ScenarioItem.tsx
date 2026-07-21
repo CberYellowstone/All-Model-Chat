@@ -153,7 +153,7 @@ export const ScenarioItem: React.FC<ScenarioItemProps> = ({
               )}
               {isSystem && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${meta.chipClass}`}
+                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ${meta.chipClass}`}
                 >
                   {t(meta.labelKey)}
                 </span>

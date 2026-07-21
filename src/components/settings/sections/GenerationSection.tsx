@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AudioLines, Image as ImageIcon, Info, SquarePen, X } from 'lucide-react';
+import { AudioLines, ChevronDown, Image as ImageIcon, Info, SlidersHorizontal, SquarePen, X } from 'lucide-react';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
-import { SMALL_ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { SETTINGS_OUTLINE_BUTTON_CLASS, SMALL_ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { type AppSettings, MediaResolution } from '@/types';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
+import { useSettingsUiStore } from '@/stores/settingsUiStore';
 import { useI18n } from '@/contexts/I18nContext';
 import { Tooltip } from '@/components/shared/Tooltip';
 import { Select } from '@/components/shared/Select';
@@ -41,7 +42,8 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
   } = currentSettings;
   const topK = currentSettings.topK ?? 64;
   const isRawModeEnabled = currentSettings.isRawModeEnabled ?? false;
-  const hideThinkingInContext = currentSettings.hideThinkingInContext ?? false;
+  const isAdvancedModeEnabled = useSettingsUiStore((state) => state.isAdvancedModeEnabled);
+  const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
   const [isSystemPromptExpanded, setIsSystemPromptExpanded] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(systemInstruction);
   const skipNextPromptBlurCommitRef = useRef(false);
@@ -77,18 +79,20 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       {!isOpenAICompatibleMode && (
-        <ThinkingControl
-          modelId={modelId}
-          thinkingBudget={thinkingBudget}
-          setThinkingBudget={(value) => onUpdateSetting('thinkingBudget', value)}
-          thinkingLevel={thinkingLevel}
-          setThinkingLevel={(value) => onUpdateSetting('thinkingLevel', value)}
-          showThoughts={showThoughts}
-          setShowThoughts={(value) => onUpdateSetting('showThoughts', value)}
-        />
+        <div data-settings-item="models-thinking">
+          <ThinkingControl
+            modelId={modelId}
+            thinkingBudget={thinkingBudget}
+            setThinkingBudget={(value) => onUpdateSetting('thinkingBudget', value)}
+            thinkingLevel={thinkingLevel}
+            setThinkingLevel={(value) => onUpdateSetting('thinkingLevel', value)}
+            showThoughts={showThoughts}
+            setShowThoughts={(value) => onUpdateSetting('showThoughts', value)}
+          />
+        </div>
       )}
 
-      <div className="pt-2">
+      <div className="pt-2" data-settings-item="models-system-prompt">
         <div className="flex justify-between items-center mb-2">
           <label
             htmlFor="system-prompt-input"
@@ -160,7 +164,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
       />
 
       <div className="pt-4 space-y-5">
-        <div>
+        <div data-settings-item="models-temperature">
           <div className="flex justify-between mb-2">
             <label
               htmlFor="temperature-slider"
@@ -209,69 +213,115 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
             className={RANGE_SLIDER_CLASS}
           />
         </div>
+      </div>
 
-        {!isOpenAICompatibleMode && (
-          <div>
-            <div className="flex justify-between mb-2">
-              <label
-                htmlFor="top-k-slider"
-                className="text-sm font-medium text-[var(--theme-text-primary)] flex items-center"
-              >
-                Top K
-                <Tooltip text={t('settingsTopKTooltip')}>
-                  <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
-                </Tooltip>
-              </label>
-              <span className="text-sm font-mono text-[var(--theme-text-link)]">{topK}</span>
-            </div>
-            <input
-              id="top-k-slider"
-              type="range"
-              min="0"
-              max="128"
-              step="1"
-              value={topK}
-              onChange={(event) => onUpdateSetting('topK', parseInt(event.target.value, 10))}
-              className={RANGE_SLIDER_CLASS}
+      {/* Advanced Parameters Section */}
+      <div className="pt-2">
+        {!isAdvancedModeEnabled && (
+          <button
+            type="button"
+            onClick={() => setIsAdvancedExpanded((prev) => !prev)}
+            className={`${SETTINGS_OUTLINE_BUTTON_CLASS} w-full justify-between py-2 text-xs text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)]`}
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal size={14} />
+              <span>
+                {isAdvancedExpanded
+                  ? t('settingsHideAdvancedParameters')
+                  : t('settingsShowAdvancedParameters')}
+              </span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-200 ${isAdvancedExpanded ? 'rotate-180' : ''}`}
             />
-          </div>
+          </button>
         )}
 
-        {!isOpenAICompatibleMode && mediaResolution && (
-          <Select
-            id="media-resolution-select"
-            label=""
-            layout="horizontal"
-            labelContent={
-              <span className="flex items-center text-sm font-medium text-[var(--theme-text-primary)]">
-                <ImageIcon size={14} className="mr-2 text-[var(--theme-text-secondary)]" />
-                {t('settingsMediaResolution')}
-                <Tooltip
-                  text={
-                    isNativeAudio ? t('settingsMediaResolutionLiveTooltip') : t('settingsMediaResolutionTooltip')
-                  }
-                >
-                  <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
-                </Tooltip>
-              </span>
-            }
-            value={mediaResolution}
-            onChange={(event) => onUpdateSetting('mediaResolution', event.target.value as MediaResolution)}
-          >
-            <option value={MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED}>{t('mediaResolutionUnspecified')}</option>
-            <option value={MediaResolution.MEDIA_RESOLUTION_LOW}>{t('mediaResolutionLow')}</option>
-            {!isNativeAudio && (
-              <option value={MediaResolution.MEDIA_RESOLUTION_MEDIUM}>{t('mediaResolutionMedium')}</option>
+        {(isAdvancedModeEnabled || isAdvancedExpanded) && (
+          <div className="mt-4 space-y-5 rounded-lg border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-tertiary)]/20 p-4 transition-all">
+
+            {!isOpenAICompatibleMode && (
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label
+                    htmlFor="top-k-slider"
+                    className="text-sm font-medium text-[var(--theme-text-primary)] flex items-center"
+                  >
+                    Top K
+                    <Tooltip text={t('settingsTopKTooltip')}>
+                      <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
+                    </Tooltip>
+                  </label>
+                  <span className="text-sm font-mono text-[var(--theme-text-link)]">{topK}</span>
+                </div>
+                <input
+                  id="top-k-slider"
+                  type="range"
+                  min="0"
+                  max="128"
+                  step="1"
+                  value={topK}
+                  onChange={(event) => onUpdateSetting('topK', parseInt(event.target.value, 10))}
+                  className={RANGE_SLIDER_CLASS}
+                />
+              </div>
             )}
-            {!isNativeAudio && (
-              <option value={MediaResolution.MEDIA_RESOLUTION_HIGH}>{t('mediaResolutionHigh')}</option>
+
+            {!isOpenAICompatibleMode && mediaResolution && (
+              <Select
+                id="media-resolution-select"
+                label=""
+                layout="horizontal"
+                labelContent={
+                  <span className="flex items-center text-sm font-medium text-[var(--theme-text-primary)]">
+                    <ImageIcon size={14} className="mr-2 text-[var(--theme-text-secondary)]" />
+                    {t('settingsMediaResolution')}
+                    <Tooltip
+                      text={
+                        isNativeAudio ? t('settingsMediaResolutionLiveTooltip') : t('settingsMediaResolutionTooltip')
+                      }
+                    >
+                      <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
+                    </Tooltip>
+                  </span>
+                }
+                value={mediaResolution}
+                onChange={(event) => onUpdateSetting('mediaResolution', event.target.value as MediaResolution)}
+              >
+                <option value={MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED}>{t('mediaResolutionUnspecified')}</option>
+                <option value={MediaResolution.MEDIA_RESOLUTION_LOW}>{t('mediaResolutionLow')}</option>
+                {!isNativeAudio && (
+                  <option value={MediaResolution.MEDIA_RESOLUTION_MEDIUM}>{t('mediaResolutionMedium')}</option>
+                )}
+                {!isNativeAudio && (
+                  <option value={MediaResolution.MEDIA_RESOLUTION_HIGH}>{t('mediaResolutionHigh')}</option>
+                )}
+              </Select>
             )}
-          </Select>
+
+            {!isOpenAICompatibleMode && (
+              <div className="pt-2 border-t border-[var(--theme-border-secondary)]/40 space-y-1">
+                <ToggleItem
+                  label={t('settingsRawModeLabel')}
+                  checked={isRawModeEnabled}
+                  onChange={(value) => onUpdateSetting('isRawModeEnabled', value)}
+                  tooltip={t('settingsRawModeTooltip')}
+                />
+                <ToggleItem
+                  label={t('settingsHideThinkingInContextLabel')}
+                  checked={hideThinkingInContext}
+                  onChange={(value) => onUpdateSetting('hideThinkingInContext', value)}
+                  tooltip={t('settingsHideThinkingInContextTooltip')}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {!isOpenAICompatibleMode && (
-        <div className="pt-6 border-t border-[var(--theme-border-secondary)] space-y-1">
+        <div className="pt-4 border-t border-[var(--theme-border-secondary)] space-y-1">
           <Select
             id="tts-voice-select"
             label=""
@@ -292,19 +342,6 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
               </option>
             ))}
           </Select>
-
-          <ToggleItem
-            label={t('settingsRawModeLabel')}
-            checked={isRawModeEnabled}
-            onChange={(value) => onUpdateSetting('isRawModeEnabled', value)}
-            tooltip={t('settingsRawModeTooltip')}
-          />
-          <ToggleItem
-            label={t('settingsHideThinkingInContextLabel')}
-            checked={hideThinkingInContext}
-            onChange={(value) => onUpdateSetting('hideThinkingInContext', value)}
-            tooltip={t('settingsHideThinkingInContextTooltip')}
-          />
         </div>
       )}
     </div>

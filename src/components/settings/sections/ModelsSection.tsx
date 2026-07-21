@@ -8,6 +8,7 @@ import { fetchOpenAICompatibleModels } from '@/services/api/openaiCompatibleApi'
 import { fetchAnthropicModels } from '@/services/api/anthropicApi';
 import { parseApiKeys } from '@/utils/apiKeySelection';
 import { getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
+import { SETTINGS_SECTION_CARD_CLASS } from '@/constants/designTokens';
 import { LiveArtifactsSection } from './LiveArtifactsSection';
 import { GenerationSection } from './GenerationSection';
 import { LanguageVoiceSection } from './LanguageVoiceSection';
@@ -146,16 +147,18 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <ModelSelector
-        availableModels={availableModels}
-        selectedModelId={modelId}
-        selectedApiMode={isOpenAICompatibleMode ? 'gemini-native' : currentSettings.apiMode}
-        onSelectModel={setModelId}
-        setAvailableModels={setAvailableModels}
-        defaultModels={defaultModels}
-        defaultApiMode={defaultApiMode}
-        extraModelListContent={openaiCompatibleModelListEditor}
-      />
+      <div data-settings-item="models-primary">
+        <ModelSelector
+          availableModels={availableModels}
+          selectedModelId={modelId}
+          selectedApiMode={isOpenAICompatibleMode ? 'gemini-native' : currentSettings.apiMode}
+          onSelectModel={setModelId}
+          setAvailableModels={setAvailableModels}
+          defaultModels={defaultModels}
+          defaultApiMode={defaultApiMode}
+          extraModelListContent={openaiCompatibleModelListEditor}
+        />
+      </div>
 
       <GenerationSection
         isOpenAICompatibleMode={isOpenAICompatibleMode}
@@ -166,19 +169,23 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
 
       {!isOpenAICompatibleMode && (
         <>
-          <LiveArtifactsSection
-            currentSettings={currentSettings}
-            currentThemeId={currentThemeId}
-            onUpdateSetting={updateSetting}
-          />
+          <div data-settings-item="models-live-artifacts">
+            <LiveArtifactsSection
+              currentSettings={currentSettings}
+              currentThemeId={currentThemeId}
+              onUpdateSetting={updateSetting}
+            />
+          </div>
 
-          <LanguageVoiceSection
-            availableModels={geminiOnlyModels}
-            currentSettings={currentSettings}
-            onUpdateSetting={updateSetting}
-          />
+          <div data-settings-item="models-tts-voice">
+            <LanguageVoiceSection
+              availableModels={geminiOnlyModels}
+              currentSettings={currentSettings}
+              onUpdateSetting={updateSetting}
+            />
+          </div>
 
-          <div className="rounded-xl border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-secondary)]/35 p-4">
+          <div className={SETTINGS_SECTION_CARD_CLASS} data-settings-item="models-safety">
             <button
               type="button"
               onClick={() => setIsSafetyExpanded((prev) => !prev)}

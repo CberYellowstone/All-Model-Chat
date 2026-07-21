@@ -2,6 +2,21 @@
  * Shared visual scale for AMC UI surfaces.
  * Prefer these over ad-hoc radius / chip classes so composer, sidebar, and chips stay aligned.
  */
+
+/** Caption / meta line — minimum practical UI size (12px at default root). */
+export const TYPE_CAPTION_CLASS = 'text-xs leading-tight';
+
+/** Dense mono meta (ids, timestamps) — same floor as caption. */
+export const TYPE_CAPTION_MONO_CLASS = 'text-xs font-mono leading-tight tabular-nums';
+
+/** Section overline labels (uppercase groups, code headers). Prefer secondary for contrast. */
+export const TYPE_OVERLINE_CLASS =
+  'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-secondary)]';
+
+/** Muted overline when hierarchy needs more de-emphasis than TYPE_OVERLINE_CLASS. */
+export const TYPE_OVERLINE_MUTED_CLASS =
+  'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
+
 const RADIUS_CLASS = {
   /** 6px — dense controls, inline badges */
   sm: 'rounded-md',
@@ -64,7 +79,7 @@ export const SETTINGS_SECTION_CARD_CLASS =
 
 /** Uppercase section label used across settings. */
 export const SETTINGS_SECTION_LABEL_CLASS =
-  'text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
+  'text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-secondary)]';
 
 /** Numeric value badge (font size, etc.) — neutral, not link-colored. */
 export const SETTINGS_VALUE_BADGE_CLASS =

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { SHORTCUT_REGISTRY, DEFAULT_SHORTCUTS } from '@/constants/shortcuts';
+import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/constants/designTokens';
 import { type AppSettings, type ModelOption } from '@/types';
 import { ShortcutRecorder } from './shortcuts/ShortcutRecorder';
 import { TabCycleModelsCard } from './models/TabCycleModelsCard';
@@ -57,24 +58,28 @@ export const ShortcutsSection: React.FC<ShortcutsSectionProps> = ({
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {Object.entries(groupedShortcuts).map(([category, items]) => (
-        <div key={category} className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] mb-3 border-b border-[var(--theme-border-secondary)]/50 pb-2">
+        <div
+          key={category}
+          className={SETTINGS_SECTION_CARD_CLASS}
+          data-settings-item={`shortcuts-${category}`}
+        >
+          <h4 className={`${SETTINGS_SECTION_LABEL_CLASS} mb-2`}>
             {t(categoryTitles[category] || category)}
           </h4>
 
-          <div className="space-y-1">
+          <div className="divide-y divide-[var(--theme-border-secondary)]/40">
             {items.map((item) => {
               const customKey = currentSettings.customShortcuts?.[item.id];
               const effectiveKey = customKey !== undefined ? customKey : item.defaultKey;
 
               return (
                 <React.Fragment key={item.id}>
-                  <div className="py-2 group">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-[var(--theme-text-secondary)] font-medium group-hover:text-[var(--theme-text-primary)] transition-colors">
+                  <div className="py-3 group" data-settings-item={`shortcut-${item.id}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 flex-col">
+                        <span className="text-sm font-medium text-[var(--theme-text-primary)] group-hover:text-[var(--theme-text-primary)] transition-colors">
                           {t(item.labelKey)}
                         </span>
                       </div>
@@ -86,7 +91,7 @@ export const ShortcutsSection: React.FC<ShortcutsSectionProps> = ({
                     </div>
                   </div>
                   {item.id === 'input.cycleModels' && (
-                    <div className="pb-3">
+                    <div className="pb-3 pt-1">
                       <TabCycleModelsCard
                         availableModels={availableModels}
                         configuredIds={currentSettings.tabModelCycleIds}

@@ -14,7 +14,7 @@ interface ScrollNavigationProps {
 
 const SINGLE_CLICK_DELAY_MS = 180;
 const SCROLL_NAV_BUTTON_CLASS =
-  'p-2.5 rounded-full bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)] transition-colors duration-200 focus:outline-none pointer-events-auto shadow-md';
+  'p-2.5 rounded-full glass-surface border border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:border-[var(--theme-border-focus)] transition-all duration-200 focus:outline-none pointer-events-auto shadow-lg';
 
 export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({
   showUp,

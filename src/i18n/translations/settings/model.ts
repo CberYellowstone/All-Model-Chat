@@ -149,8 +149,8 @@ const modelSettings = {
     zh: '要将模型列表重置为默认值吗？这会移除您的自定义添加项。',
   },
   settingsModelIdPlaceholder: {
-    en: 'Model ID (for example, gemini-3-flash-preview)',
-    zh: '模型 ID（例如 gemini-3-flash-preview）',
+    en: 'Model ID (for example, gemini-3.6-flash)',
+    zh: '模型 ID（例如 gemini-3.6-flash）',
   },
   settingsModelNamePlaceholder: { en: 'Display Name', zh: '显示名称' },
   settingsPinModel: { en: 'Pin Model', zh: '置顶模型' },

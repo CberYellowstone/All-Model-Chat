@@ -5,6 +5,7 @@ import { type Theme } from '@/types/theme';
 import { DEFAULT_FILES_API_CONFIG, getDefaultAppSettings } from '@/constants/settingsDefaults';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { logService } from '@/services/logService';
+import { migrateRemovedModelId } from '@/constants/modelConfiguration';
 import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/modelSorting';
 import { dbService } from '@/services/db/dbService';
 import { normalizeLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
@@ -92,6 +93,22 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
       settings.thoughtTranslationModelId,
       defaultSettings.thoughtTranslationModelId ?? defaultSettings.modelId,
     ),
+    tabModelCycleIds: (() => {
+      const cycleIds = settings.tabModelCycleIds ?? defaultSettings.tabModelCycleIds;
+      if (!cycleIds?.length) {
+        return cycleIds;
+      }
+      const seen = new Set<string>();
+      return cycleIds
+        .map((id) => migrateRemovedModelId(id) ?? id)
+        .filter((id) => {
+          if (seen.has(id)) {
+            return false;
+          }
+          seen.add(id);
+          return true;
+        });
+    })(),
     liveArtifactsSystemPrompts: normalizeLiveArtifactsSystemPrompts(settings),
     liveTranslateTargetLanguageCode: settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
     liveTranslateEchoTargetLanguage: settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,

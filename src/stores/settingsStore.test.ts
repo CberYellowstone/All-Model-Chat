@@ -127,7 +127,7 @@ describe('settingsStore', () => {
       expect(appSettings.apiKey).toBeNull();
       expect(appSettings.openaiCompatibleApiKey).toBeNull();
       expect(appSettings.openaiCompatibleBaseUrl).toBe('https://api.openai.com/v1');
-      expect(appSettings.modelId).toBe('gemini-3-flash-preview');
+      expect(appSettings.modelId).toBe('gemini-3.6-flash');
       expect(appSettings.openaiCompatibleModelId).toBe('gpt-5.5');
       expect(appSettings.openaiCompatibleModels).toEqual([{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]);
     });
@@ -149,7 +149,7 @@ describe('settingsStore', () => {
 
       await useSettingsStore.getState().loadSettings();
 
-      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.5-flash');
+      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.6-flash');
     });
 
     it('preserves user edits made before settings finish loading', async () => {

@@ -4,7 +4,7 @@
   color: inherit !important;
   font-family: inherit !important;
   font-size: inherit !important;
-  line-height: 1.8 !important; /* Increased line spacing */
+  line-height: 1.75 !important; /* Refined line spacing */
 }
 
 .message-content-container .markdown-body {
@@ -12,6 +12,14 @@
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Comfortable line length for prose; wide blocks keep full bubble width */
+.message-content-container .markdown-body > p,
+.message-content-container .markdown-body > ul,
+.message-content-container .markdown-body > ol,
+.message-content-container .markdown-body > blockquote {
+  max-width: min(100%, var(--app-text-measure, 75ch));
 }
 
 .markdown-body h1 {
@@ -227,6 +235,7 @@
 /* Blockquote Overrides */
 .markdown-body blockquote {
   color: var(--theme-text-secondary) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-border-secondary) 30%, transparent) !important;
   border-left: 3px solid var(--theme-border-focus) !important;
   background-color: color-mix(in srgb, var(--theme-bg-tertiary) 28%, transparent) !important;
   border-radius: 0 0.5rem 0.5rem 0;
@@ -328,9 +337,9 @@ code.hljs {
   color: var(--theme-text-link) !important;
   background-color: var(--theme-bg-info) !important;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.3rem;
   padding: 0.2em 0.4em;
-  border: 1px solid var(--theme-bg-info);
+  border: 1px solid color-mix(in srgb, var(--theme-text-link) 15%, transparent);
   font-size: 0.9em;
   line-height: 1.4; /* Slightly tighter for inline code tags */
 }

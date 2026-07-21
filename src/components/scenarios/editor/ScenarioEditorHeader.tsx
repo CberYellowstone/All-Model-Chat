@@ -78,7 +78,7 @@ export const ScenarioEditorHeader: React.FC<ScenarioEditorHeaderProps> = ({
           <div className="flex items-center gap-2 min-w-0">
             <label
               htmlFor="scenario-category-select"
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex-shrink-0"
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex-shrink-0"
             >
               {t('scenariosEditorCategoryLabel')}
             </label>
@@ -110,7 +110,7 @@ export const ScenarioEditorHeader: React.FC<ScenarioEditorHeaderProps> = ({
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <label
               htmlFor="scenario-description-input"
-              className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex-shrink-0"
+              className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex-shrink-0"
             >
               {t('scenariosEditorDescriptionLabel')}
             </label>

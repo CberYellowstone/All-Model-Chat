@@ -121,7 +121,7 @@ describe('ModelsSection', () => {
       availableModels: [
         { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true },
         { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true },
-        { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite Preview', isPinned: true },
+        { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', isPinned: true },
       ],
       currentSettings: {
         ...useSettingsStore.getState().appSettings,
@@ -133,7 +133,7 @@ describe('ModelsSection', () => {
     expect(renderer.container.querySelector('[data-testid="model-selector"]')).not.toBeNull();
     expect(renderer.container.textContent).not.toContain('Models Included In Tab Cycle');
     expect(renderer.container.textContent).not.toContain('2 models selected');
-    expect(renderer.container.textContent).not.toContain('Gemini 3.1 Flash Lite Preview');
+    expect(renderer.container.textContent).not.toContain('Gemini 3.5 Flash-Lite');
     expect(
       renderer.container.querySelector<HTMLButtonElement>('button[aria-label="Toggle Tab cycle model panel"]'),
     ).toBeNull();
@@ -321,14 +321,14 @@ describe('ModelsSection', () => {
     );
 
     act(() => {
-      mockLanguageVoiceSection.lastProps!.onUpdateSetting('transcriptionModelId', 'gemini-3.1-flash-lite');
+      mockLanguageVoiceSection.lastProps!.onUpdateSetting('transcriptionModelId', 'gemini-3.5-flash-lite');
       mockLanguageVoiceSection.lastProps!.onUpdateSetting('translationTargetLanguage', 'Simplified Chinese');
       mockLanguageVoiceSection.lastProps!.onUpdateSetting('inputTranslationModelId', 'gemini-3-flash-preview');
       mockLanguageVoiceSection.lastProps!.onUpdateSetting('thoughtTranslationTargetLanguage', 'English');
       mockLanguageVoiceSection.lastProps!.onUpdateSetting('thoughtTranslationModelId', 'gemini-3.1-pro-preview');
     });
 
-    expect(onUpdateSettings).toHaveBeenCalledWith({ transcriptionModelId: 'gemini-3.1-flash-lite' });
+    expect(onUpdateSettings).toHaveBeenCalledWith({ transcriptionModelId: 'gemini-3.5-flash-lite' });
     expect(onUpdateSettings).toHaveBeenCalledWith({ translationTargetLanguage: 'Simplified Chinese' });
     expect(onUpdateSettings).toHaveBeenCalledWith({ inputTranslationModelId: 'gemini-3-flash-preview' });
     expect(onUpdateSettings).toHaveBeenCalledWith({ thoughtTranslationTargetLanguage: 'English' });

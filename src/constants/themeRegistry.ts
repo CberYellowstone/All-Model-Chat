@@ -1,18 +1,29 @@
 import { type Theme, type ThemeColors } from '@/types/theme';
 
+/**
+ * Design rationale:
+ * - `bgAccent` is reserved for interactive states (selected, focused, primary buttons).
+ * - `bgUserMessage` uses a neutral tint, NOT the accent color, to avoid visual confusion
+ *   between "selected" UI elements and user message bubbles.
+ * - All three themes share the same semantic mapping: accent = blue family, user message = neutral tint.
+ * - `textLink` is always distinguishable from body text in every theme.
+ *
+ * v2: Refined palettes with warmer darks, cooler lights, and better contrast ratios.
+ */
+
 const ONYX_THEME_COLORS: ThemeColors = {
-  // Backgrounds
-  bgPrimary: '#09090b', // Zinc 950 - Main Content
-  bgSecondary: '#000000', // True Black - Sidebar/Header (Framing effect)
-  bgTertiary: '#18181b', // Zinc 900 - Hover states
-  bgAccent: '#3b82f6', // Blue 500 - Vibrant Accent
-  bgAccentHover: '#2563eb', // Blue 600
-  bgDanger: '#7f1d1d', // Red 900
+  // Backgrounds — deep neutral with subtle warm undertone
+  bgPrimary: '#0c0c0e', // Main content area — slightly warmer than pure black
+  bgSecondary: '#08080a', // Sidebar / header — darker for depth framing
+  bgTertiary: '#1c1c20', // Hover / raised surfaces — lifted for visibility
+  bgAccent: '#4f7cf5', // Softer blue 500 — easier on eyes in dark mode
+  bgAccentHover: '#3b6bed', // Blue 600
+  bgDanger: '#7f1d1d',
   bgDangerHover: '#991b1b',
-  bgInput: '#121214', // Zinc 925 - Very deep input area
-  bgCodeBlock: '#121214', // Deep subtle grey for code
-  bgCodeBlockHeader: '#1a1a1c', // Slightly lighter header
-  bgUserMessage: '#2563eb', // Blue 600 - Classic user bubble
+  bgInput: '#141418', // Input fields — subtle lift from bgPrimary
+  bgCodeBlock: '#141418',
+  bgCodeBlockHeader: '#1e1e24',
+  bgUserMessage: '#202028', // Neutral raised tint with slight warmth
   bgModelMessage: 'transparent',
   bgErrorMessage: 'rgba(127, 29, 29, 0.25)',
   bgSuccess: 'rgba(6, 78, 59, 0.25)',
@@ -23,118 +34,118 @@ const ONYX_THEME_COLORS: ThemeColors = {
   textWarning: '#fbbf24',
 
   // Text
-  textPrimary: '#f4f4f5', // Zinc 100 - High contrast text
-  textSecondary: '#a1a1aa', // Zinc 400
-  textTertiary: '#52525b', // Zinc 600
+  textPrimary: '#f5f5f7', // Near-white with slight warmth
+  textSecondary: '#a8a8b3', // Zinc 400 — lifted for readability
+  textTertiary: '#78787f', // Muted but readable
   textAccent: '#ffffff',
-  textDanger: '#fca5a5', // Light Red
-  textLink: '#38bdf8', // Sky 400
-  textCode: '#e4e4e7', // Zinc 200
-  bgUserMessageText: '#ffffff',
+  textDanger: '#fca5a5',
+  textLink: '#6ba3fc', // Blue 400 — brighter for dark bg
+  textCode: '#e4e4e7',
+  bgUserMessageText: '#f5f5f7',
   bgModelMessageText: '#e4e4e7',
   bgErrorMessageText: '#fca5a5',
 
   // Borders
-  borderPrimary: '#18181b', // Zinc 900 - blending more with tertiary
-  borderSecondary: '#27272a', // Zinc 800 - Slightly lighter for visible borders
-  borderFocus: '#3b82f6', // Blue 500
+  borderPrimary: '#1e1e24', // Subtle separation
+  borderSecondary: '#2c2c34', // Visible borders
+  borderFocus: '#4f7cf5', // Matches accent
 
   // Scrollbar
-  scrollbarThumb: '#27272a',
+  scrollbarThumb: '#2c2c34',
   scrollbarTrack: 'transparent',
 
   // Selection
-  selectionBg: 'rgba(59, 130, 246, 0.4)',
-  selectionText: '#f4f4f5',
+  selectionBg: 'rgba(79, 124, 245, 0.35)',
+  selectionText: '#f5f5f7',
 
   // Icons
-  iconUser: '#ffffff',
-  iconModel: '#38bdf8', // Sky 400
+  iconUser: '#a8a8b3',
+  iconModel: '#6ba3fc',
   iconError: '#ef4444',
-  iconThought: '#71717a',
-  iconSettings: '#a1a1aa',
-  iconClearChat: '#f4f4f5',
+  iconThought: '#78787f',
+  iconSettings: '#a8a8b3',
+  iconClearChat: '#f5f5f7',
   iconSend: '#ffffff',
-  iconAttach: '#a1a1aa',
+  iconAttach: '#a8a8b3',
   iconStop: '#ffffff',
-  iconEdit: '#a1a1aa',
-  iconHistory: '#a1a1aa',
+  iconEdit: '#a8a8b3',
+  iconHistory: '#a8a8b3',
 };
 
 const PEARL_THEME_COLORS: ThemeColors = {
-  // Backgrounds
-  bgPrimary: '#FFFFFF',
-  bgSecondary: '#f7f7f8',
-  bgTertiary: '#ececf1',
-  bgAccent: '#343541',
-  bgAccentHover: '#202123',
-  bgDanger: '#DF3434',
-  bgDangerHover: '#B32929',
-  bgInput: '#FFFFFF',
-  bgCodeBlock: '#F7F7F8',
-  bgCodeBlockHeader: 'rgba(236, 236, 241, 0.9)',
-  bgUserMessage: '#eef0f4', // Slightly deeper gray for contrast on white
-  bgModelMessage: '#FFFFFF',
-  bgErrorMessage: '#FEE',
+  // Backgrounds — clean whites with cool undertone
+  bgPrimary: '#fefefe', // Near-pure white
+  bgSecondary: '#f6f7f9', // Cool light gray for sidebar
+  bgTertiary: '#edeef2', // Raised surfaces
+  bgAccent: '#2563eb', // Blue 600 — brand-feel accent
+  bgAccentHover: '#1d4ed8', // Blue 700
+  bgDanger: '#dc2626',
+  bgDangerHover: '#b91c1c',
+  bgInput: '#ffffff',
+  bgCodeBlock: '#f6f7f9',
+  bgCodeBlockHeader: 'rgba(237, 238, 242, 0.9)',
+  bgUserMessage: '#eef0f5', // Neutral light tint — NOT accent
+  bgModelMessage: '#fefefe',
+  bgErrorMessage: '#fef2f2',
   bgSuccess: 'rgba(22, 163, 74, 0.1)',
   textSuccess: '#16a34a',
-  bgInfo: 'rgba(64, 65, 79, 0.05)',
-  textInfo: '#40414F',
+  bgInfo: 'rgba(37, 99, 235, 0.06)',
+  textInfo: '#2563eb',
   bgWarning: 'rgba(212, 167, 44, 0.1)',
-  textWarning: '#825F0A',
+  textWarning: '#825f0a',
 
-  // Text — restored hierarchy (primary / secondary / tertiary)
-  textPrimary: '#18181b', // Zinc 900
-  textSecondary: '#52525b', // Zinc 600
-  textTertiary: '#71717a', // Zinc 500
-  textAccent: '#FFFFFF',
-  textDanger: '#DF3434',
-  textLink: '#2563eb',
-  textCode: '#18181b',
-  bgUserMessageText: '#18181b',
-  bgModelMessageText: '#18181b',
-  bgErrorMessageText: '#DF3434',
+  // Text
+  textPrimary: '#1a1a1f', // Near-black with slight warmth
+  textSecondary: '#4a4a55', // Zinc 700
+  textTertiary: '#75757f', // Zinc 500
+  textAccent: '#ffffff',
+  textDanger: '#dc2626',
+  textLink: '#2563eb', // Blue 600 — clearly distinguishable
+  textCode: '#1a1a1f',
+  bgUserMessageText: '#1a1a1f',
+  bgModelMessageText: '#1a1a1f',
+  bgErrorMessageText: '#dc2626',
 
   // Borders
-  borderPrimary: '#e8e8ed',
-  borderSecondary: '#d9d9e3',
-  borderFocus: '#343541',
+  borderPrimary: '#eaeaef',
+  borderSecondary: '#d5d5dc',
+  borderFocus: '#2563eb',
 
   // Scrollbar
-  scrollbarThumb: '#D9D9E3',
-  scrollbarTrack: '#F7F7F8',
+  scrollbarThumb: '#d5d5dc',
+  scrollbarTrack: '#f6f7f9',
 
   // Selection
-  selectionBg: 'rgba(37, 99, 235, 0.22)',
-  selectionText: '#0f172a',
+  selectionBg: 'rgba(37, 99, 235, 0.15)',
+  selectionText: '#1a1a1f',
 
   // Icons
-  iconUser: '#343541',
-  iconModel: '#0d9488',
-  iconError: '#DF3434',
-  iconThought: '#71717a',
-  iconSettings: '#52525b',
-  iconClearChat: '#FFFFFF',
-  iconSend: '#FFFFFF',
-  iconAttach: '#52525b',
-  iconStop: '#FFFFFF',
-  iconEdit: '#52525b',
-  iconHistory: '#52525b',
+  iconUser: '#4a4a55',
+  iconModel: '#2563eb',
+  iconError: '#dc2626',
+  iconThought: '#75757f',
+  iconSettings: '#4a4a55',
+  iconClearChat: '#ffffff',
+  iconSend: '#ffffff',
+  iconAttach: '#4a4a55',
+  iconStop: '#ffffff',
+  iconEdit: '#4a4a55',
+  iconHistory: '#4a4a55',
 };
 
 const GRAPHITE_THEME_COLORS: ThemeColors = {
-  // Backgrounds
-  bgPrimary: '#2f2f2f',
-  bgSecondary: '#242424',
-  bgTertiary: '#474747',
-  bgAccent: '#d4d4d4',
-  bgAccentHover: '#f3f3f3',
+  // Backgrounds — warm graphite spectrum
+  bgPrimary: '#2b2b2e', // Main content
+  bgSecondary: '#1f1f22', // Sidebar
+  bgTertiary: '#3c3c40', // Raised surfaces
+  bgAccent: '#4f7cf5', // Blue — consistent with Onyx
+  bgAccentHover: '#3b6bed',
   bgDanger: '#7f1d1d',
   bgDangerHover: '#991b1b',
-  bgInput: '#3f3f3f',
-  bgCodeBlock: '#202020',
-  bgCodeBlockHeader: '#303030',
-  bgUserMessage: '#4a4a4a',
+  bgInput: '#343438',
+  bgCodeBlock: '#252528',
+  bgCodeBlockHeader: '#313134',
+  bgUserMessage: '#3c3c40', // Neutral raised tint
   bgModelMessage: 'transparent',
   bgErrorMessage: 'rgba(127, 29, 29, 0.28)',
   bgSuccess: 'rgba(6, 95, 70, 0.28)',
@@ -145,42 +156,42 @@ const GRAPHITE_THEME_COLORS: ThemeColors = {
   textWarning: '#fde68a',
 
   // Text
-  textPrimary: '#f3f3f3',
-  textSecondary: '#c7c7c7',
-  textTertiary: '#9a9a9a',
-  textAccent: '#171717',
+  textPrimary: '#f2f2f4',
+  textSecondary: '#b8b8be',
+  textTertiary: '#88888f',
+  textAccent: '#ffffff',
   textDanger: '#fca5a5',
-  textLink: '#e5e5e5',
-  textCode: '#f5f5f5',
-  bgUserMessageText: '#ffffff',
-  bgModelMessageText: '#f3f3f3',
+  textLink: '#6ba3fc',
+  textCode: '#f2f2f4',
+  bgUserMessageText: '#f2f2f4',
+  bgModelMessageText: '#f2f2f4',
   bgErrorMessageText: '#fecaca',
 
   // Borders
-  borderPrimary: '#454545',
-  borderSecondary: '#626262',
-  borderFocus: '#a3a3a3',
+  borderPrimary: '#3c3c40',
+  borderSecondary: '#4c4c52',
+  borderFocus: '#4f7cf5',
 
   // Scrollbar
-  scrollbarThumb: '#626262',
+  scrollbarThumb: '#4c4c52',
   scrollbarTrack: 'transparent',
 
   // Selection
-  selectionBg: 'rgba(212, 212, 212, 0.45)',
-  selectionText: '#171717',
+  selectionBg: 'rgba(79, 124, 245, 0.35)',
+  selectionText: '#f2f2f4',
 
   // Icons
-  iconUser: '#ffffff',
-  iconModel: '#d4d4d4',
+  iconUser: '#b8b8be',
+  iconModel: '#6ba3fc',
   iconError: '#f87171',
-  iconThought: '#9ca3af',
-  iconSettings: '#c7c7c7',
-  iconClearChat: '#f3f3f3',
-  iconSend: '#171717',
-  iconAttach: '#c7c7c7',
+  iconThought: '#88888f',
+  iconSettings: '#b8b8be',
+  iconClearChat: '#f2f2f4',
+  iconSend: '#ffffff',
+  iconAttach: '#b8b8be',
   iconStop: '#ffffff',
-  iconEdit: '#c7c7c7',
-  iconHistory: '#c7c7c7',
+  iconEdit: '#b8b8be',
+  iconHistory: '#b8b8be',
 };
 
 export const AVAILABLE_THEMES: Theme[] = [

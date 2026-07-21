@@ -56,7 +56,7 @@ export const OpenAICompatibleCurrentModelsPanel: React.FC<OpenAICompatibleCurren
         <div className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">
           {t('settingsOpenAICompatibleCurrentModels')}
         </div>
-        <span className="rounded-full bg-[var(--theme-bg-tertiary)] px-2 py-0.5 text-[10px] font-medium text-[var(--theme-text-tertiary)]">
+        <span className="rounded-full bg-[var(--theme-bg-tertiary)] px-2 py-0.5 text-xs font-medium text-[var(--theme-text-tertiary)]">
           {rows.length}
         </span>
       </div>

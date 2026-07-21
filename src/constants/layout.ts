@@ -7,7 +7,7 @@ export const FOCUS_BLOCKING_SELECTOR =
 export const FOCUS_HISTORY_SEARCH_EVENT = 'amc:focus-history-search';
 
 /** Max content width for the chat input area and its empty-state suggestions. */
-export const CHAT_INPUT_MAX_WIDTH_CLASS = 'max-w-[44.35rem]';
+export const CHAT_INPUT_MAX_WIDTH_CLASS = 'max-w-[44rem]';
 
 /**
  * Z-index layering. Kept as full Tailwind class strings so the JIT compiler can

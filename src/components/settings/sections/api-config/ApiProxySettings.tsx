@@ -48,7 +48,7 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
             <button
               type="button"
               onClick={handleResetProxy}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors border text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] border-transparent hover:border-[var(--theme-border-secondary)]"
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors border text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] border-transparent hover:border-[var(--theme-border-secondary)]"
               title={t('settingsApiProxyReset')}
             >
               <RotateCcw size={10} strokeWidth={1.5} />
@@ -84,7 +84,7 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
             </div>
             <div className="flex items-start gap-2 pl-5">
               <ArrowRight size={12} className="mt-1 text-[var(--theme-text-tertiary)]" />
-              <code className="font-mono text-[11px] text-[var(--theme-text-primary)] break-all leading-relaxed">
+              <code className="font-mono text-xs text-[var(--theme-text-primary)] break-all leading-relaxed">
                 {previewUrl}
               </code>
             </div>

@@ -29,7 +29,7 @@ describe('DEFAULT_APP_SETTINGS', () => {
   });
 
   it('defaults speech-to-text to Gemini 3.5 Flash', () => {
-    expect(DEFAULT_APP_SETTINGS.transcriptionModelId).toBe('gemini-3.5-flash');
+    expect(DEFAULT_APP_SETTINGS.transcriptionModelId).toBe('gemini-3.6-flash');
     expect(AVAILABLE_TRANSCRIPTION_MODELS.some((model) => model.id === DEFAULT_APP_SETTINGS.transcriptionModelId)).toBe(
       true,
     );

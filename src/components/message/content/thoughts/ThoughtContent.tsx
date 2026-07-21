@@ -45,7 +45,7 @@ export const ThoughtContent: React.FC<ThoughtContentProps> = ({
             <span className="block text-xs font-semibold text-[var(--theme-text-primary)] mb-0.5">
               {lastThought.title}
             </span>
-            <span className="block text-[11px] text-[var(--theme-text-tertiary)] line-clamp-2 leading-normal">
+            <span className="block text-xs text-[var(--theme-text-tertiary)] line-clamp-2 leading-normal">
               {lastThought.content}
             </span>
           </div>

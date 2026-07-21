@@ -18,12 +18,15 @@ interface SettingsUiState {
   activeTab: SettingsTab;
   scrollPositions: Partial<Record<SettingsTab, number>>;
   legacySettingsUiHydrated: boolean;
+  isAdvancedModeEnabled: boolean;
 }
 
 interface SettingsUiActions {
   hydrateLegacySettingsUiPreferences: () => void;
   setActiveTab: (tab: SettingsTab) => void;
   setScrollPosition: (tab: SettingsTab, scrollTop: number) => void;
+  setIsAdvancedModeEnabled: (enabled: boolean) => void;
+  toggleAdvancedMode: () => void;
 }
 
 const normalizeSettingsTab = (savedTab: string | null): SettingsTab | null => {
@@ -79,6 +82,7 @@ const buildInitialSettingsUiState = (): SettingsUiState => ({
   activeTab: readLegacyActiveTab(),
   scrollPositions: readLegacyScrollPositions(),
   legacySettingsUiHydrated: false,
+  isAdvancedModeEnabled: false,
 });
 
 export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
@@ -111,6 +115,10 @@ export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
             [tab]: Math.max(0, Math.round(scrollTop)),
           },
         })),
+
+      setIsAdvancedModeEnabled: (enabled) => set({ isAdvancedModeEnabled: enabled }),
+
+      toggleAdvancedMode: () => set((state) => ({ isAdvancedModeEnabled: !state.isAdvancedModeEnabled })),
     }),
     {
       name: SETTINGS_UI_STORE_STORAGE_KEY,
@@ -118,6 +126,7 @@ export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
       partialize: (state) => ({
         activeTab: state.activeTab,
         scrollPositions: state.scrollPositions,
+        isAdvancedModeEnabled: state.isAdvancedModeEnabled,
       }),
     },
   ),

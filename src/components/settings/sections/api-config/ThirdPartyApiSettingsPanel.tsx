@@ -108,12 +108,12 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                     {THIRD_PARTY_PROVIDER_LABELS[providerId]}
                   </span>
                   {isEnabled && !hasKey && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--theme-status-warning-bg)] text-[var(--theme-status-warning-text)]">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-status-warning-bg)] text-[var(--theme-status-warning-text)]">
                       {t('thirdPartyApiKeyMissing')}
                     </span>
                   )}
                   {isEnabled && hasKey && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--theme-status-success-bg)] text-[var(--theme-status-success-text)]">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-status-success-bg)] text-[var(--theme-status-success-text)]">
                       {t('thirdPartyApiReady')}
                     </span>
                   )}

@@ -152,7 +152,7 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
                 <div className="min-w-0 space-y-1">
                   <label
                     htmlFor={`${row.rowId}-id`}
-                    className="block text-[10px] font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
+                    className="block text-xs font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
                   >
                     {t('settingsOpenAICompatibleModelIdShort')}
                   </label>
@@ -171,7 +171,7 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
                 <div className="min-w-0 space-y-1">
                   <label
                     htmlFor={`${row.rowId}-name`}
-                    className="block text-[10px] font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
+                    className="block text-xs font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
                   >
                     {t('settingsOpenAICompatibleModelName')}
                   </label>

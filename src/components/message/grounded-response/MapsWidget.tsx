@@ -62,7 +62,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         strokeWidth={2}
       />
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-medium text-[var(--theme-text-primary)] truncate leading-tight">
+        <div className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight">
           {place.title}
         </div>
       </div>
@@ -77,7 +77,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         <ExternalLink size={12} strokeWidth={2} />
       </a>
       {/* Use chunkIndex+1 to match the [N] citation markers in the text body. */}
-      <span className="text-[9px] font-mono font-medium text-[var(--theme-text-tertiary)] opacity-40">
+      <span className="text-xs font-mono font-medium text-[var(--theme-text-tertiary)] opacity-40">
         [{place.chunkIndex + 1}]
       </span>
     </div>
@@ -92,7 +92,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         aria-expanded={expanded}
       >
         <MapPin size={11} className="text-[var(--theme-text-tertiary)]" strokeWidth={2} />
-        <h4 className="text-[10px] font-bold uppercase text-[var(--theme-text-tertiary)] tracking-widest">
+        <h4 className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)] tracking-widest">
           {t('mapsSourcesTitle')}
         </h4>
         <ChevronDown
@@ -118,7 +118,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
               <button
                 type="button"
                 onClick={() => setIsFullscreen(true)}
-                className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white text-[10px] font-medium opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
+                className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white text-xs font-medium opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
                 title={t('mapsExpand')}
               >
                 <Maximize2 size={12} strokeWidth={2} />
@@ -135,7 +135,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
             <button
               type="button"
               onClick={() => setListExpanded((prev) => !prev)}
-              className="flex items-center justify-center gap-1 w-full py-1.5 text-[11px] font-medium text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-secondary)] transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-1 w-full py-1.5 text-xs font-medium text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-secondary)] transition-colors cursor-pointer"
             >
               {listExpanded ? (
                 <>

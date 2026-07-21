@@ -42,7 +42,7 @@ export const ContextUrls: React.FC<ContextUrlsProps> = ({ metadata }) => {
     <div className="mt-3 pt-2 border-t border-[var(--theme-border-secondary)]/30 animate-in fade-in slide-in-from-top-1 duration-200">
       <div className="flex items-center gap-2 mb-2">
         <LinkIcon size={11} className="text-[var(--theme-text-tertiary)]" strokeWidth={2} />
-        <h4 className="text-[10px] font-bold uppercase text-[var(--theme-text-tertiary)] tracking-widest">
+        <h4 className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)] tracking-widest">
           {t('contextUrlsTitle')}
         </h4>
       </div>

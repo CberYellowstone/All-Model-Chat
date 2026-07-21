@@ -130,10 +130,32 @@ export const WelcomeScreen: React.FC = () => {
   const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center min-h-full w-full max-w-4xl mx-auto px-4 pb-20 sm:pb-28">
-      <div className="w-full">
-        <h1 className="text-3xl md:text-4xl font-medium text-center text-[var(--theme-text-primary)] mb-8 sm:mb-14 welcome-message-animate tracking-tight min-h-[3rem] flex items-center justify-center">
+      <div className="w-full flex flex-col items-center">
+        {/* Decorative gradient orb */}
+        <div
+          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mb-6 sm:mb-8 opacity-20 blur-2xl"
+          style={{
+            background: 'radial-gradient(circle, var(--theme-bg-accent) 0%, transparent 70%)',
+          }}
+        />
+        <h1
+          className="text-3xl md:text-4xl font-medium text-center mb-3 sm:mb-4 welcome-message-animate tracking-tight min-h-[3rem] flex items-center justify-center"
+          style={{
+            background:
+              'linear-gradient(135deg, var(--theme-text-primary) 0%, var(--theme-text-secondary) 60%, var(--theme-text-link) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
           <WelcomeEasterEggText text={t('welcomeGreeting')} />
         </h1>
+        <p
+          className="text-sm sm:text-base text-center text-[var(--theme-text-tertiary)] max-w-md welcome-message-animate tracking-tight"
+          style={{ animationDelay: '0.2s' }}
+        >
+          {t('chatInputPlaceholder')}
+        </p>
       </div>
     </div>
   );

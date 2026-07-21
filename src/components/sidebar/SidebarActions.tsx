@@ -145,9 +145,7 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
             aria-label={t('historySearchAria')}
           >
             <Search size={18} className="text-[var(--theme-icon-history)]" strokeWidth={2} />
-            <span className="min-w-0 flex-1 truncate text-[var(--theme-text-primary)]">
-              {t('historySearchButton')}
-            </span>
+            <span className="min-w-0 flex-1 truncate text-[var(--theme-text-primary)]">{t('historySearchButton')}</span>
             <ShortcutHint shortcut={searchChatsShortcut} />
           </button>
         )}

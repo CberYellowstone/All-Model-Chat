@@ -178,7 +178,7 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({
                   sections.map((section) => (
                     <div key={section.key} className="space-y-1" data-provider-section={section.providerKey}>
                       {section.providerKey && (
-                        <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
+                        <div className="px-2 pt-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
                           {section.label ?? t(getModelProviderSectionLabelKey(section.providerKey))}
                         </div>
                       )}
@@ -210,7 +210,7 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({
                                     {entry.name}
                                   </span>
                                 </div>
-                                <div className="mt-1 truncate font-mono text-[10px] text-[var(--theme-text-tertiary)]">
+                                <div className="mt-1 truncate font-mono text-xs text-[var(--theme-text-tertiary)]">
                                   {entry.id}
                                 </div>
                               </div>

@@ -128,19 +128,19 @@ describe('buildModelCatalogSections', () => {
 describe('getQuickSwitchModelIds', () => {
   it('uses the shared sorted catalog order instead of a hard-coded subset', () => {
     const models: ModelOption[] = [
-      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite Preview' },
+      { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite' },
       { id: 'gemma-4-31b-it', name: 'Gemma 4 31B IT', isPinned: true },
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true },
-      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', isPinned: true },
+      { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isPinned: true },
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview' },
     ];
 
     expect(getQuickSwitchModelIds(models)).toEqual([
-      'gemini-3.5-flash',
+      'gemini-3.6-flash',
       'gemini-3-flash-preview',
       'gemma-4-31b-it',
-      'gemini-3.1-flash-lite',
       'gemini-3.1-pro-preview',
+      'gemini-3.5-flash-lite',
     ]);
   });
 });
@@ -148,24 +148,24 @@ describe('getQuickSwitchModelIds', () => {
 describe('getTabCycleModelIds', () => {
   const models: ModelOption[] = [
     { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true },
-    { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', isPinned: true },
+    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isPinned: true },
     { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite Preview', isPinned: true },
+    { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', isPinned: true },
     { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS Preview', isPinned: true },
   ];
 
   it('falls back to the default quick-switch order when no manual selection is set', () => {
-    expect(getTabCycleModelIds(models)).toEqual(['gemini-3.1-pro-preview', 'gemini-3.5-flash']);
+    expect(getTabCycleModelIds(models)).toEqual(['gemini-3.1-pro-preview', 'gemini-3.6-flash']);
   });
 
   it('filters the cycle order down to the manually selected models while preserving picker order', () => {
-    expect(getTabCycleModelIds(models, ['gemini-3.1-flash-lite', 'gemini-3.1-pro-preview'])).toEqual([
+    expect(getTabCycleModelIds(models, ['gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'])).toEqual([
       'gemini-3.1-pro-preview',
-      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash-lite',
     ]);
   });
 
   it('falls back to the default order when the stored selection is fully stale', () => {
-    expect(getTabCycleModelIds(models, ['missing-model'])).toEqual(['gemini-3.1-pro-preview', 'gemini-3.5-flash']);
+    expect(getTabCycleModelIds(models, ['missing-model'])).toEqual(['gemini-3.1-pro-preview', 'gemini-3.6-flash']);
   });
 });

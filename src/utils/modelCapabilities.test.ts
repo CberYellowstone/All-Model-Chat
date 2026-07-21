@@ -24,9 +24,11 @@ describe('isGemini3Model', () => {
     expect(isGemini3Model('gemini-3-flash-preview')).toBe(true);
   });
 
-  it('returns true for gemini-3.5-flash', () => {
-    expect(isGemini3Model('gemini-3.5-flash')).toBe(true);
-    expect(isGemini3Model('models/gemini-3.5-flash')).toBe(true);
+  it('returns true for gemini-3.6-flash and gemini-3.5-flash-lite', () => {
+    expect(isGemini3Model('gemini-3.6-flash')).toBe(true);
+    expect(isGemini3Model('models/gemini-3.6-flash')).toBe(true);
+    expect(isGemini3Model('gemini-3.5-flash-lite')).toBe(true);
+    expect(isGemini3Model('models/gemini-3.5-flash-lite')).toBe(true);
   });
 
   it('returns true for stable gemini-3-flash IDs', () => {
@@ -38,8 +40,9 @@ describe('isGemini3Model', () => {
     expect(isGemini3Model('gemini-3-pro-image-preview')).toBe(true);
   });
 
-  it('returns true for gemini-3.1-flash', () => {
-    expect(isGemini3Model('gemini-3.1-flash-lite')).toBe(true);
+  it('returns true for gemini-3.1-flash family ids', () => {
+    expect(isGemini3Model('gemini-3.1-flash-live-preview')).toBe(true);
+    expect(isGemini3Model('gemini-3.5-flash-lite')).toBe(true);
   });
 
   it('returns true for models/ prefixed IDs', () => {
@@ -83,7 +86,8 @@ describe('getModelCapabilities', () => {
 
   it('exposes raw reasoning prefill support as a model capability', () => {
     expect(getModelCapabilities('gemini-3-flash-preview').supportsRawReasoningPrefill).toBe(true);
-    expect(getModelCapabilities('gemini-3.5-flash').supportsRawReasoningPrefill).toBe(true);
+    expect(getModelCapabilities('gemini-3.6-flash').supportsRawReasoningPrefill).toBe(true);
+    expect(getModelCapabilities('gemini-3.5-flash-lite').supportsRawReasoningPrefill).toBe(true);
     expect(getModelCapabilities('gemini-2.5-flash').supportsRawReasoningPrefill).toBe(false);
   });
 
@@ -156,7 +160,7 @@ describe('normalizeThinkingLevelForModel', () => {
 
   it('keeps MINIMAL for Gemini 3 Flash models', () => {
     expect(normalizeThinkingLevelForModel('gemini-3-flash-preview', 'MINIMAL')).toBe('MINIMAL');
-    expect(normalizeThinkingLevelForModel('gemini-3.1-flash-lite', 'MINIMAL')).toBe('MINIMAL');
+    expect(normalizeThinkingLevelForModel('gemini-3.5-flash-lite', 'MINIMAL')).toBe('MINIMAL');
   });
 });
 
@@ -186,7 +190,7 @@ describe('isLiveTranslateModel', () => {
 
   it('returns false for unrelated models', () => {
     expect(isLiveTranslateModel('gemini-3.1-flash-live-preview')).toBe(false);
-    expect(isLiveTranslateModel('gemini-3.5-flash')).toBe(false);
+    expect(isLiveTranslateModel('gemini-3.6-flash')).toBe(false);
   });
 });
 

@@ -54,8 +54,17 @@ describe('themeRegistry', () => {
     expect(pearl!.colors.textPrimary).not.toBe(pearl!.colors.textSecondary);
     expect(pearl!.colors.textSecondary).not.toBe(pearl!.colors.textTertiary);
     expect(pearl!.colors.textPrimary).toBe('#18181b');
-    expect(pearl!.colors.textSecondary).toBe('#52525b');
+    expect(pearl!.colors.textSecondary).toBe('#3f3f46');
+    expect(pearl!.colors.textTertiary).toBe('#52525b');
     expect(pearl!.colors.selectionBg).toBeTruthy();
     expect(onyx!.colors.selectionBg).toContain('59, 130, 246');
+  });
+
+  it('keeps onyx muted text readable on dark framing surfaces', () => {
+    const onyx = AVAILABLE_THEMES.find((theme) => theme.id === 'onyx');
+    expect(onyx).toBeDefined();
+    expect(onyx!.colors.textSecondary).toBe('#a1a1aa');
+    expect(onyx!.colors.textTertiary).toBe('#8b8b96');
+    expect(onyx!.colors.textTertiary).not.toBe(onyx!.colors.textSecondary);
   });
 });

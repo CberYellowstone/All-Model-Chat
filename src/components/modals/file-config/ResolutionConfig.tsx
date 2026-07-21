@@ -39,7 +39,7 @@ export const ResolutionConfig: React.FC<ResolutionConfigProps> = ({
           <option value={MediaResolution.MEDIA_RESOLUTION_ULTRA_HIGH}>{t('mediaResolutionUltraHigh')}</option>
         )}
       </Select>
-      <p className="text-[10px] text-[var(--theme-text-tertiary)] italic">{t('fileSettingsResolutionHelp')}</p>
+      <p className="text-xs text-[var(--theme-text-tertiary)] italic">{t('fileSettingsResolutionHelp')}</p>
     </div>
   );
 };

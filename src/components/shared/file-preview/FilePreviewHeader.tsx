@@ -136,7 +136,7 @@ export const FilePreviewHeader = React.forwardRef<FilePreviewHeaderHandle, FileP
             )}
 
             {!isEditable && (
-              <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono text-white/50 leading-none mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-white/50 leading-none mt-0.5">
                 <span className="truncate max-w-[60px]">{file.type.split('/').pop()?.toUpperCase()}</span>
                 <span className="w-0.5 h-0.5 rounded-full bg-white/30 flex-shrink-0"></span>
                 <span className="whitespace-nowrap">{formatFileSize(file.size)}</span>

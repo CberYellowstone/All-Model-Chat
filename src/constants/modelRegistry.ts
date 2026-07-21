@@ -18,21 +18,22 @@ interface RegisteredModel {
 
 const MODEL_REGISTRY: RegisteredModel[] = [
   {
-    id: 'gemini-3.5-flash',
-    name: 'Gemini 3.5 Flash',
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
     groupLabels: {
-      liveArtifacts: 'Gemini 3.5 Flash',
-      transcription: 'Gemini 3.5 Flash',
+      liveArtifacts: 'Gemini 3.6 Flash',
+      transcription: 'Gemini 3.6 Flash',
     },
   },
   {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash',
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash-Lite',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
     groupLabels: {
-      liveArtifacts: 'Gemini 3 Flash',
-      transcription: 'Gemini 3.0 Flash',
+      liveArtifacts: 'Gemini 3.5 Flash-Lite',
+      connectionTest: 'Gemini 3.5 Flash-Lite',
+      transcription: 'Gemini 3.5 Flash-Lite',
     },
   },
   {
@@ -44,16 +45,6 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     id: 'gemini-3.5-live-translate-preview',
     name: 'Gemini 3.5 Live Translate',
     groups: ['defaultPinned'],
-  },
-  {
-    id: 'gemini-3.1-flash-lite',
-    name: 'Gemini 3.1 Flash Lite',
-    groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
-    groupLabels: {
-      liveArtifacts: 'Gemini 3.1 Flash Lite',
-      connectionTest: 'Gemini 3.1 Flash Lite',
-      transcription: 'Gemini 3.1 Flash Lite',
-    },
   },
   {
     id: 'gemini-3.1-pro-preview',

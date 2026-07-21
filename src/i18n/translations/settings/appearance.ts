@@ -6,6 +6,10 @@ const appearanceSettings = {
   settingsThemeGray: { en: 'Gray', zh: '灰色' },
   settingsThemeLight: { en: 'Light', zh: '浅色' },
   settingsFontSize: { en: 'Reading Size', zh: '阅读字号' },
+  settingsFontSizeTooltip: {
+    en: 'Controls message body text size in chat. Sidebar, headers, and other chrome stay at the interface scale.',
+    zh: '控制聊天消息正文的字号。侧边栏、顶栏等界面元素保持界面字号，不受此设置影响。',
+  },
   settingsLiveArtifactsFontSize: { en: 'Live Artifacts Base Size', zh: 'Live Artifacts 基础字号' },
   settingsLiveArtifactsFontSizeTooltip: {
     en: 'Sets the default font size for inline Live Artifacts in chat. Artifact content with its own font-size may still override it.',
@@ -17,6 +21,10 @@ const appearanceSettings = {
   settingsLanguageZh: { en: 'Chinese', zh: '中文' },
   settingsInputToolbar: { en: 'Input Toolbar', zh: '输入框工具栏' },
   settingsBehaviorDisplay: { en: 'Interaction & Display', zh: '交互与显示' },
+  settingsChatBehavior: { en: 'Chat Behavior', zh: '对话行为' },
+  settingsClipboardInput: { en: 'Clipboard & Paste', zh: '剪贴板与粘贴' },
+  settingsRenderingPreview: { en: 'Rendering & Preview', zh: '渲染与预览' },
+  settingsNotificationsFeedback: { en: 'Notifications & Feedback', zh: '通知与反馈' },
   // Interface Toggles
   settingsExpandCodeBlocksByDefaultLabel: { en: 'Expand Code Blocks Automatically', zh: '自动展开代码块' },
   settingsEnableMermaidRenderingLabel: { en: 'Render Mermaid Diagrams', zh: '渲染 Mermaid 图表' },

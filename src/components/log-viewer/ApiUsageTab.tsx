@@ -54,7 +54,7 @@ export const ApiUsageTab: React.FC<ApiUsageTabProps> = ({ apiKeyUsage, appSettin
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-mono text-xs text-[var(--theme-text-tertiary)]">#{index + 1}</span>
                   {isActive && (
-                    <span className="text-[10px] font-bold uppercase bg-green-900 text-green-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="text-xs font-bold uppercase bg-green-900 text-green-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <CheckCircle size={10} /> {t('logViewerActive')}
                     </span>
                   )}

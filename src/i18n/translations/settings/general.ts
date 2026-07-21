@@ -18,6 +18,16 @@ const generalSettings = {
     en: 'Open a chat to edit current-chat settings.',
     zh: '打开对话后可编辑当前会话设置。',
   },
+  settingsSearchPlaceholder: { en: 'Search settings…', zh: '搜索设置…' },
+  settingsSearchNoResults: { en: 'No matching settings.', zh: '未找到匹配的设置。' },
+  settingsSearchResultsCount: { en: '{count} results', zh: '{count} 个结果' },
+  settingsSearchClearAria: { en: 'Clear search', zh: '清除搜索' },
+  settingsSearchAria: { en: 'Search settings', zh: '搜索设置' },
+  settingsAdvancedMode: { en: 'Advanced Mode', zh: '高级模式' },
+  settingsAdvancedModeDescription: { en: 'Show fine-tuning and expert parameter options', zh: '显示微调与专家级参数选项' },
+  settingsShowAdvancedParameters: { en: 'Show Advanced Parameters', zh: '展开高级微调参数' },
+  settingsHideAdvancedParameters: { en: 'Hide Advanced Parameters', zh: '折叠高级微调参数' },
+
   usageTitle: { en: 'API Usage', zh: 'API 用量' },
   usageDescription: {
     en: 'Track token consumption and request counts for recent model activity.',

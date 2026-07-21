@@ -266,17 +266,21 @@ async function buildGenerationConfigFromOptions({
   const supportsThinkingLevel = isGemini3 || isGeminiRoboticsModel(modelId);
 
   if (supportsThinkingLevel) {
+    // Gemini 3 series (incl. 3.6 Flash / 3.5 Flash-Lite): official API is thinkingLevel + includeThoughts.
+    // Do not send thinkingBudget alone — it is a 2.5-era parameter and can omit thought summaries on 3.x.
+    // includeThoughts stays true so summaries are available; UI visibility is gated by showThoughts.
     generationConfig.thinkingConfig = {
       includeThoughts: true,
-    };
-
-    if (thinkingBudget > 0) {
-      generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
-    } else {
-      generationConfig.thinkingConfig.thinkingLevel = toSdkThinkingLevel(
+      thinkingLevel: toSdkThinkingLevel(
         normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'),
         'HIGH',
-      );
+      ),
+    };
+
+    // Robotics still accepts budget for backwards-compatible token control when set.
+    if (!isGemini3 && thinkingBudget > 0) {
+      delete generationConfig.thinkingConfig.thinkingLevel;
+      generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
     }
   } else if (isGemma) {
     generationConfig.thinkingConfig = {

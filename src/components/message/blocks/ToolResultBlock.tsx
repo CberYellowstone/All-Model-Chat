@@ -80,7 +80,7 @@ export const ToolResultBlock: React.FC<ToolResultBlockProps> = ({
 
       {generatedFiles.length > 0 && (
         <div className="mt-3 pt-3 border-t border-[var(--theme-border-secondary)]/50">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5 mb-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5 mb-2">
             <FileOutput size={12} /> {t('codeGeneratedOutputFiles')}
           </span>
           <div className="flex flex-wrap gap-2">

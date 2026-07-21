@@ -27,7 +27,7 @@ export const ScenarioSystemPrompt: React.FC<ScenarioSystemPromptProps> = ({ valu
             <Maximize2 size={12} />
           </button>
         </label>
-        <p className="text-[10px] text-[var(--theme-text-tertiary)] mb-3">{t('scenariosSystemPromptHelp')}</p>
+        <p className="text-xs text-[var(--theme-text-tertiary)] mb-3">{t('scenariosSystemPromptHelp')}</p>
       </div>
       <textarea
         value={value}

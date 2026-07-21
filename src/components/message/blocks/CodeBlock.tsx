@@ -241,7 +241,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
       {hasRun && (
         <div className="border-t border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] rounded-b-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex select-none items-center justify-between px-3 py-1.5 bg-[var(--theme-bg-tertiary)]/50">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5">
               <Terminal size={12} /> {t('codeLocalPythonOutput')}
             </span>
             <div className="flex items-center gap-1">
@@ -284,7 +284,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
 
             {generatedFiles.length > 0 && (
               <div className="mt-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex select-none items-center gap-1.5 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex select-none items-center gap-1.5 mb-2">
                   <FileOutput size={12} /> {t('codeGeneratedFiles')}
                 </span>
                 <div className="flex flex-wrap gap-2">

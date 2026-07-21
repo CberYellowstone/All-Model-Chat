@@ -10,7 +10,7 @@ const SCHEMA_TYPE = {
 
 const SUGGESTION_COUNT = 3;
 const AUTO_THINKING_BUDGET = -1;
-const TEXT_GENERATION_MODEL_ID = 'gemini-3.1-flash-lite';
+const TEXT_GENERATION_MODEL_ID = 'gemini-3.5-flash-lite';
 
 type StructuredTextContent = Array<{
   role: 'user';

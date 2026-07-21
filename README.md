@@ -137,7 +137,7 @@
 
 - 日志与用量页采用“严格精确”模式：只有在已存储字段足以精确还原官方费用时才显示价格
 - 新生成的聊天、TTS、转写与部分图片生成请求会记录更完整的计费元数据
-- 纯文本聊天请求会在本地补齐 `TEXT -> TEXT` 模态证据，因此纯文本 `gemini-3.1-pro-preview`、`gemini-3-flash-preview` 与 `gemini-3.1-flash-lite` 对话可显示价格
+- 纯文本聊天请求会在本地补齐 `TEXT -> TEXT` 模态证据，因此纯文本 `gemini-3.1-pro-preview`、`gemini-3.6-flash`、`gemini-3.5-flash-lite` 等对话可显示价格
 - 历史记录或缺少精确定价字段的请求会继续显示 `—`
 
 ### 多标签同步
@@ -454,7 +454,7 @@ OpenAI 兼容模式使用独立模型列表，可在设置中手动维护或从�
 
 | 类型           | 模型                                                                                                 |
 | :------------- | :--------------------------------------------------------------------------------------------------- |
-| **Gemini 3.x** | gemini-3-flash-preview, gemini-3.1-flash-live-preview, gemini-3.1-flash-lite, gemini-3.1-pro-preview |
+| **Gemini 3.x** | gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.1-pro-preview |
 | **Robotics**   | gemini-robotics-er-1.6-preview                                                                       |
 | **Gemma 4**    | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                   |
 | **图片生成**   | gemini-2.5-flash-image, gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image |

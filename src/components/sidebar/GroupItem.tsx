@@ -114,7 +114,7 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
                 className="bg-transparent border border-[var(--theme-border-focus)] rounded-md px-1 py-0 text-sm w-full font-semibold"
               />
             ) : (
-              <span className="font-semibold text-sm truncate text-[var(--theme-text-secondary)]">{group.title}</span>
+              <span className="font-semibold text-sm truncate text-[var(--theme-text-primary)]">{group.title}</span>
             )}
           </div>
           <button

@@ -21,22 +21,29 @@ export const usePictureInPicture = (
   const openPip = useCallback(async () => {
     if (!isPipSupported || pipWindow) return;
 
-    // Collapse sidebar when entering PiP mode
-    sidebarStateBeforePipRef.current = isHistorySidebarOpen;
-    setIsHistorySidebarOpenTransient(false);
-
     try {
+      // Request PiP window immediately within the user gesture stack
       const pipWin = await window.documentPictureInPicture!.requestWindow({
         width: 500, // A reasonable default width
         height: 700, // A reasonable default height
       });
 
-      // Copy head resources without executable scripts. React renders into this window via a portal.
-      Array.from(document.head.childNodes).forEach((node) => {
-        if (node.nodeName === 'SCRIPT') {
-          return;
+      // Collapse sidebar when entering PiP mode
+      sidebarStateBeforePipRef.current = isHistorySidebarOpen;
+      setIsHistorySidebarOpenTransient(false);
+
+      // Safely copy ONLY style and stylesheet/modulepreload link elements into the PiP window.
+      // NEVER copy rel="icon", rel="manifest", rel="apple-touch-icon", as Chrome PiP security
+      // kills the renderer with RESULT_CODE_KILLED_BAD_MESSAGE if a PiP frame attempts to load web app manifest or favicons.
+      const safeStyleNodes = document.head.querySelectorAll(
+        'style, link[rel="stylesheet"], link[rel="modulepreload"]',
+      );
+      safeStyleNodes.forEach((node) => {
+        try {
+          pipWin.document.head.appendChild(pipWin.document.importNode(node, true));
+        } catch {
+          // Fallback ignore if import fails
         }
-        pipWin.document.head.appendChild(node.cloneNode(true));
       });
 
       pipWin.document.title = 'AMC WebUI - PiP';

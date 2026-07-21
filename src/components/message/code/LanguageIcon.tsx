@@ -38,7 +38,7 @@ type LanguageBadgeEntry = Omit<LanguageBadgeConfig, 'iconId'> & {
 
 const TextGlyph: React.FC<{ label: string; className: string }> = ({ label, className }) => (
   <span
-    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] px-1 text-[9px] font-black uppercase tracking-[0.12em] ${className}`}
+    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] px-1 text-xs font-black uppercase tracking-[0.12em] ${className}`}
     aria-hidden="true"
   >
     {label}
@@ -304,11 +304,11 @@ export const LanguageIcon: React.FC<{ language: string }> = ({ language }) => {
         {config.renderIcon()}
       </span>
       <span data-language-meta className="inline-flex min-w-0 items-center gap-1.5">
-        <span className="truncate text-[10px] font-bold uppercase leading-none tracking-wider text-[var(--theme-text-secondary)]">
+        <span className="truncate text-xs font-bold uppercase leading-none tracking-wider text-[var(--theme-text-secondary)]">
           {config.displayName}
         </span>
         {config.compactLabel && (
-          <span className="truncate text-[9px] font-mono font-semibold uppercase leading-none tracking-[0.12em] text-[var(--theme-text-tertiary)]">
+          <span className="truncate text-xs font-mono font-semibold uppercase leading-none tracking-[0.12em] text-[var(--theme-text-tertiary)]">
             {config.compactLabel}
           </span>
         )}

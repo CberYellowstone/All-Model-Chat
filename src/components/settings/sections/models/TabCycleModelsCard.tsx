@@ -111,7 +111,7 @@ export const TabCycleModelsCard: React.FC<TabCycleModelsCardProps> = ({ availabl
                       >
                         {model.name}
                       </span>
-                      <span className="block truncate font-mono text-[10px] text-[var(--theme-text-tertiary)]">
+                      <span className="block truncate font-mono text-xs text-[var(--theme-text-tertiary)]">
                         {model.id}
                       </span>
                     </span>

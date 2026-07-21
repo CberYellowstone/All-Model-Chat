@@ -131,7 +131,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, autoPlay = false,
             />
           </div>
 
-          <div className="flex justify-between text-[10px] font-mono text-[var(--theme-text-tertiary)] tabular-nums select-none">
+          <div className="flex justify-between text-xs font-mono text-[var(--theme-text-tertiary)] tabular-nums select-none">
             <span>{formatClockTime(currentTime)}</span>
             <span>{formatClockTime(duration)}</span>
           </div>
@@ -140,7 +140,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, autoPlay = false,
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={toggleSpeed}
-            className="px-1.5 py-1 rounded text-[10px] font-bold text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors min-w-[2rem]"
+            className="px-1.5 py-1 rounded text-xs font-bold text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors min-w-[2rem]"
             title={t('audioPlayerPlaybackSpeed')}
           >
             {playbackRate}x

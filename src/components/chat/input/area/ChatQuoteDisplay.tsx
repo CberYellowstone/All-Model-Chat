@@ -27,7 +27,7 @@ export const ChatQuoteDisplay: React.FC<ChatQuoteDisplayProps> = ({ quotes, onRe
           </div>
           <div className="flex-grow min-w-0 pr-6">
             {quotes.length > 1 && (
-              <div className="text-[10px] font-bold text-[var(--theme-text-tertiary)] uppercase tracking-wider mb-1">
+              <div className="text-xs font-bold text-[var(--theme-text-tertiary)] uppercase tracking-wider mb-1">
                 {t('quoteNumberLabel').replace('{number}', String(index + 1))}
               </div>
             )}

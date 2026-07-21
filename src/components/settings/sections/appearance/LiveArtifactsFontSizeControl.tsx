@@ -24,7 +24,7 @@ export const LiveArtifactsFontSizeControl: React.FC<LiveArtifactsFontSizeControl
   const customFontSize = clampLiveArtifactsCustomFontSize(settings.liveArtifactsCustomFontSize ?? 16);
 
   return (
-    <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-3`}>
+    <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-3`} data-settings-item="interface-live-artifacts-font">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <label

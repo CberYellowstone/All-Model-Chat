@@ -1,7 +1,9 @@
 import { act, type ComponentProps } from 'react';
+import { fireEvent } from '@testing-library/react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_APP_SETTINGS, DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
+import { ensureFeatureTranslations } from '@/i18n/featureTranslations';
 import { setupStoreStateReset } from '@/test/stores/reset';
 import { SettingsModal } from './SettingsModal';
 
@@ -165,5 +167,37 @@ describe('SettingsModal', () => {
     });
 
     expect(document.body.textContent).not.toContain('Current Chat');
+  });
+
+  it('searches settings and navigates to the matching section', async () => {
+    await ensureFeatureTranslations('settings');
+    localStorage.setItem('chatSettingsLastTab', 'api');
+    await renderSettingsModal();
+
+    const searchInput = document.querySelector<HTMLInputElement>('input[aria-label="Search settings"]');
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.change(searchInput!, { target: { value: 'mermaid' } });
+    });
+
+    expect(searchInput?.value).toBe('mermaid');
+    expect(document.body.textContent).toContain('Render Mermaid Diagrams');
+    expect(document.body.textContent).toMatch(/result/i);
+
+    const mermaidResult = Array.from(document.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Render Mermaid Diagrams'),
+    );
+    expect(mermaidResult).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(mermaidResult!);
+    });
+
+    const clearedSearch = document.querySelector<HTMLInputElement>('input[aria-label="Search settings"]');
+    expect(clearedSearch?.value).toBe('');
+    expect(document.body.textContent).toContain('Rendering & Preview');
+    expect(document.body.textContent).toContain('Render Mermaid Diagrams');
+    expect(document.querySelector('[data-settings-item="interface-mermaid"]')).not.toBeNull();
   });
 });

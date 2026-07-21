@@ -50,7 +50,7 @@ export const ThinkingBudgetSlider: React.FC<ThinkingBudgetSliderProps> = ({
           />
         </div>
       </div>
-      <p className="text-[10px] text-[var(--theme-text-tertiary)] text-center">
+      <p className="text-xs text-[var(--theme-text-tertiary)] text-center">
         {t('settingsReasoningBudgetHelp')} ({minBudget}-{maxBudget}).
       </p>
     </div>

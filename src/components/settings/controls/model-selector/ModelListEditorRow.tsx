@@ -81,7 +81,7 @@ export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({
                 onClick={() => onUpdate(index, 'apiMode', option.apiMode)}
                 aria-pressed={isActive}
                 title={t(option.labelKey)}
-                className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                   isActive
                     ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)]'
                     : 'text-[var(--theme-text-tertiary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]'

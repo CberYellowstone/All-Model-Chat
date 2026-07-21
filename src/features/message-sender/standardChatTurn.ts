@@ -46,6 +46,21 @@ export const resolveStandardChatTurn = ({
       prefillContent = isGemini3Model(apiModelId) ? '<thinking>I have finished reasoning</thinking>' : ' ';
     }
 
+    // Gemini 3.6+ rejects non-empty prefilled model turns. Continue via a user nudge instead.
+    const modelIdLower = apiModelId.toLowerCase();
+    const bansModelTurnPrefill =
+      modelIdLower.includes('gemini-3.6') ||
+      modelIdLower.includes('gemini-3.5-flash-lite') ||
+      /gemini-[4-9]/.test(modelIdLower);
+    if (bansModelTurnPrefill) {
+      return {
+        baseMessagesForApi,
+        finalRole: 'user',
+        finalParts: [{ text: 'Please continue from where you left off.' }],
+        shouldSkipApiCall: false,
+      };
+    }
+
     return {
       baseMessagesForApi,
       finalRole: 'model',

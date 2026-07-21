@@ -6,6 +6,14 @@
   --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1);
+
+  /* Reading size is applied on body; chrome stays rem-relative to this root. */
+  --app-font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  --app-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --app-text-measure: 75ch;
 }
 
 /* Global Layout Reset for Full Height */
@@ -16,7 +24,21 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Prevent body scroll, let React app handle scrolling */
+  overflow: hidden;
+}
+
+html {
+  font-family: var(--app-font-sans);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: inherit;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
 }
 
 @supports (height: 100dvh) {
@@ -51,15 +73,15 @@ body,
   color: var(--theme-selection-text, #0f172a);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar — refined with thinner profile and hover states */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -89,8 +111,8 @@ body,
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Fade Mask for horizontal scroll lists */
@@ -99,7 +121,17 @@ body,
   mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent);
 }
 
-/* Tooltip Styles */
+/* Settings sidebar search — drop native search chrome */
+.settings-search-input::-webkit-search-decoration,
+.settings-search-input::-webkit-search-cancel-button,
+.settings-search-input::-webkit-search-results-button,
+.settings-search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+/* Tooltip Styles — refined with glass effect */
 .tooltip-container {
   position: relative;
   display: inline-flex;
@@ -124,12 +156,16 @@ body,
     opacity 0.18s var(--ease-out-expo) 0.12s,
     visibility 0s linear 0.3s;
   border: 1px solid var(--theme-border-secondary);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 8px 24px -4px rgba(0, 0, 0, 0.18),
+    0 2px 8px -2px rgba(0, 0, 0, 0.1);
   font-size: 0.75rem;
   font-weight: 500;
   white-space: normal;
   pointer-events: none;
   line-height: 1.4;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .tooltip-container:hover .tooltip-text {
@@ -140,13 +176,10 @@ body,
     visibility 0s linear 0s;
 }
 
-/* 
-   EXPORT STYLES 
+/*
+   EXPORT STYLES
    Target specific elements to hide during PNG export
 */
-/* Note: UI elements (buttons, inputs) are removed via JS in prepareElementForExport. */
-
-/* Hide scrollbars in export */
 .is-exporting-png * {
   scrollbar-width: none !important;
 }
@@ -183,4 +216,62 @@ body,
 .search-entry-surface {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Premium background enhancement for chat area */
+.chat-bg-enhancement {
+  position: relative;
+}
+
+.chat-bg-enhancement::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      color-mix(in srgb, var(--theme-bg-accent) 4%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 90% 100%,
+      color-mix(in srgb, var(--theme-bg-accent) 2%, transparent),
+      transparent
+    );
+  opacity: 1;
+}
+
+/* Subtle noise texture overlay for depth in dark themes */
+.theme-onyx .chat-bg-enhancement::after,
+.theme-graphite .chat-bg-enhancement::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Glass surface utility for floating elements */
+.glass-surface {
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  background-color: color-mix(in srgb, var(--theme-bg-secondary) 70%, transparent);
+}
+
+/* Premium card shadow */
+.card-shadow {
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.06),
+    0 1px 2px -1px rgba(0, 0, 0, 0.04);
+}
+
+.theme-onyx .card-shadow,
+.theme-graphite .card-shadow {
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.3),
+    0 1px 2px -1px rgba(0, 0, 0, 0.2);
 }

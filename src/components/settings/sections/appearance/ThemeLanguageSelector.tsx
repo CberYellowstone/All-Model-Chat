@@ -30,7 +30,10 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ se
 
   return (
     <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-1`}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-1">
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-1"
+        data-settings-item="interface-theme"
+      >
         <span className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsTheme')}</span>
         <div className={`${SETTINGS_SEGMENTED_TRACK_CLASS} flex-wrap`} role="group" aria-label={t('settingsTheme')}>
           {themeOptions.map((option) => (
@@ -49,7 +52,10 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ se
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-[var(--theme-border-secondary)]/50 py-3">
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-[var(--theme-border-secondary)]/50 py-3"
+        data-settings-item="interface-language"
+      >
         <span className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsLanguage')}</span>
         <div
           className={SETTINGS_SEGMENTED_TRACK_CLASS}

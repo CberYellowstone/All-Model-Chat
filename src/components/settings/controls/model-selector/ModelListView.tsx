@@ -41,7 +41,7 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
         {sections.map((section) => (
           <div key={section.key} className="space-y-1" data-provider-section={section.providerKey}>
             {section.providerKey && (
-              <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
+              <div className="px-2 pt-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
                 {t(getModelProviderSectionLabelKey(section.providerKey))}
               </div>
             )}
@@ -77,14 +77,14 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
                         {entry.name}
                       </span>
                     </div>
-                    <div className="text-[10px] text-[var(--theme-text-tertiary)] font-mono truncate opacity-70">
+                    <div className="text-xs text-[var(--theme-text-tertiary)] font-mono truncate opacity-70">
                       {entry.id}
                     </div>
                   </div>
 
                   <div className="flex-shrink-0 ml-2">
                     {isSelected && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] text-[10px] font-bold shadow-sm border border-transparent">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] text-xs font-bold shadow-sm border border-transparent">
                         <Check size={11} strokeWidth={3} />
                         <span>{t('settingsActiveModel')}</span>
                       </div>

@@ -1,4 +1,5 @@
 import { type ModelOption } from '@/types';
+import { migrateRemovedModelId } from '@/constants/modelConfiguration';
 
 import { getModelCapabilities, isImageGenerationModel } from './modelCapabilities';
 
@@ -6,7 +7,7 @@ export const sanitizeModelOptions = (models: ModelOption[]): ModelOption[] => {
   const seenIds = new Set<string>();
 
   return models.reduce<ModelOption[]>((sanitized, model) => {
-    const normalizedId = model.id.trim();
+    const normalizedId = migrateRemovedModelId(model.id.trim()) ?? model.id.trim();
 
     if (!normalizedId || seenIds.has(normalizedId)) {
       return sanitized;
@@ -23,8 +24,10 @@ export const sanitizeModelOptions = (models: ModelOption[]): ModelOption[] => {
   }, []);
 };
 
-export const resolveSupportedModelId = (modelId: string | null | undefined, fallback: string): string =>
-  modelId || fallback;
+export const resolveSupportedModelId = (modelId: string | null | undefined, fallback: string): string => {
+  const resolved = migrateRemovedModelId(modelId) || fallback;
+  return resolved;
+};
 
 /**
  * De-duplicate a model list by id, preserving the first occurrence of each id.
@@ -45,9 +48,8 @@ export const deduplicateModelsById = (models: ModelOption[]): ModelOption[] => {
 export const sortModels = (models: ModelOption[]): ModelOption[] => {
   const pinnedPriorityOrder: Record<string, number> = {
     'gemini-3.1-pro-preview': 0,
-    'gemini-3.5-flash': 1,
-    'gemini-3-flash-preview': 2,
-    'gemini-3.1-flash-lite': 3,
+    'gemini-3.6-flash': 1,
+    'gemini-3.5-flash-lite': 2,
   };
 
   const getCategoryWeight = (id: string) => {

@@ -70,17 +70,17 @@ describe('thinking budget adjustment', () => {
 
   it('keeps auto (-1) for Gemini 3 models', () => {
     expect(resolveModelSwitchForTarget('gemini-3-flash-preview', { thinkingBudget: -1 }).thinkingBudget).toBe(-1);
-    expect(resolveModelSwitchForTarget('gemini-3.5-flash', { thinkingBudget: -1 }).thinkingBudget).toBe(-1);
+    expect(resolveModelSwitchForTarget('gemini-3.6-flash', { thinkingBudget: -1 }).thinkingBudget).toBe(-1);
   });
 
   it('forces Gemini 3 mandatory thinking models with 0 budget to auto', () => {
     expect(resolveModelSwitchForTarget('gemini-3-flash-preview', { thinkingBudget: 0 }).thinkingBudget).toBe(-1);
-    expect(resolveModelSwitchForTarget('gemini-3.5-flash', { thinkingBudget: 0 }).thinkingBudget).toBe(-1);
+    expect(resolveModelSwitchForTarget('gemini-3.6-flash', { thinkingBudget: 0 }).thinkingBudget).toBe(-1);
   });
 
   it('clamps Gemini 3.5 Flash budgets to the same range as Gemini 3 Flash', () => {
-    expect(resolveModelSwitchForTarget('gemini-3.5-flash', { thinkingBudget: 10 }).thinkingBudget).toBe(128);
-    expect(resolveModelSwitchForTarget('gemini-3.5-flash', { thinkingBudget: 50000 }).thinkingBudget).toBe(32768);
+    expect(resolveModelSwitchForTarget('gemini-3.6-flash', { thinkingBudget: 10 }).thinkingBudget).toBe(128);
+    expect(resolveModelSwitchForTarget('gemini-3.6-flash', { thinkingBudget: 50000 }).thinkingBudget).toBe(32768);
   });
 
   it('keeps valid budget within range', () => {
@@ -160,7 +160,7 @@ describe('resolveModelSwitchSettings', () => {
   it('normalizes unsupported MINIMAL thinking level when switching to Gemini 3.1 Pro', () => {
     const result = resolveModelSwitchSettings({
       currentSettings: {
-        modelId: 'gemini-3.1-flash-lite',
+        modelId: 'gemini-3.5-flash-lite',
         mediaResolution: undefined,
         thinkingBudget: -1,
         thinkingLevel: 'MINIMAL',

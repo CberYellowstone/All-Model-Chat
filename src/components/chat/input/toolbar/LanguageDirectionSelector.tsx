@@ -91,7 +91,7 @@ export const LanguageDirectionSelector: React.FC = () => {
                   }`}
                 >
                   <span className="truncate">{o.label}</span>
-                  <span className="text-[var(--theme-text-tertiary)] text-[10px] flex-shrink-0">{o.code}</span>
+                  <span className="text-[var(--theme-text-tertiary)] text-xs flex-shrink-0">{o.code}</span>
                 </button>
               ))}
             </div>

@@ -123,7 +123,7 @@ const TextThumbnail = ({ file }: { file: UploadedFile }) => {
       data-thumbnail-kind="text"
       className="h-full w-full overflow-hidden bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]"
     >
-      <div className="flex h-full flex-col gap-1 p-2 text-[8px] leading-tight">
+      <div className="flex h-full flex-col gap-1 p-2 text-xs leading-tight">
         {displayLines.map((line, index) => (
           <div key={`${index}:${line}`} className="flex items-center gap-1">
             <span className="w-2 flex-shrink-0 text-[var(--theme-text-tertiary)]">{index + 1}</span>
@@ -235,7 +235,7 @@ const CoverThumbnail = ({ file, Icon, colorClass, bgClass }: FileThumbnailProps)
         <div className="rounded-lg bg-[var(--theme-bg-primary)]/80 p-1.5 shadow-sm">
           <Icon size={19} className={colorClass} strokeWidth={1.6} />
         </div>
-        <span className="max-w-full rounded bg-[var(--theme-bg-primary)]/80 px-1.5 py-0.5 text-[8px] font-semibold leading-none text-[var(--theme-text-secondary)]">
+        <span className="max-w-full rounded bg-[var(--theme-bg-primary)]/80 px-1.5 py-0.5 text-xs font-semibold leading-none text-[var(--theme-text-secondary)]">
           {extension}
         </span>
       </div>

@@ -99,7 +99,7 @@ const SessionListGroup = ({
 }) => {
   return (
     <div>
-      <div className="px-3 pt-4 pb-1 text-xs font-medium tracking-wide text-[var(--theme-text-tertiary)]">
+      <div className="px-3 pt-4 pb-1 text-xs font-semibold tracking-wide text-[var(--theme-text-secondary)]">
         {title}
       </div>
       <LimitedSessionList sessions={sessions} sessionItemProps={sessionItemProps} />
@@ -310,10 +310,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           )}
         </div>
 
-        <div className="p-3 bg-[var(--theme-bg-secondary)]/30">
+        <div className="p-3 border-t border-[var(--theme-border-primary)]">
           <button
             onClick={onOpenSettingsModal}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-xl transition-all duration-200 group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-xl transition-all duration-150 group active:scale-[0.98]"
           >
             <Settings
               size={20}

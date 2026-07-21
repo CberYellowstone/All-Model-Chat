@@ -114,6 +114,7 @@ export const AboutSection: React.FC = () => {
 
   return (
     <div
+      data-settings-item="about-root"
       className={`flex min-h-full flex-col items-center px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 ${isCompactViewport ? 'py-2.5' : 'py-3 sm:py-4 md:py-5'}`}
     >
       <div className="relative group">

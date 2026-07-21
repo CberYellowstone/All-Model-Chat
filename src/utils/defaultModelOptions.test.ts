@@ -38,6 +38,22 @@ describe('getDefaultModelOptions', () => {
     expect(models.some((model) => model.id === 'gemini-2.5-flash-native-audio-preview-12-2025')).toBe(false);
   });
 
+  it('does not include removed Gemini 3 Flash', () => {
+    const models = getDefaultModelOptions();
+
+    expect(models.some((model) => model.id === 'gemini-3-flash-preview')).toBe(false);
+    expect(models.some((model) => model.id === 'gemini-3-flash')).toBe(false);
+  });
+
+  it('does not include removed Gemini 3.1 Flash Lite or 3.5 Flash text models', () => {
+    const models = getDefaultModelOptions();
+
+    expect(models.some((model) => model.id === 'gemini-3.1-flash-lite')).toBe(false);
+    expect(models.some((model) => model.id === 'gemini-3.5-flash')).toBe(false);
+    expect(models.some((model) => model.id === 'gemini-3.6-flash')).toBe(true);
+    expect(models.some((model) => model.id === 'gemini-3.5-flash-lite')).toBe(true);
+  });
+
   it('keeps preview ids but omits Preview from default display names', () => {
     const models = getDefaultModelOptions();
 

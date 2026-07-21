@@ -75,6 +75,12 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
     }
   }, [modelId, isMandatoryThinking, thinkingBudget, setThinkingBudget]);
 
+  // Gemini 3 text models only support thinkingLevel (not 2.5-style token budgets).
+  useEffect(() => {
+    if (!isGemini3 || isImageThinkingLevelOnly || thinkingBudget === -1) return;
+    setThinkingBudget(-1);
+  }, [isGemini3, isImageThinkingLevelOnly, thinkingBudget, setThinkingBudget]);
+
   useEffect(() => {
     if (thinkingBudget > maxBudget) {
       setThinkingBudget(maxBudget);
@@ -184,7 +190,7 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
           </label>
         </div>
 
-        {!isImageThinkingLevelOnly && (
+        {!isImageThinkingLevelOnly && !isGemini3 && (
           <ThinkingModeSelector
             mode={mode}
             onModeChange={handleModeChange}
@@ -193,17 +199,18 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
           />
         )}
 
-        {(showContent || isImageThinkingLevelOnly) && (
+        {(showContent || isImageThinkingLevelOnly || isGemini3) && (
           <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-            {((supportsThinkingLevel && mode === 'auto') || isImageThinkingLevelOnly) && setThinkingLevel && (
-              <ThinkingLevelSelector
-                thinkingLevel={thinkingLevel}
-                setThinkingLevel={setThinkingLevel}
-                supportedLevels={supportedThinkingLevels}
-              />
-            )}
+            {((supportsThinkingLevel && (mode === 'auto' || isGemini3)) || isImageThinkingLevelOnly) &&
+              setThinkingLevel && (
+                <ThinkingLevelSelector
+                  thinkingLevel={thinkingLevel}
+                  setThinkingLevel={setThinkingLevel}
+                  supportedLevels={supportedThinkingLevels}
+                />
+              )}
 
-            {!isImageThinkingLevelOnly && mode === 'custom' && (
+            {!isImageThinkingLevelOnly && !isGemini3 && mode === 'custom' && (
               <ThinkingBudgetSlider
                 minBudget={minBudget}
                 maxBudget={maxBudget}
@@ -212,11 +219,30 @@ export const ThinkingControl: FC<ThinkingControlProps> = ({
               />
             )}
 
-            {!isImageThinkingLevelOnly && mode === 'off' && (
+            {!isImageThinkingLevelOnly && !isGemini3 && mode === 'off' && (
               <div className="flex items-center justify-center py-1">
                 <p className="text-xs text-[var(--theme-text-tertiary)] italic flex items-center gap-2">
                   {t('settingsReasoningDisabledNote')}
                 </p>
+              </div>
+            )}
+
+            {isGemini3 && !isImageThinkingLevelOnly && (
+              <div className="mt-4 pt-3 border-t border-[var(--theme-border-secondary)]">
+                <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
+                  <span className="text-sm text-[var(--theme-text-primary)] flex items-center gap-2">
+                    {t('settingsShowThoughts')}
+                    <Tooltip text={t('settingsShowThoughtsTooltip')}>
+                      <Info size={14} className="text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
+                    </Tooltip>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-[var(--theme-border-secondary)] accent-[var(--theme-bg-accent)]"
+                    checked={showThoughts}
+                    onChange={(event) => setShowThoughts(event.target.checked)}
+                  />
+                </label>
               </div>
             )}
           </div>

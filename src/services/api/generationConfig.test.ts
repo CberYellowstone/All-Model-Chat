@@ -460,9 +460,22 @@ describe('buildGenerationConfig', () => {
     expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
 
-  it('uses thinkingBudget when > 0 for Gemini 3', async () => {
-    const config = await buildGenerationConfig('gemini-3-flash-preview', 'sys', baseConfig, false, 8000);
-    expect(config.thinkingConfig!.thinkingBudget).toBe(8000);
+  it('prefers thinkingLevel over thinkingBudget for Gemini 3 even when budget is set', async () => {
+    const config = await buildGenerationConfig(
+      'gemini-3.6-flash',
+      'sys',
+      baseConfig,
+      true,
+      8000,
+      false,
+      false,
+      false,
+      'MEDIUM',
+    );
+    expect(config.thinkingConfig).toEqual({
+      includeThoughts: true,
+      thinkingLevel: 'MEDIUM',
+    });
   });
 
   it('uses thinkingLevel when budget is 0 for Gemini 3', async () => {
@@ -470,7 +483,7 @@ describe('buildGenerationConfig', () => {
       'gemini-3-flash-preview',
       'sys',
       baseConfig,
-      false,
+      true,
       0,
       false,
       false,
@@ -478,7 +491,9 @@ describe('buildGenerationConfig', () => {
       'LOW',
     );
     expect(config.thinkingConfig!.thinkingLevel).toBe('LOW');
+    expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
+
 
   it('normalizes unsupported MINIMAL thinking level for Gemini 3.1 Pro', async () => {
     const config = await buildGenerationConfig(

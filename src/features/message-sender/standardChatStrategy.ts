@@ -81,9 +81,17 @@ export const sendStandardMessage = async ({
     preferCodeExecutionFileInputs,
   );
 
+  // Gemini 3.6+ rejects prefilled model turns (HTTP 400). Raw mode ends the payload with a
+  // model role `<thinking>` prefix, so it is unsafe for those models even if listed as raw-capable.
+  const modelIdLower = effectiveActiveModelId.toLowerCase();
+  const bansModelTurnPrefill =
+    modelIdLower.includes('gemini-3.6') ||
+    modelIdLower.includes('gemini-3.5-flash-lite') ||
+    /gemini-[4-9]/.test(modelIdLower);
   const isRawMode = Boolean(
     (settingsForApi.isRawModeEnabled ?? appSettings.isRawModeEnabled) &&
     !isContinueMode &&
+    !bansModelTurnPrefill &&
     getModelCapabilities(effectiveActiveModelId).supportsRawReasoningPrefill,
   );
 

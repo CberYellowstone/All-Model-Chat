@@ -69,17 +69,13 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
   return (
     <li
       onContextMenu={handleContextMenu}
-      className={`group relative rounded-lg my-0.5 transition-colors duration-100 ease-out ${
-        session.id === activeSessionId || isRightClickAnimating
-          ? 'bg-[var(--theme-bg-accent)]/10'
-          : ''
+      className={`group relative rounded-lg my-0.5 transition-all duration-150 ease-out ${
+        session.id === activeSessionId || isRightClickAnimating ? 'bg-[var(--theme-bg-accent)]/10' : ''
       } ${newlyTitledSessionId === session.id ? 'title-update-animate' : ''} ${isActive ? 'z-20' : ''}`}
     >
       <div
-        className={`relative w-full text-left pl-2.5 pr-1 py-2 text-sm transition-colors rounded-lg ${
-          session.id === activeSessionId
-            ? 'text-[var(--theme-text-primary)] font-medium'
-            : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]'
+        className={`relative w-full text-left pl-2.5 pr-1 py-2 text-sm transition-colors rounded-lg text-[var(--theme-text-primary)] ${
+          session.id === activeSessionId ? 'font-medium' : 'hover:bg-[var(--theme-bg-tertiary)]'
         }`}
       >
         {editingItem?.type === 'session' && editingItem.id === session.id ? (
