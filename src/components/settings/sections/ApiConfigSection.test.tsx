@@ -141,7 +141,7 @@ describe('ApiConfigSection', () => {
 
     await vi.waitFor(() => {
       expect(generateContentMock).toHaveBeenCalledWith({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.6-flash',
         contents: 'Hello',
       });
     });

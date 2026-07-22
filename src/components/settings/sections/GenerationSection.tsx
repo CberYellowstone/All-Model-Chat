@@ -42,6 +42,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
   } = currentSettings;
   const topK = currentSettings.topK ?? 64;
   const isRawModeEnabled = currentSettings.isRawModeEnabled ?? false;
+  const hideThinkingInContext = currentSettings.hideThinkingInContext ?? false;
   const isAdvancedModeEnabled = useSettingsUiStore((state) => state.isAdvancedModeEnabled);
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
   const [isSystemPromptExpanded, setIsSystemPromptExpanded] = useState(false);

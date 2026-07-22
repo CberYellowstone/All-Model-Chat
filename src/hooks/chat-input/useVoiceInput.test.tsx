@@ -3,12 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@/test/render/renderer';
 import { useVoiceInput } from './useVoiceInput';
 
-const { mockUseRecorder } = vi.hoisted(() => ({
+const { mockUseRecorder, prepareAudioForGeminiTranscriptionMock } = vi.hoisted(() => ({
   mockUseRecorder: vi.fn(),
+  prepareAudioForGeminiTranscriptionMock: vi.fn(),
 }));
 
 vi.mock('@/hooks/core/useRecorder', () => ({
   useRecorder: mockUseRecorder,
+}));
+
+vi.mock('@/features/audio/audioCompression', () => ({
+  prepareAudioForGeminiTranscription: prepareAudioForGeminiTranscriptionMock,
 }));
 
 describe('useVoiceInput', () => {
@@ -33,6 +38,9 @@ describe('useVoiceInput', () => {
     recorderState.onStop = undefined;
     recorderState.onError = undefined;
     recorderState.onSystemAudioWarning = undefined;
+    prepareAudioForGeminiTranscriptionMock.mockImplementation(async (blob: Blob) => {
+      return new File([blob], 'voice-input.mp3', { type: 'audio/mpeg' });
+    });
 
     mockUseRecorder.mockImplementation(
       (options?: {
@@ -145,6 +153,57 @@ describe('useVoiceInput', () => {
     });
 
     expect(recorderState.startRecording).toHaveBeenCalledWith({ captureSystemAudio: false });
+
+    unmount();
+  });
+
+  it('always converts recorded audio before transcription, even when compression setting is off', async () => {
+    const onTranscribeAudio = vi.fn(async () => '你好');
+    const setInputText = vi.fn();
+    const converted = new File([new Uint8Array([1, 2, 3])], 'voice-input.mp3', { type: 'audio/mpeg' });
+    prepareAudioForGeminiTranscriptionMock.mockResolvedValue(converted);
+
+    const { unmount } = renderHook(() =>
+      useVoiceInput({
+        onTranscribeAudio,
+        setInputText,
+        isAudioCompressionEnabled: false,
+        textareaRef: { current: null },
+      }),
+    );
+
+    const recorded = new Blob(['webm-bytes'], { type: 'audio/webm;codecs=opus' });
+    await act(async () => {
+      await recorderState.onStop?.(recorded);
+    });
+
+    expect(prepareAudioForGeminiTranscriptionMock).toHaveBeenCalledWith(recorded);
+    expect(onTranscribeAudio).toHaveBeenCalledWith(converted);
+    expect(onTranscribeAudio.mock.calls[0][0].type).toBe('audio/mpeg');
+
+    unmount();
+  });
+
+  it('does not fall back to raw webm when conversion fails', async () => {
+    const onTranscribeAudio = vi.fn(async () => 'should-not-run');
+    const setAppFileError = vi.fn();
+    prepareAudioForGeminiTranscriptionMock.mockRejectedValue(new Error('decode failed'));
+
+    const { unmount } = renderHook(() =>
+      useVoiceInput({
+        onTranscribeAudio,
+        setInputText: vi.fn(),
+        setAppFileError,
+        textareaRef: { current: null },
+      }),
+    );
+
+    await act(async () => {
+      await recorderState.onStop?.(new Blob(['webm'], { type: 'audio/webm;codecs=opus' }));
+    });
+
+    expect(onTranscribeAudio).not.toHaveBeenCalled();
+    expect(setAppFileError).toHaveBeenCalledWith(expect.stringContaining('decode failed'));
 
     unmount();
   });
