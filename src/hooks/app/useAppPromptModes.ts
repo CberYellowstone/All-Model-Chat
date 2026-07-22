@@ -74,9 +74,11 @@ export const useAppPromptModes = ({
       ? liveArtifactsPromptOverrideState.active
       : null;
   const liveArtifactsPromptBusy = liveArtifactsPromptBusySessionId === currentLiveArtifactsPromptTargetSessionId;
-  const persistedLiveArtifactsPromptActive =
-    isConfiguredLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) ||
-    isConfiguredLiveArtifactsSystemInstruction(appSettings.systemInstruction);
+  // Button reflects the active session only. Global appSettings.systemInstruction is still
+  // written on toggle so newly created chats inherit Live Artifacts via createSettingsForNewChat.
+  const persistedLiveArtifactsPromptActive = isConfiguredLiveArtifactsSystemInstruction(
+    currentChatSettings.systemInstruction,
+  );
 
   const isLiveArtifactsPromptActive = liveArtifactsPromptOverrideActive ?? persistedLiveArtifactsPromptActive;
   const loadBuiltInLiveArtifactsPrompt = useCallback(
@@ -139,9 +141,7 @@ export const useAppPromptModes = ({
       return;
     }
 
-    const actualActive =
-      isConfiguredLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction) ||
-      isConfiguredLiveArtifactsSystemInstruction(appSettings.systemInstruction);
+    const actualActive = isConfiguredLiveArtifactsSystemInstruction(currentChatSettings.systemInstruction);
     if (actualActive === liveArtifactsPromptOverrideState.active) {
       queueMicrotask(() => {
         setLiveArtifactsPromptOverrideState((current) =>
@@ -157,7 +157,6 @@ export const useAppPromptModes = ({
       });
     }
   }, [
-    appSettings.systemInstruction,
     isConfiguredLiveArtifactsSystemInstruction,
     liveArtifactsPromptOverrideState,
     currentLiveArtifactsPromptTargetSessionId,

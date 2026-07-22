@@ -1,6 +1,6 @@
 import dns from 'node:dns/promises';
 import net from 'node:net';
-import { isPrivateNetworkHostname } from './privateNetwork.js';
+import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 
 export type FetchLike = (url: string | URL, init?: RequestInit) => Promise<Response>;
 

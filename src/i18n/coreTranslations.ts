@@ -10,19 +10,32 @@ export type SupportedLanguage = 'en' | 'zh';
 export type TranslationEntry = Partial<Record<SupportedLanguage, string>>;
 export type TranslationMap = Record<string, TranslationEntry>;
 
+/**
+ * Shell / always-mounted chrome strings that must work before lazy feature
+ * packs (settings, etc.) are registered via `ensureFeatureTranslations`.
+ *
+ * Keep this list minimal and only for UI that renders on the main shell path
+ * (sidebar, chat toolbar, PWA banner). Full settings copy lives under
+ * `src/i18n/translations/settings/*` and is loaded on demand.
+ *
+ * Keys that also appear in lazy packs (e.g. settingsTitle) are intentional:
+ * core owns the bootstrap value; the lazy pack may re-register the same
+ * strings when the settings modal loads. Prefer editing both places if wording
+ * changes, or move the key solely into core if only shell needs it early.
+ */
 const shellFeatureTranslations: TranslationMap = {
+  // Sidebar + settings modal chrome (modal also loads the full settings pack).
   settingsTitle: { en: 'Settings', zh: '设置' },
+  // Chat toolbar selectors (mounted before settings pack).
   settingsTtsVoice: { en: 'Speech Voice', zh: '语音音色' },
   settingsMediaResolution: { en: 'Input Detail Level', zh: '输入细节等级' },
-  mediaResolution_unspecified: { en: 'Auto (Default)', zh: '自动（默认）' },
-  mediaResolution_low: { en: 'Low (Faster)', zh: '低（较快）' },
-  mediaResolution_medium: { en: 'Medium (Balanced)', zh: '中（平衡）' },
-  mediaResolution_high: { en: 'High (Detail)', zh: '高（细节）' },
-  mediaResolution_ultra_high: { en: 'Ultra High (Images only)', zh: '超高（仅限图片）' },
-  settings_generateQuadImages_tooltip: {
-    en: 'When enabled, image-generation prompts will produce four independent variations at once. This will consume more API credits.',
-    zh: '启用后，图片生成提示词将一次性生成四张独立变体。这将消耗更多 API 用量。',
-  },
+  // CamelCase labels used by MediaResolutionSelector on the chat chrome.
+  mediaResolutionUnspecified: { en: 'Auto (Default)', zh: '自动（默认）' },
+  mediaResolutionLow: { en: 'Low (Faster)', zh: '低（较快）' },
+  mediaResolutionMedium: { en: 'Medium (Balanced)', zh: '中（平衡）' },
+  mediaResolutionHigh: { en: 'High (Detail)', zh: '高（细节）' },
+  mediaResolutionUltraHigh: { en: 'Ultra High (Images only)', zh: '超高（仅限图片）' },
+  // PWA update banner (always available).
   aboutUpdateReady: { en: 'Update ready to refresh', zh: '发现可用更新' },
   pwaUpdateRefreshPrompt: {
     en: 'Refresh to update the installed shell and latest assets.',

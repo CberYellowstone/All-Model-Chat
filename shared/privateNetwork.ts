@@ -25,6 +25,11 @@ const extractMappedIpv4 = (lower: string): string | null => {
   return match ? match[1] : null;
 };
 
+/**
+ * True when the hostname must not be contacted by SSRF-sensitive proxies
+ * (image proxy, MCP HTTP, etc.). Shared by the production API server and the
+ * Vite dev plugin so both enforce the same rules.
+ */
 export const isPrivateNetworkHostname = (hostname: string): boolean => {
   const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
   const ipVersion = net.isIP(normalizedHostname);

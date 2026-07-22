@@ -1,29 +1,14 @@
 import { Buffer } from 'node:buffer';
-import { execFile } from 'node:child_process';
 import type { IncomingHttpHeaders } from 'node:http';
-import net from 'node:net';
-import { promisify } from 'node:util';
 import type { Plugin } from 'vite';
+import { parseAllowedImageProxyUrl } from '../shared/imageProxyUrl';
+import { readMacOsClipboardPng } from '../shared/macosClipboardPng';
 
 const IMAGE_PROXY_PATH = '/api/image-proxy';
 const LOCAL_CLIPBOARD_IMAGE_PATH = '/api/local-clipboard-image';
 const MCP_API_PREFIX = '/api/mcp';
 const DEFAULT_MCP_API_BASE_URL = 'http://127.0.0.1:3001';
 const MAX_IMAGE_PROXY_BYTES = 25 * 1024 * 1024;
-const MAX_LOCAL_CLIPBOARD_IMAGE_BYTES = 25 * 1024 * 1024;
-const PNG_HEX_PREFIX = '89504e470d0a1a0a';
-const MACOS_CLIPBOARD_PNG_SCRIPT = `
-(() => {
-  ObjC.import('AppKit');
-  ObjC.import('Foundation');
-  const pasteboard = $.NSPasteboard.generalPasteboard;
-  const data = pasteboard.dataForType($('public.png'));
-  if (!data || data.isNil()) {
-    return '';
-  }
-  return ObjC.unwrap(data.base64EncodedStringWithOptions(0));
-})()
-`.trim();
 
 type DevServerRequest = {
   method?: string;
@@ -34,86 +19,6 @@ type DevServerRequest = {
 type DevServerResponse = {
   writeHead: (status: number, headers: Record<string, string>) => void;
   end: (body?: string | Uint8Array) => void;
-};
-
-const execFileAsync = promisify(execFile);
-
-const isPrivateImageProxyHostname = (hostname: string): boolean => {
-  const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
-  const ipVersion = net.isIP(normalizedHostname);
-
-  if (ipVersion === 4) {
-    const [first, second] = normalizedHostname.split('.').map((part) => Number(part));
-    return (
-      first === 10 ||
-      first === 127 ||
-      (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168) ||
-      (first === 169 && second === 254) ||
-      first === 0
-    );
-  }
-
-  if (ipVersion === 6) {
-    const lower = normalizedHostname.toLowerCase();
-    return lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80:');
-  }
-
-  return ['localhost', 'localhost.localdomain'].includes(normalizedHostname.toLowerCase());
-};
-
-const parseAllowedImageProxyUrl = (value: string | null): URL | null => {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(value);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return null;
-    }
-    if (parsedUrl.username || parsedUrl.password || isPrivateImageProxyHostname(parsedUrl.hostname)) {
-      return null;
-    }
-    return parsedUrl;
-  } catch {
-    return null;
-  }
-};
-
-const parsePngBase64Data = (value: string): Buffer | null => {
-  const base64 = value.trim();
-  if (!base64) {
-    return null;
-  }
-
-  const data = Buffer.from(base64, 'base64');
-  if (!data.byteLength || !data.toString('hex', 0, 8).startsWith(PNG_HEX_PREFIX)) {
-    return null;
-  }
-
-  return data;
-};
-
-const readMacOsClipboardPng = async (): Promise<Buffer | null> => {
-  if (process.platform !== 'darwin') {
-    return null;
-  }
-
-  try {
-    const result = await execFileAsync('osascript', ['-l', 'JavaScript', '-e', MACOS_CLIPBOARD_PNG_SCRIPT], {
-      encoding: 'utf8',
-      maxBuffer: MAX_LOCAL_CLIPBOARD_IMAGE_BYTES * 2 + 1024,
-    });
-    const data = parsePngBase64Data(result.stdout);
-    if (!data || data.byteLength > MAX_LOCAL_CLIPBOARD_IMAGE_BYTES) {
-      return null;
-    }
-
-    return data;
-  } catch {
-    return null;
-  }
 };
 
 const writeImageProxyJson = (
@@ -268,20 +173,20 @@ const localClipboardImageRequest = async (request: { method?: string }, response
     return;
   }
 
-  const data = await readMacOsClipboardPng();
-  if (!data) {
+  const image = await readMacOsClipboardPng();
+  if (!image) {
     writeImageProxyJson(response, 404, { error: 'No local clipboard image is available.' });
     return;
   }
 
   response.writeHead(200, {
-    'content-type': 'image/png',
-    'content-length': String(data.byteLength),
+    'content-type': image.mimeType,
+    'content-length': String(image.data.byteLength),
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
-    'x-clipboard-file-name': 'clipboard-image.png',
+    'x-clipboard-file-name': image.fileName,
   });
-  response.end(method === 'HEAD' ? undefined : data);
+  response.end(method === 'HEAD' ? undefined : image.data);
 };
 
 const handleLocalApiRequest = (request: DevServerRequest, response: DevServerResponse, next: () => void) => {

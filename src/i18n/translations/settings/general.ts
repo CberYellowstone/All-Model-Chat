@@ -1,5 +1,6 @@
+// settingsTitle lives in coreTranslations shellFeatureTranslations (sidebar chrome
+// before the settings pack loads). Do not re-declare it here.
 const generalSettings = {
-  settingsTitle: { en: 'Settings', zh: '设置' },
   settingsTabChat: { en: 'Chat', zh: '聊天' },
   settingsTabModels: { en: 'Models', zh: '模型' },
   settingsTabGeneration: { en: 'Model Behavior', zh: '模型行为' },

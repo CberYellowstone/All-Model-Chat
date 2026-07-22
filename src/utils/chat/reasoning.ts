@@ -1,4 +1,5 @@
 import { splitMarkdownSegments } from '@/utils/markdownSegments';
+import { escapeHtml } from '@/utils/escapeHtml';
 
 const GEMMA_THOUGHT_CHANNEL_REGEX = /<\|channel(?:\|thought>|>thought\s*)([\s\S]*?)\s*<channel\|>/gi;
 const GEMMA_THOUGHT_CHANNEL_PRESENCE_REGEX = /<\|channel(?:\|thought>|>thought\s*)([\s\S]*?)\s*<channel\|>/i;
@@ -112,14 +113,6 @@ export const stripReasoningMarkup = (text: string): string => {
 
   return normalizeReasoningWhitespace(content);
 };
-
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 
 const createThinkingBlockMarkup = (innerContent: string, isLoading: boolean, summaryLabel: string): string => {
   const escapedContent = escapeHtml(innerContent.trim());

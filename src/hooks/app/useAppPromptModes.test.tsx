@@ -346,7 +346,7 @@ describe('useAppPromptModes', () => {
     unmount();
   });
 
-  it('keeps the Live Artifacts button active while app settings already contain the Live Artifacts prompt', () => {
+  it('keeps the Live Artifacts button inactive when only app settings contain the Live Artifacts prompt', () => {
     const { result, unmount } = renderHook(() =>
       useAppPromptModesWithDefaultTheme({
         appSettings: createAppSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT }),
@@ -354,6 +354,26 @@ describe('useAppPromptModes', () => {
         activeChat: createLiveArtifactsSession({ title: 'Session 1' }),
         activeSessionId: 'session-1',
         currentChatSettings: createLiveArtifactsChatSettings(),
+        setCurrentChatSettings: vi.fn(),
+        handleSendMessage: vi.fn(),
+        setCommandedInput: createSetCommandedInputMock(),
+      }),
+    );
+
+    // Button tracks the active session only so it cannot look "on" when this chat has no LA prompt.
+    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+
+    unmount();
+  });
+
+  it('marks the Live Artifacts button active only when the current session has the Live Artifacts prompt', () => {
+    const { result, unmount } = renderHook(() =>
+      useAppPromptModesWithDefaultTheme({
+        appSettings: createAppSettings({ systemInstruction: '' }),
+        setAppSettings: vi.fn(),
+        activeChat: createLiveArtifactsSession({ title: 'Session 1' }, { systemInstruction: LIVE_ARTIFACTS_PROMPT }),
+        activeSessionId: 'session-1',
+        currentChatSettings: createLiveArtifactsChatSettings({ systemInstruction: LIVE_ARTIFACTS_PROMPT }),
         setCurrentChatSettings: vi.fn(),
         handleSendMessage: vi.fn(),
         setCommandedInput: createSetCommandedInputMock(),

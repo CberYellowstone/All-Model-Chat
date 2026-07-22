@@ -1,9 +1,10 @@
 import { ttsStyleTranslations } from '@/i18n/voiceStyleTranslations';
 
+// settingsTtsVoice, settingsMediaResolution, and mediaResolution* labels live in
+// coreTranslations shellFeatureTranslations (chat toolbar chrome before this pack loads).
 const modelSettings = {
   settingsModelParameters: { en: 'Defaults for New Chats', zh: '新对话默认值' },
   settingsDefaultModel: { en: 'Primary Chat Model', zh: '主对话模型' },
-  settingsTtsVoice: { en: 'Speech Voice', zh: '语音音色' },
   settingsSystemPrompt: { en: 'Default System Prompt', zh: '默认系统提示' },
   settingsTemperature: { en: 'Temperature', zh: '温度' },
   settingsTopP: { en: 'Top P', zh: 'Top P' },
@@ -38,16 +39,10 @@ const modelSettings = {
     zh: '设置推理的 Token 预算。-1 表示自动或不限量，0 表示关闭推理，大于 0 则表示固定上限。',
   },
   settingsThinkingBudgetPlaceholder: { en: 'e.g., -1 for auto', zh: '例如：-1 代表自动' },
-  settingsMediaResolution: { en: 'Input Detail Level', zh: '输入细节等级' },
   settingsMediaResolutionTooltip: {
     en: 'Controls the detail level for images, videos, and PDFs sent to the model. Higher detail uses more tokens but preserves more information.',
     zh: '控制发送给模型的图片、视频和 PDF 的细节等级。等级越高会消耗更多 Token，但保留更多细节。',
   },
-  mediaResolutionUnspecified: { en: 'Auto (Default)', zh: '自动（默认）' },
-  mediaResolutionLow: { en: 'Low (Faster)', zh: '低（较快）' },
-  mediaResolutionMedium: { en: 'Medium (Balanced)', zh: '中（平衡）' },
-  mediaResolutionHigh: { en: 'High (Detail)', zh: '高（细节）' },
-  mediaResolutionUltraHigh: { en: 'Ultra High (Images only)', zh: '超高（仅限图片）' },
   chatBehaviorVoiceModelLabel: { en: 'Speech-to-Text Model', zh: '语音转文本模型' },
   chatBehaviorVoiceModelTooltip: {
     en: 'Selects the model used for transcribing voice input to text.',

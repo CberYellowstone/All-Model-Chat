@@ -22,6 +22,9 @@ export const DB_STORE_NAMES = [
 export const LOCK_NAME = 'all_model_chat_db_write_lock';
 
 export const applyMigrations = (db: IDBDatabase, oldVersion: number) => {
+  // Versioned upgrades: run once when opening a DB that is still below DB_VERSION.
+  // Keep these blocks as the source of truth for *when* a store/index was introduced.
+
   // Version 1: Initial schema
   if (oldVersion < 1) {
     db.createObjectStore(SESSIONS_STORE, { keyPath: 'id' });
@@ -55,6 +58,14 @@ export const applyMigrations = (db: IDBDatabase, oldVersion: number) => {
     }
   }
 
+  // Safety net (intentionally not version-gated): repair partially migrated or
+  // hand-edited DBs that report a high version but are missing stores. Do not
+  // remove this without a migration test proving every store is always created
+  // solely via the version blocks above (including upgrade-from-every-oldVersion).
+  ensureObjectStores(db);
+};
+
+const ensureObjectStores = (db: IDBDatabase) => {
   if (!db.objectStoreNames.contains(SESSIONS_STORE)) {
     db.createObjectStore(SESSIONS_STORE, { keyPath: 'id' });
   }

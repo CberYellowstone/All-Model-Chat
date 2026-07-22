@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { isPrivateNetworkHostname } from './privateNetwork';
+import { isPrivateNetworkHostname } from './privateNetwork.js';
 
 describe('isPrivateNetworkHostname', () => {
   it('blocks IPv4 private and link-local ranges', () => {

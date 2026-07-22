@@ -65,7 +65,10 @@ const HTML_STRUCTURAL_LINE_START_REGEX = new RegExp(
   'i',
 );
 const HTML_COMMENT_REGEX = /<!--[\s\S]*?-->/g;
-const UNSAFE_INLINE_FRAGMENT_TAG_REGEX = /<(?:script|style|iframe|object|embed)\b/i;
+// Reject only executable/embedding tags when classifying bare HTML fragments.
+// <style> is allowed: Live Artifacts commonly ship CSS blocks and style is not
+// executable (scripts/iframes are still stripped by the preview sanitizer).
+const UNSAFE_INLINE_FRAGMENT_TAG_REGEX = /<(?:script|iframe|object|embed)\b/i;
 const SVG_DOCUMENT_REGEX = /^<svg\b[\s\S]*<\/svg>$/i;
 const FENCED_CODE_BLOCK_REGEX = /```([^\n`]*)\n?([\s\S]*?)```/g;
 const OPEN_FENCED_CODE_BLOCK_AT_END_REGEX = /```([^\n`]*)\n?([\s\S]*)$/;

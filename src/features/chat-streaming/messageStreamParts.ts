@@ -3,6 +3,7 @@ import type { UploadedFile } from '@/types';
 import { SUPPORTED_GENERATED_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
 import { generateUniqueId } from '@/utils/chat/ids';
+import { escapeHtml } from '@/utils/escapeHtml';
 import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/fileTypeClassification';
 
 const hasThoughtSignature = (part: Part) =>
@@ -36,14 +37,6 @@ export const appendApiPart = (parts: Part[] = [], newPart: Part) => {
   newParts.push({ ...newPart });
   return newParts;
 };
-
-const escapeHtml = (unsafe: string) =>
-  unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 
 export const getContentDeltaFromPart = (part: Part): string => {
   const anyPart = part as Part & {

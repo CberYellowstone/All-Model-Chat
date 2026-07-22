@@ -97,6 +97,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   const { window: targetWindow } = useWindowContext();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const latestStreamingHtmlRef = useRef(html);
+  const isLoadingRef = useRef(isLoading);
   const lastPostedStreamingHtmlRef = useRef<string | null>(null);
   const streamingFlushTimeoutRef = useRef<number | null>(null);
   const contentHeightCacheKey = useMemo(() => getContentFrameHeightCacheKey(html, cacheKey), [cacheKey, html]);
@@ -124,29 +125,9 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     latestStreamingHtmlRef.current = html;
   }, [html]);
 
-  const postStreamingHtml = useCallback(
-    (nextHtml: string, force = false) => {
-      if (!force && lastPostedStreamingHtmlRef.current === nextHtml) {
-        return;
-      }
-
-      const iframeWindow = iframeRef.current?.contentWindow;
-      if (!iframeWindow) {
-        return;
-      }
-
-      iframeWindow.postMessage(
-        {
-          channel: HTML_PREVIEW_MESSAGE_CHANNEL,
-          event: HTML_PREVIEW_STREAM_RENDER_EVENT,
-          html: buildStreamingHtmlPreviewRenderPayload(nextHtml),
-        },
-        '*',
-      );
-      lastPostedStreamingHtmlRef.current = nextHtml;
-    },
-    [iframeRef],
-  );
+  useLayoutEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   const clearStreamingFlushTimeout = useCallback(() => {
     if (streamingFlushTimeoutRef.current === null) {
@@ -157,16 +138,69 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     streamingFlushTimeoutRef.current = null;
   }, [targetWindow]);
 
-  const scheduleStreamingHtmlFlush = useCallback(() => {
-    if (streamingFlushTimeoutRef.current !== null) {
-      return;
+  // Returns false when the iframe is not ready yet so callers can retry.
+  const postStreamingHtml = useCallback((nextHtml: string, force = false): boolean => {
+    if (!force && lastPostedStreamingHtmlRef.current === nextHtml) {
+      return true;
     }
 
-    streamingFlushTimeoutRef.current = targetWindow.setTimeout(() => {
-      streamingFlushTimeoutRef.current = null;
-      postStreamingHtml(latestStreamingHtmlRef.current);
-    }, STREAMING_SRC_DOC_THROTTLE_MS);
-  }, [postStreamingHtml, targetWindow]);
+    const iframeWindow = iframeRef.current?.contentWindow;
+    if (!iframeWindow) {
+      return false;
+    }
+
+    try {
+      iframeWindow.postMessage(
+        {
+          channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+          event: HTML_PREVIEW_STREAM_RENDER_EVENT,
+          html: buildStreamingHtmlPreviewRenderPayload(nextHtml),
+        },
+        '*',
+      );
+      lastPostedStreamingHtmlRef.current = nextHtml;
+      return true;
+    } catch (error) {
+      logService.warn('Failed to post Live Artifact streaming html:', error);
+      return false;
+    }
+  }, []);
+
+  const scheduleStreamingHtmlFlush = useCallback(
+    (force = false) => {
+      if (streamingFlushTimeoutRef.current !== null) {
+        return;
+      }
+
+      streamingFlushTimeoutRef.current = targetWindow.setTimeout(() => {
+        streamingFlushTimeoutRef.current = null;
+        if (!isLoadingRef.current) {
+          return;
+        }
+
+        const posted = postStreamingHtml(latestStreamingHtmlRef.current, force);
+        // contentWindow can appear after the first timeout (Virtuoso remount / slow srcDoc).
+        if (!posted) {
+          scheduleStreamingHtmlFlush(force);
+        }
+      }, STREAMING_SRC_DOC_THROTTLE_MS);
+    },
+    [postStreamingHtml, targetWindow],
+  );
+
+  const flushStreamingHtmlNow = useCallback(
+    (force = false) => {
+      if (!isLoadingRef.current) {
+        return;
+      }
+
+      const posted = postStreamingHtml(latestStreamingHtmlRef.current, force);
+      if (!posted) {
+        scheduleStreamingHtmlFlush(force);
+      }
+    },
+    [postStreamingHtml, scheduleStreamingHtmlFlush],
+  );
 
   useEffect(() => {
     if (!isLoading) {
@@ -196,6 +230,13 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
       const iframeWindow = iframeRef.current?.contentWindow;
       if (iframeWindow && event.source !== iframeWindow) {
+        return;
+      }
+
+      // Bridge ready means the streaming runner is listening — re-push HTML that may
+      // have been posted too early (or lost during Virtuoso remount).
+      if (data.event === 'ready') {
+        flushStreamingHtmlNow(true);
         return;
       }
 
@@ -261,7 +302,14 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
     targetWindow.addEventListener('message', handleMessage);
     return () => targetWindow.removeEventListener('message', handleMessage);
-  }, [contentHeightCacheKey, heightCacheKey, onFollowUp, streamingHeightCacheKey, targetWindow]);
+  }, [
+    contentHeightCacheKey,
+    flushStreamingHtmlNow,
+    heightCacheKey,
+    onFollowUp,
+    streamingHeightCacheKey,
+    targetWindow,
+  ]);
 
   useEffect(() => {
     const handleClearSelection = () => {
@@ -300,9 +348,8 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
           allow="clipboard-write"
           scrolling="no"
           onLoad={() => {
-            if (isLoading) {
-              postStreamingHtml(html, true);
-            }
+            // Prefer refs so remount/load races always flush the latest streaming html.
+            flushStreamingHtmlNow(true);
           }}
         />
       </div>

@@ -53,10 +53,10 @@ describe('ArtifactFrame', () => {
 
     expect(srcDoc).toContain('data-amc-live-artifact-theme="true"');
     expect(srcDoc).toContain('html,body{margin:0;padding:0;background:transparent');
-    expect(srcDoc).toContain('--amc-live-artifact-text:#f4f4f5');
-    expect(srcDoc).toContain('--amc-live-artifact-surface:#18181b');
-    expect(srcDoc).toContain('--amc-live-artifact-border:#27272a');
-    expect(srcDoc).toContain('--amc-live-artifact-accent:#38bdf8');
+    expect(srcDoc).toContain('--amc-live-artifact-text:#f5f5f7');
+    expect(srcDoc).toContain('--amc-live-artifact-surface:#1c1c20');
+    expect(srcDoc).toContain('--amc-live-artifact-border:#2c2c34');
+    expect(srcDoc).toContain('--amc-live-artifact-accent:#6ba3fc');
   });
 
   it('injects the configured base font size into streaming artifact documents', () => {
@@ -85,10 +85,10 @@ describe('ArtifactFrame', () => {
 
     expect(srcDoc).toContain('data-amc-live-artifact-theme="true"');
     expect(srcDoc).toContain('html,body{margin:0;padding:0;background:transparent');
-    expect(srcDoc).toContain('--amc-live-artifact-text:#f3f3f3');
-    expect(srcDoc).toContain('--amc-live-artifact-surface:#474747');
-    expect(srcDoc).toContain('--amc-live-artifact-border:#626262');
-    expect(srcDoc).toContain('--amc-live-artifact-accent:#e5e5e5');
+    expect(srcDoc).toContain('--amc-live-artifact-text:#f2f2f4');
+    expect(srcDoc).toContain('--amc-live-artifact-surface:#3c3c40');
+    expect(srcDoc).toContain('--amc-live-artifact-border:#4c4c52');
+    expect(srcDoc).toContain('--amc-live-artifact-accent:#6ba3fc');
     expect(srcDoc).toContain('data-amc-stream-preview-root');
   });
 
@@ -182,6 +182,82 @@ describe('ArtifactFrame', () => {
         channel: HTML_PREVIEW_MESSAGE_CHANNEL,
         event: HTML_PREVIEW_STREAM_RENDER_EVENT,
         html: '<section>Second chunk</section>',
+      },
+      '*',
+    );
+  });
+
+  it('reposts the latest streaming html when the sandboxed iframe reports ready', () => {
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<section>Ready payload</section>" isLoading />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    const postMessage = vi.fn();
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: { postMessage },
+    });
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+            event: 'ready',
+          },
+          source: iframe!.contentWindow,
+          origin: 'null',
+        }),
+      );
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_STREAM_RENDER_EVENT,
+        html: '<section>Ready payload</section>',
+      },
+      '*',
+    );
+  });
+
+  it('retries posting streaming html after contentWindow becomes available', () => {
+    vi.useFakeTimers();
+
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<section>Deferred chunk</section>" isLoading />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+
+    // First flush has no contentWindow yet.
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: null,
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+
+    const postMessage = vi.fn();
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: { postMessage },
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_STREAM_RENDER_EVENT,
+        html: '<section>Deferred chunk</section>',
       },
       '*',
     );

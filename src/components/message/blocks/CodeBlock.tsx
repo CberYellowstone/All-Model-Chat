@@ -11,8 +11,6 @@ import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/obje
 import { FileDisplay } from '@/components/message/FileDisplay';
 import { useI18n } from '@/contexts/I18nContext';
 import {
-  isLikelyHtml,
-  isLikelyStreamingHtmlArtifact,
   isLikelyStreamingLiveArtifactInteractionJson,
   isLiveArtifactInteractionLanguage,
   isLiveArtifactLanguage,
@@ -144,11 +142,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
     isLiveArtifactInteractionLanguage(sourceLanguage) &&
     Boolean(props.isLoading) &&
     isLikelyStreamingLiveArtifactInteractionJson(resolvedCodeText);
+  // Fenced Live Artifacts (amc-live-artifact-html) always go through ArtifactFrame.
+  // Do not gate on isLikelyHtml: that helper rejects common fragments that include
+  // <style> tags or are only partially closed while streaming, which used to leave
+  // a blank/missing preview even though the fence language is authoritative.
   const showInlineHtmlPreview =
     showPreviewControls &&
     isLiveArtifactLanguage(sourceLanguage) &&
     previewMarkupType === 'html' &&
-    (isLikelyHtml(resolvedCodeText) || (Boolean(props.isLoading) && isLikelyStreamingHtmlArtifact(resolvedCodeText)));
+    (resolvedCodeText.trim().length > 0 || Boolean(props.isLoading));
 
   if (isInteractive && interactionSpec) {
     return (

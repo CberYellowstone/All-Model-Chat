@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson } from './cors.js';
 import type { McpClientBridge, McpServerConfig, McpTool } from './mcpTypes.js';
-import { isPrivateNetworkHostname } from './privateNetwork.js';
+import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 import {
   isValidMcpHttpUrl,
   sanitizeMcpAuth,

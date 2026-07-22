@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   extractPreviewableCodeBlock,
   getCodeBlockPreviewType,
+  isLikelyHtml,
+  isLikelyStreamingHtmlArtifact,
   normalizePreviewableMarkdownContent,
 } from './previewableMarkdown';
 
@@ -166,6 +168,15 @@ describe('previewableMarkdown detection', () => {
     expect(normalizePreviewableMarkdownContent(`\`\`\`html\n${document}\n\`\`\``)).toBe(
       `\`\`\`html\n${document}\n\`\`\``,
     );
+  });
+
+  it('wraps html fragments that include style tags as Live Artifacts', () => {
+    const fragment =
+      '<section><style>.card{color:red}</style><div class="card">Styled artifact</div></section>';
+
+    expect(normalizePreviewableMarkdownContent(fragment)).toBe(`\`\`\`amc-live-artifact-html\n${fragment}\n\`\`\``);
+    expect(isLikelyHtml(fragment)).toBe(true);
+    expect(isLikelyStreamingHtmlArtifact(fragment)).toBe(true);
   });
 
   it('wraps bare Live Artifact interaction JSON in the dedicated interaction fence', () => {

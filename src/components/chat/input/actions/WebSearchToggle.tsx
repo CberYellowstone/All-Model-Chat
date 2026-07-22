@@ -13,18 +13,6 @@ export const WebSearchToggle: React.FC<WebSearchToggleProps> = ({
   isGoogleSearchEnabled,
   onToggleGoogleSearch,
   disabled,
-}) => (
-  <WebSearchToggleInner
-    isGoogleSearchEnabled={isGoogleSearchEnabled}
-    onToggleGoogleSearch={onToggleGoogleSearch}
-    disabled={disabled}
-  />
-);
-
-const WebSearchToggleInner: React.FC<WebSearchToggleProps> = ({
-  isGoogleSearchEnabled,
-  onToggleGoogleSearch,
-  disabled,
 }) => {
   const { t } = useI18n();
 

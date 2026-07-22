@@ -1,30 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { parseAllowedImageProxyUrl } from '../../shared/imageProxyUrl.js';
+import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 import { getCorsHeaders, sendJson } from './cors.js';
-import { isPrivateNetworkHostname } from './privateNetwork.js';
 
 export const IMAGE_PROXY_PATH = '/api/image-proxy';
 
 const MAX_IMAGE_PROXY_BYTES = 25 * 1024 * 1024;
 const IMAGE_PROXY_TIMEOUT_MS = 15_000;
-
-function parseAllowedImageProxyUrl(value: string | null): URL | null {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(value);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return null;
-    }
-    if (parsedUrl.username || parsedUrl.password || isPrivateNetworkHostname(parsedUrl.hostname)) {
-      return null;
-    }
-    return parsedUrl;
-  } catch {
-    return null;
-  }
-}
 
 // Reject any URL whose final resolved host is private. Guards against DNS rebinding and
 // cross-origin redirects that land on internal services after the input-URL check passes.
