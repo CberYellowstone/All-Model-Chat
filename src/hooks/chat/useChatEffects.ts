@@ -23,6 +23,8 @@ interface UseChatEffectsProps {
   setAspectRatio: (value: string) => void;
   imageSize: string;
   setImageSize: (value: string) => void;
+  /** Wait for persisted app settings before creating sessions so new chats inherit systemInstruction (e.g. Live Artifacts). */
+  isSettingsLoaded: boolean;
   loadInitialData: () => Promise<void>;
   loadChatSession: (id: string) => void;
   startNewChat: () => void;
@@ -41,37 +43,65 @@ export const useChatEffects = ({
   setAspectRatio,
   imageSize,
   setImageSize,
+  isSettingsLoaded,
   loadInitialData,
   loadChatSession,
   startNewChat,
 }: UseChatEffectsProps) => {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+  // Guard against re-running initial load when loadInitialData/startNewChat identities
+  // change after the first session write (those callbacks depend on savedSessions).
+  const initialLoadStartedRef = useRef(false);
+  const loadInitialDataRef = useRef(loadInitialData);
+  const loadChatSessionRef = useRef(loadChatSession);
+  const startNewChatRef = useRef(startNewChat);
+  const recoveringMissingSessionRef = useRef(false);
+
+  loadInitialDataRef.current = loadInitialData;
+  loadChatSessionRef.current = loadChatSession;
+  startNewChatRef.current = startNewChat;
 
   useEffect(() => {
-    const loadData = async () => {
+    if (!isSettingsLoaded || initialLoadStartedRef.current) {
+      return;
+    }
+
+    initialLoadStartedRef.current = true;
+    void (async () => {
       try {
-        await loadInitialData();
+        await loadInitialDataRef.current();
       } finally {
         setHasLoadedInitialData(true);
       }
-    };
-    void loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Load persisted chat data once on mount.
+    })();
+  }, [isSettingsLoaded]);
 
   useEffect(() => {
-    if (hasLoadedInitialData && activeSessionId && !savedSessions.find((session) => session.id === activeSessionId)) {
-      logService.warn(`Active session ${activeSessionId} is no longer available. Switching sessions.`);
-      const sortedSessions = [...savedSessions].sort(
-        (leftSession, rightSession) => rightSession.timestamp - leftSession.timestamp,
-      );
-      const nextSession = sortedSessions[0];
-      if (nextSession) {
-        loadChatSession(nextSession.id);
-      } else {
-        startNewChat();
-      }
+    if (!hasLoadedInitialData || !activeSessionId) {
+      return;
     }
-  }, [savedSessions, activeSessionId, hasLoadedInitialData, loadChatSession, startNewChat]);
+
+    if (savedSessions.some((session) => session.id === activeSessionId)) {
+      recoveringMissingSessionRef.current = false;
+      return;
+    }
+
+    if (recoveringMissingSessionRef.current) {
+      return;
+    }
+
+    recoveringMissingSessionRef.current = true;
+    logService.warn(`Active session ${activeSessionId} is no longer available. Switching sessions.`);
+    const sortedSessions = [...savedSessions].sort(
+      (leftSession, rightSession) => rightSession.timestamp - leftSession.timestamp,
+    );
+    const nextSession = sortedSessions[0];
+    if (nextSession) {
+      loadChatSessionRef.current(nextSession.id);
+    } else {
+      startNewChatRef.current();
+    }
+  }, [savedSessions, activeSessionId, hasLoadedInitialData]);
 
   useEffect(() => {
     const handleOnline = () => {

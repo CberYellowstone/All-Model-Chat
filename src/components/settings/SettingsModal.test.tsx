@@ -93,11 +93,9 @@ describe('SettingsModal', () => {
     ]);
 
     const groupElements = document.querySelectorAll('[data-settings-group]');
-    expect(groupElements[0]?.className).not.toContain('border-t');
-    // Secondary sidebar groups are visually separated from the primary set.
-    expect(groupElements[1]?.className).toContain('md:border-t');
-    expect(groupElements[1]?.className).toContain('md:pt-3');
-    expect(groupElements[2]?.className).toContain('md:border-t');
+    for (const group of groupElements) {
+      expect(group.className).not.toContain('border-t');
+    }
   });
 
   it('places the desktop close control in the content pane, not the sidebar', async () => {

@@ -32,6 +32,7 @@ const createProps = (overrides: Partial<Parameters<typeof useChatEffects>[0]> = 
   setAspectRatio: vi.fn(),
   imageSize: '1K',
   setImageSize: vi.fn(),
+  isSettingsLoaded: true,
   loadInitialData: vi.fn(async () => undefined),
   loadChatSession: vi.fn(),
   startNewChat: vi.fn(),
@@ -150,6 +151,56 @@ describe('useChatEffects', () => {
     const hook = renderHook(() => useChatEffects(props));
 
     expect(props.startNewChat).not.toHaveBeenCalled();
+    hook.unmount();
+  });
+
+  it('waits for app settings to load before creating the initial chat session', async () => {
+    const loadInitialData = vi.fn(async () => undefined);
+    const props = createProps({
+      isSettingsLoaded: false,
+      loadInitialData,
+    });
+
+    const hook = renderHook(() => useChatEffects(props));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(loadInitialData).not.toHaveBeenCalled();
+
+    props.isSettingsLoaded = true;
+    hook.rerender();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(loadInitialData).toHaveBeenCalledTimes(1);
+    hook.unmount();
+  });
+
+  it('does not restart initial history load when loadInitialData identity changes', async () => {
+    const firstLoad = vi.fn(async () => undefined);
+    const secondLoad = vi.fn(async () => undefined);
+    const props = createProps({
+      isSettingsLoaded: true,
+      loadInitialData: firstLoad,
+    });
+
+    const hook = renderHook(() => useChatEffects(props));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(firstLoad).toHaveBeenCalledTimes(1);
+
+    props.loadInitialData = secondLoad;
+    hook.rerender();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(firstLoad).toHaveBeenCalledTimes(1);
+    expect(secondLoad).not.toHaveBeenCalled();
     hook.unmount();
   });
 });

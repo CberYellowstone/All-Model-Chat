@@ -4,20 +4,55 @@ import { ACTIVE_CHAT_SESSION_ID_KEY } from '@/constants/storageKeys';
 import { dbService } from '@/services/db/dbService';
 import { logService } from '@/services/logService';
 import type { SetActiveSessionOptions } from '@/stores/chatStore';
-import type { ChatGroup, ChatMessage, SavedChatSession } from '@/types';
+import type { AppSettings, ChatGroup, ChatMessage, ChatSettings, SavedChatSession } from '@/types';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
-import { sanitizeSessionModel, sortSessionsByPinnedAndTimestamp } from './sessionLoaderSettings';
+import { createSettingsForNewChat, sanitizeSessionModel, sortSessionsByPinnedAndTimestamp } from './sessionLoaderSettings';
 
 type SessionLoaderHistoryOptions = Pick<SetActiveSessionOptions, 'history'>;
 
 interface LoadInitialSessionDataOptions {
+  appSettings: AppSettings;
   setSavedSessions: Dispatch<SetStateAction<SavedChatSession[]>>;
   setSavedGroups: Dispatch<SetStateAction<ChatGroup[]>>;
   setActiveSessionId: (value: SetStateAction<string | null>, options?: SetActiveSessionOptions) => void;
   setActiveMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   restoreDraftFiles: (sessionId: string) => void;
+  updateAndPersistSessions: (
+    updater: (prev: SavedChatSession[]) => SavedChatSession[],
+    options?: { persist?: boolean },
+  ) => void | Promise<void>;
   startNewChat: (explicitTemplateSession?: SavedChatSession, options?: SessionLoaderHistoryOptions) => void;
 }
+
+const inheritAppSystemInstructionForEmptySession = (
+  session: SavedChatSession,
+  appSettings: AppSettings,
+  savedSessions: SavedChatSession[],
+): { session: SavedChatSession; settingsChanged: boolean } => {
+  if (session.messages.length > 0 || session.settings.systemInstruction?.trim()) {
+    return { session, settingsChanged: false };
+  }
+
+  const inheritedSettings: ChatSettings = createSettingsForNewChat({
+    appSettings,
+    savedSessions,
+    excludeTemplateSessionId: session.id,
+  });
+  // Keep the empty session's already-chosen model/thinking controls; only fill missing SI + related app defaults.
+  const nextSettings: ChatSettings = {
+    ...session.settings,
+    systemInstruction: inheritedSettings.systemInstruction,
+  };
+
+  if (nextSettings.systemInstruction === session.settings.systemInstruction) {
+    return { session, settingsChanged: false };
+  }
+
+  return {
+    session: { ...session, settings: nextSettings },
+    settingsChanged: true,
+  };
+};
 
 const resolveInitialActiveSessionId = (metadataList: SavedChatSession[]) => {
   const urlMatch = window.location.pathname.match(/^\/chat\/([^/]+)$/);
@@ -67,11 +102,13 @@ const mergeLoadedSessionMetadata = (
 };
 
 export const loadInitialSessionData = async ({
+  appSettings,
   setSavedSessions,
   setSavedGroups,
   setActiveSessionId,
   setActiveMessages,
   restoreDraftFiles,
+  updateAndPersistSessions,
   startNewChat,
 }: LoadInitialSessionDataOptions) => {
   try {
@@ -107,10 +144,20 @@ export const loadInitialSessionData = async ({
         const fullSession = await dbService.getSession(mostRecent.id);
         if (fullSession && fullSession.messages.length === 0 && !fullSession.settings.systemInstruction) {
           logService.info(`Reusing empty recent session: ${mostRecent.id}`);
-          const rehydrated = rehydrateSessionFiles(sanitizeSessionModel(fullSession));
+          const rehydratedBase = rehydrateSessionFiles(sanitizeSessionModel(fullSession));
+          const { session: rehydrated, settingsChanged } = inheritAppSystemInstructionForEmptySession(
+            rehydratedBase,
+            appSettings,
+            sortedList,
+          );
           setActiveMessages(rehydrated.messages);
           setActiveSessionId(rehydrated.id, { history: 'replace' });
           restoreDraftFiles(rehydrated.id);
+          if (settingsChanged) {
+            void updateAndPersistSessions((prev) =>
+              prev.map((session) => (session.id === rehydrated.id ? { ...session, settings: rehydrated.settings } : session)),
+            );
+          }
 
           reused = true;
         }

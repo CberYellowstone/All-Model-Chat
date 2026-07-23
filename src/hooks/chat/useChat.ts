@@ -18,6 +18,7 @@ import { useTextToSpeechHandler } from './message/useTextToSpeechHandler';
 import { createLiveClientFunctions } from '@/utils/live-api/liveClientFunctions';
 import { getPyodideService } from '@/features/local-python/loadPyodideService';
 import { useChatStore } from '@/stores/chatStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export const useChat = (
   appSettings: AppSettings,
@@ -26,6 +27,7 @@ export const useChat = (
 ) => {
   const { activeChat, currentChatSettings, isLoading, activeSessionId, savedSessions, activeMessages } =
     useChatState(appSettings);
+  const isSettingsLoaded = useSettingsStore((state) => state.isSettingsLoaded);
 
   const savedGroups = useChatStore((state) => state.savedGroups);
   const editingMessageId = useChatStore((state) => state.editingMessageId);
@@ -238,6 +240,7 @@ export const useChat = (
     setAspectRatio,
     imageSize,
     setImageSize,
+    isSettingsLoaded,
     loadInitialData: historyHandler.loadInitialData,
     loadChatSession,
     startNewChat,

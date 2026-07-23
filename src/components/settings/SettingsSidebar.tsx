@@ -103,7 +103,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       </div>
 
       {/* Search container aligned with main header baseline */}
-      <div className="flex-shrink-0 px-2 pt-0 pb-1.5 md:h-16 md:px-3 md:py-0 md:flex md:items-center md:border-b md:border-[var(--theme-border-primary)]/40">
+      <div className="flex-shrink-0 px-2 pt-0 pb-1.5 md:h-16 md:px-3 md:py-0 md:flex md:items-center">
         <SettingsSearchBar
           value={searchQuery}
           onChange={onSearchChange}
@@ -116,20 +116,18 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         className="flex flex-1 gap-1 overflow-x-auto px-2 pb-2 pt-1 md:flex-col md:gap-1.5 md:overflow-x-hidden md:overflow-y-auto md:px-3 md:pb-3 md:pt-1 custom-scrollbar"
         role="tablist"
       >
-        {groupedTabs.map((group, groupIndex) => (
+        {groupedTabs.map((group) => (
           <div
             key={group.id}
             data-settings-group={group.id}
-            className={`flex flex-shrink-0 md:w-full md:flex-col gap-1 md:gap-1.5 ${
-              groupIndex > 0 ? 'md:mt-3 md:border-t md:border-[var(--theme-border-primary)] md:pt-3' : ''
-            }`}
+            className="flex flex-shrink-0 md:w-full md:flex-col gap-1 md:gap-1.5"
           >
             {group.tabs.map(renderTabButton)}
           </div>
         ))}
       </nav>
 
-      <div className="flex-shrink-0 border-t border-[var(--theme-border-primary)] p-2 md:p-3">
+      <div className="flex-shrink-0 p-2 md:p-3">
         <button
           type="button"
           onClick={toggleAdvancedMode}

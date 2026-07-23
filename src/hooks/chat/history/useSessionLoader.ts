@@ -273,14 +273,25 @@ export const useSessionLoader = ({
 
   const loadInitialData = useCallback(async () => {
     await loadInitialSessionData({
+      appSettings,
       setSavedSessions,
       setSavedGroups,
       setActiveSessionId,
       setActiveMessages,
       restoreDraftFiles,
+      updateAndPersistSessions,
       startNewChat,
     });
-  }, [setSavedSessions, setSavedGroups, startNewChat, setActiveSessionId, setActiveMessages, restoreDraftFiles]);
+  }, [
+    appSettings,
+    setSavedSessions,
+    setSavedGroups,
+    startNewChat,
+    setActiveSessionId,
+    setActiveMessages,
+    restoreDraftFiles,
+    updateAndPersistSessions,
+  ]);
 
   useEffect(() => {
     const handlePopState = () => {
