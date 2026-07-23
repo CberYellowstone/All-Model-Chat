@@ -1,7 +1,7 @@
 import type { ApiMode, ModelOption } from '@/types';
 import { getModelCapabilities, isGeminiRoboticsModel } from './modelCapabilities';
 import { sortModels } from './modelSorting';
-import { THIRD_PARTY_PROVIDER_IDS, THIRD_PARTY_PROVIDER_LABELS } from './thirdPartyApiProviders';
+import { THIRD_PARTY_PROVIDER_IDS, THIRD_PARTY_PROVIDER_LABELS } from '@/utils/thirdPartyApiProviders';
 
 type ModelCatalogGroup = 'pinned' | 'standard';
 type ModelCatalogCategory = 'text' | 'live' | 'tts' | 'image' | 'robotics' | 'other';

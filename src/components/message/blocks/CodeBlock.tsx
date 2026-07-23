@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, X, Terminal, AlertTriangle, FileOutput, RotateCcw } from 'lucide-react';
 import { type SideViewContent } from '@/types';
 import { useCodeBlock } from '@/hooks/ui/useCodeBlock';
@@ -6,7 +6,7 @@ import { usePyodide } from '@/features/local-python/usePyodide';
 import { CodeHeader } from './parts/CodeHeader';
 import { ArtifactFrame } from './ArtifactFrame';
 import { extractTextFromNode } from '@/utils/reactNodeText';
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { FileDisplay } from '@/components/message/FileDisplay';
 import { useI18n } from '@/contexts/I18nContext';
@@ -15,8 +15,8 @@ import {
   isLiveArtifactInteractionLanguage,
   isLiveArtifactLanguage,
 } from '@/utils/previewableMarkdown';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
-import { parseLiveArtifactInteractionSpec } from '@/utils/liveArtifactInteraction';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
+import { parseLiveArtifactInteractionSpec } from '@/utils/live-artifacts/liveArtifactInteraction';
 import { LiveArtifactInteractionFrame } from './LiveArtifactInteractionFrame';
 
 interface CodeBlockProps {
@@ -32,6 +32,15 @@ interface CodeBlockProps {
   themeId?: string;
   onLiveArtifactFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
 }
+
+type GeneratedFileEntry = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+  uploadState: 'active';
+};
 
 const LiveArtifactInteractionPendingFrame: React.FC<{ label: string; baseFontSize?: number }> = ({
   label,
@@ -94,10 +103,14 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
     if (rawCode) runCode(rawCode);
   };
 
-  const generatedFiles = useMemo(() => {
-    return files.map((file, fileIndex) => {
+  // Object URLs are external resources — create/release only in effects so Strict
+  // Mode / concurrent discarded renders cannot leave unreclaimed blob: URLs.
+  const [generatedFiles, setGeneratedFiles] = useState<GeneratedFileEntry[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const nextEntries = files.map((file, fileIndex) => {
       const blob = new Blob([file.data], { type: file.type });
-      // Build a file-like wrapper so FileDisplay can render generated artifacts.
       return {
         id: `generated-file-${fileIndex}`,
         name: file.name,
@@ -107,28 +120,25 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
         uploadState: 'active' as const,
       };
     });
-  }, [files]);
-
-  // Object URLs are external resources that outlive the render that created
-  // them; release the previous batch whenever the derived entries change.
-  useEffect(() => {
+    setGeneratedFiles(nextEntries);
     return () => {
-      for (const entry of generatedFiles) {
+      for (const entry of nextEntries) {
         releaseManagedObjectUrl(entry.dataUrl);
       }
     };
-  }, [generatedFiles]);
-
-  const imageUrl = useMemo(() => {
-    if (!image) return null;
-    const blob = new Blob([image], { type: 'image/png' });
-    return createManagedObjectUrl(blob);
-  }, [image]);
+  }, [files]);
 
   useEffect(() => {
-    if (!imageUrl) return;
-    return () => releaseManagedObjectUrl(imageUrl);
-  }, [imageUrl]);
+    if (!image) {
+      setImageUrl(null);
+      return;
+    }
+    const url = createManagedObjectUrl(new Blob([image], { type: 'image/png' }));
+    setImageUrl(url);
+    return () => {
+      releaseManagedObjectUrl(url);
+    };
+  }, [image]);
 
   const displayInlineImage = imageUrl && !generatedFiles.some((file) => isImageMimeType(file.type)) ? imageUrl : null;
   const isInteractive = props.showPreviewControls ?? true;

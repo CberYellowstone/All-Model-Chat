@@ -23,8 +23,8 @@ import {
   normalizeThinkingLevelForModel,
   normalizeAspectRatioForModel,
   normalizeImageSizeForModel,
-} from '@/utils/modelCapabilities';
-import { normalizeModelId } from '@/utils/modelId';
+} from '@/utils/model/modelCapabilities';
+import { normalizeModelId } from '@/utils/model/modelId';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 
 const IMAGE_TEXT_MODALITIES = ['IMAGE', 'TEXT'];

@@ -1,7 +1,7 @@
 import { logService } from '@/services/logService';
 import { buildContentParts } from '@/utils/chat/builder';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import { getThirdPartyProviderModelId } from '@/utils/thirdPartyApiProviders';
 import type { UploadedFile } from '@/types';

@@ -70,7 +70,7 @@ vi.mock('@/utils/chat/session', () => ({
   })),
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   isGemini3Model: vi.fn((id: string) => id.includes('gemini-3')),
   isImageGenerationModel: vi.fn((id: string) => id.includes('image')),
   shouldStripThinkingFromContext: vi.fn(() => false),

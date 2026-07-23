@@ -50,7 +50,7 @@ vi.mock('@/utils/themeDom', () => ({
   applyThemeToDocument: vi.fn(),
 }));
 
-vi.mock('@/utils/modelSorting', () => ({
+vi.mock('@/utils/model/modelSorting', () => ({
   resolveSupportedModelId: vi.fn((modelId: string | null | undefined, fallback: string) => modelId || fallback),
 }));
 

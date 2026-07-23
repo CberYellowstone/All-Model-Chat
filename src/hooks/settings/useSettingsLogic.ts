@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import { type AppSettings } from '@/types';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { logService } from '@/services/logService';
-import { resolveModelSwitchSettings } from '@/utils/modelSwitchSettings';
+import { resolveModelSwitchSettings } from '@/utils/model/modelSwitchSettings';
 import { type translations } from '@/i18n/translations';
 import { useSettingsUiStore, type SettingsTabDescriptor } from '@/stores/settingsUiStore';
 

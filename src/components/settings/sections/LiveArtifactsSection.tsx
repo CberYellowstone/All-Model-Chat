@@ -7,7 +7,7 @@ import { loadLiveArtifactsSystemPrompt } from '@/features/prompts/promptRegistry
 import {
   getLiveArtifactsSystemPromptValue,
   updateLiveArtifactsSystemPromptForMode,
-} from '@/utils/liveArtifactsPromptSettings';
+} from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import type { AppSettings } from '@/types';
 import type { SettingsUpdateHandler } from '@/components/settings/settingsTypes';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { isLiveArtifactFollowupStateWithinLimit, type LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import { isLiveArtifactFollowupStateWithinLimit, type LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   buildLiveArtifactInteractionPayload,
   getLiveArtifactInteractionDefaultValue,
@@ -12,7 +12,7 @@ import {
   type LiveArtifactInteractionProperty,
   type LiveArtifactInteractionSpec,
   type LiveArtifactInteractionValue,
-} from '@/utils/liveArtifactInteraction';
+} from '@/utils/live-artifacts/liveArtifactInteraction';
 
 const FIELD_ERROR_CLASS = 'mt-1 block text-[0.75em] text-[var(--theme-text-danger)]';
 

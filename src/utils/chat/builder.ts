@@ -1,10 +1,10 @@
 import { type ChatMessage, type ContentPart, type UploadedFile, type ChatHistoryItem, MediaResolution } from '@/types';
 import type { PartMediaResolutionLevel } from '@google/genai';
 import { logService } from '@/services/logService';
-import { isGemini3Model } from '@/utils/modelCapabilities';
-import { normalizeModelId } from '@/utils/modelId';
-import { blobToBase64, fileToString } from '@/utils/fileEncoding';
-import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/fileTypeClassification';
+import { isGemini3Model } from '@/utils/model/modelCapabilities';
+import { normalizeModelId } from '@/utils/model/modelId';
+import { blobToBase64, fileToString } from '@/utils/file/fileEncoding';
+import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/file/fileTypeClassification';
 
 import { usesRemoteFileReference } from './fileTransferStrategy';
 import { stripReasoningMarkup } from './reasoning';

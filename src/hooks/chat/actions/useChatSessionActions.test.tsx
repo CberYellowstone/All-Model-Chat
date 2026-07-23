@@ -5,7 +5,7 @@ import { createChatSettings } from '@/test/data/factories';
 import { useChatSessionActions } from './useChatSessionActions';
 import { renderHook } from '@/test/render/renderer';
 
-vi.mock('@/utils/filePreviewUrls', () => ({
+vi.mock('@/utils/file/filePreviewUrls', () => ({
   cleanupFilePreviewUrls: vi.fn(),
 }));
 

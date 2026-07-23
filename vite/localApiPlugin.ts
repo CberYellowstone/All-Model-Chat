@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import type { IncomingHttpHeaders } from 'node:http';
 import type { Plugin } from 'vite';
+import { fetchImageProxyWithSafeRedirects } from '../shared/imageProxyFetch';
 import { parseAllowedImageProxyUrl } from '../shared/imageProxyUrl';
 import { readMacOsClipboardPng } from '../shared/macosClipboardPng';
 
@@ -121,19 +122,26 @@ const proxyImageRequest = async (request: DevServerRequest, response: DevServerR
     return;
   }
 
-  let upstreamResponse: Response;
-  try {
-    upstreamResponse = await fetch(targetUrl, {
-      headers: {
-        accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        'user-agent': 'AMC-WebUI image proxy',
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown upstream error';
+  // Same redirect / SSRF / DNS-rebinding policy as production server/src/imageProxy.ts.
+  const fetchResult = await fetchImageProxyWithSafeRedirects(targetUrl);
+  if (!fetchResult.ok) {
+    if (fetchResult.kind === 'unsafe_redirect') {
+      writeImageProxyJson(response, 400, { error: 'Image proxy target attempted an unsafe redirect.' });
+      return;
+    }
+    if (fetchResult.kind === 'blocked') {
+      writeImageProxyJson(response, 400, { error: fetchResult.message });
+      return;
+    }
+    const message =
+      fetchResult.kind === 'fetch_error' && fetchResult.error instanceof Error
+        ? fetchResult.error.message
+        : 'Unknown upstream error';
     writeImageProxyJson(response, 502, { error: `Image proxy request failed: ${message}` });
     return;
   }
+
+  const upstreamResponse = fetchResult.response;
 
   if (!upstreamResponse.ok) {
     writeImageProxyJson(response, 502, { error: `Image proxy target returned ${upstreamResponse.status}.` });

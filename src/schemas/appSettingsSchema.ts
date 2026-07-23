@@ -16,7 +16,7 @@ import {
   THINKING_LEVELS,
   TRANSLATION_TARGET_LANGUAGES,
 } from '@/types';
-import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { sanitizeThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import {
   isValidMcpHttpUrl,

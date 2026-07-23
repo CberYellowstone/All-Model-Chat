@@ -12,7 +12,7 @@ import {
   HTML_PREVIEW_MESSAGE_CHANNEL,
 } from '@/utils/html-preview/previewDocument';
 import { useI18n } from '@/contexts/I18nContext';
-import { normalizeLiveArtifactFollowupPayload, type LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import { normalizeLiveArtifactFollowupPayload, type LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   createRelayedLiveArtifactSelectionDetail,
   dispatchLiveArtifactSelection,

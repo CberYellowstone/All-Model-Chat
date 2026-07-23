@@ -1,4 +1,5 @@
 import type { OpenAIResponsePayload } from './openaiCompatibleTypes';
+import { appendSseChunk } from './sseBuffer';
 
 const parseSseDataLines = (buffer: string): { events: string[]; rest: string } => {
   const events: string[] = [];
@@ -45,7 +46,7 @@ export const readOpenAICompatibleStreamEvents = async (
         break;
       }
 
-      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      buffer = appendSseChunk(buffer, decoder.decode(value, { stream: true }));
       const parsed = parseSseDataLines(buffer);
       buffer = parsed.rest;
 
@@ -64,7 +65,7 @@ export const readOpenAICompatibleStreamEvents = async (
 
     const tail = decoder.decode();
     if (tail) {
-      buffer += tail.replace(/\r\n/g, '\n');
+      buffer = appendSseChunk(buffer, tail);
     }
     const parsed = parseSseDataLines(`${buffer}\n\n`);
     for (const event of parsed.events) {

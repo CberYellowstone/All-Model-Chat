@@ -1,4 +1,4 @@
-import { parseLiveArtifactInteractionSpec } from './liveArtifactInteraction';
+import { parseLiveArtifactInteractionSpec } from './live-artifacts/liveArtifactInteraction';
 
 type PreviewMarkupType = 'html' | 'svg';
 interface NormalizePreviewableMarkdownOptions {

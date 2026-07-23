@@ -169,7 +169,7 @@ describe('source readability boundaries', () => {
   it('keeps byte-buffer code readable through descriptive locals', () => {
     const byteBufferSources = [
       'src/features/audio/audioProcessing.ts',
-      'src/utils/fileEncoding.ts',
+      'src/utils/file/fileEncoding.ts',
       'src/hooks/chat-input/useChatInputGlobalEffects.ts',
       'src/components/modals/create-file/useCreateFileEditor.ts',
     ];
@@ -297,6 +297,10 @@ describe('source readability boundaries', () => {
       'Insert BBox and Guide Buttons after "Smart Board" (organize action) if available',
       'Wrap toolbar in z-indexed container to ensure dropdowns render above status banner',
       'Use chunkIndex+1 to match the [N] citation markers in the text body.',
+      // Layout / design constraints (not section narration)
+      'Decorative gradient orb — neutral only, no accent/blue tint',
+      'Mobile-only close row; desktop close lives in the content pane.',
+      'Search container aligned with main header baseline',
     ]);
     const jsxCommentPattern = /\{\/\*\s*([^*]+?)\s*\*\/\}/g;
     const unexpectedComments = listProjectSourceFiles('src')
@@ -315,7 +319,7 @@ describe('source readability boundaries', () => {
   it('names live media and canvas contexts after the resource they wrap', () => {
     const liveAudioSource = readProjectFile('src/hooks/live-api/useLiveAudio.ts');
     const liveVideoSource = readProjectFile('src/hooks/live-api/useLiveVideo.ts');
-    const audioVisualizerSource = readProjectFile('src/components/recorder/AudioVisualizer.tsx');
+    const audioVisualizerSource = readProjectFile('src/components/audio/AudioVisualizer.tsx');
     const imageExportSource = readProjectFile('src/utils/export/image.ts');
     const backgroundKeepAliveSource = readProjectFile('src/hooks/core/useBackgroundKeepAlive.ts');
     const completionFeedbackSource = readProjectFile('src/utils/browserCompletionFeedback.ts');

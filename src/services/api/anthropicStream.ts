@@ -1,4 +1,5 @@
 import type { AnthropicStreamEvent } from './anthropicTypes';
+import { appendSseChunk } from './sseBuffer';
 
 export const parseAnthropicSseEvents = (buffer: string): { events: AnthropicStreamEvent[]; rest: string } => {
   const events: AnthropicStreamEvent[] = [];
@@ -46,7 +47,7 @@ export const readAnthropicStreamEvents = async (
       const { done, value } = await reader.read();
       if (done || abortSignal.aborted) break;
 
-      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      buffer = appendSseChunk(buffer, decoder.decode(value, { stream: true }));
       const parsed = parseAnthropicSseEvents(buffer);
       buffer = parsed.rest;
       for (const event of parsed.events) {
@@ -59,7 +60,7 @@ export const readAnthropicStreamEvents = async (
 
     const tail = decoder.decode();
     if (tail) {
-      buffer += tail.replace(/\r\n/g, '\n');
+      buffer = appendSseChunk(buffer, tail);
     }
     const parsed = parseAnthropicSseEvents(`${buffer}\n\n`);
     for (const event of parsed.events) {

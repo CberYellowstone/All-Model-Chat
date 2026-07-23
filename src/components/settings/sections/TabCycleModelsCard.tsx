@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { ChevronDown, Keyboard } from 'lucide-react';
 import { type ModelOption } from '@/types';
-import { getQuickSwitchModelIds, getTabCycleModelIds } from '@/utils/modelCatalog';
+import { getQuickSwitchModelIds, getTabCycleModelIds } from '@/utils/model/modelCatalog';
 
 interface TabCycleModelsCardProps {
   availableModels: ModelOption[];

@@ -1,7 +1,7 @@
 import { type ChatMessage, type ChatSettings } from '@/types';
 import type { UsageMetadata } from '@google/genai';
 import { getTranslator } from '@/i18n/translations';
-import { calculateTokenStats } from '@/utils/modelUsageStats';
+import { calculateTokenStats } from '@/utils/model/modelUsageStats';
 
 interface FinalizeMessagesOptions {
   messages: ChatMessage[];

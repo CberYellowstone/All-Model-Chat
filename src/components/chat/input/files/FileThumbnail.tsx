@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ElementType, type FC, type ReactNode } from 'react';
 import type { UploadedFile } from '@/types';
 import { SUPPORTED_IMAGE_MIME_TYPES } from '@/constants/fileTypeSupport';
-import { getFileTypeCategory, isTextFile } from '@/utils/fileTypeClassification';
+import { getFileTypeCategory, isTextFile } from '@/utils/file/fileTypeClassification';
 
 const LazyPdfFileThumbnail = lazy(() =>
   import('./PdfFileThumbnail').then((module) => ({ default: module.PdfFileThumbnail })),

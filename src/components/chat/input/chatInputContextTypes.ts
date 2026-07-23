@@ -26,7 +26,7 @@ import type { ChatToolToggleStates } from '@/types/chatTools';
 import type { SlashCommand } from '@/types/slashCommands';
 import type { ChatInputBooleanUpdate, ChatInputMachineState } from '@/utils/chat-input/chatInputStateMachine';
 import type { QueuedChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
-import type { ModelCapabilities } from '@/utils/modelCapabilities';
+import type { ModelCapabilities } from '@/utils/model/modelCapabilities';
 
 type ChatEditMode = 'update' | 'resend';
 type ChatInputMode = 'idle' | 'editing' | 'queuing' | 'live' | 'processing';

@@ -6,7 +6,7 @@ import {
   type UploadedFile,
 } from '@/types';
 import { generateUniqueId } from './ids';
-import { base64ToBlob, blobToBase64 } from '@/utils/fileEncoding';
+import { base64ToBlob, blobToBase64 } from '@/utils/file/fileEncoding';
 import { getVisibleChatMessages } from './visibility';
 import { createManagedObjectUrl, releaseManagedObjectUrlsByOwner } from '@/services/objectUrlManager';
 

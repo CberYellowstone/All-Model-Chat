@@ -6,7 +6,7 @@ import {
   applyChatAreaProviderValue,
   createChatAreaProviderValue,
   type ChatAreaProviderValue,
-} from '@/test/chat-area/fixtures';
+} from '@/test/layout/fixtures';
 import { type ChatSettings, type InputCommand, type UploadedFile } from '@/types';
 
 export type { ChatAreaProviderValue };
@@ -182,7 +182,7 @@ vi.mock('@/hooks/ui/useFileModalState', () => ({
   }),
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   getModelCapabilities: () => mockModelCapabilities.value,
   isGemini3Model: (modelId: string) => modelId.includes('gemini-3'),
 }));

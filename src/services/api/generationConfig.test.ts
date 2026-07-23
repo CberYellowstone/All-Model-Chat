@@ -13,8 +13,8 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-vi.mock('@/utils/modelCapabilities', async () => {
-  const actual = await vi.importActual<typeof import('@/utils/modelCapabilities')>('@/utils/modelCapabilities');
+vi.mock('@/utils/model/modelCapabilities', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/model/modelCapabilities')>('@/utils/model/modelCapabilities');
 
   return {
     ...actual,

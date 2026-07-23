@@ -6,8 +6,6 @@ export type FetchLike = (url: string | URL, init?: RequestInit) => Promise<Respo
 
 const MAX_REDIRECTS = 5;
 
-const isPrivateResolvedAddress = (address: string): boolean => isPrivateNetworkHostname(address);
-
 /**
  * Reject hostnames that are private literals, or that resolve to private/link-local addresses
  * (DNS rebinding / SSRF protection). When allowPrivate is true, any host is permitted.
@@ -55,7 +53,7 @@ export async function assertMcpHttpUrlAllowed(urlString: string, allowPrivate: b
   }
 
   for (const { address } of addresses) {
-    if (isPrivateResolvedAddress(address)) {
+    if (isPrivateNetworkHostname(address)) {
       throw new Error(
         `MCP HTTP host "${hostname}" resolves to private address ${address}, which is disabled on this API server.`,
       );

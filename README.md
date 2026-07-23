@@ -398,7 +398,7 @@ Live API 默认由浏览器使用本地 API Key 直连官方 Live 服务。
 
 ## 项目结构
 
-核心前端目录包括 `src/components/`、`src/features/`、`src/hooks/`、`src/services/`、`src/i18n/`、`src/pwa/`、`src/schemas/` 与 `src/test/`。
+核心前端目录包括 `src/components/`、`src/features/`、`src/hooks/`、`src/services/`、`src/i18n/`、`src/pwa/`、`src/schemas/` 与 `src/test/`。仓库顶层还有前后端共用的 `shared/`、Vite 插件配置 `vite/`，以及脚本目录 `scripts/`。
 
 放置规则：
 
@@ -406,19 +406,29 @@ Live API 默认由浏览器使用本地 API Key 直连官方 Live 服务。
 - `src/features/` 放领域能力的实现边界，例如消息发送、本地 Python、音频处理、标准聊天工具循环。
 - `src/hooks/` 放 React 编排层；如果 hook 只是某个领域能力的 React 入口，优先靠近对应领域目录命名。
 - `src/services/` 放外部系统与持久化边界，例如 API client、IndexedDB、日志和对象 URL 生命周期。
-- `src/utils/` 放无 React 状态的小型跨域工具；涉及 DOM、剪贴板、媒体、导出等浏览器边界时优先使用明确的文件名或子目录。
+- `src/utils/` 放无 React 状态的小型跨域工具；相关工具按领域分子目录（如 `utils/model/`、`utils/file/`、`utils/live-artifacts/`、`utils/export/`），避免笼统的 `*Helpers` 桶文件。
 - `src/test/architecture/` 放结构和风格护栏测试，用来防止历史清理问题回流。
+- `shared/` 放 web 与 Node API 共用的纯逻辑（例如 image proxy、MCP 配置、私网判断）。
 - `src` 内跨目录引用统一使用 `@/` alias，同目录引用保留 `./`。
+
+聊天与消息相关目录边界：
+
+- `components/chat/`：会话外壳（输入区、消息列表编排、拖放遮罩）。
+- `components/chat/message-list/`：消息列表入口与滚动/选区/欢迎页等列表级 UI。
+- `components/message/`：单条消息气泡、Markdown、附件与导出按钮等。
+- `hooks/chat/message/`：单条消息操作与 TTS 等 React 编排。
+- `components/audio/` + `features/audio/`：录音 UI 与音频处理能力（域名统一为 audio）。
+- `components/pwa/`：PWA 相关 UI（如更新横幅）；`src/pwa/`：Service Worker 与安装运行时。
 
 ```
 AMC-WebUI/
 ├── src/                        # 前端应用源码（Vite SPA）
-│   ├── components/             # UI 组件（chat / message / layout / settings / modals 等）
+│   ├── components/             # UI 组件（chat / message / layout / settings / modals / audio 等）
 │   ├── features/               # 本地 Python（src/features/local-python/）、消息发送、场景、音频、标准聊天等业务能力
 │   ├── hooks/                  # 业务 hooks（app / chat / chat-input / data-management / live-api / ui）
 │   ├── services/               # API、IndexedDB、日志、对象 URL 等基础设施
 │   ├── stores/                 # Zustand 状态（chat / settings / ui）
-│   ├── utils/                  # 导出、会话、Markdown、文件处理、媒体等工具
+│   ├── utils/                  # 领域子目录工具（model / file / live-artifacts / export / chat 等）
 │   ├── i18n/                   # 翻译聚合、覆盖率测试与中英文文案
 │   ├── pwa/                    # Service Worker、PWA 注册与安装状态
 │   ├── runtime/                # 运行时配置读取与公开配置映射
@@ -433,10 +443,13 @@ AMC-WebUI/
 ├── server/                     # 独立 Node API（/api/gemini/*）
 │   ├── src/
 │   └── tsconfig.json
+├── shared/                     # 前后端共用纯逻辑（image proxy、MCP、私网等）
+├── vite/                       # Vite 插件与分包配置
+├── scripts/                    # 测试/校验辅助脚本
 ├── public/                     # 静态资源与 runtime-config.js 模板
 ├── e2e/                        # Playwright 端到端测试
-├── docs/                       # 截图与文档资源
-├── docker/                     # 部署辅助脚本
+├── docs/                       # 截图、model-logos 等文档资源（运行时图标见 src/assets/model-icons/）
+├── docker/                     # 部署辅助脚本（如 web-server.js）
 ├── vite.config.ts              # Vite 配置（React、静态复制、手工分包）
 ├── playwright.config.ts        # E2E 配置
 ├── vitest.config.ts            # 单元/集成测试配置

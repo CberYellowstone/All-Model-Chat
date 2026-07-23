@@ -4,7 +4,7 @@ import { SUPPORTED_GENERATED_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { escapeHtml } from '@/utils/escapeHtml';
-import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/fileTypeClassification';
+import { isAudioMimeType, isImageMimeType, isVideoMimeType } from '@/utils/file/fileTypeClassification';
 
 const hasThoughtSignature = (part: Part) =>
   Boolean(

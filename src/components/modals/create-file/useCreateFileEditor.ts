@@ -7,7 +7,7 @@ import {
   extractInlineImagePlaceholders,
   resolveInlineImagePlaceholders,
 } from '@/utils/inlineImagePlaceholders';
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { CREATE_TEXT_FILE_EDITOR_LAST_EXTENSION_KEY } from '@/constants/storageKeys';
 import { useI18n } from '@/contexts/I18nContext';
 import { CREATE_FILE_EXTENSION_OPTIONS } from './createFileExtensionOptions';

@@ -7,7 +7,7 @@ import {
   LIVE_ARTIFACTS_CUSTOM_FONT_SIZE_MAX,
   LIVE_ARTIFACTS_CUSTOM_FONT_SIZE_MIN,
   clampLiveArtifactsCustomFontSize,
-} from '@/utils/liveArtifactsFontSize';
+} from '@/utils/live-artifacts/liveArtifactsFontSize';
 import {
   SETTINGS_SECTION_CARD_CLASS,
   SETTINGS_SECTION_LABEL_CLASS,

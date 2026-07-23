@@ -1,4 +1,4 @@
-import { SHORTCUT_REGISTRY } from '@/constants/shortcuts';
+import { SHORTCUT_REGISTRY } from './shortcuts';
 import type { SettingsTab } from '@/stores/settingsUiStore';
 
 export interface SettingsSearchEntry {

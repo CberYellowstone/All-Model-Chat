@@ -11,7 +11,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { logService } from '@/services/logService';
 import { formatApiKeyErrorMessage } from '@/utils/apiKeySelection';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import { getThirdPartyProviderModelId } from '@/utils/thirdPartyApiProviders';
 

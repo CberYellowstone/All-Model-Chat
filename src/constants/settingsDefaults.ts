@@ -1,7 +1,7 @@
 import { getRuntimeConfigAppSettingsOverrides } from '@/runtime/runtimeConfig';
 import { MediaResolution, type AppSettings, type FilesApiConfig, type ModelOption, type ThinkingLevel } from '@/types';
 import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL } from '@/utils/apiProxyUrl';
-import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { DEFAULT_THEME_ID } from './themeRegistry';
 import {
   DEFAULT_MODEL_ID,

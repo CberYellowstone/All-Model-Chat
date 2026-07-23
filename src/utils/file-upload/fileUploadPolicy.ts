@@ -8,7 +8,7 @@ import {
 } from '@/constants/fileTypeSupport';
 import { type AppSettings, type FilesApiConfig, type UploadedFile } from '@/types';
 import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES, isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isTextFile } from '@/utils/fileTypeClassification';
+import { isTextFile } from '@/utils/file/fileTypeClassification';
 import { getTranslator } from '@/i18n/translations';
 
 type Translator = ReturnType<typeof getTranslator>;

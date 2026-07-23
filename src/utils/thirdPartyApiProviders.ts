@@ -6,7 +6,7 @@ import type {
   ThirdPartyProviderConfig,
   ThirdPartyProviderId,
 } from '@/types';
-import { deduplicateModelsById, sanitizeModelOptions } from './modelSorting';
+import { deduplicateModelsById, sanitizeModelOptions } from './model/modelSorting';
 
 export const THIRD_PARTY_PROVIDER_IDS = [
   'openai',

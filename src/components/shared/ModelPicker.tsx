@@ -8,7 +8,7 @@ import {
   buildModelCatalogSections,
   filterModelCatalog,
   getModelProviderSectionLabelKey,
-} from '@/utils/modelCatalog';
+} from '@/utils/model/modelCatalog';
 import { getModelIcon } from './ModelIcon';
 
 interface ModelPickerProps {

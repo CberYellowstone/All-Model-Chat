@@ -1,8 +1,8 @@
 import type { UploadedFile } from '@/types';
 import { logService } from '@/services/logService';
 import { CODE_EXECUTION_TEXT_FILE_LIMIT_BYTES } from '@/utils/codeExecution';
-import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/fileTypeClassification';
-import { normalizeModelId } from '@/utils/modelId';
+import { isImageMimeType, isPdfMimeType, isTextFile } from '@/utils/file/fileTypeClassification';
+import { normalizeModelId } from '@/utils/model/modelId';
 import type { MessageSenderTranslator } from './messageSenderTypes';
 
 interface MessageSendPermissions {

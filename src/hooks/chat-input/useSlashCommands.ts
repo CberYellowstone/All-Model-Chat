@@ -5,7 +5,7 @@ import type { SlashCommand as Command } from '@/types/slashCommands';
 import type { ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { getSlashCommandToolDefinitions } from '@/features/chat-tools/toolRegistry';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
-import { isImageGenerationModel } from '@/utils/modelCapabilities';
+import { isImageGenerationModel } from '@/utils/model/modelCapabilities';
 
 export type SlashCommandState = {
   isOpen: boolean;

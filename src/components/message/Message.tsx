@@ -3,7 +3,7 @@ import { type ChatMessage, type UploadedFile, type SideViewContent } from '@/typ
 import { MessageContent } from './MessageContent';
 import { MessageActions } from './MessageActions';
 import { useSettingsStore } from '@/stores/settingsStore';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import type { UserMessageCollapseController } from './content/userMessageCollapse';
 
 interface MessageProps {

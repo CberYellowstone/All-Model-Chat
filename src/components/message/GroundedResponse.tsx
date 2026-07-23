@@ -7,7 +7,7 @@ import { ContextUrls } from './grounded-response/ContextUrls';
 import { SearchSources } from './grounded-response/SearchSources';
 import { MapsWidget } from './grounded-response/MapsWidget';
 import { IconGoogle } from '@/components/icons';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 
 interface GroundedResponseProps {
   messageId?: string;

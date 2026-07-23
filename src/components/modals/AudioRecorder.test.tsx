@@ -11,7 +11,7 @@ vi.mock('@/features/audio/useAudioRecorder', () => ({
   useAudioRecorder: mockUseAudioRecorder,
 }));
 
-vi.mock('@/components/recorder/AudioVisualizer', () => ({
+vi.mock('@/components/audio/AudioVisualizer', () => ({
   AudioVisualizer: () => <div data-testid="audio-visualizer" />,
 }));
 

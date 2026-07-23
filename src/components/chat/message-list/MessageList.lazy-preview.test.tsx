@@ -2,7 +2,7 @@ import { act } from 'react';
 import { setupTestRenderer } from '@/test/render/renderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '@/types';
-import { createChatAreaProviderValue } from '@/test/chat-area/fixtures';
+import { createChatAreaProviderValue } from '@/test/layout/fixtures';
 import { createUploadedFile } from '@/test/data/factories';
 
 const file = createUploadedFile({
@@ -35,11 +35,11 @@ const mockedModuleIds = [
   '../message/Message',
   '../modals/FilePreviewModal',
   '../modals/FileConfigModal',
-  './message-list/hooks/useMessageListScroll',
-  './message-list/ScrollNavigation',
-  './message-list/TextSelectionToolbar',
-  './message-list/MessageListFooter',
-  './message-list/WelcomeScreen',
+  './hooks/useMessageListScroll',
+  './ScrollNavigation',
+  './TextSelectionToolbar',
+  './MessageListFooter',
+  './WelcomeScreen',
 ];
 
 const loadMessageList = async (moduleLoadTracker: { count: number }) => {
@@ -66,18 +66,18 @@ const loadMessageList = async (moduleLoadTracker: { count: number }) => {
 
   vi.doMock('@/components/modals/FileConfigModal', () => createNullComponentMock('FileConfigModal'));
 
-  vi.doMock('./message-list/hooks/useMessageListScroll', () => createMessageListScrollMock());
+  vi.doMock('./hooks/useMessageListScroll', () => createMessageListScrollMock());
 
-  vi.doMock('./message-list/ScrollNavigation', () => createNullComponentMock('ScrollNavigation'));
+  vi.doMock('./ScrollNavigation', () => createNullComponentMock('ScrollNavigation'));
 
-  vi.doMock('./message-list/TextSelectionToolbar', () => createNullComponentMock('TextSelectionToolbar'));
+  vi.doMock('./TextSelectionToolbar', () => createNullComponentMock('TextSelectionToolbar'));
 
-  vi.doMock('./message-list/MessageListFooter', () => createNullComponentMock('MessageListFooter'));
+  vi.doMock('./MessageListFooter', () => createNullComponentMock('MessageListFooter'));
 
-  vi.doMock('./message-list/WelcomeScreen', () => createNullComponentMock('WelcomeScreen'));
+  vi.doMock('./WelcomeScreen', () => createNullComponentMock('WelcomeScreen'));
 
   const module = await import('./MessageList');
-  const fixtureModule = await import('@/test/chat-area/fixtures');
+  const fixtureModule = await import('@/test/layout/fixtures');
   const i18nModule = await import('@/contexts/I18nContext');
 
   return {

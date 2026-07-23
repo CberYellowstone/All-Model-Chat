@@ -3,7 +3,7 @@ import { type AppSettings, type ChatSettings as IndividualChatSettings, type Sav
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { createNewSession } from '@/utils/chat/session';
 import { focusChatInput } from '@/utils/chat-input/focus';
-import { resolveModelSwitchSettings } from '@/utils/modelSwitchSettings';
+import { resolveModelSwitchSettings } from '@/utils/model/modelSwitchSettings';
 
 interface UseModelSelectionProps {
   appSettings: AppSettings;

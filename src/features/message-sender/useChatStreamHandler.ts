@@ -9,7 +9,7 @@ import {
 import type { Part, UsageMetadata } from '@google/genai';
 import { useApiErrorHandler } from './useApiErrorHandler';
 import { logService } from '@/services/logService';
-import { calculateTokenStats } from '@/utils/modelUsageStats';
+import { calculateTokenStats } from '@/utils/model/modelUsageStats';
 import { finalizeMessages } from '@/features/chat-streaming/processors';
 import { streamingStore } from '@/services/streamingStore';
 import { buildExactPricingFromUsageMetadata } from '@/utils/usagePricingTelemetry';

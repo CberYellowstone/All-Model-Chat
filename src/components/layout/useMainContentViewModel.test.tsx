@@ -2,7 +2,7 @@ import { act, type PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppViewModel } from '@/hooks/app/useApp';
 import { renderHook } from '@/test/render/renderer';
-import { createAppSettings, createChatAreaProviderValue, createChatRuntimeApp } from '@/test/chat-area/fixtures';
+import { createAppSettings, createChatAreaProviderValue, createChatRuntimeApp } from '@/test/layout/fixtures';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { ChatRuntimeProvider, useChatHeaderRuntime } from './chat-runtime/ChatRuntimeContext';
 import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/layout';

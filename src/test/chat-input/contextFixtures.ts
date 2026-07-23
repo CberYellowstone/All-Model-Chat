@@ -6,7 +6,7 @@ import type {
   ChatInputToolbarContextValue,
 } from '@/components/chat/input/ChatInputContext';
 import { createChatToolToggleStates } from '@/test/chat-tools/fixtures';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 
 export const createChatInputActionsContextValue = (
   overrides: Partial<ChatInputActionsContextValue> = {},

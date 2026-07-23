@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL_ID } from '@/constants/modelConfiguration';
 import type { SavedChatSession } from '@/types';
-import { resolveSupportedModelId } from '@/utils/modelSorting';
+import { resolveSupportedModelId } from '@/utils/model/modelSorting';
 
 export function sortSessionsInPlace<T extends Pick<SavedChatSession, 'isPinned' | 'timestamp'>>(sessions: T[]): T[] {
   sessions.sort((leftSession, rightSession) => {

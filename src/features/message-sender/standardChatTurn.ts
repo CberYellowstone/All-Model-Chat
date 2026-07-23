@@ -1,6 +1,6 @@
 import type { ChatMessage, UploadedFile } from '@/types';
 import type { ContentPart } from '@/types/chat';
-import { isGemini3Model } from '@/utils/modelCapabilities';
+import { isGemini3Model } from '@/utils/model/modelCapabilities';
 
 interface ResolveStandardChatTurnParams {
   messages: ChatMessage[];

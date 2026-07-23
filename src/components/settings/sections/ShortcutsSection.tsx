@@ -4,7 +4,7 @@ import { SHORTCUT_REGISTRY, DEFAULT_SHORTCUTS } from '@/constants/shortcuts';
 import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/constants/designTokens';
 import { type AppSettings, type ModelOption } from '@/types';
 import { ShortcutRecorder } from './shortcuts/ShortcutRecorder';
-import { TabCycleModelsCard } from './models/TabCycleModelsCard';
+import { TabCycleModelsCard } from './TabCycleModelsCard';
 
 interface ShortcutsSectionProps {
   currentSettings?: AppSettings;

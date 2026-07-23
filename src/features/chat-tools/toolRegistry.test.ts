@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 import { getChatToolsForSurface, getSlashCommandToolDefinitions } from './toolRegistry';
 
 describe('chat tool registry', () => {

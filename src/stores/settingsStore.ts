@@ -6,9 +6,9 @@ import { DEFAULT_FILES_API_CONFIG, getDefaultAppSettings } from '@/constants/set
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { logService } from '@/services/logService';
 import { migrateRemovedModelId } from '@/constants/modelConfiguration';
-import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/modelSorting';
+import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/model/modelSorting';
 import { dbService } from '@/services/db/dbService';
-import { normalizeLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { normalizeLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { type ConcreteThemeId } from '@/utils/themeMode';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 import { CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';

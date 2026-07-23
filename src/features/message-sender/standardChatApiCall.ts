@@ -2,7 +2,7 @@ import { createChatHistoryForApi } from '@/utils/chat/builder';
 import { toError } from '@/utils/errorMessage';
 import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
+import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/model/modelCapabilities';
 import { appendFunctionDeclarationsToTools, buildGenerationConfig } from '@/services/api/generationConfig';
 import {
   generateContentTurnApi,

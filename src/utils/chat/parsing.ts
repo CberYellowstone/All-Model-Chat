@@ -1,7 +1,7 @@
 import { type UploadedFile } from '@/types';
 import { generateUniqueId } from './ids';
-import { base64ToBlob } from '@/utils/fileEncoding';
-import { getExtensionFromMimeType } from '@/utils/fileMime';
+import { base64ToBlob } from '@/utils/file/fileEncoding';
+import { getExtensionFromMimeType } from '@/utils/file/fileMime';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 
 const getThoughtHeadingTitle = (line: string): string | null => {

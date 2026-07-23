@@ -2,7 +2,7 @@ import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback 
 import { type ChatMessage, type UploadedFile, type SavedChatSession, type InputCommand } from '@/types';
 import { logService } from '@/services/logService';
 import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/layout';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import { getVisibleChatMessages } from '@/utils/chat/visibility';
 import { cloneMessagesWithFreshIds, createNewSession } from '@/utils/chat/session';
 import { updateMessageInSession, updateSessionById } from '@/utils/chat/sessionMutations';

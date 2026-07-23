@@ -16,7 +16,7 @@ vi.mock('@/utils/chat/ids', () => ({
   generateUniqueId: generateUniqueIdMock,
 }));
 
-vi.mock('@/utils/filePreviewUrls', () => {
+vi.mock('@/utils/file/filePreviewUrls', () => {
   return {
     fileToBlobUrl: fileToBlobUrlMock,
   };

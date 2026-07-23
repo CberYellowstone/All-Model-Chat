@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import type { ChatMessage } from '@/types';
-import { createChatAreaProviderValue, renderWithChatAreaProviders } from '@/test/chat-area/fixtures';
+import { createChatAreaProviderValue, renderWithChatAreaProviders } from '@/test/layout/fixtures';
 import { MessageList } from './MessageList';
 import type { VirtuosoMockProps } from '@/test/message-list/doubles';
 import { AVAILABLE_THEMES } from '@/constants/themeRegistry';
@@ -27,37 +27,37 @@ vi.mock('@/components/modals/FileConfigModal', async () => {
   return createNullComponentMock('FileConfigModal');
 });
 
-vi.mock('./message-list/hooks/useMessageListUi', async () => {
+vi.mock('./hooks/useMessageListUi', async () => {
   const { createMessageListUiMock } = await import('@/test/message-list/doubles');
 
   return createMessageListUiMock();
 });
 
-vi.mock('./message-list/hooks/useMessageListScroll', async () => {
+vi.mock('./hooks/useMessageListScroll', async () => {
   const { createMessageListScrollMock } = await import('@/test/message-list/doubles');
 
   return createMessageListScrollMock({ scrollerRef: null });
 });
 
-vi.mock('./message-list/ScrollNavigation', async () => {
+vi.mock('./ScrollNavigation', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('ScrollNavigation');
 });
 
-vi.mock('./message-list/TextSelectionToolbar', async () => {
+vi.mock('./TextSelectionToolbar', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('TextSelectionToolbar');
 });
 
-vi.mock('./message-list/MessageListFooter', async () => {
+vi.mock('./MessageListFooter', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('MessageListFooter');
 });
 
-vi.mock('./message-list/WelcomeScreen', async () => {
+vi.mock('./WelcomeScreen', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('WelcomeScreen');

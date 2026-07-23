@@ -8,7 +8,7 @@ import { extractPreviewableCodeBlock, normalizePreviewableMarkdownContent } from
 import { useSmoothStreaming } from '@/hooks/ui/useSmoothStreaming';
 import { useMessageStream } from '@/hooks/ui/useMessageStream';
 import { extractRawThinkingBlocks } from '@/utils/chat/reasoning';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   getUserMessageCollapseKey,
@@ -17,7 +17,7 @@ import {
   USER_MESSAGE_COLLAPSE_LINE_THRESHOLD,
   type UserMessageCollapseController,
 } from './userMessageCollapse';
-import { resolveLiveArtifactsFontSize } from '@/utils/liveArtifactsFontSize';
+import { resolveLiveArtifactsFontSize } from '@/utils/live-artifacts/liveArtifactsFontSize';
 
 interface MessageTextProps {
   message: ChatMessage;

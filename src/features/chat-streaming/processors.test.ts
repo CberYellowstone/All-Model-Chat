@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/utils/modelUsageStats', () => ({
+vi.mock('@/utils/model/modelUsageStats', () => ({
   calculateTokenStats: () => ({
     promptTokens: 0,
     cachedPromptTokens: 0,

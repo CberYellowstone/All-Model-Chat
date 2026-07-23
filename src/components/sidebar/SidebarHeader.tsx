@@ -16,18 +16,20 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ onToggle, isOpen, 
 
   return (
     <div className="p-2 sm:p-3 flex items-center justify-between flex-shrink-0 h-[60px]">
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`flex items-center gap-2 pl-2 bg-transparent border-0 cursor-pointer hover:opacity-80 transition-opacity ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}
-        aria-label={`${sidebarToggleLabel} AMC WebUI`}
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-center gap-2 pl-2 bg-transparent border-0 cursor-pointer hover:opacity-80 transition-opacity no-underline ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}
+        aria-label={t('headerNewChatAria')}
+        title={t('newChat')}
       >
         <img
           src={isDarkThemeId(themeId) ? '/app-logo-dark.png' : '/app-logo.png'}
           alt="AMC WebUI"
           className="h-8 w-auto object-contain"
         />
-      </button>
+      </a>
       <button
         onClick={onToggle}
         className={`p-2 -translate-y-1 text-[var(--theme-icon-history)] hover:bg-[var(--theme-bg-tertiary)] rounded-md ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}

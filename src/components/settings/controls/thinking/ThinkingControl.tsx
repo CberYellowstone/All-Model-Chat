@@ -2,7 +2,7 @@ import { useState, useEffect, type FC } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Info, Lightbulb } from 'lucide-react';
 import { REQUIRED_THINKING_MODEL_IDS, THINKING_BUDGET_RANGES } from '@/constants/modelConfiguration';
-import { normalizeModelId } from '@/utils/modelId';
+import { normalizeModelId } from '@/utils/model/modelId';
 import { Tooltip } from '@/components/shared/Tooltip';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import { ThinkingModeSelector } from './ThinkingModeSelector';

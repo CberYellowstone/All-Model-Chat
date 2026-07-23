@@ -1,6 +1,5 @@
 import { translations } from '@/i18n/coreTranslations';
-import type { SettingsSearchEntry } from '@/constants/settingsSearchCatalog';
-import { SETTINGS_SEARCH_CATALOG } from '@/constants/settingsSearchCatalog';
+import { SETTINGS_SEARCH_CATALOG, type SettingsSearchEntry } from '@/constants/settingsSearchCatalog';
 
 const normalizeQuery = (value: string): string =>
   value

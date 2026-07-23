@@ -1,6 +1,6 @@
 import type { UsageMetadata } from '@google/genai';
 import { readResponseErrorMessage, toError } from '@/utils/errorMessage';
-import { deduplicateModelsById } from '@/utils/modelSorting';
+import { deduplicateModelsById } from '@/utils/model/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildOpenAICompatibleRequestBody } from './openaiCompatibleMessages';

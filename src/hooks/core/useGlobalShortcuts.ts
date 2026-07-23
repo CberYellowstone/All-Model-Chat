@@ -3,7 +3,7 @@ import { CHAT_INPUT_TEXTAREA_SELECTOR, FOCUS_HISTORY_SEARCH_EVENT } from '@/cons
 import { useFullscreen } from '@/hooks/ui/useFullscreen';
 import type { AppSettings, ChatSettings, ModelOption } from '@/types';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
-import { getTabCycleModelIds } from '@/utils/modelCatalog';
+import { getTabCycleModelIds } from '@/utils/model/modelCatalog';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 import {
   buildProviderAwareModelList,

@@ -58,7 +58,7 @@ vi.mock('./senderStoreActions', () => ({
   createSenderStoreActions: () => mockSenderStoreActions,
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   getModelCapabilities: mockGetModelCapabilities,
 }));
 

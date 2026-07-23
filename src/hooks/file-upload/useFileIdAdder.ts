@@ -16,7 +16,7 @@ import {
   getUploadLifecycleForGeminiState,
 } from '@/utils/file-upload/fileUploadPolicy';
 import { useI18n } from '@/contexts/I18nContext';
-import { isVideoMimeType } from '@/utils/fileTypeClassification';
+import { isVideoMimeType } from '@/utils/file/fileTypeClassification';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 
 interface UseFileIdAdderProps {

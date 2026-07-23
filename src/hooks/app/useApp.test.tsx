@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSettings, ChatMessage, ModelOption, SavedChatSession } from '@/types';
-import { createAppSettings, createChatSettings } from '@/test/chat-area/fixtures';
+import { createAppSettings, createChatSettings } from '@/test/layout/fixtures';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { useApp } from './useApp';
 import { renderHook } from '@/test/render/renderer';

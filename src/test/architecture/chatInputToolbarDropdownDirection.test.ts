@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { projectRoot } from './projectFiles';
 
+// Only Select-based toolbar menus need direction="up" (segmented controls open in place).
 const toolbarSelectorPaths = [
-  'src/components/chat/input/toolbar/ImageOutputModeSelector.tsx',
   'src/components/chat/input/toolbar/MediaResolutionSelector.tsx',
   'src/components/chat/input/toolbar/AspectRatioSelector.tsx',
   'src/components/chat/input/toolbar/TtsVoiceSelector.tsx',

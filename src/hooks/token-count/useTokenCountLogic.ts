@@ -6,7 +6,7 @@ import { buildContentParts } from '@/utils/chat/builder';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
-import { cleanupFilePreviewUrl, cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrl, cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import { countTokensApi } from '@/services/api/generation/tokenApi';
 import { estimateVideoTokensForFiles } from '@/utils/tokenEstimation';
 import {

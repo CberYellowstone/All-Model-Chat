@@ -1,4 +1,4 @@
-import { fileToString } from '@/utils/fileEncoding';
+import { fileToString } from '@/utils/file/fileEncoding';
 
 const IGNORE_FILE_NAMES = new Set(['.gitignore', '.ignore', '.repomixignore']);
 

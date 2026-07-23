@@ -5,7 +5,7 @@ import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { logService } from '@/services/logService';
 import { releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { generateUniqueId } from '@/utils/chat/ids';
-import { fileToBlobUrl } from '@/utils/filePreviewUrls';
+import { fileToBlobUrl } from '@/utils/file/filePreviewUrls';
 import { uploadFileApi } from '@/services/api/fileApi';
 import {
   createProcessingPlaceholderFile,

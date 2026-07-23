@@ -2,6 +2,18 @@ import type { Buffer } from 'node:buffer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLocalApiPlugin } from '../../../vite/localApiPlugin';
 
+// Image proxy resolves hostnames before fetch (DNS rebinding guard). Keep suites offline.
+const dnsLookup = vi.hoisted(() =>
+  vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]),
+);
+
+vi.mock('node:dns/promises', () => ({
+  default: {
+    lookup: dnsLookup,
+  },
+  lookup: dnsLookup,
+}));
+
 type Middleware = (
   request: { method?: string; url?: string; headers?: Record<string, string> } & Partial<
     AsyncIterable<Buffer | string | Uint8Array>
@@ -48,6 +60,8 @@ describe('createLocalApiPlugin', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    dnsLookup.mockReset();
+    dnsLookup.mockResolvedValue([{ address: '1.2.3.4', family: 4 }]);
     if (originalMcpApiBaseUrl === undefined) {
       delete process.env.MCP_API_BASE_URL;
     } else {
@@ -107,5 +121,91 @@ describe('createLocalApiPlugin', () => {
     );
     const [body] = response.end.mock.calls[0] as [string | Uint8Array | undefined];
     expect(new TextDecoder().decode(body as Uint8Array)).toContain('"ok":true');
+  });
+
+  it('rejects image-proxy redirects that land on a private address', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: 'http://169.254.169.254/latest/meta-data' },
+        }),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+    const middleware = getRegisteredMiddleware();
+    const response = {
+      writeHead: vi.fn((_status: number, _headers: Record<string, string>) => undefined),
+      end: vi.fn((_body?: string | Uint8Array) => undefined),
+    };
+    const next = vi.fn();
+
+    middleware(
+      {
+        method: 'GET',
+        url: `/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/redirect')}`,
+      },
+      response,
+      next,
+    );
+    await waitForAsyncMiddleware();
+
+    expect(next).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const firstCall = fetchMock.mock.calls[0] as unknown as
+      | [RequestInfo | URL, RequestInit | undefined]
+      | undefined;
+    expect(firstCall?.[1]).toMatchObject({ redirect: 'manual' });
+    expect(response.writeHead).toHaveBeenCalledWith(
+      400,
+      expect.objectContaining({ 'content-type': 'application/json; charset=utf-8' }),
+    );
+    expect(response.end).toHaveBeenCalledWith(
+      JSON.stringify({ error: 'Image proxy target attempted an unsafe redirect.' }),
+    );
+  });
+
+  it('follows a safe image-proxy redirect with redirect: manual', async () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 302,
+          headers: { location: 'https://cdn.example.com/final.png' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(pngBytes, {
+          status: 200,
+          headers: { 'content-type': 'image/png' },
+        }),
+      );
+    globalThis.fetch = fetchMock as typeof fetch;
+    const middleware = getRegisteredMiddleware();
+    const response = {
+      writeHead: vi.fn((_status: number, _headers: Record<string, string>) => undefined),
+      end: vi.fn((_body?: string | Uint8Array) => undefined),
+    };
+    const next = vi.fn();
+
+    middleware(
+      {
+        method: 'GET',
+        url: `/api/image-proxy?url=${encodeURIComponent('https://cdn.example.com/signed')}`,
+      },
+      response,
+      next,
+    );
+    await waitForAsyncMiddleware();
+
+    expect(next).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(response.writeHead).toHaveBeenCalledWith(
+      200,
+      expect.objectContaining({
+        'content-type': 'image/png',
+        'x-content-type-options': 'nosniff',
+      }),
+    );
   });
 });

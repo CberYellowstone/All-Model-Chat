@@ -2,8 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Document, Page } from 'react-pdf';
 import type { UploadedFile } from '@/types';
 import { ensurePdfWorkerConfigured } from '@/utils/pdfRuntime';
-
-const pdfThumbnailImageCache = new Map<string, string>();
+import { readPdfThumbnailCache, writePdfThumbnailCache } from './pdfThumbnailCache';
 
 const getPdfThumbnailCacheKey = (file: UploadedFile) =>
   file.dataUrl ?? file.fileApiName ?? `${file.name}:${file.size}:${file.type}`;
@@ -18,7 +17,7 @@ export const PdfFileThumbnail: React.FC<PdfFileThumbnailProps> = ({ file, fallba
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cacheKey = useMemo(() => getPdfThumbnailCacheKey(file), [file]);
-  const [cachedImageUrl, setCachedImageUrl] = useState(() => pdfThumbnailImageCache.get(cacheKey) ?? null);
+  const [cachedImageUrl, setCachedImageUrl] = useState(() => readPdfThumbnailCache(cacheKey) ?? null);
   const [hasError, setHasError] = useState(false);
 
   if (!file.dataUrl || hasError) {
@@ -37,7 +36,7 @@ export const PdfFileThumbnail: React.FC<PdfFileThumbnailProps> = ({ file, fallba
 
     try {
       const imageUrl = canvas.toDataURL('image/png');
-      pdfThumbnailImageCache.set(cacheKey, imageUrl);
+      writePdfThumbnailCache(cacheKey, imageUrl);
       setCachedImageUrl(imageUrl);
     } catch {
       // Keep the rendered PDF canvas in place if the browser refuses canvas export.

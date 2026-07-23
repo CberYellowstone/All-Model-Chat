@@ -10,7 +10,7 @@ import {
 } from '@/features/prompts/promptRegistry';
 import { DEFAULT_SYSTEM_INSTRUCTION } from '@/constants/settingsDefaults';
 import { focusChatInput } from '@/utils/chat-input/focus';
-import { getLiveArtifactsSystemPromptOverride } from '@/utils/liveArtifactsPromptSettings';
+import { getLiveArtifactsSystemPromptOverride } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import type { AppSettings, ChatSettings, InputCommand, SavedChatSession } from '@/types';
 
 interface PendingLiveArtifactsPromptActivation {

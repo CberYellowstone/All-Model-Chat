@@ -1,9 +1,9 @@
 import type { GenerateContentConfig, Part, ThinkingConfig, ThinkingLevel, UsageMetadata } from '@google/genai';
 import { executeConfiguredApiRequest } from '@/services/api/apiExecutor';
 import { logService } from '@/services/logService';
-import { blobToBase64 } from '@/utils/fileEncoding';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
-import { calculateTokenStats } from '@/utils/modelUsageStats';
+import { blobToBase64 } from '@/utils/file/fileEncoding';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
+import { calculateTokenStats } from '@/utils/model/modelUsageStats';
 import { buildExactPricingFromUsageMetadata } from '@/utils/usagePricingTelemetry';
 import { AVAILABLE_TTS_VOICES } from '@/constants/voiceOptions';
 import { SUPPORTED_AUDIO_MIME_TYPES } from '@/constants/fileTypeSupport';

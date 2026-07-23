@@ -3,7 +3,7 @@ import { setupTestRenderer } from '@/test/render/renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { createChatInputToolbarContextValue } from '@/test/chat-input/contextFixtures';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 
 const imageOutputModeSelectorMock = vi.fn();
 const mockCapabilities = vi.hoisted(() => ({

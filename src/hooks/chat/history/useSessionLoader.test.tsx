@@ -40,11 +40,11 @@ vi.mock('@/utils/chat/session', () => ({
   rehydrateSessionFiles: mockRehydrateSessionFiles,
 }));
 
-vi.mock('@/utils/filePreviewUrls', () => ({
+vi.mock('@/utils/file/filePreviewUrls', () => ({
   cleanupFilePreviewUrls: mockCleanupFilePreviewUrls,
 }));
 
-vi.mock('@/utils/modelSorting', () => ({
+vi.mock('@/utils/model/modelSorting', () => ({
   resolveSupportedModelId: mockResolveSupportedModelId,
 }));
 

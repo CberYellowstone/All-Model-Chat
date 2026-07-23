@@ -384,7 +384,7 @@ Live API uses the browser-local API key to connect directly to the official Live
 
 ## Project Structure
 
-Core frontend areas include `src/components/`, `src/features/`, `src/hooks/`, `src/services/`, `src/i18n/`, `src/pwa/`, `src/schemas/`, and `src/test/`.
+Core frontend areas include `src/components/`, `src/features/`, `src/hooks/`, `src/services/`, `src/i18n/`, `src/pwa/`, `src/schemas/`, and `src/test/`. At the repo root there are also shared web/API helpers in `shared/`, Vite plugin config in `vite/`, and helper scripts in `scripts/`.
 
 Placement rules:
 
@@ -392,19 +392,29 @@ Placement rules:
 - `src/features/` contains domain capability boundaries such as message sending, local Python, audio processing, and the standard chat tool loop.
 - `src/hooks/` contains React orchestration; hooks that are only a React entry point for one domain should keep naming close to that domain.
 - `src/services/` contains external-system and persistence boundaries such as API clients, IndexedDB, logging, and object URL lifecycle management.
-- `src/utils/` contains small cross-domain helpers without React state. Browser-bound helpers for DOM, clipboard, media, and export flows should use explicit filenames or subdirectories.
+- `src/utils/` contains small cross-domain helpers without React state. Group related helpers under domain subdirectories (for example `utils/model/`, `utils/file/`, `utils/live-artifacts/`, `utils/export/`) instead of catch-all `*Helpers` buckets.
 - `src/test/architecture/` contains structure and style guardrail tests that keep cleaned-up problems from returning.
+- `shared/` contains pure logic used by both the web app and the Node API (image proxy, MCP config, private-network checks, and similar).
 - Cross-directory imports inside `src` use the `@/` alias; same-directory imports keep `./`.
+
+Chat and message directory boundaries:
+
+- `components/chat/`: session chrome (composer, message-list orchestration, drag-and-drop overlays).
+- `components/chat/message-list/`: message list entry plus list-level UI (scroll, selection toolbar, welcome screen).
+- `components/message/`: single-message bubble, Markdown, attachments, and per-message export controls.
+- `hooks/chat/message/`: React orchestration for per-message actions and TTS.
+- `components/audio/` + `features/audio/`: recorder UI and audio processing (shared `audio` domain name).
+- `components/pwa/`: PWA UI such as the update banner; `src/pwa/`: service worker and install runtime.
 
 ```text
 AMC-WebUI/
 ├── src/                        # Frontend source code (Vite SPA)
-│   ├── components/             # UI components for chat, messages, layout, settings, modals, and more
+│   ├── components/             # UI for chat, message, layout, settings, modals, audio, and more
 │   ├── features/               # Local Python (src/features/local-python/), message sending, scenarios, audio, and standard chat features
 │   ├── hooks/                  # App, chat, input, data management, live API, and UI hooks
 │   ├── services/               # API, IndexedDB, logging, object URL, and infrastructure services
 │   ├── stores/                 # Zustand stores for chat, settings, and UI state
-│   ├── utils/                  # Export, session, Markdown, file, and media utilities
+│   ├── utils/                  # Domain-subdirectory helpers (model / file / live-artifacts / export / chat)
 │   ├── i18n/                   # Translation aggregation, coverage tests, and bilingual copy
 │   ├── pwa/                    # Service worker, PWA registration, and install state
 │   ├── runtime/                # Runtime config loading and public config mapping
@@ -417,10 +427,13 @@ AMC-WebUI/
 │   ├── App.tsx                 # App root component
 │   └── index.tsx               # React mount entry
 ├── server/                     # Standalone Node API for /api/gemini/*
+├── shared/                     # Shared web/API pure logic (image proxy, MCP, private network)
+├── vite/                       # Vite plugins and chunk config
+├── scripts/                    # Test and verification helper scripts
 ├── public/                     # Static assets and runtime-config.js template
 ├── e2e/                        # Playwright tests
-├── docs/                       # Screenshots and documentation assets
-├── docker/                     # Deployment helper scripts
+├── docs/                       # Screenshots and model-logos (runtime icons live in src/assets/model-icons/)
+├── docker/                     # Deployment helper scripts (for example web-server.js)
 ├── vite.config.ts              # Vite config
 ├── playwright.config.ts        # E2E config
 ├── vitest.config.ts            # Unit and integration test config

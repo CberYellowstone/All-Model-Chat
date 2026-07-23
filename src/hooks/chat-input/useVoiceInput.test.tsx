@@ -179,7 +179,7 @@ describe('useVoiceInput', () => {
 
     expect(prepareAudioForGeminiTranscriptionMock).toHaveBeenCalledWith(recorded);
     expect(onTranscribeAudio).toHaveBeenCalledWith(converted);
-    expect(onTranscribeAudio.mock.calls[0][0].type).toBe('audio/mpeg');
+    expect(converted.type).toBe('audio/mpeg');
 
     unmount();
   });

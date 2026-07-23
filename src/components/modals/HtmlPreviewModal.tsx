@@ -5,7 +5,7 @@ import { Z_INDEX_MODAL_BACKDROP } from '@/constants/layout';
 import { useHtmlPreviewModal } from '@/hooks/ui/useHtmlPreviewModal';
 import { HtmlPreviewHeader } from './html-preview/HtmlPreviewHeader';
 import { HtmlPreviewContent } from './html-preview/HtmlPreviewContent';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 
 interface HtmlPreviewModalProps {
   isOpen: boolean;

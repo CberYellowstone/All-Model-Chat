@@ -21,7 +21,7 @@ describe('state persistence boundaries', () => {
     const settingsLogicSource = readProjectFile('src/hooks/settings/useSettingsLogic.ts');
     const useModelsSource = readProjectFile('src/hooks/core/useModels.ts');
     const uiStoreSource = readProjectFile('src/stores/uiStore.ts');
-    const modelSwitchSettingsSource = readProjectFile('src/utils/modelSwitchSettings.ts');
+    const modelSwitchSettingsSource = readProjectFile('src/utils/model/modelSwitchSettings.ts');
 
     expect(chatInputStateSource).toContain('useChatDraftStore');
     expect(settingsLogicSource).toContain('useSettingsUiStore');
@@ -34,7 +34,7 @@ describe('state persistence boundaries', () => {
       ['src/hooks/settings/useSettingsLogic.ts', settingsLogicSource],
       ['src/hooks/core/useModels.ts', useModelsSource],
       ['src/stores/uiStore.ts', uiStoreSource],
-      ['src/utils/modelSwitchSettings.ts', modelSwitchSettingsSource],
+      ['src/utils/model/modelSwitchSettings.ts', modelSwitchSettingsSource],
     ] as const) {
       expect(source, relativePath).not.toContain('localStorage.');
       expect(source, relativePath).not.toContain("addEventListener('storage'");

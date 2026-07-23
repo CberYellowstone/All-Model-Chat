@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { deferToNextTick } from '@/utils/deferToNextTick';
 import { type UploadedFile, type SavedChatSession, type ChatSettings } from '@/types';
 import { logService } from '@/services/logService';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import {
   getModelCapabilities,
   normalizeAspectRatioForModel,
   normalizeImageSizeForModel,
-} from '@/utils/modelCapabilities';
+} from '@/utils/model/modelCapabilities';
 import { getTranslator } from '@/i18n/translations';
 
 interface UseChatEffectsProps {

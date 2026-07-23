@@ -3,7 +3,7 @@ import { Language, Outcome } from '@google/genai';
 import { buildContentParts, createChatHistoryForApi } from './builder';
 import { type UploadedFile, type ChatMessage, MediaResolution } from '@/types';
 
-vi.mock('@/utils/fileEncoding', () => ({
+vi.mock('@/utils/file/fileEncoding', () => ({
   blobToBase64: vi.fn().mockResolvedValue('base64data'),
   fileToString: vi.fn().mockResolvedValue('file text content'),
 }));
@@ -14,7 +14,7 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   isGemini3Model: vi.fn((id: string) => id?.includes('gemini-3')),
 }));
 

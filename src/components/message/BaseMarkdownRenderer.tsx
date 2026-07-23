@@ -12,7 +12,7 @@ import { InlineCode } from './code/InlineCode';
 import { splitMarkdownSegments } from '@/utils/markdownSegments';
 import { stripGemmaThoughtMarkup, wrapReasoningMarkup } from '@/utils/chat/reasoning';
 import { normalizePreviewableMarkdownContent } from '@/utils/previewableMarkdown';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import { loadNamedComponent } from '@/utils/lazyNamedComponent';
 
 const loadMermaidBlock = () => loadNamedComponent(() => import('./blocks/MermaidBlock'), 'MermaidBlock');

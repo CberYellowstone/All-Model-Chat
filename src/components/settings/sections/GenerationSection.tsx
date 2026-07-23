@@ -216,7 +216,6 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
         </div>
       </div>
 
-      {/* Advanced Parameters Section */}
       <div className="pt-2">
         {!isAdvancedModeEnabled && (
           <button

@@ -17,7 +17,7 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule({ recordTokenUsage: recordTokenUsageMock });
 });
 
-vi.mock('@/utils/fileEncoding', () => ({
+vi.mock('@/utils/file/fileEncoding', () => ({
   blobToBase64: blobToBase64Mock,
 }));
 

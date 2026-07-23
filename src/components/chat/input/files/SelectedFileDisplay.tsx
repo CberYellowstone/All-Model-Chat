@@ -13,10 +13,10 @@ import {
   FileText,
   Ellipsis,
 } from 'lucide-react';
-import { CATEGORY_STYLES, getResolutionColor } from '@/utils/fileDisplayStyles';
+import { CATEGORY_STYLES, getResolutionColor } from '@/utils/file/fileDisplayStyles';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { formatFileSize } from '@/utils/fileSize';
-import { isTextFile } from '@/utils/fileTypeClassification';
+import { formatFileSize } from '@/utils/file/fileSize';
+import { isTextFile } from '@/utils/file/fileTypeClassification';
 import { getFileCardMeta } from '@/components/shared/file-preview/fileCardMeta';
 import { useI18n } from '@/contexts/I18nContext';
 import { FileThumbnail } from './FileThumbnail';

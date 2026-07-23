@@ -278,7 +278,7 @@ describe('translation coverage for protected UI surfaces', () => {
         ],
       },
       {
-        file: 'src/components/recorder/RecorderControls.tsx',
+        file: 'src/components/audio/RecorderControls.tsx',
         snippets: ['Start Recording', 'Stop Recording', '>Discard<', 'Saving...', 'Save Recording'],
       },
       {
@@ -515,7 +515,7 @@ describe('translation coverage for protected UI surfaces', () => {
         snippets: ['textarea[aria-label="Chat message input"]'],
       },
       {
-        file: 'src/hooks/chat/messages/useMessageActions.ts',
+        file: 'src/hooks/chat/message/useMessageActions.ts',
         snippets: ['textarea[aria-label="Chat message input"]'],
       },
       {

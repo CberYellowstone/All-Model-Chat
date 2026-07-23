@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type SavedChatSession, type Theme } from '@/types';
 import { logService } from '@/services/logService';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
-import { createChatExportElement } from '@/features/chat-export/ChatExportRenderer';
+import { createChatExportElement } from './ChatExportRenderer';
 import { serializeSessionForPortableExport } from '@/utils/chat/session';
 import { triggerDownload } from '@/utils/export/core';
 import { buildChatExportFilename, createExportDateMeta, loadExportRuntime } from '@/utils/export/runtime';

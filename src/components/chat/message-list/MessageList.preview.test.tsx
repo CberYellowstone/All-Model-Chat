@@ -2,7 +2,7 @@ import { act } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MessageList } from './MessageList';
 import { type ChatMessage, type UploadedFile } from '@/types';
-import { createChatAreaProviderValue, renderWithChatAreaProviders } from '@/test/chat-area/fixtures';
+import { createChatAreaProviderValue, renderWithChatAreaProviders } from '@/test/layout/fixtures';
 
 const messagePropsSpy = vi.hoisted(() => vi.fn());
 
@@ -30,31 +30,31 @@ vi.mock('@/components/modals/MarkdownPreviewModal', async () => {
   return createMarkdownPreviewModalMock();
 });
 
-vi.mock('./message-list/hooks/useMessageListScroll', async () => {
+vi.mock('./hooks/useMessageListScroll', async () => {
   const { createMessageListScrollMock } = await import('@/test/message-list/doubles');
 
   return createMessageListScrollMock();
 });
 
-vi.mock('./message-list/ScrollNavigation', async () => {
+vi.mock('./ScrollNavigation', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('ScrollNavigation');
 });
 
-vi.mock('./message-list/TextSelectionToolbar', async () => {
+vi.mock('./TextSelectionToolbar', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('TextSelectionToolbar');
 });
 
-vi.mock('./message-list/MessageListFooter', async () => {
+vi.mock('./MessageListFooter', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('MessageListFooter');
 });
 
-vi.mock('./message-list/WelcomeScreen', async () => {
+vi.mock('./WelcomeScreen', async () => {
   const { createNullComponentMock } = await import('@/test/message-list/doubles');
 
   return createNullComponentMock('WelcomeScreen');

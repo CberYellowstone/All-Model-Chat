@@ -52,7 +52,7 @@ describe('codebase maintainability guardrails', () => {
     const modelCapabilitiesStoreSource = readProjectFile('src/stores/modelCapabilitiesStore.ts');
     const toolRegistrySource = readProjectFile('src/features/chat-tools/toolRegistry.ts');
 
-    expect(toolRegistrySource).toContain("from '@/utils/modelCapabilities'");
+    expect(toolRegistrySource).toContain("from '@/utils/model/modelCapabilities'");
     expect(toolRegistrySource).not.toContain("from '@/stores/modelCapabilitiesStore'");
     expect(modelCapabilitiesStoreSource).not.toContain(
       'export type ModelCapabilities = ReturnType<typeof getModelCapabilities>',
@@ -124,13 +124,13 @@ describe('codebase maintainability guardrails', () => {
 
   it('keeps message-list scroll ownership local instead of routing scroll events back through chat state', () => {
     const chatScrollSource = readProjectFile('src/hooks/chat/useChatScroll.ts');
-    const messageListSource = readProjectFile('src/components/chat/MessageList.tsx');
+    const messageListSource = readProjectFile('src/components/chat/message-list/MessageList.tsx');
 
     expect(chatScrollSource).not.toContain('handleScroll =');
     expect(fs.existsSync(path.join(projectRoot, 'src/components/layout/chat-area/ChatAreaContext.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/components/layout/chat-area/ChatAreaProps.ts'))).toBe(false);
     expect(messageListSource).not.toContain('onScrollContainerScroll');
-    expect(messageListSource).toContain("from './message-list/MessageListModals'");
+    expect(messageListSource).toContain("from './MessageListModals'");
     expect(messageListSource).not.toContain('LazyHtmlPreviewModal');
     expect(messageListSource).not.toContain('LazyFilePreviewModal');
   });

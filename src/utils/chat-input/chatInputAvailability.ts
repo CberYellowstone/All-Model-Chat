@@ -1,5 +1,5 @@
 import type { UploadedFile } from '@/types';
-import type { ModelCapabilities } from '@/utils/modelCapabilities';
+import type { ModelCapabilities } from '@/utils/model/modelCapabilities';
 import { hasSendableChatInputContent } from './chatInputContent';
 import { getChatInputMode, type ChatInputMachineState } from './chatInputStateMachine';
 import { areFilesStillProcessing } from './pendingSubmission';
