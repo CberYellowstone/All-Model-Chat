@@ -236,7 +236,9 @@ const buildPreviewThemeStyle = (themeId?: string): string => {
   const colors = theme.colors;
   const colorScheme = DARK_LIVE_ARTIFACT_THEME_IDS.has(theme.id) ? 'dark' : 'light';
 
-  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};--amc-live-artifact-text:${colors.textPrimary};--amc-live-artifact-muted:${colors.textSecondary};--amc-live-artifact-subtle:${colors.textTertiary};--amc-live-artifact-surface:${colors.bgTertiary};--amc-live-artifact-surface-muted:${colors.bgInput};--amc-live-artifact-border:${colors.borderSecondary};--amc-live-artifact-accent:${colors.textLink};--amc-live-artifact-accent-surface:${colors.bgAccent};--amc-live-artifact-success:${colors.textSuccess};--amc-live-artifact-danger:${colors.textDanger};--amc-live-artifact-warning:${colors.textWarning};}html,body{margin:0;padding:0;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
+  // height/min-height auto: model CSS often uses min-height:100vh / height:100%, which
+  // expands to the iframe viewport and reports a locked tall height (blank under content).
+  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};--amc-live-artifact-text:${colors.textPrimary};--amc-live-artifact-muted:${colors.textSecondary};--amc-live-artifact-subtle:${colors.textTertiary};--amc-live-artifact-surface:${colors.bgTertiary};--amc-live-artifact-surface-muted:${colors.bgInput};--amc-live-artifact-border:${colors.borderSecondary};--amc-live-artifact-accent:${colors.textLink};--amc-live-artifact-accent-surface:${colors.bgAccent};--amc-live-artifact-success:${colors.textSuccess};--amc-live-artifact-danger:${colors.textDanger};--amc-live-artifact-warning:${colors.textWarning};}html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
 };
 
 const injectPreviewTheme = (srcDoc: string, themeId?: string): string => {

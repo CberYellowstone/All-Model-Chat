@@ -55,25 +55,90 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
       effectiveDirective: event.effectiveDirective,
     });
   });
+  // Measure intrinsic content height — never use body/html offsetHeight.
+  // Those equal the iframe viewport once the parent sets a fixed height, which
+  // creates a ratchet (height only grows) and large blank regions under short content.
+  // Also briefly neutralize height/min-height on the document shell so model CSS
+  // like min-height:100vh cannot lock the reported height to the current iframe size.
+  let isMeasuringHeight = false;
+  const measureContentHeight = () => {
+    const body = document.body;
+    const root = document.documentElement;
+    if (!body || !root) return 0;
+
+    const restored = [];
+    const neutralizeSize = (el) => {
+      if (!(el instanceof HTMLElement)) return;
+      restored.push([el, el.style.height, el.style.minHeight, el.style.maxHeight]);
+      el.style.height = 'auto';
+      el.style.minHeight = '0';
+      el.style.maxHeight = 'none';
+    };
+
+    isMeasuringHeight = true;
+    try {
+      neutralizeSize(root);
+      neutralizeSize(body);
+
+      const children = body.children;
+      for (let i = 0; i < children.length; i += 1) {
+        const el = children[i];
+        if (!(el instanceof HTMLElement)) continue;
+        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') continue;
+        neutralizeSize(el);
+      }
+
+      let contentBottom = 0;
+      for (let i = 0; i < children.length; i += 1) {
+        const el = children[i];
+        if (!(el instanceof HTMLElement)) continue;
+        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') continue;
+
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+        // Fixed elements are viewport-relative and must not inflate document height.
+        if (style.position === 'fixed') continue;
+
+        const rect = el.getBoundingClientRect();
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+        const bottom = rect.bottom + (window.scrollY || window.pageYOffset || 0) + marginBottom;
+        if (bottom > contentBottom) contentBottom = bottom;
+      }
+
+      const bodyStyle = window.getComputedStyle(body);
+      const paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
+      const borderBottom = parseFloat(bodyStyle.borderBottomWidth) || 0;
+
+      if (contentBottom > 0) {
+        return Math.ceil(contentBottom + paddingBottom + borderBottom);
+      }
+
+      // Empty/sparse documents: fall back to scrollHeight only (not offsetHeight).
+      return Math.max(body.scrollHeight || 0, root.scrollHeight || 0);
+    } finally {
+      for (let i = restored.length - 1; i >= 0; i -= 1) {
+        const [el, height, minHeight, maxHeight] = restored[i];
+        el.style.height = height;
+        el.style.minHeight = minHeight;
+        el.style.maxHeight = maxHeight;
+      }
+      isMeasuringHeight = false;
+    }
+  };
+
   const notifyResize = () => {
     try {
-      const body = document.body;
-      const root = document.documentElement;
-      const height = Math.max(
-        body ? body.scrollHeight : 0,
-        body ? body.offsetHeight : 0,
-        root ? root.scrollHeight : 0,
-        root ? root.offsetHeight : 0
-      );
+      const height = measureContentHeight();
       parent.postMessage({ channel, event: 'resize', height }, '*');
     } catch {}
   };
 
   let resizeFrame = 0;
   const scheduleResize = () => {
-    if (resizeFrame) return;
+    if (isMeasuringHeight || resizeFrame) return;
     resizeFrame = requestAnimationFrame(() => {
       resizeFrame = 0;
+      if (isMeasuringHeight) return;
       notifyResize();
     });
   };

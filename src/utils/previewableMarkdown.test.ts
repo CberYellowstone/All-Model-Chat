@@ -179,6 +179,21 @@ describe('previewableMarkdown detection', () => {
     expect(isLikelyStreamingHtmlArtifact(fragment)).toBe(true);
   });
 
+  it('still treats Live Artifact fragments that mention iframe/script tags as previewable', () => {
+    // Models often document tags like <iframe> inside table cells. Classification must
+    // not reject the whole artifact (sanitizer still strips real embeds at render time).
+    const fragment =
+      '<div style="display:block;width:100%">' +
+      '<h2>结论</h2>' +
+      '<p>核心模块透视</p>' +
+      '<table><tr><td>通过 <iframe src="https://example.com"></iframe> 嵌入联网版</td></tr></table>' +
+      '</div>';
+
+    expect(isLikelyHtml(fragment)).toBe(true);
+    expect(isLikelyStreamingHtmlArtifact(fragment)).toBe(true);
+    expect(normalizePreviewableMarkdownContent(fragment)).toBe(`\`\`\`amc-live-artifact-html\n${fragment}\n\`\`\``);
+  });
+
   it('wraps bare Live Artifact interaction JSON in the dedicated interaction fence', () => {
     const interaction = JSON.stringify(
       {

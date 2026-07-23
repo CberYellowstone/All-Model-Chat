@@ -18,6 +18,26 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain("event.key === 'Escape'");
   });
 
+  it('measures artifact height from content bounds instead of body/html offsetHeight', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc('<section style="height:200px">Content</section>');
+
+    // offsetHeight of body/html locks to the iframe viewport and leaves blank space under content.
+    expect(srcDoc).toContain('measureContentHeight');
+    expect(srcDoc).toContain('getBoundingClientRect');
+    expect(srcDoc).toContain("el.style.minHeight = '0'");
+    expect(srcDoc).toContain('isMeasuringHeight');
+    expect(srcDoc).not.toMatch(/body\s*\?\s*body\.offsetHeight/);
+    expect(srcDoc).not.toMatch(/root\s*\?\s*root\.offsetHeight/);
+  });
+
+  it('forces content-sized html/body so min-height:100vh cannot inflate the frame', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc('<section>Content</section>');
+
+    expect(srcDoc).toContain('height:auto!important');
+    expect(srcDoc).toContain('min-height:0!important');
+    expect(srcDoc).toContain('max-height:none!important');
+  });
+
   it('injects a sandboxed preview CSP while allowing inline scripts and HTTPS assets', () => {
     const srcDoc = buildHtmlPreviewSrcDoc(
       '<html><head><title>Demo</title><script src="https://cdn.example/app.js"></script></head><body><img src="https://example.com/demo.png" alt="Demo"></body></html>',

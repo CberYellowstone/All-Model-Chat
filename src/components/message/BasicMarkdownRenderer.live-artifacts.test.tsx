@@ -175,7 +175,9 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
     const srcDoc = iframe?.getAttribute('srcdoc') ?? '';
 
     expect(srcDoc).toContain('data-amc-live-artifact-theme="true"');
-    expect(srcDoc).toContain('html,body{margin:0;padding:0;background:transparent');
+    expect(srcDoc).toContain(
+      'html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent',
+    );
     expect(srcDoc).toContain('--amc-live-artifact-text:#f5f5f7');
     expect(srcDoc).toContain('--amc-live-artifact-surface:#1c1c20');
   });

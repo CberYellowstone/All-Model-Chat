@@ -65,10 +65,11 @@ const HTML_STRUCTURAL_LINE_START_REGEX = new RegExp(
   'i',
 );
 const HTML_COMMENT_REGEX = /<!--[\s\S]*?-->/g;
-// Reject only executable/embedding tags when classifying bare HTML fragments.
-// <style> is allowed: Live Artifacts commonly ship CSS blocks and style is not
-// executable (scripts/iframes are still stripped by the preview sanitizer).
-const UNSAFE_INLINE_FRAGMENT_TAG_REGEX = /<(?:script|iframe|object|embed)\b/i;
+// NOTE: Do not reject fragments that merely mention <script>/<iframe>/… in text.
+// Models often document those tags inside Live Artifacts (e.g. "通过 <iframe> 嵌入"),
+// and string-matching them used to drop the whole reply out of ArtifactFrame into a
+// broken Markdown/HTML code-block view. Executable tags are still stripped by the
+// preview sanitizer when the artifact actually renders.
 const SVG_DOCUMENT_REGEX = /^<svg\b[\s\S]*<\/svg>$/i;
 const FENCED_CODE_BLOCK_REGEX = /```([^\n`]*)\n?([\s\S]*?)```/g;
 const OPEN_FENCED_CODE_BLOCK_AT_END_REGEX = /```([^\n`]*)\n?([\s\S]*)$/;
@@ -127,7 +128,7 @@ const isStandaloneHtmlFragment = (textContent: string): boolean => {
   if (!textContent) return false;
 
   const normalizedContent = textContent.trim();
-  if (!normalizedContent || UNSAFE_INLINE_FRAGMENT_TAG_REGEX.test(normalizedContent)) {
+  if (!normalizedContent) {
     return false;
   }
 
@@ -139,7 +140,7 @@ const isStandaloneHtmlFragment = (textContent: string): boolean => {
 const isLikelyStreamingStandaloneHtmlFragment = (textContent: string): boolean => {
   const normalizedContent = textContent.trim();
 
-  if (!normalizedContent || UNSAFE_INLINE_FRAGMENT_TAG_REGEX.test(normalizedContent)) {
+  if (!normalizedContent) {
     return false;
   }
 
@@ -187,7 +188,7 @@ export const isLikelyStreamingLiveArtifactInteractionJson = (textContent: string
 const isLikelyHtmlFragmentSegment = (textContent: string): boolean => {
   const normalizedContent = textContent.trim();
 
-  if (!normalizedContent || UNSAFE_INLINE_FRAGMENT_TAG_REGEX.test(normalizedContent)) {
+  if (!normalizedContent) {
     return false;
   }
 
