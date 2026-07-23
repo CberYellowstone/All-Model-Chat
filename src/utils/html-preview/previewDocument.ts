@@ -316,12 +316,13 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
   htmlContent: string,
   options: { baseFontSize?: number; themeId?: string } = {},
 ): string => {
-  const UNRESTRICTED_CSP =
-    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; object-src *";
+  const UNRESTRICTED_CSP = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; object-src *";
 
   if (!htmlContent) {
     const srcDoc = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
-    return renderPreviewMath(injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId));
+    return renderPreviewMath(
+      injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId),
+    );
   }
 
   // No sanitization - inject bridge script and permissive CSP
@@ -329,9 +330,15 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
 
   // Inject CSP
   if (/<head\b[^>]*>/i.test(srcDoc)) {
-    srcDoc = srcDoc.replace(/<head\b[^>]*>/i, (headTag) => `${headTag}<meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}">`);
+    srcDoc = srcDoc.replace(
+      /<head\b[^>]*>/i,
+      (headTag) => `${headTag}<meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}">`,
+    );
   } else if (/<html\b[^>]*>/i.test(srcDoc)) {
-    srcDoc = srcDoc.replace(/<html\b[^>]*>/i, (htmlTag) => `${htmlTag}<head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head>`);
+    srcDoc = srcDoc.replace(
+      /<html\b[^>]*>/i,
+      (htmlTag) => `${htmlTag}<head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head>`,
+    );
   } else {
     srcDoc = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head><body>${srcDoc}</body></html>`;
   }
@@ -340,7 +347,9 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
   srcDoc = srcDoc.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
 
   // Apply theme and math rendering, but skip the strict CSP injection
-  return renderPreviewMath(injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId));
+  return renderPreviewMath(
+    injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId),
+  );
 };
 
 export const createStaticPreviewSnapshotContainer = (

@@ -8,7 +8,12 @@ import { SERVER_MANAGED_API_KEY } from '@/utils/apiKeySelection';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { ApiConfigSection } from './ApiConfigSection';
 
-const { getClientMock, generateContentMock, sendOpenAICompatibleMessageNonStreamMock, sendAnthropicMessageNonStreamMock } = vi.hoisted(() => ({
+const {
+  getClientMock,
+  generateContentMock,
+  sendOpenAICompatibleMessageNonStreamMock,
+  sendAnthropicMessageNonStreamMock,
+} = vi.hoisted(() => ({
   getClientMock: vi.fn(),
   generateContentMock: vi.fn(),
   sendOpenAICompatibleMessageNonStreamMock: vi.fn(),
@@ -291,9 +296,7 @@ describe('ApiConfigSection', () => {
 
     expect(setApiKey).not.toHaveBeenCalled();
     // The active provider api key is written through onUpdate with the full thirdPartyApi object.
-    const thirdPartyUpdate = onUpdate.mock.calls.find(
-      ([key]) => key === 'thirdPartyApi',
-    );
+    const thirdPartyUpdate = onUpdate.mock.calls.find(([key]) => key === 'thirdPartyApi');
     expect(thirdPartyUpdate).toBeDefined();
     const updatedSettings = thirdPartyUpdate![1] as AppSettings['thirdPartyApi'];
     expect(updatedSettings.providers.openai.apiKey).toBe('sk-openai');

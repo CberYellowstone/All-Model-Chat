@@ -9,10 +9,7 @@ import { SendControls } from './actions/SendControls';
 import { ComposerMoreMenu } from './actions/ComposerMoreMenu';
 import { useComposerAuxiliaryActions } from './actions/useComposerAuxiliaryActions';
 import { useAuxiliaryActionCollapse } from './actions/useAuxiliaryActionCollapse';
-import {
-  COMPOSER_CLUSTER_GAP_CLASS,
-  COMPOSER_CLUSTER_SEPARATION_CLASS,
-} from '@/constants/designTokens';
+import { COMPOSER_CLUSTER_GAP_CLASS, COMPOSER_CLUSTER_SEPARATION_CLASS } from '@/constants/designTokens';
 import { useChatInputActionsContext, useChatInputComposerStatusContext } from './ChatInputContext';
 
 const ChatInputActionsComponent: React.FC = () => {

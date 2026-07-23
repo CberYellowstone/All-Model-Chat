@@ -45,7 +45,6 @@ describe('getModelIcon', () => {
     expect(geminiImageMarkup).toContain('alt="Nano Banana"');
   });
 
-
   it('uses the Gemini SVG brand icon for Gemini Robotics models', () => {
     const roboticsMarkup = renderToStaticMarkup(
       getModelIcon({ id: 'gemini-robotics-er-1.6-preview', name: 'Gemini Robotics-ER 1.6 Preview' }),

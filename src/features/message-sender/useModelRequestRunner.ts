@@ -49,9 +49,7 @@ interface UseModelRequestRunnerParams {
 }
 
 const hasLockableActiveFile = (files: UploadedFile[]) =>
-  files.some(
-    (file) => usesRemoteFileReference(file) && file.fileUri && file.uploadState === 'active',
-  );
+  files.some((file) => usesRemoteFileReference(file) && file.fileUri && file.uploadState === 'active');
 
 export const useModelRequestRunner = ({
   appSettings,

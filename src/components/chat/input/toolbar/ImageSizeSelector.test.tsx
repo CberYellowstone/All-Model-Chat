@@ -8,9 +8,7 @@ describe('ImageSizeSelector', () => {
 
   it('hides when there is only one supported size', () => {
     act(() => {
-      renderer.root.render(
-        <ImageSizeSelector imageSize="1K" setImageSize={vi.fn()} supportedSizes={['1K']} />,
-      );
+      renderer.root.render(<ImageSizeSelector imageSize="1K" setImageSize={vi.fn()} supportedSizes={['1K']} />);
     });
 
     expect(renderer.container.querySelector('[role="radiogroup"]')).toBeNull();
@@ -21,11 +19,7 @@ describe('ImageSizeSelector', () => {
 
     act(() => {
       renderer.root.render(
-        <ImageSizeSelector
-          imageSize="1K"
-          setImageSize={setImageSize}
-          supportedSizes={['512', '1K', '2K', '4K']}
-        />,
+        <ImageSizeSelector imageSize="1K" setImageSize={setImageSize} supportedSizes={['512', '1K', '2K', '4K']} />,
       );
     });
 

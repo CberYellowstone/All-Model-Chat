@@ -104,12 +104,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
       {/* Search container aligned with main header baseline */}
       <div className="flex-shrink-0 px-2 pt-0 pb-1.5 md:h-16 md:px-3 md:py-0 md:flex md:items-center">
-        <SettingsSearchBar
-          value={searchQuery}
-          onChange={onSearchChange}
-          inputRef={searchInputRef}
-          compact
-        />
+        <SettingsSearchBar value={searchQuery} onChange={onSearchChange} inputRef={searchInputRef} compact />
       </div>
 
       <nav

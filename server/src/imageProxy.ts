@@ -49,13 +49,7 @@ export async function proxyExternalImage(
 
   if (!fetchResult.ok) {
     if (fetchResult.kind === 'unsafe_redirect') {
-      sendJson(
-        request,
-        response,
-        400,
-        { error: 'Image proxy target attempted an unsafe redirect.' },
-        allowedOrigins,
-      );
+      sendJson(request, response, 400, { error: 'Image proxy target attempted an unsafe redirect.' }, allowedOrigins);
       return;
     }
 
@@ -75,7 +69,13 @@ export async function proxyExternalImage(
       '[image-proxy] upstream request failed:',
       fetchResult.kind === 'fetch_error' ? fetchResult.error : fetchResult.kind,
     );
-    sendJson(request, response, aborted ? 504 : 502, { error: `Image proxy request failed: ${message}` }, allowedOrigins);
+    sendJson(
+      request,
+      response,
+      aborted ? 504 : 502,
+      { error: `Image proxy request failed: ${message}` },
+      allowedOrigins,
+    );
     return;
   }
 

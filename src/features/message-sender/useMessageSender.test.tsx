@@ -45,7 +45,6 @@ vi.mock('./standardChatStrategy', () => ({
   sendStandardMessage: mockSendStandardMessage,
 }));
 
-
 vi.mock('./ttsStrategy', () => ({
   sendTtsMessage: mockSendTtsMessage,
 }));

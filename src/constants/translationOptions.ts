@@ -129,4 +129,3 @@ export const liveTranslateLanguageLabel = (code: string, locale: string = 'en'):
     return code;
   }
 };
-

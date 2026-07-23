@@ -18,10 +18,12 @@ type SettingsContentTestProps = Omit<ComponentProps<typeof SettingsContent>, 'cu
 
 const removedSettingsTab = (tab: string): SettingsTab => tab as SettingsTab;
 
-const buildOpenaiProviderSettings = (overrides: {
-  modelId?: string;
-  models?: Array<{ id: string; name: string; isPinned?: boolean }>;
-} = {}) => {
+const buildOpenaiProviderSettings = (
+  overrides: {
+    modelId?: string;
+    models?: Array<{ id: string; name: string; isPinned?: boolean }>;
+  } = {},
+) => {
   const defaults = createDefaultThirdPartyApiSettings();
   return {
     isThirdPartyApiEnabled: true,

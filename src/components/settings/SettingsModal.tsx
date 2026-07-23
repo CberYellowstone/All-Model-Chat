@@ -316,15 +316,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="max-w-3xl mx-auto w-full pb-4 md:pb-6 md:min-h-[48px] flex flex-col justify-center">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="hidden md:block text-xl font-semibold text-[var(--theme-text-primary)] min-w-0 truncate">
-                  {isSearching
-                    ? t('settingsSearchAria')
-                    : activeTabLabelKey
-                      ? t(activeTabLabelKey)
-                      : ''}
+                  {isSearching ? t('settingsSearchAria') : activeTabLabelKey ? t(activeTabLabelKey) : ''}
                 </h2>
                 <div className="flex items-center gap-2 sm:gap-3 ml-auto">
                   {activeTabUsesScope && (
-                    <div className={SETTINGS_SEGMENTED_TRACK_CLASS} role="group" aria-label={t('settingsScopeDefaults')}>
+                    <div
+                      className={SETTINGS_SEGMENTED_TRACK_CLASS}
+                      role="group"
+                      aria-label={t('settingsScopeDefaults')}
+                    >
                       <button
                         type="button"
                         onClick={() => setSettingsScope('defaults')}

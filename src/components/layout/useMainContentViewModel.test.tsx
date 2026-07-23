@@ -118,7 +118,8 @@ const buildOpenaiProviderAppSettings = (overrides: {
   return {
     ...createAppSettings(),
     isThirdPartyApiEnabled: enabled,
-    apiMode: (overrides.apiMode ?? (enabled ? 'third-party' : 'gemini-native')) as AppViewModel['appSettings']['apiMode'],
+    apiMode: (overrides.apiMode ??
+      (enabled ? 'third-party' : 'gemini-native')) as AppViewModel['appSettings']['apiMode'],
     modelId: 'gemini-3-flash-preview',
     thirdPartyApi: {
       activeProvider: 'openai' as const,

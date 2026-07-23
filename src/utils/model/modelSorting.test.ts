@@ -29,12 +29,7 @@ describe('sortModels', () => {
       { id: 'gemini-native-audio', name: 'Audio', isPinned: true },
     ];
     const result = sortModels(models);
-    expect(result.map((m) => m.id)).toEqual([
-      'gemini-flash',
-      'gemini-native-audio',
-      'gemini-tts',
-      'gemini-image',
-    ]);
+    expect(result.map((m) => m.id)).toEqual(['gemini-flash', 'gemini-native-audio', 'gemini-tts', 'gemini-image']);
   });
 
   it('prioritizes gemini-3 among pinned models of same category', () => {

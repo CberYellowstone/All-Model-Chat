@@ -59,12 +59,14 @@ vi.mock('./SafetySection', () => ({
   },
 }));
 
-const buildOpenaiProviderSettings = (overrides: {
-  apiKey?: string | null;
-  baseUrl?: string | null;
-  modelId?: string;
-  models?: Array<{ id: string; name: string; isPinned?: boolean }>;
-} = {}) => {
+const buildOpenaiProviderSettings = (
+  overrides: {
+    apiKey?: string | null;
+    baseUrl?: string | null;
+    modelId?: string;
+    models?: Array<{ id: string; name: string; isPinned?: boolean }>;
+  } = {},
+) => {
   const defaults = createDefaultThirdPartyApiSettings();
   return {
     isThirdPartyApiEnabled: true,
@@ -394,8 +396,9 @@ describe('ModelsSection', () => {
 
     const thirdPartyUpdate = onUpdateSettings.mock.calls
       .map((call) => call[0])
-      .find((partial): partial is { thirdPartyApi: AppSettings['thirdPartyApi'] } =>
-        typeof partial === 'object' && partial !== null && 'thirdPartyApi' in partial,
+      .find(
+        (partial): partial is { thirdPartyApi: AppSettings['thirdPartyApi'] } =>
+          typeof partial === 'object' && partial !== null && 'thirdPartyApi' in partial,
       ) as { thirdPartyApi: AppSettings['thirdPartyApi'] } | undefined;
 
     expect(thirdPartyUpdate).toBeDefined();
@@ -464,8 +467,9 @@ describe('ModelsSection', () => {
 
     const thirdPartyFetchUpdate = onUpdateSettings.mock.calls
       .map((call) => call[0])
-      .find((partial): partial is { thirdPartyApi: AppSettings['thirdPartyApi'] } =>
-        typeof partial === 'object' && partial !== null && 'thirdPartyApi' in partial,
+      .find(
+        (partial): partial is { thirdPartyApi: AppSettings['thirdPartyApi'] } =>
+          typeof partial === 'object' && partial !== null && 'thirdPartyApi' in partial,
       ) as { thirdPartyApi: AppSettings['thirdPartyApi'] } | undefined;
 
     expect(thirdPartyFetchUpdate).toBeDefined();

@@ -1,4 +1,8 @@
-import { HTML_PREVIEW_COPY_EVENT, HTML_PREVIEW_DIAGNOSTIC_EVENT, HTML_PREVIEW_MESSAGE_CHANNEL } from './previewMessageProtocol';
+import {
+  HTML_PREVIEW_COPY_EVENT,
+  HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_MESSAGE_CHANNEL,
+} from './previewMessageProtocol';
 
 export const PREVIEW_BRIDGE_SCRIPT = `<script>
 (() => {

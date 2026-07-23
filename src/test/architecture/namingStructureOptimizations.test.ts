@@ -63,12 +63,16 @@ describe('naming and structure optimization guardrails', () => {
     expect(modelCapabilitiesSource).not.toContain('isImagenModel');
     expect(modelCapabilitiesSource).not.toContain('isRealImagenModel');
     expect(modelCapabilitiesSource).not.toContain('isImageModel =');
-    expect(chatInputContextTypesSource).toContain("import type { ModelCapabilities } from '@/utils/model/modelCapabilities'");
+    expect(chatInputContextTypesSource).toContain(
+      "import type { ModelCapabilities } from '@/utils/model/modelCapabilities'",
+    );
     expect(chatInputContextTypesSource).toContain('isImageGenerationModel: boolean;');
     expect(chatInputContextTypesSource).not.toContain('isRealImagenModel');
     expect(chatInputContextTypesSource).not.toContain('isImageModel: boolean;');
     expect(chatInputContextTypesSource).not.toContain('interface ChatInputCapabilities');
-    expect(chatInputAvailabilitySource).toContain("import type { ModelCapabilities } from '@/utils/model/modelCapabilities'");
+    expect(chatInputAvailabilitySource).toContain(
+      "import type { ModelCapabilities } from '@/utils/model/modelCapabilities'",
+    );
     expect(chatInputAvailabilitySource).not.toContain('interface ChatInputCapabilities');
   });
 

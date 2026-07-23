@@ -14,7 +14,9 @@ vi.mock('@/services/logService', async () => {
 });
 
 vi.mock('@/utils/model/modelCapabilities', async () => {
-  const actual = await vi.importActual<typeof import('@/utils/model/modelCapabilities')>('@/utils/model/modelCapabilities');
+  const actual = await vi.importActual<typeof import('@/utils/model/modelCapabilities')>(
+    '@/utils/model/modelCapabilities',
+  );
 
   return {
     ...actual,
@@ -493,7 +495,6 @@ describe('buildGenerationConfig', () => {
     expect(config.thinkingConfig!.thinkingLevel).toBe('LOW');
     expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
-
 
   it('normalizes unsupported MINIMAL thinking level for Gemini 3.1 Pro', async () => {
     const config = await buildGenerationConfig(

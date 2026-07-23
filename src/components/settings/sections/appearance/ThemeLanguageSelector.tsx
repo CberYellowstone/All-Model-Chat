@@ -57,11 +57,7 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ se
         data-settings-item="interface-language"
       >
         <span className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsLanguage')}</span>
-        <div
-          className={SETTINGS_SEGMENTED_TRACK_CLASS}
-          role="group"
-          aria-label={t('settingsLanguage')}
-        >
+        <div className={SETTINGS_SEGMENTED_TRACK_CLASS} role="group" aria-label={t('settingsLanguage')}>
           {languageOptions.map((option) => (
             <button
               key={option.id}

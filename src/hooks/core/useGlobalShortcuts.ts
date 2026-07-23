@@ -105,11 +105,9 @@ export const useGlobalShortcuts = ({
         if (isChatTextareaFocused || !isGenerallyInputFocused) {
           event.preventDefault();
           const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-          const activeThirdPartyProvider = isThirdPartyMode
-            ? getThirdPartyProviderConfig(appSettings)
-            : null;
+          const activeThirdPartyProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
           const currentModelId = isThirdPartyMode
-            ? activeThirdPartyProvider?.modelId ?? currentChatSettings.modelId
+            ? (activeThirdPartyProvider?.modelId ?? currentChatSettings.modelId)
             : currentChatSettings.modelId;
           const tabCycleModels = buildTabCycleAvailableModels(appSettings, availableModels);
           const cycleModels = getTabCycleModelIds(tabCycleModels, appSettings.tabModelCycleIds);

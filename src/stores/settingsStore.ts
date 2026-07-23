@@ -110,8 +110,10 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
         });
     })(),
     liveArtifactsSystemPrompts: normalizeLiveArtifactsSystemPrompts(settings),
-    liveTranslateTargetLanguageCode: settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
-    liveTranslateEchoTargetLanguage: settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
+    liveTranslateTargetLanguageCode:
+      settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
+    liveTranslateEchoTargetLanguage:
+      settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
   };
 }
 

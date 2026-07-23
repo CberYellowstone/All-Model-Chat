@@ -1,11 +1,7 @@
 import { translations } from '@/i18n/coreTranslations';
 import { SETTINGS_SEARCH_CATALOG, type SettingsSearchEntry } from '@/constants/settingsSearchCatalog';
 
-const normalizeQuery = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
+const normalizeQuery = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
 const collectTextsForKey = (key: string, resolveText: (key: string) => string): string[] => {
   const texts = new Set<string>();

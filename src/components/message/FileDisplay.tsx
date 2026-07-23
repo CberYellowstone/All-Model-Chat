@@ -210,9 +210,7 @@ export const FileDisplay: React.FC<FileDisplayProps> = ({
             </span>
           )}
           {file.error && (
-            <span className="text-[var(--theme-text-danger)] ml-1 flex-shrink-0">
-              {t('selectedFileErrorFallback')}
-            </span>
+            <span className="text-[var(--theme-text-danger)] ml-1 flex-shrink-0">{t('selectedFileErrorFallback')}</span>
           )}
         </div>
       </div>

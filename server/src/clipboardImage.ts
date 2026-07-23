@@ -1,8 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import {
-  readMacOsClipboardPng,
-  type MacOsClipboardPng,
-} from '../../shared/macosClipboardPng.js';
+import { readMacOsClipboardPng, type MacOsClipboardPng } from '../../shared/macosClipboardPng.js';
 import { getCorsHeaders, sendJson } from './cors.js';
 
 export const LOCAL_CLIPBOARD_IMAGE_PATH = '/api/local-clipboard-image';

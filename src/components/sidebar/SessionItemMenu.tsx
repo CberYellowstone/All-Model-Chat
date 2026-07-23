@@ -30,10 +30,7 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
 }) => {
   const { t } = useI18n();
   return (
-    <div
-      ref={menuRef}
-      className={`${MENU_PANEL_CLASS} top-9 z-10`}
-    >
+    <div ref={menuRef} className={`${MENU_PANEL_CLASS} top-9 z-10`}>
       <button onClick={onStartEdit} className={`${MENU_ITEM_BUTTON_CLASS} ${MENU_ITEM_DEFAULT_STATE_CLASS}`}>
         <SquarePen size={14} /> <span>{t('edit')}</span>
       </button>

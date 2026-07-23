@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { isLiveArtifactFollowupStateWithinLimit, type LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
+import {
+  isLiveArtifactFollowupStateWithinLimit,
+  type LiveArtifactFollowupPayload,
+} from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   buildLiveArtifactInteractionPayload,
   getLiveArtifactInteractionDefaultValue,

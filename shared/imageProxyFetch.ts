@@ -1,7 +1,4 @@
-import {
-  assertImageProxyHostResolvesPublic,
-  type ImageProxyDnsLookup,
-} from './imageProxyDns.js';
+import { assertImageProxyHostResolvesPublic, type ImageProxyDnsLookup } from './imageProxyDns.js';
 import { isPrivateNetworkHostname } from './privateNetwork.js';
 
 /** Max redirects followed while re-validating each hop (CDN signed URLs often 302 once). */

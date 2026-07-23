@@ -66,11 +66,13 @@ export const SendControls: React.FC = () => {
     bgClass =
       'bg-transparent border border-[var(--theme-border-secondary)] text-[var(--theme-text-tertiary)] cursor-not-allowed shadow-none';
   } else if (isStop) {
-    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
+    bgClass =
+      'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
   } else if (isEdit) {
     bgClass = 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm';
   } else if (isUpload) {
-    bgClass = 'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
+    bgClass =
+      'bg-[var(--theme-bg-danger)] hover:bg-[var(--theme-bg-danger-hover)] text-[var(--theme-icon-stop)] shadow-sm';
   }
 
   const shapeClass = isStop ? '!rounded-[10px]' : '!rounded-full';

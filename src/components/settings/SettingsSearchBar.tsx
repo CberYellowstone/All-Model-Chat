@@ -14,12 +14,7 @@ interface SettingsSearchBarProps {
  * Lightweight sidebar filter — same visual language as nav rows
  * (no card surface, no shadow, rounded-lg).
  */
-export const SettingsSearchBar: React.FC<SettingsSearchBarProps> = ({
-  value,
-  onChange,
-  inputRef,
-  compact = false,
-}) => {
+export const SettingsSearchBar: React.FC<SettingsSearchBarProps> = ({ value, onChange, inputRef, compact = false }) => {
   const { t } = useI18n();
   const hasValue = value.length > 0;
   const sizeClass = compact ? 'h-9 text-sm' : 'h-10 text-sm';

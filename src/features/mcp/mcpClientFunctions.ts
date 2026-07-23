@@ -58,7 +58,9 @@ const resolvePrimaryType = (schema: Record<string, unknown>): Type => {
   // anyOf / oneOf / allOf — prefer the first object-like branch, else first branch.
   const union = schema.anyOf ?? schema.oneOf ?? schema.allOf;
   if (Array.isArray(union)) {
-    const objectBranch = union.find((branch) => isRecord(branch) && (branch.type === 'object' || isRecord(branch.properties)));
+    const objectBranch = union.find(
+      (branch) => isRecord(branch) && (branch.type === 'object' || isRecord(branch.properties)),
+    );
     if (objectBranch) {
       return resolvePrimaryType(objectBranch as Record<string, unknown>);
     }
@@ -164,9 +166,7 @@ const toGeminiSchema = (schema: unknown): Schema => {
   // Nullable via type: ["string","null"] — Gemini uses nullable on some schemas; attach description note.
   if (Array.isArray(schema.type) && schema.type.includes('null') && type !== Type.NULL) {
     const baseDescription = geminiSchema.description ?? '';
-    geminiSchema.description = baseDescription
-      ? `${baseDescription} (nullable)`
-      : 'Nullable value.';
+    geminiSchema.description = baseDescription ? `${baseDescription} (nullable)` : 'Nullable value.';
   }
 
   return geminiSchema;
@@ -198,9 +198,7 @@ const makeRuntimeServerEntries = (
   });
 };
 
-const formatDiscoveryErrors = (
-  errors: Array<{ serverId: string; serverName: string; error: string }>,
-): string =>
+const formatDiscoveryErrors = (errors: Array<{ serverId: string; serverName: string; error: string }>): string =>
   errors.map((entry) => `${entry.serverName || entry.serverId}: ${entry.error}`).join('; ');
 
 /**

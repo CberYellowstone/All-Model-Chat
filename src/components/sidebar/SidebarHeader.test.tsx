@@ -21,11 +21,7 @@ describe('SidebarHeader', () => {
     const onToggle = props.onToggle ?? vi.fn();
     act(() => {
       renderer.root.render(
-        <SidebarHeader
-          isOpen={props.isOpen ?? true}
-          onToggle={onToggle}
-          themeId={props.themeId ?? 'pearl'}
-        />,
+        <SidebarHeader isOpen={props.isOpen ?? true} onToggle={onToggle} themeId={props.themeId ?? 'pearl'} />,
       );
     });
     return { onToggle };

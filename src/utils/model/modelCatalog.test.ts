@@ -66,9 +66,7 @@ describe('filterModelCatalog', () => {
   it('matches name, id, and capability tags', () => {
     expect(filterModelCatalog(entries, 'tts').map((entry) => entry.id)).toEqual(['gemini-3.1-flash-tts-preview']);
     expect(filterModelCatalog(entries, 'live').map((entry) => entry.id)).toEqual(['gemini-3.1-flash-live-preview']);
-    expect(filterModelCatalog(entries, 'nano').map((entry) => entry.id)).toEqual([
-      'gemini-3.1-flash-image-preview',
-    ]);
+    expect(filterModelCatalog(entries, 'nano').map((entry) => entry.id)).toEqual(['gemini-3.1-flash-image-preview']);
   });
 });
 

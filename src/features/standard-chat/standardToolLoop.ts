@@ -3,11 +3,7 @@ import { getErrorMessage } from '@/utils/errorMessage';
 import type { ChatHistoryItem, StandardClientFunctions, UploadedFile } from '@/types';
 import { toStructuredToolResponse } from '@/features/chat-tools/toolResponse';
 import { mergeUsageMetadata, mergeUrlContextMetadata } from '@/features/chat-streaming/messageStreamMetadata';
-import {
-  getGroundingChunkSource,
-  type GroundingChunkLike,
-  type GroundingSource,
-} from '@/utils/groundingMetadata';
+import { getGroundingChunkSource, type GroundingChunkLike, type GroundingSource } from '@/utils/groundingMetadata';
 import { isRecord } from '../../../shared/predicates';
 
 interface StandardToolTurnResult {

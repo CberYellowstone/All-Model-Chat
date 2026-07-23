@@ -134,14 +134,7 @@ export const useChatHeaderRuntimeValues = ({
       }
       chatState.handleSelectModelInHeader(modelId);
     },
-    [
-      chatState,
-      geminiModelIds,
-      isOpenAICompatibleMode,
-      thirdPartyModelIds,
-      thirdPartyModelProviders,
-      setAppSettings,
-    ],
+    [chatState, geminiModelIds, isOpenAICompatibleMode, thirdPartyModelIds, thirdPartyModelProviders, setAppSettings],
   );
 
   const header = useMemo<ChatHeaderRuntimeValue>(

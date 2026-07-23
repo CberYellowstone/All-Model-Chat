@@ -1,7 +1,4 @@
-import {
-  CHAT_INPUT_MAX_WIDTH_CLASS,
-  Z_INDEX_FULLSCREEN_CHAT_INPUT,
-} from '@/constants/layout';
+import { CHAT_INPUT_MAX_WIDTH_CLASS, Z_INDEX_FULLSCREEN_CHAT_INPUT } from '@/constants/layout';
 import { COMPOSER_SHELL_RADIUS_CLASS } from '@/constants/designTokens';
 
 interface ChatInputAreaLayoutParams {

@@ -158,10 +158,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({
         </div>
 
         <div className="mt-1.5 px-0.5 text-left w-full">
-          <p
-            className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight"
-            title={file.name}
-          >
+          <p className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight" title={file.name}>
             {file.name}
           </p>
           <p

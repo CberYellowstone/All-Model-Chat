@@ -139,9 +139,7 @@ export const createDefaultThirdPartyApiSettings = (): ThirdPartyApiSettings => (
   ) as Record<ThirdPartyProviderId, ThirdPartyProviderConfig>,
 });
 
-export const getThirdPartyProviderConfig = (
-  settings: Pick<AppSettings, 'thirdPartyApi'>,
-): ThirdPartyProviderConfig => {
+export const getThirdPartyProviderConfig = (settings: Pick<AppSettings, 'thirdPartyApi'>): ThirdPartyProviderConfig => {
   const thirdPartyApi = settings.thirdPartyApi ?? createDefaultThirdPartyApiSettings();
   return thirdPartyApi.providers[thirdPartyApi.activeProvider] ?? thirdPartyApi.providers.openai;
 };
@@ -160,9 +158,10 @@ export const getEnabledThirdPartyProviders = (
   settings: Pick<AppSettings, 'thirdPartyApi'>,
 ): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig }[] => {
   const thirdPartyApi = settings.thirdPartyApi ?? createDefaultThirdPartyApiSettings();
-  return THIRD_PARTY_PROVIDER_IDS.filter(
-    (id) => thirdPartyApi.providers[id]?.enabled === true,
-  ).map((id) => ({ id, config: thirdPartyApi.providers[id] }));
+  return THIRD_PARTY_PROVIDER_IDS.filter((id) => thirdPartyApi.providers[id]?.enabled === true).map((id) => ({
+    id,
+    config: thirdPartyApi.providers[id],
+  }));
 };
 
 /**
@@ -174,9 +173,7 @@ export const resolveProviderForModelId = (
   modelId: string,
 ): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig } => {
   const enabled = getEnabledThirdPartyProviders(settings);
-  const match = enabled.find(({ config }) =>
-    config.models.some((m) => m.id === modelId),
-  );
+  const match = enabled.find(({ config }) => config.models.some((m) => m.id === modelId));
   if (match) return match;
 
   // Fallback: active provider

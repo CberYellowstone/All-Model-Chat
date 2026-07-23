@@ -148,69 +148,73 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
   return (
     <div className="space-y-4">
       <div data-settings-item="data-import-export">
-      <DataCard title={t('settingsDataImportsExports')} icon={<Database size={14} strokeWidth={1.5} />}>
-        {importExportRows.map(({ key, label, icon, importRef, onImport, onExport }) => (
-          <div key={key} data-settings-item={`data-${key}`}>
-            <ActionRow label={label} icon={icon}>
-              <button type="button" onClick={onExport} className={SETTINGS_OUTLINE_BUTTON_CLASS}>
-                <Download size={12} strokeWidth={1.5} /> {t('export')}
-              </button>
-              <button type="button" onClick={() => importRef.current?.click()} className={SETTINGS_OUTLINE_BUTTON_CLASS}>
-                <Upload size={12} strokeWidth={1.5} /> {t('import')}
-              </button>
-              <input
-                type="file"
-                ref={importRef}
-                onChange={() => handleFileImport(importRef, onImport)}
-                accept=".json"
-                className="hidden"
-              />
-            </ActionRow>
-          </div>
-        ))}
-      </DataCard>
+        <DataCard title={t('settingsDataImportsExports')} icon={<Database size={14} strokeWidth={1.5} />}>
+          {importExportRows.map(({ key, label, icon, importRef, onImport, onExport }) => (
+            <div key={key} data-settings-item={`data-${key}`}>
+              <ActionRow label={label} icon={icon}>
+                <button type="button" onClick={onExport} className={SETTINGS_OUTLINE_BUTTON_CLASS}>
+                  <Download size={12} strokeWidth={1.5} /> {t('export')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => importRef.current?.click()}
+                  className={SETTINGS_OUTLINE_BUTTON_CLASS}
+                >
+                  <Upload size={12} strokeWidth={1.5} /> {t('import')}
+                </button>
+                <input
+                  type="file"
+                  ref={importRef}
+                  onChange={() => handleFileImport(importRef, onImport)}
+                  accept=".json"
+                  className="hidden"
+                />
+              </ActionRow>
+            </div>
+          ))}
+        </DataCard>
       </div>
 
       <div data-settings-item="data-system-tools">
-      <DataCard title={t('settingsSystemTools')} icon={<Settings size={14} strokeWidth={1.5} />}>
-        <ActionRow label={t('settingsLocalAppData')} description={localAppDataDescription}>
-          <button
-            type="button"
-            onClick={() => void refreshAppDataSize()}
-            disabled={isAppDataSizeLoading}
-            className={SETTINGS_OUTLINE_BUTTON_CLASS}
-          >
-            <RefreshCw size={12} strokeWidth={1.5} /> {t('refresh')}
-          </button>
-        </ActionRow>
-        <div data-settings-item="data-logs">
-          <ActionRow label={t('settingsViewLogsAndUsage')}>
+        <DataCard title={t('settingsSystemTools')} icon={<Settings size={14} strokeWidth={1.5} />}>
+          <ActionRow label={t('settingsLocalAppData')} description={localAppDataDescription}>
             <button
               type="button"
-              onClick={() => onOpenLogViewer({ initialTab: 'usage', initialUsageTab: 'overview' })}
+              onClick={() => void refreshAppDataSize()}
+              disabled={isAppDataSizeLoading}
               className={SETTINGS_OUTLINE_BUTTON_CLASS}
             >
-              {t('settingsViewLogs')}
-            </button>
-            <button type="button" onClick={onClearLogs} className={SETTINGS_DANGER_OUTLINE_BUTTON_CLASS}>
-              <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearLogs')}
+              <RefreshCw size={12} strokeWidth={1.5} /> {t('refresh')}
             </button>
           </ActionRow>
-        </div>
-        <div data-settings-item="data-install-app">
-          <ActionRow label={t('settingsInstallApp')} description={installDescription}>
-            <button
-              type="button"
-              onClick={onInstallPwa}
-              disabled={isInstallDisabled}
-              aria-label={t('settingsInstallAppAria')}
-              className={SETTINGS_OUTLINE_BUTTON_CLASS}
-            >
-              {t('settingsInstallApp')}
-            </button>
-          </ActionRow>
-        </div>
-      </DataCard>
+          <div data-settings-item="data-logs">
+            <ActionRow label={t('settingsViewLogsAndUsage')}>
+              <button
+                type="button"
+                onClick={() => onOpenLogViewer({ initialTab: 'usage', initialUsageTab: 'overview' })}
+                className={SETTINGS_OUTLINE_BUTTON_CLASS}
+              >
+                {t('settingsViewLogs')}
+              </button>
+              <button type="button" onClick={onClearLogs} className={SETTINGS_DANGER_OUTLINE_BUTTON_CLASS}>
+                <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearLogs')}
+              </button>
+            </ActionRow>
+          </div>
+          <div data-settings-item="data-install-app">
+            <ActionRow label={t('settingsInstallApp')} description={installDescription}>
+              <button
+                type="button"
+                onClick={onInstallPwa}
+                disabled={isInstallDisabled}
+                aria-label={t('settingsInstallAppAria')}
+                className={SETTINGS_OUTLINE_BUTTON_CLASS}
+              >
+                {t('settingsInstallApp')}
+              </button>
+            </ActionRow>
+          </div>
+        </DataCard>
       </div>
 
       <div

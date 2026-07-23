@@ -2,7 +2,11 @@ import { createChatHistoryForApi } from '@/utils/chat/builder';
 import { toError } from '@/utils/errorMessage';
 import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/model/modelCapabilities';
+import {
+  isGemini3Model,
+  isImageGenerationModel,
+  shouldStripThinkingFromContext,
+} from '@/utils/model/modelCapabilities';
 import { appendFunctionDeclarationsToTools, buildGenerationConfig } from '@/services/api/generationConfig';
 import {
   generateContentTurnApi,
@@ -284,10 +288,7 @@ export const performStandardChatApiCall = async ({
   });
   const enabledMcpServers = (appSettings.mcpServers ?? []).filter((server) => server.enabled);
   const isMcpEnabledForTurn =
-    finalRole === 'user' &&
-    !isRawMode &&
-    !isImageGenerationModel(apiModelId) &&
-    enabledMcpServers.length > 0;
+    finalRole === 'user' && !isRawMode && !isImageGenerationModel(apiModelId) && enabledMcpServers.length > 0;
   // Discovery is resilient: failures log and yield {} so chat continues without MCP tools.
   const mcpClientFunctions = isMcpEnabledForTurn
     ? await createMcpClientFunctions({

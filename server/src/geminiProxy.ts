@@ -175,7 +175,13 @@ export async function proxyGeminiRequest(
     request.off('aborted', abortUpstream);
     response.off('close', abortUpstream);
     console.error('[gemini] upstream returned redirect:', upstreamResponse.status);
-    sendJson(request, response, 502, { error: 'Gemini upstream returned an unexpected redirect.' }, config.allowedOrigins);
+    sendJson(
+      request,
+      response,
+      502,
+      { error: 'Gemini upstream returned an unexpected redirect.' },
+      config.allowedOrigins,
+    );
     return;
   }
 

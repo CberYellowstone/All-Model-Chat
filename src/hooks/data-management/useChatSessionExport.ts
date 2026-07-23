@@ -31,9 +31,9 @@ export const useChatSessionExport = ({ activeChat, currentTheme, language, t }: 
 
         const { element: exportElement, cleanup } = await createChatExportElement(activeChat, currentTheme.id);
         const chatClone = await prepareElementForExport(exportElement, {
-        expandDetails: format === 'png',
-        forPng: format === 'png',
-      });
+          expandDetails: format === 'png',
+          forPng: format === 'png',
+        });
 
         try {
           if (format === 'png') {

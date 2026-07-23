@@ -42,9 +42,9 @@ describe('assertImageProxyHostResolvesPublic', () => {
       { address: '10.0.0.1', family: 4 },
     ]);
 
-    await expect(
-      assertImageProxyHostResolvesPublic(new URL('https://dual.example.com/a.png'), lookup),
-    ).rejects.toThrow(/10\.0\.0\.1/);
+    await expect(assertImageProxyHostResolvesPublic(new URL('https://dual.example.com/a.png'), lookup)).rejects.toThrow(
+      /10\.0\.0\.1/,
+    );
   });
 
   it('rejects DNS resolution failures', async () => {

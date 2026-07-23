@@ -10,12 +10,10 @@ export const TYPE_CAPTION_CLASS = 'text-xs leading-tight';
 export const TYPE_CAPTION_MONO_CLASS = 'text-xs font-mono leading-tight tabular-nums';
 
 /** Section overline labels (uppercase groups, code headers). Prefer secondary for contrast. */
-export const TYPE_OVERLINE_CLASS =
-  'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-secondary)]';
+export const TYPE_OVERLINE_CLASS = 'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-secondary)]';
 
 /** Muted overline when hierarchy needs more de-emphasis than TYPE_OVERLINE_CLASS. */
-export const TYPE_OVERLINE_MUTED_CLASS =
-  'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
+export const TYPE_OVERLINE_MUTED_CLASS = 'text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
 
 const RADIUS_CLASS = {
   /** 6px — dense controls, inline badges */
@@ -96,8 +94,7 @@ export const SETTINGS_SEGMENTED_IDLE_CLASS =
   'px-3 py-1.5 text-xs font-medium rounded-md text-[var(--theme-text-secondary)] transition-colors hover:text-[var(--theme-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)] disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Active settings nav tab — aligned with chat session selection. */
-export const SETTINGS_NAV_ACTIVE_CLASS =
-  'bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-primary)] font-medium';
+export const SETTINGS_NAV_ACTIVE_CLASS = 'bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-primary)] font-medium';
 
 export const SETTINGS_NAV_IDLE_CLASS =
   'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]/50 hover:text-[var(--theme-text-primary)]';

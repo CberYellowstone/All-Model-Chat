@@ -48,7 +48,7 @@ export async function assertImageProxyHostResolvesPublic(
     addresses = await lookup(hostname, { all: true, verbatim: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to resolve image proxy host "${hostname}": ${message}`);
+    throw new Error(`Failed to resolve image proxy host "${hostname}": ${message}`, { cause: error });
   }
 
   if (addresses.length === 0) {
@@ -57,9 +57,7 @@ export async function assertImageProxyHostResolvesPublic(
 
   for (const { address } of addresses) {
     if (isPrivateNetworkHostname(address)) {
-      throw new Error(
-        `Image proxy host "${hostname}" resolves to private address ${address}.`,
-      );
+      throw new Error(`Image proxy host "${hostname}" resolves to private address ${address}.`);
     }
   }
 }

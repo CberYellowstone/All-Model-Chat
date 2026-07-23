@@ -29,9 +29,7 @@ describe('ToggleItem', () => {
 
   it('keeps tooltip icons spaced from the label', () => {
     act(() => {
-      renderer.root.render(
-        <ToggleItem label="Paste button" checked={true} onChange={vi.fn()} tooltip="Help text" />,
-      );
+      renderer.root.render(<ToggleItem label="Paste button" checked={true} onChange={vi.fn()} tooltip="Help text" />);
     });
 
     const labelRow = renderer.container.querySelector('[role="switch"] > div');

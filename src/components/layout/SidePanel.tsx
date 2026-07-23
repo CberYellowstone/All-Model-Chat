@@ -197,7 +197,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
   return (
     <>
       {isResizing && (
-        <div className={`fixed inset-0 ${Z_INDEX_TOPMOST_OVERLAY} bg-transparent cursor-col-resize`} style={{ touchAction: 'none' }} />
+        <div
+          className={`fixed inset-0 ${Z_INDEX_TOPMOST_OVERLAY} bg-transparent cursor-col-resize`}
+          style={{ touchAction: 'none' }}
+        />
       )}
 
       <div

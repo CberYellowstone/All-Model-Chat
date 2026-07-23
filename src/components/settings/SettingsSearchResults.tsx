@@ -37,7 +37,9 @@ export const SettingsSearchResults: React.FC<SettingsSearchResultsProps> = ({ re
                 onClick={() => onSelect(result)}
                 aria-selected={isSelected}
                 className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--theme-bg-tertiary)]/50 focus:outline-none focus-visible:bg-[var(--theme-bg-tertiary)]/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-border-focus)] ${
-                  isSelected ? 'bg-[var(--theme-bg-tertiary)]/75 ring-2 ring-inset ring-[var(--theme-border-focus)]' : ''
+                  isSelected
+                    ? 'bg-[var(--theme-bg-tertiary)]/75 ring-2 ring-inset ring-[var(--theme-border-focus)]'
+                    : ''
                 }`}
               >
                 <div className="min-w-0 flex-1">

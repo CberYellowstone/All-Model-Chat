@@ -35,9 +35,7 @@ export const usePictureInPicture = (
       // Safely copy ONLY style and stylesheet/modulepreload link elements into the PiP window.
       // NEVER copy rel="icon", rel="manifest", rel="apple-touch-icon", as Chrome PiP security
       // kills the renderer with RESULT_CODE_KILLED_BAD_MESSAGE if a PiP frame attempts to load web app manifest or favicons.
-      const safeStyleNodes = document.head.querySelectorAll(
-        'style, link[rel="stylesheet"], link[rel="modulepreload"]',
-      );
+      const safeStyleNodes = document.head.querySelectorAll('style, link[rel="stylesheet"], link[rel="modulepreload"]');
       safeStyleNodes.forEach((node) => {
         try {
           pipWin.document.head.appendChild(pipWin.document.importNode(node, true));

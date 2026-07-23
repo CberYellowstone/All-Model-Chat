@@ -171,8 +171,7 @@ describe('previewableMarkdown detection', () => {
   });
 
   it('wraps html fragments that include style tags as Live Artifacts', () => {
-    const fragment =
-      '<section><style>.card{color:red}</style><div class="card">Styled artifact</div></section>';
+    const fragment = '<section><style>.card{color:red}</style><div class="card">Styled artifact</div></section>';
 
     expect(normalizePreviewableMarkdownContent(fragment)).toBe(`\`\`\`amc-live-artifact-html\n${fragment}\n\`\`\``);
     expect(isLikelyHtml(fragment)).toBe(true);

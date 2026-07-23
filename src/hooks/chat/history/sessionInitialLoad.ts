@@ -6,7 +6,11 @@ import { logService } from '@/services/logService';
 import type { SetActiveSessionOptions } from '@/stores/chatStore';
 import type { AppSettings, ChatGroup, ChatMessage, ChatSettings, SavedChatSession } from '@/types';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
-import { createSettingsForNewChat, sanitizeSessionModel, sortSessionsByPinnedAndTimestamp } from './sessionLoaderSettings';
+import {
+  createSettingsForNewChat,
+  sanitizeSessionModel,
+  sortSessionsByPinnedAndTimestamp,
+} from './sessionLoaderSettings';
 
 type SessionLoaderHistoryOptions = Pick<SetActiveSessionOptions, 'history'>;
 
@@ -155,7 +159,9 @@ export const loadInitialSessionData = async ({
           restoreDraftFiles(rehydrated.id);
           if (settingsChanged) {
             void updateAndPersistSessions((prev) =>
-              prev.map((session) => (session.id === rehydrated.id ? { ...session, settings: rehydrated.settings } : session)),
+              prev.map((session) =>
+                session.id === rehydrated.id ? { ...session, settings: rehydrated.settings } : session,
+              ),
             );
           }
 

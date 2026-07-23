@@ -318,10 +318,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
     .optional()
     .transform((value) => sanitizeTabModelCycleIds(value, DEFAULT_APP_SETTINGS.tabModelCycleIds)),
   liveTranslateTargetLanguageCode: stringWithDefault(DEFAULT_APP_SETTINGS.liveTranslateTargetLanguageCode),
-  liveTranslateEchoTargetLanguage: z
-    .boolean()
-    .optional()
-    .default(DEFAULT_APP_SETTINGS.liveTranslateEchoTargetLanguage),
+  liveTranslateEchoTargetLanguage: z.boolean().optional().default(DEFAULT_APP_SETTINGS.liveTranslateEchoTargetLanguage),
   thirdPartyApi: thirdPartyApiSchema,
 });
 

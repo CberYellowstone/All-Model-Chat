@@ -8,8 +8,7 @@ export const createSenderStoreActions = () => {
     updateAndPersistSessions: ((updater, options) =>
       getStore().updateAndPersistSessions(updater, options)) as SessionsUpdater,
     setActiveSessionId: (id: string | null) => getStore().setActiveSessionId(id),
-    setSessionLoading: (sessionId: string, isLoading: boolean) =>
-      getStore().setSessionLoading(sessionId, isLoading),
+    setSessionLoading: (sessionId: string, isLoading: boolean) => getStore().setSessionLoading(sessionId, isLoading),
     activeJobs: getStore()._activeJobs,
   };
 };

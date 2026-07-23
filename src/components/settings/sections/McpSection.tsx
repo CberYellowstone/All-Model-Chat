@@ -149,9 +149,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
       </div>
 
       {servers.length === 0 ? (
-        <div
-          className={`${SETTINGS_SECTION_CARD_CLASS} border-dashed text-sm text-[var(--theme-text-tertiary)]`}
-        >
+        <div className={`${SETTINGS_SECTION_CARD_CLASS} border-dashed text-sm text-[var(--theme-text-tertiary)]`}>
           {t('settingsMcpEmpty')}
         </div>
       ) : (
@@ -165,7 +163,11 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
             const enabledInputId = `mcp-enabled-${stateKey}`;
 
             return (
-              <section key={stateKey} className={SETTINGS_SECTION_CARD_CLASS} data-settings-item={`mcp-server-${index}`}>
+              <section
+                key={stateKey}
+                className={SETTINGS_SECTION_CARD_CLASS}
+                data-settings-item={`mcp-server-${index}`}
+              >
                 <div
                   data-mcp-server-card-header
                   className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -264,9 +266,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                         value={server.url ?? ''}
                         onChange={(event) => updateServer(index, { url: event.target.value })}
                         className={`${inputBaseClasses} ${SETTINGS_INPUT_CLASS} font-mono`}
-                        placeholder={
-                          server.transport === 'sse' ? 'https://example.com/sse' : 'https://example.com/mcp'
-                        }
+                        placeholder={server.transport === 'sse' ? 'https://example.com/sse' : 'https://example.com/mcp'}
                       />
                     </label>
                   )}

@@ -8,11 +8,7 @@ interface ImageSizeSelectorProps {
   supportedSizes?: string[];
 }
 
-export const ImageSizeSelector: React.FC<ImageSizeSelectorProps> = ({
-  imageSize,
-  setImageSize,
-  supportedSizes,
-}) => {
+export const ImageSizeSelector: React.FC<ImageSizeSelectorProps> = ({ imageSize, setImageSize, supportedSizes }) => {
   const { t } = useI18n();
   const sizes = supportedSizes || [];
   // Single fixed size is not a choice — hide the control.

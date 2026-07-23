@@ -1,11 +1,6 @@
 import type { AppSettings } from '@/types';
 
-type RuntimeConfigKey =
-  | 'serverManagedApi'
-  | 'useCustomApiConfig'
-  | 'useApiProxy'
-  | 'apiProxyUrl'
-  | 'pyodideBaseUrl';
+type RuntimeConfigKey = 'serverManagedApi' | 'useCustomApiConfig' | 'useApiProxy' | 'apiProxyUrl' | 'pyodideBaseUrl';
 
 type RuntimeConfigShape = Partial<Record<RuntimeConfigKey, unknown>>;
 

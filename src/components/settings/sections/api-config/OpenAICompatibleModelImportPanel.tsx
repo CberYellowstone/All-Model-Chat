@@ -189,7 +189,10 @@ export const OpenAICompatibleModelImportPanel: React.FC<OpenAICompatibleModelImp
         {fetchedPreviewModels.length > 0 ? (
           <>
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-tertiary)]" />
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-tertiary)]"
+              />
               <input
                 type="text"
                 value={searchFilter}

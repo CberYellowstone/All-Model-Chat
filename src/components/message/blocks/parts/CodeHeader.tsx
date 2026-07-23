@@ -61,18 +61,10 @@ export const CodeHeader: React.FC<CodeHeaderProps> = ({
             <button className={headerButtonClass} title={t('diagramOpenSidePanel')} onClick={onOpenSide}>
               <Sidebar size={16} strokeWidth={2} />
             </button>
-            <button
-              className={headerButtonClass}
-              title={t('codeFullscreenMonitor')}
-              onClick={() => onFullscreen(true)}
-            >
+            <button className={headerButtonClass} title={t('codeFullscreenMonitor')} onClick={() => onFullscreen(true)}>
               <Expand size={16} strokeWidth={2} />
             </button>
-            <button
-              className={headerButtonClass}
-              title={t('codeFullscreenModal')}
-              onClick={() => onFullscreen(false)}
-            >
+            <button className={headerButtonClass} title={t('codeFullscreenModal')} onClick={() => onFullscreen(false)}>
               <Maximize2 size={16} strokeWidth={2} />
             </button>
           </>

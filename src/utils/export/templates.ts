@@ -30,11 +30,12 @@ export const generateExportHtmlTemplate = ({
   // rootBgColor is interpolated into a CSS value inside a <style> block — escapeHtml
   // alone does not stop CSS breakout (no quotes to close), so validate it matches a
   // safe CSS color token; fall back to transparent otherwise.
-  const safeRootBgColor = /^(#[0-9a-fA-F]{3,8}|rgb\([^()]*\)|rgba\([^()]*\)|hsl\([^()]*\)|hsla\([^()]*\)|oklch\([^()]*\)|transparent|currentColor|[a-z]+)$/i.test(
-    rootBgColor.trim(),
-  )
-    ? rootBgColor.trim()
-    : 'transparent';
+  const safeRootBgColor =
+    /^(#[0-9a-fA-F]{3,8}|rgb\([^()]*\)|rgba\([^()]*\)|hsl\([^()]*\)|hsla\([^()]*\)|oklch\([^()]*\)|transparent|currentColor|[a-z]+)$/i.test(
+      rootBgColor.trim(),
+    )
+      ? rootBgColor.trim()
+      : 'transparent';
 
   return `
         <!DOCTYPE html>

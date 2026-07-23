@@ -105,6 +105,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
 
   // Object URLs are external resources — create/release only in effects so Strict
   // Mode / concurrent discarded renders cannot leave unreclaimed blob: URLs.
+  // setState here is intentional: URLs must not be allocated during render.
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFileEntry[]>([]);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -120,6 +121,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
         uploadState: 'active' as const,
       };
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL lifecycle must stay in effects
     setGeneratedFiles(nextEntries);
     return () => {
       for (const entry of nextEntries) {
@@ -129,14 +131,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
   }, [files]);
 
   useEffect(() => {
-    if (!image) {
-      setImageUrl(null);
-      return;
-    }
-    const url = createManagedObjectUrl(new Blob([image], { type: 'image/png' }));
+    const url = image ? createManagedObjectUrl(new Blob([image], { type: 'image/png' })) : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL lifecycle must stay in effects
     setImageUrl(url);
     return () => {
-      releaseManagedObjectUrl(url);
+      if (url) {
+        releaseManagedObjectUrl(url);
+      }
     };
   }, [image]);
 

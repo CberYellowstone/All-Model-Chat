@@ -338,9 +338,7 @@ describe('createMcpClientBridge', () => {
       return instance;
     });
 
-    await expect(bridge.listTools(server)).resolves.toEqual([
-      { name: 'ping', inputSchema: { type: 'object' } },
-    ]);
+    await expect(bridge.listTools(server)).resolves.toEqual([{ name: 'ping', inputSchema: { type: 'object' } }]);
 
     expect(sdkMocks.streamableHttpTransportConstructor).toHaveBeenCalled();
     expect(sdkMocks.sseTransportConstructor).toHaveBeenCalledWith(new URL('https://mcp.example.com/sse'), {

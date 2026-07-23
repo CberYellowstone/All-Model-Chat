@@ -53,4 +53,3 @@ export const buildExactPricingFromUsageMetadata = (
     ...(toolUsePromptTokensDetails?.length ? { toolUsePromptTokensDetails } : {}),
   };
 };
-

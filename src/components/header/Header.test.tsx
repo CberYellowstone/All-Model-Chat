@@ -75,15 +75,13 @@ describe('Header', () => {
       );
     });
 
-    const liveArtifactsButton = renderer.container.querySelector(
-      'button[aria-label="Load Live Artifacts prompt"]',
-    );
+    const liveArtifactsButton = renderer.container.querySelector('button[aria-label="Load Live Artifacts prompt"]');
 
     expect(liveArtifactsButton).not.toBeNull();
     expect(liveArtifactsButton?.className).toContain('w-9');
     expect(liveArtifactsButton?.className).toContain('h-9');
+    // Keep a fixed 36px hit target; no hover grow that shifts layout.
     expect(liveArtifactsButton?.className).not.toContain('hover:scale-105');
-    expect(liveArtifactsButton?.className).not.toContain('active:scale-95');
   });
 
   it('uses compact vertical chrome for the top header', async () => {

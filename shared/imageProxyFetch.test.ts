@@ -1,10 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { ImageProxyDnsLookup } from './imageProxyDns.js';
-import {
-  fetchImageProxyWithSafeRedirects,
-  isUnsafeImageProxyRedirect,
-} from './imageProxyFetch.js';
+import { fetchImageProxyWithSafeRedirects, isUnsafeImageProxyRedirect } from './imageProxyFetch.js';
 
 const publicLookup: ImageProxyDnsLookup = async () => [{ address: '1.2.3.4', family: 4 }];
 
@@ -72,9 +69,7 @@ describe('fetchImageProxyWithSafeRedirects', () => {
 
   it('blocks hostnames that resolve to private IPs before fetching (DNS rebinding)', async () => {
     const fetchImpl = vi.fn();
-    const lookup = vi
-      .fn<ImageProxyDnsLookup>()
-      .mockResolvedValue([{ address: '127.0.0.1', family: 4 }]);
+    const lookup = vi.fn<ImageProxyDnsLookup>().mockResolvedValue([{ address: '127.0.0.1', family: 4 }]);
 
     const result = await fetchImageProxyWithSafeRedirects(new URL('https://evil.example.com/a.png'), {
       fetchImpl: fetchImpl as typeof fetch,

@@ -60,14 +60,8 @@ export const ShortcutsSection: React.FC<ShortcutsSectionProps> = ({
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {Object.entries(groupedShortcuts).map(([category, items]) => (
-        <div
-          key={category}
-          className={SETTINGS_SECTION_CARD_CLASS}
-          data-settings-item={`shortcuts-${category}`}
-        >
-          <h4 className={`${SETTINGS_SECTION_LABEL_CLASS} mb-2`}>
-            {t(categoryTitles[category] || category)}
-          </h4>
+        <div key={category} className={SETTINGS_SECTION_CARD_CLASS} data-settings-item={`shortcuts-${category}`}>
+          <h4 className={`${SETTINGS_SECTION_LABEL_CLASS} mb-2`}>{t(categoryTitles[category] || category)}</h4>
 
           <div className="divide-y divide-[var(--theme-border-secondary)]/40">
             {items.map((item) => {

@@ -87,11 +87,7 @@ function createStdioTransport(server: McpServerConfig): Transport {
   });
 }
 
-function createHttpTransport(
-  server: McpServerConfig,
-  kind: HttpTransportKind,
-  safeFetch: FetchLike,
-): Transport {
+function createHttpTransport(server: McpServerConfig, kind: HttpTransportKind, safeFetch: FetchLike): Transport {
   if (!server.url?.trim()) {
     throw new Error('MCP HTTP server URL is required.');
   }
@@ -185,9 +181,7 @@ async function createConnectedSession(
     }
   }
 
-  throw lastError instanceof Error
-    ? lastError
-    : new Error(`Failed to connect to MCP server: ${String(lastError)}`);
+  throw lastError instanceof Error ? lastError : new Error(`Failed to connect to MCP server: ${String(lastError)}`);
 }
 
 function mapTool(tool: { name: string; description?: string; inputSchema: unknown }): McpTool {
@@ -228,11 +222,7 @@ function mapResourceTemplate(template: {
   };
 }
 
-function mapPrompt(prompt: {
-  name: string;
-  description?: string;
-  arguments?: McpPrompt['arguments'];
-}): McpPrompt {
+function mapPrompt(prompt: { name: string; description?: string; arguments?: McpPrompt['arguments'] }): McpPrompt {
   return {
     name: prompt.name,
     ...(prompt.description ? { description: prompt.description } : {}),

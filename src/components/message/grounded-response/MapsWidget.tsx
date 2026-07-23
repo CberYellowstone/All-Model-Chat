@@ -26,9 +26,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
 
   // Fall back to the first place when the stored selection no longer exists
   // (e.g. the message was regenerated with a different place list).
-  const effectiveSelectedPlace = places.some((p) => p.uri === selectedPlace)
-    ? selectedPlace
-    : places[0]?.uri ?? '';
+  const effectiveSelectedPlace = places.some((p) => p.uri === selectedPlace) ? selectedPlace : (places[0]?.uri ?? '');
   const activePlace = places.find((p) => p.uri === effectiveSelectedPlace) ?? places[0];
 
   const embedSrc = useMemo(() => {
@@ -62,9 +60,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         strokeWidth={2}
       />
       <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight">
-          {place.title}
-        </div>
+        <div className="text-xs font-medium text-[var(--theme-text-primary)] truncate leading-tight">{place.title}</div>
       </div>
       <a
         href={place.uri}
@@ -163,9 +159,7 @@ export const MapsWidget: React.FC<MapsWidgetProps> = ({ places }) => {
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)]/40 flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <MapPin size={16} className="text-[var(--theme-text-link)] flex-shrink-0" strokeWidth={2} />
-            <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate">
-              {activePlace?.title}
-            </span>
+            <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate">{activePlace?.title}</span>
           </div>
           <button
             type="button"

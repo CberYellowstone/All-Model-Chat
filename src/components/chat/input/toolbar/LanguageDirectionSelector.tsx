@@ -2,10 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Languages, Volume2, Search } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useSettingsStore } from '@/stores/settingsStore';
-import {
-  LIVE_TRANSLATE_TARGET_LANGUAGE_CODES,
-  liveTranslateLanguageLabel,
-} from '@/constants/translationOptions';
+import { LIVE_TRANSLATE_TARGET_LANGUAGE_CODES, liveTranslateLanguageLabel } from '@/constants/translationOptions';
 
 /**
  * Live Translate 模式的目标语言选择器（替代普通 Live 模式的 voice 选择器）。
@@ -101,7 +98,12 @@ export const LanguageDirectionSelector: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => setAppSettings((prev) => ({ ...prev, liveTranslateEchoTargetLanguage: !prev.liveTranslateEchoTargetLanguage }))}
+        onClick={() =>
+          setAppSettings((prev) => ({
+            ...prev,
+            liveTranslateEchoTargetLanguage: !prev.liveTranslateEchoTargetLanguage,
+          }))
+        }
         className={`
           flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 mb-2
           ${

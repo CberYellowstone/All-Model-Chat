@@ -110,8 +110,7 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
   });
 
   it('renders fenced Live Artifacts that include style tags inside artifact frames', () => {
-    const fragment =
-      '<section><style>.card{color:red}</style><div class="card">Styled Live Artifact</div></section>';
+    const fragment = '<section><style>.card{color:red}</style><div class="card">Styled Live Artifact</div></section>';
 
     renderMarkdown({
       content: `\`\`\`amc-live-artifact-html\n${fragment}\n\`\`\``,

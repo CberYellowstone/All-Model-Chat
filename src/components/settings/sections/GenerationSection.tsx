@@ -226,9 +226,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
             <span className="flex items-center gap-2">
               <SlidersHorizontal size={14} />
               <span>
-                {isAdvancedExpanded
-                  ? t('settingsHideAdvancedParameters')
-                  : t('settingsShowAdvancedParameters')}
+                {isAdvancedExpanded ? t('settingsHideAdvancedParameters') : t('settingsShowAdvancedParameters')}
               </span>
             </span>
             <ChevronDown
@@ -240,7 +238,6 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
 
         {(isAdvancedModeEnabled || isAdvancedExpanded) && (
           <div className="mt-4 space-y-5 rounded-lg border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-tertiary)]/20 p-4 transition-all">
-
             {!isOpenAICompatibleMode && (
               <div>
                 <div className="flex justify-between mb-2">
@@ -250,7 +247,11 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
                   >
                     Top K
                     <Tooltip text={t('settingsTopKTooltip')}>
-                      <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
+                      <Info
+                        size={14}
+                        className="ml-2 text-[var(--theme-text-tertiary)] cursor-help"
+                        strokeWidth={1.5}
+                      />
                     </Tooltip>
                   </label>
                   <span className="text-sm font-mono text-[var(--theme-text-link)]">{topK}</span>
@@ -282,7 +283,11 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
                         isNativeAudio ? t('settingsMediaResolutionLiveTooltip') : t('settingsMediaResolutionTooltip')
                       }
                     >
-                      <Info size={14} className="ml-2 text-[var(--theme-text-tertiary)] cursor-help" strokeWidth={1.5} />
+                      <Info
+                        size={14}
+                        className="ml-2 text-[var(--theme-text-tertiary)] cursor-help"
+                        strokeWidth={1.5}
+                      />
                     </Tooltip>
                   </span>
                 }

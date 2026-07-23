@@ -9,7 +9,8 @@ const DEFAULT_EXPORT_WIDTH = '800px';
 // must be sanitized so a malicious theme CSS variable or body class name cannot break
 // out of the style attribute or inject markup. Allow only CSS-color-ish tokens
 // (hex, rgb/rgba/oklch/hsl, var(), named colors) and CSS-class-name characters.
-const CSS_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|rgb\([^()]*\)|rgba\([^()]*\)|hsl\([^()]*\)|hsla\([^()]*\)|oklch\([^()]*\)|transparent|currentColor|[a-z]+)$/i;
+const CSS_COLOR_PATTERN =
+  /^(#[0-9a-fA-F]{3,8}|rgb\([^()]*\)|rgba\([^()]*\)|hsl\([^()]*\)|hsla\([^()]*\)|oklch\([^()]*\)|transparent|currentColor|[a-z]+)$/i;
 const CSS_CLASS_PATTERN = /^[a-zA-Z0-9 _-]*$/;
 const THEME_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 

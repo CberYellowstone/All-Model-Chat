@@ -6,9 +6,7 @@ import http from 'node:http';
 import { Buffer } from 'node:buffer';
 
 // Image proxy resolves hostnames before fetch (DNS rebinding guard). Keep suites offline.
-const dnsLookup = vi.hoisted(() =>
-  vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]),
-);
+const dnsLookup = vi.hoisted(() => vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]));
 
 vi.mock('node:dns/promises', () => ({
   default: {
@@ -340,10 +338,7 @@ describe('createServer', () => {
         headers: { 'content-type': 'image/png' },
       });
     });
-    const app = createServer(
-      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
-      { fetchImpl },
-    );
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
     const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
@@ -362,10 +357,7 @@ describe('createServer', () => {
         headers: { location: 'http://127.0.0.1/private.png' },
       });
     });
-    const app = createServer(
-      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
-      { fetchImpl },
-    );
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
     const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
@@ -380,10 +372,7 @@ describe('createServer', () => {
   it('rejects image-proxy hosts that resolve to private addresses (DNS rebinding)', async () => {
     dnsLookup.mockResolvedValue([{ address: '127.0.0.1', family: 4 }]);
     const fetchImpl = vi.fn();
-    const app = createServer(
-      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
-      { fetchImpl },
-    );
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
     const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(

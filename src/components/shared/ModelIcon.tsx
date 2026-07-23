@@ -49,13 +49,8 @@ const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIc
 
 const resolveBrandIcon = (model: ModelOption): ModelBrandIconKey | null => {
   const normalizedId = model.id.toLowerCase();
-  const {
-    isGemini3ImageModel,
-    isGemini31FlashImageModel,
-    isFlashImageModel,
-    isImageGenerationModel,
-    isGemmaModel,
-  } = getCachedModelCapabilities(model.id);
+  const { isGemini3ImageModel, isGemini31FlashImageModel, isFlashImageModel, isImageGenerationModel, isGemmaModel } =
+    getCachedModelCapabilities(model.id);
 
   // Nano Banana family: Gemini native image models (Pro / 2 / Lite / legacy Flash Image)
   if (

@@ -91,11 +91,7 @@ const ChatInputToolbarComponent: React.FC = () => {
 
   return (
     <div className={`flex flex-col gap-1.5 ${hasVisibleContent ? 'mb-1.5' : ''}`}>
-      {(showImageCluster ||
-        canShowTtsVoice ||
-        canShowLanguageDirection ||
-        canShowMediaResolution ||
-        isTtsModel) && (
+      {(showImageCluster || canShowTtsVoice || canShowLanguageDirection || canShowMediaResolution || isTtsModel) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
           {canShowTtsVoice && <TtsVoiceSelector ttsVoice={ttsVoice} setTtsVoice={setTtsVoice} />}
           {canShowLanguageDirection && <LanguageDirectionSelector />}
@@ -151,14 +147,9 @@ const ChatInputToolbarComponent: React.FC = () => {
                 />
               )}
               {showImageOutputMode && (
-                <ImageOutputModeSelector
-                  imageOutputMode={imageOutputMode!}
-                  setImageOutputMode={setImageOutputMode!}
-                />
+                <ImageOutputModeSelector imageOutputMode={imageOutputMode!} setImageOutputMode={setImageOutputMode!} />
               )}
-              {showQuadToggle && (
-                <QuadImageToggle enabled={generateQuadImages!} onToggle={onToggleQuadImages!} />
-              )}
+              {showQuadToggle && <QuadImageToggle enabled={generateQuadImages!} onToggle={onToggleQuadImages!} />}
             </div>
           )}
         </div>

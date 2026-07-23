@@ -3,9 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLocalApiPlugin } from '../../../vite/localApiPlugin';
 
 // Image proxy resolves hostnames before fetch (DNS rebinding guard). Keep suites offline.
-const dnsLookup = vi.hoisted(() =>
-  vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]),
-);
+const dnsLookup = vi.hoisted(() => vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]));
 
 vi.mock('node:dns/promises', () => ({
   default: {
@@ -151,9 +149,7 @@ describe('createLocalApiPlugin', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledOnce();
-    const firstCall = fetchMock.mock.calls[0] as unknown as
-      | [RequestInfo | URL, RequestInit | undefined]
-      | undefined;
+    const firstCall = fetchMock.mock.calls[0] as unknown as [RequestInfo | URL, RequestInit | undefined] | undefined;
     expect(firstCall?.[1]).toMatchObject({ redirect: 'manual' });
     expect(response.writeHead).toHaveBeenCalledWith(
       400,

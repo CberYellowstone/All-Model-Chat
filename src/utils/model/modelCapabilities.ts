@@ -54,9 +54,7 @@ const isGemini3ImageModel = (modelId: string): boolean =>
 const isFlashImageModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-2.5-flash-image');
 
 export const isImageGenerationModel = (modelId: string): boolean =>
-  isFlashImageModel(modelId) ||
-  isGemini3ImageModel(modelId) ||
-  modelId.toLowerCase().includes('image');
+  isFlashImageModel(modelId) || isGemini3ImageModel(modelId) || modelId.toLowerCase().includes('image');
 
 export interface ModelInteractionPermissions {
   canAcceptAttachments: boolean;

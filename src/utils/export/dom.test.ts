@@ -75,9 +75,7 @@ describe('prepareElementForExport', () => {
 
     const iframe = clone.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    expect(iframe?.getAttribute('sandbox')).toBe(
-      'allow-scripts allow-forms allow-popups allow-modals allow-downloads',
-    );
+    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-popups allow-modals allow-downloads');
     expect(iframe?.getAttribute('srcdoc')).toContain('<div>Artifact</div>');
   });
 

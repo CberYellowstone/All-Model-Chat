@@ -56,9 +56,7 @@ export const VideoConfig: React.FC<VideoConfigProps> = ({
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)]">
-          {t('videoSettingsFps')}
-        </label>
+        <label className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)]">{t('videoSettingsFps')}</label>
         <div className="relative">
           <MonitorPlay
             size={14}

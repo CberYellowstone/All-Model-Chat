@@ -40,7 +40,7 @@ describe('TextEditorModalShell', () => {
     const createTextFileEditorSource = fs.readFileSync(createTextFileEditorPath, 'utf8');
 
     expect(textEditorModalSource).toContain("from './TextEditorModalShell'");
-    expect(createTextFileEditorSource).toContain("@/components/modals/TextEditorModalShell");
+    expect(createTextFileEditorSource).toContain('@/components/modals/TextEditorModalShell');
     expect(textEditorModalSource).toContain('<TextEditorModalShell');
     expect(createTextFileEditorSource).toContain('<TextEditorModalShell');
   });

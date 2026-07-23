@@ -137,9 +137,7 @@ describe('promptRegistry', () => {
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
     expect(zhPrompt).toContain('可以使用安全的内联样式、SVG、图片、表格、按钮状态和表单控件');
-    expect(enPrompt).toContain(
-      'You may use safe inline styles, SVG, images, tables, button states, and form controls',
-    );
+    expect(enPrompt).toContain('You may use safe inline styles, SVG, images, tables, button states, and form controls');
   });
 
   it('allows richer safe primitives in the built-in Live Artifacts prompt', async () => {

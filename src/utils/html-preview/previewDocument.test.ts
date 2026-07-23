@@ -111,9 +111,7 @@ describe('htmlPreview utilities', () => {
   });
 
   it('injects a declarative copy bridge that relays data-amc-copy clicks', () => {
-    const srcDoc = buildHtmlPreviewSrcDoc(
-      `<section><button data-amc-copy="npm install katex">Copy</button></section>`,
-    );
+    const srcDoc = buildHtmlPreviewSrcDoc(`<section><button data-amc-copy="npm install katex">Copy</button></section>`);
 
     expect(srcDoc).toContain('data-amc-copy');
     expect(srcDoc).toContain("closest('[data-amc-copy]')");
@@ -197,9 +195,7 @@ describe('htmlPreview utilities', () => {
 
   it('relays data-amc-copy attribute text and falls back to button text', () => {
     const messages: unknown[] = [];
-    const srcDoc = buildHtmlPreviewSrcDoc(
-      `<section><button data-amc-copy="npm install katex">Copy</button></section>`,
-    );
+    const srcDoc = buildHtmlPreviewSrcDoc(`<section><button data-amc-copy="npm install katex">Copy</button></section>`);
     const scriptContent = srcDoc.match(/<script>([\s\S]*?)<\/script>/)?.[1];
     expect(scriptContent).toBeDefined();
 

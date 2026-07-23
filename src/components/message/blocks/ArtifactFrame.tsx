@@ -12,7 +12,10 @@ import {
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
 } from '@/utils/html-preview/previewDocument';
-import { normalizeLiveArtifactFollowupPayload, type LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
+import {
+  normalizeLiveArtifactFollowupPayload,
+  type LiveArtifactFollowupPayload,
+} from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   createRelayedLiveArtifactSelectionDetail,
   dispatchLiveArtifactSelection,
@@ -172,7 +175,8 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
         return;
       }
 
-      streamingFlushTimeoutRef.current = targetWindow.setTimeout(() => {
+      // Named retry loop avoids a useCallback self-reference (react-hooks/immutability).
+      const attemptFlush = () => {
         streamingFlushTimeoutRef.current = null;
         if (!isLoadingRef.current) {
           return;
@@ -181,9 +185,11 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
         const posted = postStreamingHtml(latestStreamingHtmlRef.current, force);
         // contentWindow can appear after the first timeout (Virtuoso remount / slow srcDoc).
         if (!posted) {
-          scheduleStreamingHtmlFlush(force);
+          streamingFlushTimeoutRef.current = targetWindow.setTimeout(attemptFlush, STREAMING_SRC_DOC_THROTTLE_MS);
         }
-      }, STREAMING_SRC_DOC_THROTTLE_MS);
+      };
+
+      streamingFlushTimeoutRef.current = targetWindow.setTimeout(attemptFlush, STREAMING_SRC_DOC_THROTTLE_MS);
     },
     [postStreamingHtml, targetWindow],
   );
@@ -302,14 +308,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
     targetWindow.addEventListener('message', handleMessage);
     return () => targetWindow.removeEventListener('message', handleMessage);
-  }, [
-    contentHeightCacheKey,
-    flushStreamingHtmlNow,
-    heightCacheKey,
-    onFollowUp,
-    streamingHeightCacheKey,
-    targetWindow,
-  ]);
+  }, [contentHeightCacheKey, flushStreamingHtmlNow, heightCacheKey, onFollowUp, streamingHeightCacheKey, targetWindow]);
 
   useEffect(() => {
     const handleClearSelection = () => {

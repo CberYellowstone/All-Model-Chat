@@ -50,9 +50,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
   const handleToggleEnabled = (providerId: ThirdPartyProviderId) => {
     const provider = thirdPartyApi?.providers?.[providerId];
     const nextEnabled = !provider?.enabled;
-    updateThirdPartyApi(
-      updateThirdPartyProviderConfig(thirdPartyApi, providerId, { enabled: nextEnabled }),
-    );
+    updateThirdPartyApi(updateThirdPartyProviderConfig(thirdPartyApi, providerId, { enabled: nextEnabled }));
   };
 
   const updateField = <K extends keyof typeof expandedConfig>(key: K, value: (typeof expandedConfig)[K]) => {
@@ -144,27 +142,27 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                       onChange={(e) => updateField('baseUrl', e.target.value)}
                       className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 focus:ring-offset-0 text-sm custom-scrollbar font-mono ${SETTINGS_INPUT_CLASS}`}
                       aria-label={t('thirdPartyApiBaseUrl')}
-                      />
-                  {expandedConfig.protocol === 'openai-compatible' &&
-                    (() => {
-                      const warning = getOpenAICompatibleBaseUrlWarning(expandedConfig.baseUrl);
-                      if (warning === 'chat-completions-endpoint') {
-                        return (
-                          <p className="text-xs text-[var(--theme-status-warning-text)]">
-                            {t('thirdPartyApiBaseUrlChatCompletionsWarning')}
-                          </p>
-                        );
-                      }
-                      if (warning === 'models-endpoint') {
-                        return (
-                          <p className="text-xs text-[var(--theme-status-warning-text)]">
-                            {t('thirdPartyApiBaseUrlModelsWarning')}
-                          </p>
-                        );
-                      }
-                      return null;
-                    })()}
-                    </div>
+                    />
+                    {expandedConfig.protocol === 'openai-compatible' &&
+                      (() => {
+                        const warning = getOpenAICompatibleBaseUrlWarning(expandedConfig.baseUrl);
+                        if (warning === 'chat-completions-endpoint') {
+                          return (
+                            <p className="text-xs text-[var(--theme-status-warning-text)]">
+                              {t('thirdPartyApiBaseUrlChatCompletionsWarning')}
+                            </p>
+                          );
+                        }
+                        if (warning === 'models-endpoint') {
+                          return (
+                            <p className="text-xs text-[var(--theme-status-warning-text)]">
+                              {t('thirdPartyApiBaseUrlModelsWarning')}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                  </div>
 
                   <OpenAICompatibleModelListEditor
                     models={expandedConfig.models}

@@ -173,7 +173,10 @@ async function buildGenerationConfigFromOptions({
   const normalizedImageSize = normalizeImageSizeForModel(modelId, imageSize);
   const googleSearchTool = buildGoogleSearchToolForModel(modelId);
 
-  if (normalizeModelId(modelId) === 'gemini-2.5-flash-image-preview' || normalizeModelId(modelId) === 'gemini-2.5-flash-image') {
+  if (
+    normalizeModelId(modelId) === 'gemini-2.5-flash-image-preview' ||
+    normalizeModelId(modelId) === 'gemini-2.5-flash-image'
+  ) {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {};
     if (normalizedAspectRatio && normalizedAspectRatio !== 'Auto') {
       imageConfig.aspectRatio = normalizedAspectRatio;
@@ -205,7 +208,10 @@ async function buildGenerationConfigFromOptions({
       imageConfig,
     };
 
-    if (normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' || normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image') {
+    if (
+      normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' ||
+      normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image'
+    ) {
       generationConfig.thinkingConfig = {
         includeThoughts: true,
         // Gemini 3.1 Flash Image / Lite expose only minimal/high thinking levels.
@@ -271,10 +277,7 @@ async function buildGenerationConfigFromOptions({
     // includeThoughts stays true so summaries are available; UI visibility is gated by showThoughts.
     generationConfig.thinkingConfig = {
       includeThoughts: true,
-      thinkingLevel: toSdkThinkingLevel(
-        normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'),
-        'HIGH',
-      ),
+      thinkingLevel: toSdkThinkingLevel(normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'), 'HIGH'),
     };
 
     // Robotics still accepts budget for backwards-compatible token control when set.
@@ -323,7 +326,9 @@ export const buildGenerationConfig = (options: BuildGenerationConfigOptions): Pr
   buildGenerationConfigFromOptions(toInternalBuildGenerationConfigOptions(options));
 
 const hasBuiltInTools = (tools: GenerationConfig['tools'] | undefined): boolean =>
-  !!tools?.some((tool) => 'googleSearch' in tool || 'googleMaps' in tool || 'codeExecution' in tool || 'urlContext' in tool);
+  !!tools?.some(
+    (tool) => 'googleSearch' in tool || 'googleMaps' in tool || 'codeExecution' in tool || 'urlContext' in tool,
+  );
 
 export const appendFunctionDeclarationsToTools = (
   modelId: string,
