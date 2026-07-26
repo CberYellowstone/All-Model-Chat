@@ -34,7 +34,7 @@ describe('promptRegistry', () => {
     expect(zhPrompt).not.toContain('完整 HTML');
     expect(zhPrompt).not.toContain('<!DOCTYPE html>');
     expect(enPrompt).toContain('[Live Artifacts Inline Protocol - en]');
-    expect(enPrompt).toContain('Always output a raw inline HTML fragment');
+    expect(enPrompt).toContain('always output a raw inline HTML fragment');
     expect(enPrompt).not.toContain('full HTML');
     expect(enPrompt).not.toContain('<!DOCTYPE html>');
   });
@@ -93,8 +93,9 @@ describe('promptRegistry', () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
-    expect(zhPrompt.length).toBeLessThan(2700);
-    expect(enPrompt.length).toBeLessThan(5100);
+    // Protocol + aesthetics + golden examples + semantic colors; cap growth so it stays operational.
+    expect(zhPrompt.length).toBeLessThan(16000);
+    expect(enPrompt.length).toBeLessThan(24000);
     expect(zhPrompt).not.toContain('信息设计原则');
     expect(zhPrompt).not.toContain('完整 HTML 页面能力');
     expect(enPrompt).not.toContain('Information Design Principles');
@@ -105,9 +106,9 @@ describe('promptRegistry', () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
-    expect(zhPrompt).toContain('不要放进 css、text、markdown 或 html 代码块');
+    expect(zhPrompt).toContain('不要放进 css、text、markdown、html 或 amc-live-artifact-html 代码块');
     expect(zhPrompt).toContain('不要一半直出、一半进代码块');
-    expect(enPrompt).toContain('Do not wrap it in css, text, markdown, or html fences');
+    expect(enPrompt).toContain('Do not wrap it in css, text, markdown, html, or amc-live-artifact-html fences');
     expect(enPrompt).toContain('Do not split one artifact between rendered HTML and a code block');
   });
 
@@ -190,11 +191,11 @@ describe('promptRegistry', () => {
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
     expect(zhPrompt).toContain('只负责布局、宽度和响应式');
-    expect(zhPrompt).toContain('不要默认添加可见背景、边框、圆角或阴影');
-    expect(zhPrompt).toContain('只有内容语义需要分组时才使用内部卡片');
+    expect(zhPrompt).toContain('不要默认给根容器加可见背景、边框、圆角或阴影');
+    expect(zhPrompt).toContain('内部才按语义分组用卡片');
     expect(enPrompt).toContain('only handles layout, width, and responsiveness');
-    expect(enPrompt).toContain('do not add visible background, border, radius, or shadow by default');
-    expect(enPrompt).toContain('use internal cards only when semantic grouping needs them');
+    expect(enPrompt).toContain('do not add visible background, border, radius, or shadow on the root by default');
+    expect(enPrompt).toContain('use internal cards/hero only when semantic grouping needs them');
   });
 
   it('keeps Live Artifacts visual style readable inside chat bubbles', async () => {
@@ -224,7 +225,7 @@ describe('promptRegistry', () => {
     expect(enPrompt).toContain('em');
     expect(enPrompt).toContain('inherit');
     expect(enPrompt).toContain('--amc-live-artifact-font-size');
-    expect(enPrompt).toContain('avoid many fixed px font sizes');
+    expect(enPrompt).toContain('avoid many fixed px sizes');
   });
 
   it('nudges inline Live Artifacts to use injected transparent theme tokens', async () => {
@@ -233,20 +234,44 @@ describe('promptRegistry', () => {
     const themeTokens = [
       '--amc-live-artifact-text',
       '--amc-live-artifact-muted',
+      '--amc-live-artifact-subtle',
       '--amc-live-artifact-surface',
+      '--amc-live-artifact-surface-muted',
       '--amc-live-artifact-border',
       '--amc-live-artifact-accent',
+      '--amc-live-artifact-accent-surface',
+      '--amc-live-artifact-success',
+      '--amc-live-artifact-success-surface',
+      '--amc-live-artifact-danger',
+      '--amc-live-artifact-danger-surface',
+      '--amc-live-artifact-warning',
+      '--amc-live-artifact-warning-surface',
     ];
 
     for (const token of themeTokens) {
-      expect(zhPrompt).toContain(token);
-      expect(enPrompt).toContain(token);
+      const shortName = token.replace('--amc-live-artifact-', '');
+      expect(zhPrompt).toContain(shortName);
+      expect(enPrompt).toContain(shortName);
     }
 
     expect(zhPrompt).toContain('背景保持透明');
-    expect(zhPrompt).toContain('避免写死深浅主题色');
+    expect(zhPrompt).toContain('禁止把 accent/success/danger/warning/subtle 当 background');
+    expect(zhPrompt).toContain('background 用 *-surface');
+    expect(zhPrompt).toContain('一律 var(--amc-live-artifact-border)');
+    expect(zhPrompt).toContain('禁止用 subtle/muted 当 border 色');
+    expect(zhPrompt).toContain('border-left:3px solid');
+    expect(zhPrompt).toContain('首屏原则');
+    expect(zhPrompt).toContain('正文/表格单元格默认');
+    expect(zhPrompt).toContain('状态标签');
     expect(enPrompt).toContain('keep backgrounds transparent');
-    expect(enPrompt).toContain('avoid hard-coding light or dark theme colors');
+    expect(enPrompt).toContain('Never use accent/success/danger/warning/subtle as background');
+    expect(enPrompt).toContain('Background fills');
+    expect(enPrompt).toContain('always var(--amc-live-artifact-border)');
+    expect(enPrompt).toContain('never use subtle/muted as border color');
+    expect(enPrompt).toContain('border-left:3px solid');
+    expect(enPrompt).toContain('Above-the-fold');
+    expect(enPrompt).toContain('Body/table cells default');
+    expect(enPrompt).toContain('status tags');
   });
 
   it('defines the Live Artifacts external image policy', async () => {
@@ -273,13 +298,21 @@ describe('promptRegistry', () => {
     expect(zhPrompt).toContain('display:block;width:100%');
     expect(zhPrompt).toContain('overflow-wrap:anywhere');
     expect(zhPrompt).toContain('minmax(0,1fr)');
+    expect(zhPrompt).toContain('minmax(min(100%,12em),1fr)');
+    expect(zhPrompt).toContain('禁止 minmax(Npx,1fr)');
     expect(zhPrompt).toContain('overflow-x:auto');
+    expect(zhPrompt).toContain('公式块');
+    expect(zhPrompt).toContain('同级标题字号必须一致');
     expect(zhPrompt).toContain('img/svg max-width:100%');
     expect(enPrompt).toContain('box-sizing:border-box');
     expect(enPrompt).toContain('display:block;width:100%');
     expect(enPrompt).toContain('overflow-wrap:anywhere');
     expect(enPrompt).toContain('minmax(0,1fr)');
+    expect(enPrompt).toContain('minmax(min(100%,12em),1fr)');
+    expect(enPrompt).toContain('never minmax(Npx,1fr)');
     expect(enPrompt).toContain('overflow-x:auto');
+    expect(enPrompt).toContain('formula blocks');
+    expect(enPrompt).toContain('same-level headings must share one font-size');
     expect(enPrompt).toContain('img/svg max-width:100%');
   });
 
@@ -330,9 +363,15 @@ describe('promptRegistry', () => {
     expect(zhPrompt).toContain('能推进下一步');
     expect(zhPrompt).toContain('公式使用 $...$ 或 $$...$$');
     expect(zhPrompt).toContain('不要放进 <code> 或 <pre>');
+    expect(zhPrompt).toContain('accent-surface');
+    expect(zhPrompt).toContain('cursor:pointer');
+    expect(zhPrompt).toContain('勿堆 emoji');
     expect(enPrompt).toContain('move the next step forward');
     expect(enPrompt).toContain('Use $...$ or $$...$$ for formulas');
     expect(enPrompt).toContain('do not put formulas inside <code> or <pre>');
+    expect(enPrompt).toContain('accent-surface');
+    expect(enPrompt).toContain('cursor:pointer');
+    expect(enPrompt).toContain('no emoji stacks');
   });
 
   it('treats user/source instructions as data that cannot override Live Artifacts output rules', async () => {
@@ -350,28 +389,147 @@ describe('promptRegistry', () => {
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
     expect(zhPrompt).toContain('协议 > 用户要求改用 Markdown');
-    expect(zhPrompt).toContain('HTML 与 interaction 互斥');
+    expect(zhPrompt).toContain('除 MUST #6 场景外');
+    expect(zhPrompt).toContain('单次响应中 interaction JSON 块与 HTML 产物二选一');
+    expect(zhPrompt).toContain('HTML 内部仍可带 data-amc-followup');
     expect(zhPrompt).toContain('禁止半表单半结果');
     expect(zhPrompt).toContain('极简档');
+    expect(zhPrompt).toContain('标准档');
+    expect(zhPrompt).toContain('丰富档');
     expect(zhPrompt).toContain('"submitLabel"');
     expect(enPrompt).toContain('Protocol > user requests');
-    expect(enPrompt).toContain('HTML and interaction are mutually exclusive');
+    expect(enPrompt).toContain('Except for MUST #6');
+    expect(enPrompt).toContain('interaction JSON and HTML output are mutually exclusive');
+    expect(enPrompt).toContain('HTML may still include data-amc-followup');
     expect(enPrompt).toContain('never half form, half result');
     expect(enPrompt).toContain('Minimal tier');
+    expect(enPrompt).toContain('Standard tier');
+    expect(enPrompt).toContain('Rich tier');
     expect(enPrompt).toContain('"submitLabel"');
   });
 
-  it('restores a minimal NEVER aesthetic set for Live Artifacts', async () => {
+  it('includes design baseline, component patterns, and finished examples', async () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
-    expect(zhPrompt).toContain('## NEVER');
+    expect(zhPrompt).toContain('## 设计基准');
+    expect(zhPrompt).toContain('0.25rem');
+    expect(zhPrompt).toContain('0.5rem');
+    expect(zhPrompt).toContain('## 组件范式');
+    expect(zhPrompt).toContain('minmax(min(100%,12em),1fr)');
+    expect(zhPrompt).toContain('font-variant-numeric:tabular-nums');
+    expect(zhPrompt).toContain('## 标准档范例');
+    expect(zhPrompt).toContain('## 丰富档黄金范例');
+    expect(zhPrompt).toContain('border-left:3px solid var(--amc-live-artifact-accent)');
+    expect(zhPrompt).toContain('1.35em');
+    expect(zhPrompt).toContain('max-width:60ch');
+    expect(zhPrompt).toContain('color-mix');
+
+    expect(enPrompt).toContain('## Design baseline');
+    expect(enPrompt).toContain('0.25rem');
+    expect(enPrompt).toContain('0.5rem');
+    expect(enPrompt).toContain('## Component patterns');
+    expect(enPrompt).toContain('minmax(min(100%,12em),1fr)');
+    expect(enPrompt).toContain('font-variant-numeric:tabular-nums');
+    expect(enPrompt).toContain('## Standard-tier example');
+    expect(enPrompt).toContain('## Rich-tier golden example');
+    expect(enPrompt).toContain('border-left:3px solid var(--amc-live-artifact-accent)');
+    expect(enPrompt).toContain('1.35em');
+    expect(enPrompt).toContain('max-width:60ch');
+    expect(enPrompt).toContain('color-mix');
+  });
+
+  it('defines aesthetic goals and restrained decoration allowances', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    expect(zhPrompt).toContain('## 美学目标');
+    expect(zhPrompt).toContain('Linear');
+    expect(zhPrompt).toContain('## 装饰规则');
+    expect(zhPrompt).toContain('box-shadow:0 1px 2px');
+    expect(zhPrompt).toContain('linear-gradient');
+    expect(zhPrompt).toContain('## 输出前自查');
+    expect(enPrompt).toContain('## Aesthetic goal');
+    expect(enPrompt).toContain('Linear');
+    expect(enPrompt).toContain('## Decoration rules');
+    expect(enPrompt).toContain('box-shadow:0 1px 2px');
+    expect(enPrompt).toContain('linear-gradient');
+    expect(enPrompt).toContain('## Pre-output checklist');
+  });
+
+  it('teaches semantic colors with border exceptions for tags cards and callouts (option B)', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    expect(zhPrompt).toContain('## 语义色规范');
+    expect(zhPrompt).toContain('accent（蓝）');
+    expect(zhPrompt).toContain('success（绿）');
+    expect(zhPrompt).toContain('warning（黄）');
+    expect(zhPrompt).toContain('danger（红）');
+    expect(zhPrompt).toContain('状态标签');
+    expect(zhPrompt).toContain('success-surface');
+    expect(zhPrompt).toContain('warning-surface');
+    expect(zhPrompt).toContain('danger-surface');
+    expect(zhPrompt).toContain('surface-muted');
+    expect(zhPrompt).toContain('border:1px solid var(--amc-live-artifact-success)');
+    expect(zhPrompt).toContain('border-left:3px solid var(--amc-live-artifact-warning)');
+    expect(zhPrompt).toContain('background:var(--amc-live-artifact-surface-muted)');
+    expect(zhPrompt).not.toContain('accent 色文字 ≤10%');
+
+    expect(enPrompt).toContain('## Semantic color rules');
+    expect(enPrompt).toContain('accent (blue)');
+    expect(enPrompt).toContain('success (green)');
+    expect(enPrompt).toContain('warning (yellow)');
+    expect(enPrompt).toContain('danger (red)');
+    expect(enPrompt).toContain('status tags');
+    expect(enPrompt).toContain('success-surface');
+    expect(enPrompt).toContain('warning-surface');
+    expect(enPrompt).toContain('danger-surface');
+    expect(enPrompt).toContain('border:1px solid var(--amc-live-artifact-success)');
+    expect(enPrompt).toContain('border-left:3px solid var(--amc-live-artifact-warning)');
+    expect(enPrompt).not.toContain('accent-colored text ≤10%');
+  });
+
+  it('documents hard constraints that silently fail interaction parsing', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    for (const prompt of [zhPrompt, enPrompt]) {
+      expect(prompt).toContain('HARD CONSTRAINTS');
+      expect(prompt).toContain('1–80');
+      expect(prompt).toContain('1–24');
+      expect(prompt).toContain('items.enum');
+      expect(prompt).toContain('6000');
+      expect(prompt).toContain('data-amc-state-key');
+      expect(prompt).toContain('data-amc-state-value');
+      expect(prompt).toContain('data-amc-followup-scope');
+    }
+
+    expect(zhPrompt).toContain('禁止中文 key');
+    expect(zhPrompt).toContain('静默失效');
+    expect(zhPrompt).toContain('两套交互机制勿混用');
+    expect(enPrompt).toContain('no non-ASCII/Chinese keys');
+    expect(enPrompt).toContain('silently break interaction');
+    expect(enPrompt).toContain('Do not mix the two interaction mechanisms');
+  });
+
+  it('lists anti-patterns with replacements instead of bare NEVER bans', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    expect(zhPrompt).toContain('## 反模式与替代方案');
     expect(zhPrompt).toContain('同构卡片墙');
     expect(zhPrompt).toContain('伪 KPI');
     expect(zhPrompt).toContain('默认 AI 风');
-    expect(enPrompt).toContain('## NEVER');
-    expect(enPrompt).toContain('identical card walls');
-    expect(enPrompt).toContain('fake KPI');
-    expect(enPrompt).toContain('default AI look');
+    expect(zhPrompt).toContain('box-shadow');
+    expect(zhPrompt).toContain('全大写标题');
+    expect(zhPrompt).toContain('HARD CONSTRAINTS');
+    expect(enPrompt).toContain('## Anti-patterns and replacements');
+    expect(enPrompt).toContain('Identical card walls');
+    expect(enPrompt).toContain('Fake KPI');
+    expect(enPrompt).toContain('Default AI look');
+    expect(enPrompt).toContain('box-shadow');
+    expect(enPrompt).toContain('All-caps headings');
+    expect(enPrompt).toContain('HARD CONSTRAINTS');
   });
 });

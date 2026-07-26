@@ -99,6 +99,23 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain('window.getSelection()?.removeAllRanges()');
   });
 
+  it('maps accent-surface to a soft tint, not solid bgAccent (avoids blue-on-blue invisible text)', () => {
+    const pearl = buildHtmlPreviewSrcDoc('<section>x</section>', { themeId: 'pearl' });
+    const onyx = buildHtmlPreviewSrcDoc('<section>x</section>', { themeId: 'onyx' });
+
+    // Pearl: textLink and bgAccent are both #2563eb; surface must use soft bgInfo instead.
+    expect(pearl).toContain('--amc-live-artifact-accent:#2563eb');
+    expect(pearl).toContain('--amc-live-artifact-accent-surface:rgba(37, 99, 235, 0.06)');
+    expect(pearl).not.toContain('--amc-live-artifact-accent-surface:#2563eb');
+    expect(pearl).toContain('--amc-live-artifact-success-surface:rgba(22, 163, 74, 0.1)');
+    expect(pearl).toContain('--amc-live-artifact-danger-surface:#fef2f2');
+    expect(pearl).toContain('--amc-live-artifact-warning-surface:rgba(212, 167, 44, 0.1)');
+
+    expect(onyx).toContain('--amc-live-artifact-accent:#6ba3fc');
+    expect(onyx).toContain('--amc-live-artifact-accent-surface:rgba(30, 58, 138, 0.25)');
+    expect(onyx).not.toContain('--amc-live-artifact-accent-surface:#4f7cf5');
+  });
+
   it('injects a declarative Live Artifact follow-up click bridge', () => {
     const srcDoc = buildHtmlPreviewSrcDoc(
       `<section><button data-amc-followup='{"instruction":"Continue","state":{"selected":"B"}}'>Continue</button></section>`,
