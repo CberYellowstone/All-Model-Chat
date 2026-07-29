@@ -18,9 +18,10 @@ vi.mock('@/features/message-sender/generationLease', () => ({
   isGenerationLeaseFresh: mockIsGenerationLeaseFresh,
 }));
 
-import { useAppFavicon, isLocalGeneration } from './useAppFavicon';
+import { getFaviconVisualState, useAppFavicon, isLocalGeneration } from './useAppFavicon';
 
 const DEFAULT_HREF = 'http://localhost/favicon.png';
+const GENERATING_HREF = 'http://localhost/favicon-generating.png';
 const SUCCESS_HREF = 'http://localhost/favicon-success.png';
 
 const setFaviconLink = (href = DEFAULT_HREF) => {
@@ -64,6 +65,21 @@ const render = (initial: Props) => {
   return { rerender };
 };
 
+describe('getFaviconVisualState', () => {
+  it('returns generating when armed and loading', () => {
+    expect(getFaviconVisualState({ isLoading: true, armed: true })).toBe('generating');
+  });
+
+  it('returns success when armed and done loading', () => {
+    expect(getFaviconVisualState({ isLoading: false, armed: true })).toBe('success');
+  });
+
+  it('returns default when not armed, regardless of loading', () => {
+    expect(getFaviconVisualState({ isLoading: true, armed: false })).toBe('default');
+    expect(getFaviconVisualState({ isLoading: false, armed: false })).toBe('default');
+  });
+});
+
 describe('useAppFavicon', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,15 +93,22 @@ describe('useAppFavicon', () => {
     vi.restoreAllMocks();
   });
 
-  it('switches to the success variant when a locally-owned generation finishes', () => {
+  it('shows generating while a locally-owned generation is in flight, then success on completion', () => {
     setLease('test-tab');
     const { rerender } = render({ isLoading: false, activeSessionId: 'session-1' });
 
     rerender({ isLoading: true, activeSessionId: 'session-1' });
-    expect(faviconHref()).toBe(DEFAULT_HREF);
+    expect(faviconHref()).toBe(GENERATING_HREF);
 
     rerender({ isLoading: false, activeSessionId: 'session-1' });
     expect(faviconHref()).toBe(SUCCESS_HREF);
+  });
+
+  it('shows the generating variant immediately when mounted mid-generation this tab owns', () => {
+    setLease('test-tab');
+    render({ isLoading: true, activeSessionId: 'session-1' });
+
+    expect(faviconHref()).toBe(GENERATING_HREF);
   });
 
   it('does not change the favicon for a generation owned by another tab', () => {
@@ -93,8 +116,9 @@ describe('useAppFavicon', () => {
     const { rerender } = render({ isLoading: false, activeSessionId: 'session-1' });
 
     rerender({ isLoading: true, activeSessionId: 'session-1' });
-    rerender({ isLoading: false, activeSessionId: 'session-1' });
+    expect(faviconHref()).toBe(DEFAULT_HREF);
 
+    rerender({ isLoading: false, activeSessionId: 'session-1' });
     expect(faviconHref()).toBe(DEFAULT_HREF);
   });
 
@@ -127,20 +151,37 @@ describe('useAppFavicon', () => {
     expect(faviconHref()).toBe(DEFAULT_HREF);
   });
 
-  it('resets before arming a new generation, then re-applies success on completion', () => {
+  it('switches to generating, then back to success across generation cycles', () => {
     setLease('test-tab');
     const { rerender } = render({ isLoading: false, activeSessionId: 'session-1' });
     rerender({ isLoading: true, activeSessionId: 'session-1' });
     rerender({ isLoading: false, activeSessionId: 'session-1' });
     expect(faviconHref()).toBe(SUCCESS_HREF);
 
-    // New generation starts: must reset to default first, then arm.
+    // A new generation replaces success with generating first, then completes to
+    // success again.
     rerender({ isLoading: true, activeSessionId: 'session-1' });
-    expect(faviconHref()).toBe(DEFAULT_HREF);
+    expect(faviconHref()).toBe(GENERATING_HREF);
 
-    // And complete again → success.
     rerender({ isLoading: false, activeSessionId: 'session-1' });
     expect(faviconHref()).toBe(SUCCESS_HREF);
+  });
+
+  it('re-arms the generating variant when switching back to a session this tab is still generating', () => {
+    setLease('test-tab');
+    const { rerender } = render({ isLoading: true, activeSessionId: 'session-1' });
+    expect(faviconHref()).toBe(GENERATING_HREF);
+
+    // Switch away to a session this tab is not generating → default.
+    clearLease();
+    rerender({ isLoading: true, activeSessionId: 'session-2' });
+    expect(faviconHref()).toBe(DEFAULT_HREF);
+
+    // Switch back to the still-generating session this tab owns → generating
+    // is restored.
+    setLease('test-tab');
+    rerender({ isLoading: true, activeSessionId: 'session-1' });
+    expect(faviconHref()).toBe(GENERATING_HREF);
   });
 
   it('writes the href only once for repeated done transitions (idempotent)', () => {
