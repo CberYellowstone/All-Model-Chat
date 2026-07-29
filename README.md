@@ -48,7 +48,7 @@
 当前仓库围绕 **Vite + React SPA** 作为唯一主线构建形态：
 
 - **标准模式**：本地通过 Vite 开发 / 构建，适合日常开发与静态部署
-- **Docker 部署模式**：`web + api` 双服务部署，普通 Gemini 请求走 `/api/gemini/*`，Live API 由浏览器使用本地 key 直连
+- **Docker 部署模式**：`web + api` 双服务部署，普通 Gemini 请求走 `/api/gemini/*`，第三方兼容接口走 `/api/openai/*`，Live API 走 `/api/live` 的 WebSocket 全代理
 - **静态前端 + 独立 API 模式**：前端部署到 Pages/CDN，后端单独托管 Node API 服务
 
 ## API 模式说明
@@ -236,7 +236,7 @@ docker compose up -d --build
 
 说明：
 
-- Docker 默认是 BYOK 自用模式：启动后在 **设置 -> API 配置** 填入 Gemini API Key 即可使用普通聊天与 Live API，不需要在 `.env` 或 `docker-compose.yml` 里配置 `GEMINI_API_KEY`。
+- Docker 默认是 BYOK 自用模式：启动后在 **设置 -> API 配置** 填入 Gemini API Key 即可使用普通聊天、Live API 与第三方兼容接口，不需要在 `.env` 或 `docker-compose.yml` 里配置 `GEMINI_API_KEY` 或 `THIRD_PARTY_ROUTES`。服务端 Key 仅在浏览器未携带 Key 时兜底。
 - `web` 镜像默认直接打包宿主机已生成的 `dist/`，不再在容器内执行前端生产构建。
 - 修改前端或后端 API 代码后，请先重新执行 `npm run build:docker`，再执行 `docker compose up -d --build`。
 
@@ -249,19 +249,25 @@ docker compose up -d --build
 
 部署时请区分两类配置：
 
-| 变量名                          | 用途                                                          | 公开性             | Docker 默认值                               |
-| :------------------------------ | :------------------------------------------------------------ | :----------------- | :------------------------------------------ |
-| `GEMINI_API_KEY`                | 可选的服务端托管 Gemini API Key（配置后优先于浏览器设置 key） | **仅服务端**       | 空                                          |
-| `PORT`                          | `api` 服务监听端口                                            | 仅服务端           | `3001`                                      |
-| `GEMINI_API_BASE`               | Gemini 上游地址（代理目标）                                   | 仅服务端           | `https://generativelanguage.googleapis.com` |
-| `ALLOWED_ORIGINS`               | 逗号分隔 CORS 白名单（跨域部署时使用）                        | 仅服务端           | 空                                          |
-| `ENABLE_MCP_STDIO`              | 启用 `stdio` MCP 服务调用能力                                 | 仅服务端           | `false`                                     |
-| `ENABLE_MCP_PRIVATE_HTTP`       | 允许 API 服务访问内网/本机 HTTP MCP 地址                      | 仅服务端           | `false`                                     |
-| `RUNTIME_SERVER_MANAGED_API`    | 前端默认启用服务端托管 API                                    | **公开运行时配置** | `false`                                     |
-| `RUNTIME_USE_CUSTOM_API_CONFIG` | 前端默认启用“自定义 API 配置”                                 | 公开运行时配置     | `true`                                      |
-| `RUNTIME_USE_API_PROXY`         | 前端默认启用 API 代理                                         | 公开运行时配置     | `true`                                      |
-| `RUNTIME_API_PROXY_URL`         | 前端默认 Gemini 代理地址                                      | 公开运行时配置     | `/api/gemini`                               |
-| `RUNTIME_PYODIDE_BASE_URL`      | 可选 Pyodide 运行时资源地址；留空时使用同源 `/pyodide/`       | 公开运行时配置     | 空                                          |
+| 变量名                          | 用途                                                                  | 公开性             | Docker 默认值                               |
+| :------------------------------ | :-------------------------------------------------------------------- | :----------------- | :------------------------------------------ |
+| `GEMINI_API_KEY`                | 可选的服务端托管 Gemini API Key；浏览器 BYOK 优先，留空则回落此 Key   | **仅服务端**       | 空                                          |
+| `PORT`                          | `api` 服务监听端口                                                    | 仅服务端           | `3001`                                      |
+| `GEMINI_API_BASE`               | Gemini 上游地址（代理目标）                                           | 仅服务端           | `https://generativelanguage.googleapis.com` |
+| `ALLOWED_ORIGINS`               | 逗号分隔 CORS 白名单（跨域部署时使用）                                | 仅服务端           | 空                                          |
+| `ENABLE_MCP_STDIO`              | 启用 `stdio` MCP 服务调用能力                                         | 仅服务端           | `false`                                     |
+| `ENABLE_MCP_PRIVATE_HTTP`       | 允许 API 服务访问内网/本机 HTTP MCP 地址                              | 仅服务端           | `false`                                     |
+| `ENABLE_LIVE_WS_PROXY`          | 启用 `/api/live` WebSocket 全代理（Docker 默认开启）                  | 仅服务端           | `true`                                      |
+| `LIVE_WS_IDLE_TIMEOUT_MS`       | Live WS 空闲回收时间（毫秒）                                          | 仅服务端           | `300000`                                    |
+| `SERVER_KEY_PRIORITY`           | Key 优先级：`false`=浏览器 BYOK 优先·服务端兜底；`true`=服务端优先    | 仅服务端           | `false`                                     |
+| `THIRD_PARTY_ROUTES`            | JSON：provider → { baseUrl, apiKey } 第三方路由表（仅 https、非私网） | 仅服务端           | 空                                          |
+| `RUNTIME_SERVER_MANAGED_API`    | 前端默认启用服务端托管 API                                            | **公开运行时配置** | `true`                                      |
+| `RUNTIME_USE_CUSTOM_API_CONFIG` | 前端默认启用“自定义 API 配置”                                         | 公开运行时配置     | `true`                                      |
+| `RUNTIME_USE_API_PROXY`         | 前端默认启用 API 代理                                                 | 公开运行时配置     | `true`                                      |
+| `RUNTIME_API_PROXY_URL`         | 前端默认 Gemini 代理地址                                              | 公开运行时配置     | `/api/gemini`                               |
+| `RUNTIME_LIVE_API_BASE_URL`     | 前端 Live API 代理地址（留空则浏览器直连官方 WS）                     | 公开运行时配置     | `/api/live`                                 |
+| `RUNTIME_THIRD_PARTY_PROXY_URL` | 前端第三方兼容接口代理地址（留空则浏览器直连 provider）               | 公开运行时配置     | `/api/openai`                               |
+| `RUNTIME_PYODIDE_BASE_URL`      | 可选 Pyodide 运行时资源地址；留空时使用同源 `/pyodide/`               | 公开运行时配置     | 空                                          |
 
 说明：
 
@@ -269,12 +275,13 @@ docker compose up -d --build
 - public/runtime-config.js 模板用于纯静态构建，默认不启用自定义 API 配置或代理；Docker 部署会由 `docker/web-server.js` 在容器启动时按上表默认值覆盖该文件。
 - Pyodide 产物会在生产构建时复制到 `dist/pyodide/`，运行时默认从同源 `/pyodide/` 加载；如需改用 CDN 或独立静态域，可将 `RUNTIME_PYODIDE_BASE_URL` 设置为完整目录 URL，例如 `https://cdn.jsdelivr.net/pyodide/v0.25.1/full/`。
 - PWA 预缓存默认排除 `pyodide/` 大体积产物，首次执行本地 Python 时仍会按上述地址按需加载。
-- 默认 BYOK 模式只需要在设置界面填写 API Key：普通 Gemini 代理会使用浏览器请求携带的 key；Live API 会使用浏览器本地 key 直接建立官方 Live WebSocket 连接，不再经过 AMC 后端换取临时 token。
-- 如需服务端统一托管普通 Gemini 请求的 key，可配置 `GEMINI_API_KEY` 并将 `RUNTIME_SERVER_MANAGED_API=true`；Live API 仍需要浏览器中可用的 API Key。
+- 默认 BYOK 模式只需要在设置界面填写 API Key：普通 Gemini 代理会使用浏览器请求携带的 key；Live API 走 `/api/live` 的 WebSocket 全代理，由 `api` 容器桥接到官方 `wss://generativelanguage…/BidiGenerateContent`，浏览器 Key 存在时优先透传（BYOK 兜底），否则回落服务端 `GEMINI_API_KEY`。
+- 如需服务端统一托管普通 Gemini 请求的 key，可配置 `GEMINI_API_KEY` 并将 `RUNTIME_SERVER_MANAGED_API=true`；Live API 与第三方接口同样遵循「浏览器 Key 优先·服务端兜底」（除非显式设 `SERVER_KEY_PRIORITY=true`）。
 - MCP 的 `stdio` 与内网/本机 HTTP 访问默认关闭；仅在可信自托管环境中按需设置 `ENABLE_MCP_STDIO=true` 或 `ENABLE_MCP_PRIVATE_HTTP=true`。
-- OpenAI 兼容模式当前不读取 `RUNTIME_API_PROXY_URL`、`RUNTIME_USE_API_PROXY` 或 `RUNTIME_SERVER_MANAGED_API`；它会直接使用设置里的 OpenAI 兼容 Base URL 和独立 Key 发起 `chat/completions` 请求。如需走你自己的网关，请直接把该网关地址填为 OpenAI 兼容 Base URL。
+- 第三方兼容接口（OpenAI / DeepSeek / Anthropic / OpenRouter / Qwen / Kimi / GLM / Custom）经 `/api/openai/*` 转发，按请求头 `x-third-party-provider` 在 `THIRD_PARTY_ROUTES` 路由表中查上游，仅接受 https、非私网 host；浏览器 Key 优先、缺失时回落路由表里的服务端 Key。静态部署（Pages）不注入 `RUNTIME_THIRD_PARTY_PROXY_URL`，前端自动回退浏览器直连 provider。
 - 浏览器本地 key 适合自用/可信部署。它不会因为“保存在本地”而变成服务器密钥，同一浏览器上下文中的脚本、扩展、XSS 或设备风险仍可能读取它。
-- 前端在部署时默认只依赖后端端点：`/api/gemini/*`；Live API 从浏览器直连官方 Live 服务。
+- 前端在 Docker 部署时依赖后端端点：`/api/gemini/*`、`/api/openai/*`、`/api/live`（WS）；静态部署（Pages）不注入这些 runtime 地址，前端自动回退浏览器直连官方 Live/第三方上游。
+- 全部新行为由 env 门控：置 `ENABLE_LIVE_WS_PROXY=false` 并清空 `RUNTIME_LIVE_API_BASE_URL` 即恢复 Live 浏览器直连；清空 `THIRD_PARTY_ROUTES` 与 `RUNTIME_THIRD_PARTY_PROXY_URL` 即恢复第三方直连，无需改代码重构建。
 
 ### 方式三：Cloudflare Pages（静态前端）+ 独立 API 服务
 

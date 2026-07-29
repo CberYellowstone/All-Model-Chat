@@ -36,7 +36,10 @@ interface UseChatActionsProps {
     options?: { persist?: boolean },
   ) => void;
   appendMessageToSession: (sessionId: string, message: ChatMessage, options?: { persist?: boolean }) => void;
-  handleStopGenerating: (options?: { silent?: boolean }) => void;
+  handleStopGenerating: (options?: {
+    silent?: boolean;
+    skipLoadingUpdate?: boolean;
+  }) => 'stopped' | 'no_local_job' | 'not_loading' | void;
   startNewChat: () => void;
   handleTogglePinSession: (sessionId: string) => void;
   userScrolledUpRef: MutableRefObject<boolean>;

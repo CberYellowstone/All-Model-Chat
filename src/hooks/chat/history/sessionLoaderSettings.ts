@@ -39,6 +39,9 @@ export const createSettingsForNewChat = ({
     settingsForNewChat = {
       ...settingsForNewChat,
       modelId: sanitizedTemplate.settings.modelId,
+      apiMode: sanitizedTemplate.settings.apiMode,
+      thirdPartyProviderId: sanitizedTemplate.settings.thirdPartyProviderId,
+      thirdPartyModelId: sanitizedTemplate.settings.thirdPartyModelId,
       isGoogleSearchEnabled: sanitizedTemplate.settings.isGoogleSearchEnabled,
       isCodeExecutionEnabled: sanitizedTemplate.settings.isCodeExecutionEnabled,
       isUrlContextEnabled: sanitizedTemplate.settings.isUrlContextEnabled,

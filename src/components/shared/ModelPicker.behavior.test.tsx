@@ -71,7 +71,7 @@ describe('ModelPicker behavior', () => {
         renderPicker({
           models: [
             { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-            { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'openai-compatible' },
           ],
           selectedId: 'gemini-3-flash-preview',
         }),
@@ -90,7 +90,7 @@ describe('ModelPicker behavior', () => {
     expect(geminiSection?.textContent).toContain('Gemini');
     expect(geminiSection?.textContent).toContain('Gemini 3 Flash Preview');
     expect(openaiSection?.textContent).toContain('OpenAI Compatible');
-    expect(openaiSection?.textContent).toContain('GPT-5.5');
+    expect(openaiSection?.textContent).toContain('GPT-5.6 Sol');
   });
 
   it('supports keyboard navigation through model options', () => {

@@ -1,0 +1,181 @@
+import { TAB_ID } from '@/stores/tabIdentity';
+import { logService } from '@/services/logService';
+
+/**
+ * Persistent record of an in-flight streamed generation that the api container
+ * is journaling under an `x-amc-job-id`. After a page refresh the frontend
+ * reads this to resume the stream from `lastSeq` (the last event seq the
+ * browser saw), instead of losing the partial output.
+ *
+ * Shape mirrors `generationLease` storage: one record per session, keyed by
+ * session id, in localStorage so it survives a reload. Cleared on completion,
+ * abort, or error.
+ */
+export interface PendingStreamJob {
+  sessionId: string;
+  generationId: string;
+  /** Job id sent to the api container; today this equals generationId. */
+  jobId: string;
+  /** Epoch ms when the generation started (for firstToken latency). */
+  startedAt: number;
+  /** Highest SSE event seq the browser has consumed so far. */
+  lastSeq: number;
+  /** Tab that owns the job; only it resumes (multi-tab guard). */
+  tabId: string;
+}
+
+const PENDING_JOB_KEY_PREFIX = 'amc_stream_job:';
+const PENDING_JOB_TTL_MS = 10 * 60_000; // match server-side job TTL
+
+const pendingJobStorageKey = (sessionId: string) => `${PENDING_JOB_KEY_PREFIX}${sessionId}`;
+
+const getStorage = (): Storage | null => {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  return localStorage;
+};
+
+const isFresh = (job: PendingStreamJob, now = Date.now()): boolean => now - job.startedAt < PENDING_JOB_TTL_MS;
+
+/**
+ * Reads the pending stream job for a session. Returns null when none, when the
+ * record is malformed, or when it has aged past the TTL (so a stale record
+ * left by a crashed tab does not trigger a doomed resume).
+ */
+export const readPendingStreamJob = (sessionId: string): PendingStreamJob | null => {
+  const storage = getStorage();
+  if (!storage || !sessionId) {
+    return null;
+  }
+  try {
+    const raw = storage.getItem(pendingJobStorageKey(sessionId));
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Partial<PendingStreamJob>;
+    if (
+      typeof parsed.sessionId !== 'string' ||
+      typeof parsed.generationId !== 'string' ||
+      typeof parsed.jobId !== 'string' ||
+      typeof parsed.startedAt !== 'number' ||
+      typeof parsed.lastSeq !== 'number' ||
+      typeof parsed.tabId !== 'string'
+    ) {
+      storage.removeItem(pendingJobStorageKey(sessionId));
+      return null;
+    }
+    const job: PendingStreamJob = {
+      sessionId: parsed.sessionId,
+      generationId: parsed.generationId,
+      jobId: parsed.jobId,
+      startedAt: parsed.startedAt,
+      lastSeq: parsed.lastSeq,
+      tabId: parsed.tabId,
+    };
+    if (!isFresh(job)) {
+      storage.removeItem(pendingJobStorageKey(sessionId));
+      return null;
+    }
+    return job;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Records (or refreshes) a pending stream job when a streamed turn starts.
+ * Overwrites any stale record for the same session.
+ */
+export const recordPendingStreamJob = (
+  job: Omit<PendingStreamJob, 'lastSeq' | 'tabId'> & {
+    lastSeq?: number;
+  },
+): void => {
+  const storage = getStorage();
+  if (!storage || !job.sessionId) {
+    return;
+  }
+  try {
+    storage.setItem(
+      pendingJobStorageKey(job.sessionId),
+      JSON.stringify({
+        sessionId: job.sessionId,
+        generationId: job.generationId,
+        jobId: job.jobId,
+        startedAt: job.startedAt,
+        lastSeq: job.lastSeq ?? 0,
+        tabId: TAB_ID,
+      } satisfies PendingStreamJob),
+    );
+  } catch {
+    // Ignore storage failures in restricted browser contexts.
+  }
+};
+
+/**
+ * Advances the cursor after each consumed SSE event so a resume picks up at the
+ * exact next boundary. Best-effort; a missed write only means a resume replays
+ * one already-seen event (idempotent for Gemini SSE).
+ */
+export const advancePendingStreamJobSeq = (sessionId: string, seq: number): void => {
+  const storage = getStorage();
+  if (!storage || !sessionId) {
+    return;
+  }
+  const existing = readPendingStreamJob(sessionId);
+  if (!existing || existing.tabId !== TAB_ID) {
+    return;
+  }
+  if (seq <= existing.lastSeq) {
+    return;
+  }
+  try {
+    storage.setItem(
+      pendingJobStorageKey(sessionId),
+      JSON.stringify({ ...existing, lastSeq: seq } satisfies PendingStreamJob),
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+/** Removes the pending record (called on completion, abort, or error). */
+export const clearPendingStreamJob = (sessionId: string): void => {
+  const storage = getStorage();
+  if (!storage || !sessionId) {
+    return;
+  }
+  try {
+    storage.removeItem(pendingJobStorageKey(sessionId));
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+/** Whether this tab owns the pending job for the session (multi-tab guard). */
+export const isPendingStreamJobOwnedByTab = (sessionId: string): boolean => {
+  const job = readPendingStreamJob(sessionId);
+  return Boolean(job && job.tabId === TAB_ID);
+};
+
+/**
+ * Remove the pending record only if this tab owns it. Returns true when a
+ * record was removed. Used so a non-owning tab does not clobber another tab's
+ * in-flight job.
+ */
+export const clearOwnedPendingStreamJob = (sessionId: string): boolean => {
+  const existing = readPendingStreamJob(sessionId);
+  if (!existing || existing.tabId !== TAB_ID) {
+    return false;
+  }
+  clearPendingStreamJob(sessionId);
+  return true;
+};
+
+export const PENDING_STREAM_JOB_TTL_MS = PENDING_JOB_TTL_MS;
+
+// Re-exported for the message-sender wiring so it can log resume decisions.
+export const logResume = (message: string, context?: unknown): void => {
+  logService.info(message, context);
+};

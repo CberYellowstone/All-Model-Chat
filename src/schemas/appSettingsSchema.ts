@@ -236,6 +236,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   isDeepSearchEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isDeepSearchEnabled),
   isRawModeEnabled: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isRawModeEnabled),
   hideThinkingInContext: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.hideThinkingInContext),
+  alwaysKeepThinkingInContext: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.alwaysKeepThinkingInContext),
   safetySettings: z
     .unknown()
     .optional()

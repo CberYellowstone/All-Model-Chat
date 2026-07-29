@@ -153,7 +153,7 @@ describe('ModelListEditor', () => {
               isPinned: true,
               apiMode: 'gemini-native',
             },
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: false, apiMode: 'openai-compatible' },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: false, apiMode: 'openai-compatible' },
           ]}
           onSave={onSave}
           setIsEditingList={vi.fn()}
@@ -170,7 +170,7 @@ describe('ModelListEditor', () => {
 
     expect(onSave).toHaveBeenCalledWith([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', isPinned: true, apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: false, apiMode: 'openai-compatible' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: false, apiMode: 'openai-compatible' },
     ]);
   });
 
@@ -183,7 +183,7 @@ describe('ModelListEditor', () => {
         <ModelListEditor
           availableModels={[{ id: 'custom-openai-model', name: 'Custom OpenAI Model', isPinned: true }]}
           defaultModels={[
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ]}
           onSave={onSave}
@@ -217,7 +217,7 @@ describe('ModelListEditor', () => {
     });
 
     expect(onSave).toHaveBeenCalledWith([
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'gpt-4.1', name: 'GPT-4.1', isPinned: false },
     ]);
   });

@@ -2,16 +2,21 @@
 // Serves the web container:
 //   - serves static files from /usr/share/nginx/html with SPA fallback to index.html
 //   - proxies /api/* to http://api:3001 (path preserved, body + response streamed)
+//   - raw-socket-forwards the /api/live WebSocket upgrade to api:3001 (http.request
+//     cannot carry the WS upgrade frame, so upgrades must be bridged at the socket
+//     layer rather than proxied like a normal request)
 //   - generates /runtime-config.js at startup from RUNTIME_* env vars
 //   - long-cache headers for /assets/*, no-store for /runtime-config.js
 // Uses only Node built-ins (http, fs, path) so no npm install is needed in the image.
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = Number(process.env.PORT || 80);
 const ROOT = process.env.WEB_ROOT || '/usr/share/nginx/html';
 const API_UPSTREAM = process.env.API_UPSTREAM || 'http://api:3001';
+const LIVE_WS_PATH = '/api/live';
 
 // --- runtime-config.js generation ---
 const toBool = (value) => /^(1|true|yes|on)$/i.test(String(value || '').trim());
@@ -28,6 +33,8 @@ function writeRuntimeConfig() {
     useCustomApiConfig: toBool(process.env.RUNTIME_USE_CUSTOM_API_CONFIG ?? 'true'),
     useApiProxy: toBool(process.env.RUNTIME_USE_API_PROXY ?? 'true'),
     apiProxyUrl: JSON.parse(jsonStringOrNull(process.env.RUNTIME_API_PROXY_URL ?? '/api/gemini')),
+    liveApiBaseUrl: JSON.parse(jsonStringOrNull(process.env.RUNTIME_LIVE_API_BASE_URL)),
+    thirdPartyProxyUrl: JSON.parse(jsonStringOrNull(process.env.RUNTIME_THIRD_PARTY_PROXY_URL)),
     pyodideBaseUrl: JSON.parse(jsonStringOrNull(process.env.RUNTIME_PYODIDE_BASE_URL)),
   };
   const content = `window.__AMC_RUNTIME_CONFIG__ = ${JSON.stringify({ ...(globalThis.__AMC_RUNTIME_CONFIG__ || {}), ...config }, null, 2)};`;
@@ -150,6 +157,70 @@ const server = http.createServer((req, res) => {
     return proxyApi(req, res);
   }
   return serveStatic(req, res);
+});
+
+// WebSocket upgrade for /api/live: bridge the raw TCP socket to api:3001.
+// http.request-based proxyApi cannot forward the WS upgrade handshake, so we
+// open a plain TCP socket to the upstream and splice the two sockets together,
+// letting the api container terminate the actual WS frames.
+const isLiveWsUpgrade = (req) => {
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  return pathname === LIVE_WS_PATH || pathname.startsWith(`${LIVE_WS_PATH}/`);
+};
+
+server.on('upgrade', (req, socket, head) => {
+  if (!isLiveWsUpgrade(req)) {
+    socket.destroy();
+    return;
+  }
+
+  const upstream = new URL(API_UPSTREAM);
+  const upstreamPort = Number(upstream.port) || (upstream.protocol === 'https:' ? 443 : 80);
+  const upstreamSocket = net.connect(upstreamPort, upstream.hostname);
+
+  let cleanup = () => {
+    cleanup = () => {};
+    try {
+      upstreamSocket.destroy();
+    } catch {
+      /* ignore */
+    }
+    try {
+      socket.destroy();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  upstreamSocket.on('error', (err) => {
+    console.error('[web] live ws upstream connect error:', err.message);
+    cleanup();
+  });
+  socket.on('error', () => {
+    cleanup();
+  });
+
+  upstreamSocket.on('connect', () => {
+    // Re-emit the exact upgrade request bytes the browser sent so the api
+    // container sees the original path, query, and headers (incl. the WS key).
+    const reqLines = [
+      `${req.method} ${req.url} HTTP/1.1`,
+      ...Object.entries(req.headers).map(([name, value]) => {
+        const headerValue = Array.isArray(value) ? value.join(', ') : value;
+        return `${name}: ${headerValue}`;
+      }),
+      '',
+      '',
+    ];
+    upstreamSocket.write(reqLines.join('\r\n'));
+    if (head && head.length > 0) {
+      upstreamSocket.write(head);
+    }
+    socket.pipe(upstreamSocket);
+    upstreamSocket.pipe(socket);
+    socket.on('end', () => upstreamSocket.end());
+    upstreamSocket.on('end', () => socket.end());
+  });
 });
 
 writeRuntimeConfig();

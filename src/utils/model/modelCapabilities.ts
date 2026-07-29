@@ -38,10 +38,36 @@ const isGemini31FlashLiteImageModel = (modelId: string): boolean =>
 
 const isTtsModel = (modelId: string): boolean => modelId.toLowerCase().includes('tts');
 
+const isOpenAIGpt5FamilyModel = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  return lowerId.startsWith('gpt-5') || lowerId.includes('/gpt-5');
+};
+
+const isKimiK3Model = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  return lowerId === 'kimi-k3' || lowerId.startsWith('kimi-k3-') || lowerId.includes('kimi-k3');
+};
+
+/** Claude models that accept output_config.effort (adaptive thinking). */
+const isAnthropicEffortModel = (modelId: string): boolean => {
+  const id = modelId.toLowerCase();
+  if (/fable|mythos/.test(id)) {
+    return true;
+  }
+  return (
+    /claude-opus-5|claude-sonnet-5|claude-opus-4-[678]|claude-sonnet-4-6/.test(id) ||
+    /opus-5|sonnet-5|opus-4\.[678]|sonnet-4\.6/.test(id)
+  );
+};
+
 const supportsThinkingLevel = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
   // GLM-5 series supports thinking via the OpenAI-compatible thinking parameter.
   if (lowerId.startsWith('glm-')) {
+    return true;
+  }
+  // Third-party reasoning controls mapped in openaiCompatibleMessages / anthropicMessages.
+  if (isOpenAIGpt5FamilyModel(modelId) || isKimiK3Model(modelId) || isAnthropicEffortModel(modelId)) {
     return true;
   }
   return !isTtsModel(modelId) && (isGemini3Model(modelId) || isGeminiRoboticsModel(modelId));
@@ -248,7 +274,17 @@ export const normalizeThinkingLevelForModel = (
   return resolvedLevel;
 };
 
-export const shouldStripThinkingFromContext = (modelId: string, hideThinkingInContext?: boolean): boolean => {
+export const shouldStripThinkingFromContext = (
+  modelId: string,
+  hideThinkingInContext?: boolean,
+  alwaysKeepThinkingInContext?: boolean,
+): boolean => {
+  // "Always keep" wins outright — it must override both the hide toggle and the
+  // Gemma default so the full thinking text can be injected back into context.
+  if (alwaysKeepThinkingInContext) {
+    return false;
+  }
+
   if (hideThinkingInContext) {
     return true;
   }

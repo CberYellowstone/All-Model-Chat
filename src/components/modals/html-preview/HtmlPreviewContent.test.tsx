@@ -6,17 +6,33 @@ import { HtmlPreviewContent } from './HtmlPreviewContent';
 describe('HtmlPreviewContent', () => {
   const renderer = setupTestRenderer();
 
-  it('renders the iframe with a safe sandbox and bridged srcDoc content', () => {
+  it('renders the iframe with an unrestricted sandbox and bridged srcDoc content', () => {
     const iframeRef = React.createRef<HTMLIFrameElement>();
+    const htmlWithScript =
+      '<html><head><script src="https://cdn.example/app.js"></script></head><body><button onclick="run()">Hello</button></body></html>';
 
     act(() => {
-      renderer.root.render(
-        <HtmlPreviewContent iframeRef={iframeRef} htmlContent="<html><body>Hello</body></html>" scale={1} />,
-      );
+      renderer.root.render(<HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlWithScript} scale={1} />);
     });
 
     const iframe = renderer.container.querySelector('iframe');
-    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-popups allow-modals allow-downloads');
-    expect(iframe?.getAttribute('srcdoc')).toContain('parent.postMessage');
+    const sandbox = iframe?.getAttribute('sandbox') ?? '';
+    const srcDoc = iframe?.getAttribute('srcdoc') ?? '';
+
+    expect(sandbox.split(/\s+/)).toEqual(
+      expect.arrayContaining([
+        'allow-scripts',
+        'allow-same-origin',
+        'allow-forms',
+        'allow-popups',
+        'allow-modals',
+        'allow-downloads',
+      ]),
+    );
+    // Unrestricted: keep model scripts/handlers and do not inject a CSP.
+    expect(srcDoc).toContain('cdn.example/app.js');
+    expect(srcDoc).toContain('onclick="run()"');
+    expect(srcDoc).not.toContain('Content-Security-Policy');
+    expect(srcDoc).toContain('parent.postMessage');
   });
 });

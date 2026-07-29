@@ -384,4 +384,37 @@ describe('useSessionLoader', () => {
 
     unmount();
   });
+
+  it('inherits third-party routing from the most recent session', () => {
+    const recentSession = createSession('session-kimi', 'Kimi Session');
+    recentSession.settings = {
+      ...recentSession.settings,
+      modelId: 'kimi-k3-turbo',
+      apiMode: 'third-party',
+      thirdPartyProviderId: 'kimi',
+      thirdPartyModelId: 'kimi-k3-turbo',
+    };
+
+    const { result, unmount } = renderSessionLoader({
+      appSettings: { apiMode: 'third-party', isThirdPartyApiEnabled: true },
+      activeChat: createSession('session-current', 'Current Session'),
+      activeSessionId: 'session-current',
+      savedSessions: [recentSession],
+    });
+
+    act(() => {
+      result.current.startNewChat();
+    });
+
+    expect(mockCreateNewSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelId: 'kimi-k3-turbo',
+        apiMode: 'third-party',
+        thirdPartyProviderId: 'kimi',
+        thirdPartyModelId: 'kimi-k3-turbo',
+      }),
+    );
+
+    unmount();
+  });
 });

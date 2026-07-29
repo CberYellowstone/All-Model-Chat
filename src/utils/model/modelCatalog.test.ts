@@ -74,7 +74,7 @@ describe('buildModelCatalogSections', () => {
   it('groups mixed provider catalogs by provider instead of duplicating section assembly in pickers', () => {
     const entries = buildModelCatalog([
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'openai-compatible' },
     ]);
 
     expect(buildModelCatalogSections(entries)).toMatchObject([
@@ -86,7 +86,7 @@ describe('buildModelCatalogSections', () => {
       {
         key: 'openai-compatible',
         providerKey: 'openai-compatible',
-        entries: [{ id: 'gpt-5.5' }],
+        entries: [{ id: 'gpt-5.6-sol' }],
       },
     ]);
   });
@@ -104,7 +104,7 @@ describe('buildModelCatalogSections', () => {
   it('splits third-party models into per-provider subsections', () => {
     const entries = buildModelCatalog([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'third-party', providerId: 'openai' },
       { id: 'claude-fable-5', name: 'Claude Fable 5', apiMode: 'third-party', providerId: 'anthropic' },
       { id: 'qwen3.7-max', name: 'Qwen3.7 Max', apiMode: 'third-party', providerId: 'qwen' },
     ]);

@@ -24,6 +24,12 @@ import { runStandardToolLoop } from '@/features/standard-chat/standardToolLoop';
 import { collectLocalPythonInputFiles } from '@/features/local-python/executionFiles';
 import { getPyodideService } from '@/features/local-python/loadPyodideService';
 import { updateSessionById } from '@/utils/chat/sessionMutations';
+import {
+  recordPendingStreamJob,
+  advancePendingStreamJobSeq,
+  clearPendingStreamJob,
+} from '@/features/stream-jobs/amcStreamJobs';
+import { isGeminiProxyRelativePath } from '@/services/api/geminiApiBaseUrl';
 import type {
   ChatMessage,
   ChatSettings as IndividualChatSettings,
@@ -38,8 +44,7 @@ import type {
   StreamHandlerFunctions,
 } from './messageSenderTypes';
 import type { resolveStandardChatTurn } from './standardChatTurn';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderConfig, resolveProviderForModelId } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 
 interface StandardChatApiCallContext {
   appSettings: StandardChatProps['appSettings'];
@@ -120,20 +125,9 @@ export const performStandardChatApiCall = async ({
   textToUse,
   enrichedFiles,
 }: PerformStandardChatApiCallParams) => {
-  const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-  // Resolve provider: if the active provider doesn't contain the selected model,
-  // fall back to searching enabled providers for the correct one.
-  let activeProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
-  if (activeProvider) {
-    const hasModel = activeProvider.models.some((m) => m.id === activeProvider!.modelId);
-    if (!hasModel) {
-      const resolved = resolveProviderForModelId(appSettings, activeProvider!.modelId);
-      if (resolved.config) {
-        activeProvider = resolved.config;
-      }
-    }
-  }
-  const apiModelId = activeProvider ? activeProvider.modelId : activeModelId;
+  const apiRoute = resolveChatApiRoute(appSettings, sessionToUpdate);
+  const activeProvider = apiRoute.provider ?? null;
+  const apiModelId = apiRoute.modelId || activeModelId;
   const { baseMessagesForApi, finalRole, finalParts, shouldSkipApiCall } = resolveTurn({
     messages,
     promptParts,
@@ -149,15 +143,19 @@ export const performStandardChatApiCall = async ({
     return;
   }
 
+  const alwaysKeepThinking =
+    sessionToUpdate.alwaysKeepThinkingInContext ?? appSettings.alwaysKeepThinkingInContext ?? false;
   const shouldStripThinking = shouldStripThinkingFromContext(
     apiModelId,
     sessionToUpdate.hideThinkingInContext ?? appSettings.hideThinkingInContext,
+    alwaysKeepThinking,
   );
   const historyForChat = await createChatHistoryForApi(
     baseMessagesForApi,
     shouldStripThinking,
     apiModelId,
     isServerCodeExecutionMode(sessionToUpdate),
+    alwaysKeepThinking,
   );
 
   const { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk } = getStreamHandlers(
@@ -168,10 +166,14 @@ export const performStandardChatApiCall = async ({
     sessionToUpdate,
     finalParts,
   );
+  const wrappedStreamOnComplete: typeof streamOnComplete = (usage, grounding, urlContext) => {
+    clearPendingStreamJob(finalSessionId);
+    streamOnComplete(usage, grounding, urlContext);
+  };
   const nonStreamOnComplete = createNonStreamCompleteHandler({
     streamOnPart,
     onThoughtChunk,
-    streamOnComplete,
+    streamOnComplete: wrappedStreamOnComplete,
   });
 
   if (activeProvider) {
@@ -184,6 +186,9 @@ export const performStandardChatApiCall = async ({
       thinkingBudget: sessionToUpdate.thinkingBudget,
     };
     const isAnthropic = activeProvider.protocol === 'anthropic';
+    // Tagged so the api container's third-party proxy can route to the right
+    // upstream in THIRD_PARTY_ROUTES. Null in static deploys (no proxy).
+    const providerId = apiRoute.providerId ?? null;
 
     if (appSettings.isStreamingEnabled) {
       await routeThrownStreamError(
@@ -201,6 +206,7 @@ export const performStandardChatApiCall = async ({
                 streamOnError,
                 streamOnComplete,
                 finalRole,
+                providerId,
               )
             : sendOpenAICompatibleMessageStream(
                 keyToUse,
@@ -214,6 +220,7 @@ export const performStandardChatApiCall = async ({
                 streamOnError,
                 streamOnComplete,
                 finalRole,
+                providerId,
               ),
         streamOnError,
       );
@@ -233,6 +240,7 @@ export const performStandardChatApiCall = async ({
               streamOnError,
               nonStreamOnComplete,
               finalRole,
+              providerId,
             )
           : sendOpenAICompatibleMessageNonStream(
               keyToUse,
@@ -244,6 +252,7 @@ export const performStandardChatApiCall = async ({
               streamOnError,
               nonStreamOnComplete,
               finalRole,
+              providerId,
             ),
       streamOnError,
     );
@@ -391,6 +400,30 @@ export const performStandardChatApiCall = async ({
   }
 
   if (appSettings.isStreamingEnabled) {
+    // Stream journal: only the Docker default (relative /api/gemini) routes
+    // through our api container where the job buffer lives. Absolute proxy
+    // URLs bypass the container, so journaling is skipped there. Also only
+    // meaningful for a fresh user-driven turn (the common resume case); tool
+    // loops and other internal turns don't carry a stable generation id.
+    const canJournalStream =
+      !activeProvider && isGeminiProxyRelativePath(appSettings) && finalRole === 'user' && !isContinueMode;
+    const streamResume = canJournalStream
+      ? {
+          jobId: generationId,
+          lastSeq: 0,
+          onSeq: (seq: number) => advancePendingStreamJobSeq(finalSessionId, seq),
+        }
+      : undefined;
+
+    if (canJournalStream) {
+      recordPendingStreamJob({
+        sessionId: finalSessionId,
+        generationId,
+        jobId: generationId,
+        startedAt: generationStartTime.getTime(),
+      });
+    }
+
     await routeThrownStreamError(
       () =>
         sendStatelessMessageStreamApi(
@@ -403,8 +436,10 @@ export const performStandardChatApiCall = async ({
           streamOnPart,
           onThoughtChunk,
           streamOnError,
-          streamOnComplete,
+          wrappedStreamOnComplete,
           finalRole,
+          undefined,
+          streamResume,
         ),
       streamOnError,
     );

@@ -77,9 +77,10 @@ describe('CodeHeader', () => {
     });
 
     const badge = renderer.container.querySelector('[data-language-badge="tsx"]');
+    const meta = renderer.container.querySelector('[data-language-meta]');
 
     expect(badge).not.toBeNull();
-    expect(badge?.textContent).toContain('TypeScript React');
-    expect(badge?.textContent).toContain('TSX');
+    expect(meta?.textContent?.trim()).toBe('TSX');
+    expect(badge?.textContent).not.toContain('TypeScript React');
   });
 });

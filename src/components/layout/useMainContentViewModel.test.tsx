@@ -2,10 +2,14 @@ import { act, type PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppViewModel } from '@/hooks/app/useApp';
 import { renderHook } from '@/test/render/renderer';
-import { createAppSettings, createChatAreaProviderValue, createChatRuntimeApp } from '@/test/layout/fixtures';
+import {
+  createAppSettings,
+  createChatAreaProviderValue,
+  createChatRuntimeApp,
+  createChatSettings,
+} from '@/test/layout/fixtures';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { ChatRuntimeProvider, useChatHeaderRuntime } from './chat-runtime/ChatRuntimeContext';
-import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/layout';
 
 const mockStores = vi.hoisted(() => {
   const ui = {
@@ -65,9 +69,9 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
         openai: {
           apiKey: null,
           baseUrl: baseDefaults.providers.openai.baseUrl,
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
           models: [
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ],
           protocol: 'openai-compatible',
@@ -82,7 +86,7 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
     createChatAreaProviderValue({
       header: {
         availableModels: [{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }],
-        currentModelName: 'GPT-5.5',
+        currentModelName: 'GPT-5.6 Sol',
         isPipSupported: false,
       },
       input: {
@@ -97,7 +101,7 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
     ...app,
     appSettings,
     setAppSettings,
-    getCurrentModelDisplayName: vi.fn(() => 'GPT-5.5'),
+    getCurrentModelDisplayName: vi.fn(() => 'GPT-5.6 Sol'),
     ...appOverrides,
     chatState: {
       ...app.chatState,
@@ -145,23 +149,33 @@ describe('chat runtime values', () => {
   });
 
   it('shows API-configured OpenAI-compatible models in the header while OpenAI mode is active', () => {
-    const app = buildApp();
+    const app = buildApp({
+      chatState: {
+        currentChatSettings: {
+          ...createChatSettings(),
+          modelId: 'gpt-5.6-sol',
+          apiMode: 'third-party',
+          thirdPartyProviderId: 'openai',
+          thirdPartyModelId: 'gpt-5.6-sol',
+        },
+      },
+    });
     const { result, unmount } = renderChatHeaderRuntime(app);
     const header = result.current;
 
     expect(header.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
       { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party', providerId: 'openai' },
     ]);
-    expect(header.selectedModelId).toBe('gpt-5.5');
-    expect(header.currentModelName).toBe('GPT-5.5');
+    expect(header.selectedModelId).toBe('gpt-5.6-sol');
+    expect(header.currentModelName).toBe('GPT-5.6 Sol');
 
     act(() => {
       header.onSelectModel('gpt-4.1');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).not.toHaveBeenCalled();
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-4.1');
     expect(app.setAppSettings).toHaveBeenCalledOnce();
     const updater = vi.mocked(app.setAppSettings).mock.calls[0][0];
     expect(typeof updater).toBe('function');
@@ -170,7 +184,7 @@ describe('chat runtime values', () => {
     }
     const updatedSettings = updater(app.appSettings);
     expect(updatedSettings.apiMode).toBe('third-party');
-    expect((updatedSettings as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-4.1');
+    expect((updatedSettings as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-5.6-sol');
 
     unmount();
   });
@@ -180,8 +194,8 @@ describe('chat runtime values', () => {
       appSettings: buildOpenaiProviderAppSettings({
         enabled: true,
         apiMode: 'gemini-native',
-        modelId: 'gpt-5.5',
-        models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+        modelId: 'gpt-5.6-sol',
+        models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
       getCurrentModelDisplayName: vi.fn(() => 'Gemini 3 Flash Preview'),
     });
@@ -190,7 +204,7 @@ describe('chat runtime values', () => {
 
     expect(header.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
     ]);
     expect(header.selectedModelId).toBe('gemini-3-flash-preview');
 
@@ -202,9 +216,10 @@ describe('chat runtime values', () => {
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     act(() => {
-      header.onSelectModel('gpt-5.5');
+      header.onSelectModel('gpt-5.6-sol');
     });
 
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
     expect(app.setAppSettings).toHaveBeenCalledOnce();
     const switchToOpenAI = vi.mocked(app.setAppSettings).mock.calls[0][0];
     expect(typeof switchToOpenAI).toBe('function');
@@ -213,42 +228,30 @@ describe('chat runtime values', () => {
     }
     const switchedSettings = switchToOpenAI(app.appSettings);
     expect(switchedSettings.apiMode).toBe('third-party');
-    expect((switchedSettings as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-5.5');
+    expect((switchedSettings as AppViewModel['appSettings']).thirdPartyApi.activeProvider).toBe('openai');
 
     unmount();
   });
 
-  it('focuses the chat input after selecting a third-party model from Gemini-native mode', () => {
-    vi.useFakeTimers();
-    const previousFocus = document.createElement('button');
-    const textarea = document.createElement('textarea');
-    textarea.setAttribute('data-chat-input-textarea', 'true');
-    document.body.append(previousFocus, textarea);
-    previousFocus.focus();
-
+  it('delegates third-party model selection from Gemini-native mode to the session handler', () => {
     const app = buildApp({
       appSettings: buildOpenaiProviderAppSettings({
         enabled: true,
         apiMode: 'gemini-native',
-        modelId: 'gpt-5.5',
-        models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+        modelId: 'gpt-5.6-sol',
+        models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
       getCurrentModelDisplayName: vi.fn(() => 'Gemini 3 Flash Preview'),
     });
     const { result, unmount } = renderChatHeaderRuntime(app);
 
-    try {
-      act(() => {
-        result.current.onSelectModel('gpt-5.5');
-        vi.runAllTimers();
-      });
+    act(() => {
+      result.current.onSelectModel('gpt-5.6-sol');
+    });
 
-      expect(document.querySelector(CHAT_INPUT_TEXTAREA_SELECTOR)).toBe(textarea);
-      expect(document.activeElement).toBe(textarea);
-    } finally {
-      unmount();
-      vi.useRealTimers();
-    }
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+
+    unmount();
   });
 
   it('shows enabled third-party models in the header even when the top-level mode is Gemini-native', () => {
@@ -266,8 +269,8 @@ describe('chat runtime values', () => {
             openai: {
               apiKey: null,
               baseUrl: defaults.providers.openai.baseUrl,
-              modelId: 'gpt-5.5',
-              models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
               protocol: 'openai-compatible',
               enabled: true,
             },
@@ -281,15 +284,15 @@ describe('chat runtime values', () => {
 
     expect(header.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
     ]);
     expect(header.selectedModelId).toBe('gemini-3-flash-preview');
 
     act(() => {
-      header.onSelectModel('gpt-5.5');
+      header.onSelectModel('gpt-5.6-sol');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).not.toHaveBeenCalled();
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
     expect(app.setAppSettings).toHaveBeenCalledOnce();
     const updater = vi.mocked(app.setAppSettings).mock.calls[0][0];
     expect(typeof updater).toBe('function');
@@ -299,7 +302,7 @@ describe('chat runtime values', () => {
     const updated = updater(app.appSettings);
     expect(updated.apiMode).toBe('third-party');
     expect((updated as AppViewModel['appSettings']).isThirdPartyApiEnabled).toBe(true);
-    expect((updated as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-5.5');
+    expect((updated as AppViewModel['appSettings']).thirdPartyApi.activeProvider).toBe('openai');
 
     unmount();
   });
@@ -309,8 +312,8 @@ describe('chat runtime values', () => {
       appSettings: buildOpenaiProviderAppSettings({
         enabled: false,
         apiMode: 'gemini-native',
-        modelId: 'gpt-5.5',
-        models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+        modelId: 'gpt-5.6-sol',
+        models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
       getCurrentModelDisplayName: vi.fn(() => 'Gemini 3 Flash Preview'),
     });
@@ -323,11 +326,28 @@ describe('chat runtime values', () => {
     expect(header.selectedModelId).toBe('gemini-3-flash-preview');
 
     act(() => {
-      header.onSelectModel('gpt-5.5');
+      header.onSelectModel('gpt-5.6-sol');
     });
 
     expect(app.setAppSettings).not.toHaveBeenCalled();
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.5');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+
+    unmount();
+  });
+
+  it('uses the session third-party model as the header selection', () => {
+    const app = buildApp({
+      chatState: {
+        currentChatSettings: {
+          ...createChatSettings(),
+          apiMode: 'third-party',
+          thirdPartyModelId: 'gpt-4.1',
+        },
+      },
+    });
+    const { result, unmount } = renderChatHeaderRuntime(app);
+
+    expect(result.current.selectedModelId).toBe('gpt-4.1');
 
     unmount();
   });

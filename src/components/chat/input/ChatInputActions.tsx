@@ -65,6 +65,12 @@ const ChatInputActionsComponent: React.FC = () => {
           ? () => onToggleToolAndFocus(toolStates.googleMaps!.onToggle!)
           : undefined,
       },
+      alwaysKeepThinking: {
+        isEnabled: !!toolStates.alwaysKeepThinking?.isEnabled,
+        onToggle: toolStates.alwaysKeepThinking?.onToggle
+          ? () => onToggleToolAndFocus(toolStates.alwaysKeepThinking!.onToggle!)
+          : undefined,
+      },
     }),
     [onToggleToolAndFocus, toolStates],
   );

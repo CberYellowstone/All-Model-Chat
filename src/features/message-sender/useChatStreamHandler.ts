@@ -18,6 +18,7 @@ import { updateMessageInSession, updateSessionById } from '@/utils/chat/sessionM
 import { createMessageStreamState, reduceMessageStreamEvent } from '@/features/chat-streaming/messageStreamReducer';
 import { getContentDeltaFromPart, mergeUniqueFiles } from '@/features/chat-streaming/messageStreamParts';
 import { finishActiveGenerationJob } from './activeGenerationJobs';
+import { clearOwnedPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { buildCompletionNotificationBody, emitCompletionFeedback } from './completionFeedback';
 
 type SessionsUpdater = (
@@ -78,6 +79,11 @@ export const useChatStreamHandler = ({
           sessionId: currentSessionId,
           generationId,
         });
+        // Reclaim the pending stream-job record so a later session reload does
+        // not mistake a failed generation for an in-flight one and try to
+        // resume it. The owned variant only clears this tab's record, so a
+        // failure in one tab never deletes another tab's live job.
+        clearOwnedPendingStreamJob(currentSessionId);
         streamingStore.clear(generationId);
       };
 

@@ -175,12 +175,25 @@ const normalizeEnumNames = (value: unknown, enumLength: number): string[] | unde
 };
 
 const normalizeArrayItems = (value: unknown): LiveArtifactInteractionArrayItems | null => {
-  if (!isPlainObject(value) || typeof value.type !== 'string') {
+  if (!isPlainObject(value)) {
     return null;
   }
 
-  const type = value.type.toLowerCase() as LiveArtifactInteractionScalarPropertyType;
-  if (!SUPPORTED_SCALAR_PROPERTY_TYPES.has(type)) {
+  // The prompt historically demonstrated `"items":{"enum":[...]}` without a
+  // `type` field, which the old strict check rejected outright — failing the
+  // whole spec and degrading the form to a plain code block. Tolerate that
+  // shape by inferring the scalar type from the enum values when `items.type`
+  // is absent. An explicit, unsupported type still fails.
+  const rawType = typeof value.type === 'string' ? value.type.toLowerCase() : undefined;
+  const type: LiveArtifactInteractionScalarPropertyType | null = rawType
+    ? SUPPORTED_SCALAR_PROPERTY_TYPES.has(rawType as LiveArtifactInteractionScalarPropertyType)
+      ? (rawType as LiveArtifactInteractionScalarPropertyType)
+      : null
+    : Array.isArray(value.enum)
+      ? inferArrayItemsType(value.enum)
+      : null;
+
+  if (!type) {
     return null;
   }
 
@@ -199,6 +212,27 @@ const normalizeArrayItems = (value: unknown): LiveArtifactInteractionArrayItems 
     enum: enumValues,
     ...(enumNames ? { enumNames } : {}),
   };
+};
+
+// Infers the scalar type of array items from the enum values when `items.type`
+// is missing. Mixed-type enums yield null (the spec stays rejected).
+const inferArrayItemsType = (values: unknown[]): LiveArtifactInteractionScalarPropertyType | null => {
+  if (values.length === 0) {
+    return null;
+  }
+  if (values.every((item) => typeof item === 'string')) {
+    return 'string';
+  }
+  if (values.every((item) => typeof item === 'boolean')) {
+    return 'boolean';
+  }
+  if (values.every((item) => isValidNumberForType(item, 'integer'))) {
+    return 'integer';
+  }
+  if (values.every((item) => isValidNumberForType(item, 'number'))) {
+    return 'number';
+  }
+  return null;
 };
 
 const normalizeArrayDefault = (

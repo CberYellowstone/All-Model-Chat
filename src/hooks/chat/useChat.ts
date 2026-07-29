@@ -244,6 +244,7 @@ export const useChat = (
     loadInitialData: historyHandler.loadInitialData,
     loadChatSession,
     startNewChat,
+    resumePendingStream: messageSender.resumePendingStream,
   });
 
   return {

@@ -1,4 +1,4 @@
-import { type AppSettings, type ChatSettings } from '@/types';
+import { type AppSettings, type ChatSettings, type ThirdPartyProviderConfig } from '@/types';
 import { API_KEY_LAST_USED_INDEX_KEY } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
 import { isThirdPartyApiActive } from './thirdPartyApiActive';
@@ -25,6 +25,7 @@ type GetKeyForRequestOptions = {
   skipIncrement?: boolean;
   skipUsageLogging?: boolean;
   apiMode?: ApiKeyRequestMode;
+  provider?: ThirdPartyProviderConfig;
 };
 
 const resolveApiKeyRequestMode = (appSettings: AppSettings, apiMode: ApiKeyRequestMode = 'active') => {
@@ -37,7 +38,7 @@ const resolveApiKeyRequestMode = (appSettings: AppSettings, apiMode: ApiKeyReque
 
 const getActiveApiConfig = (
   appSettings: AppSettings,
-  apiMode: ApiKeyRequestMode = 'active',
+  options: GetKeyForRequestOptions = {},
 ): { apiKeysString: string | null } => {
   const importEnv = (
     import.meta as ImportMeta & {
@@ -48,10 +49,10 @@ const getActiveApiConfig = (
     }
   ).env;
 
-  if (resolveApiKeyRequestMode(appSettings, apiMode) === 'third-party') {
-    const activeProvider = getThirdPartyProviderConfig(appSettings);
-    const envFallback = activeProvider.protocol === 'openai-compatible' ? importEnv?.VITE_OPENAI_API_KEY : null;
-    return { apiKeysString: activeProvider.apiKey || envFallback || null };
+  if (resolveApiKeyRequestMode(appSettings, options.apiMode) === 'third-party') {
+    const provider = options.provider ?? getThirdPartyProviderConfig(appSettings);
+    const envFallback = provider.protocol === 'openai-compatible' ? importEnv?.VITE_OPENAI_API_KEY : null;
+    return { apiKeysString: provider.apiKey || envFallback || null };
   }
 
   if (appSettings.useCustomApiConfig) {
@@ -89,7 +90,7 @@ export const getKeyForRequest = (
     }
   };
 
-  const { apiKeysString } = getActiveApiConfig(appSettings, options.apiMode);
+  const { apiKeysString } = getActiveApiConfig(appSettings, options);
   if (!apiKeysString) {
     if (shouldUseServerManagedMarker) {
       return { key: SERVER_MANAGED_API_KEY, isNewKey: false };

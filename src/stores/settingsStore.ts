@@ -9,6 +9,7 @@ import { migrateRemovedModelId } from '@/constants/modelConfiguration';
 import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/model/modelSorting';
 import { dbService } from '@/services/db/dbService';
 import { normalizeLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
+import { sanitizeThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { type ConcreteThemeId } from '@/utils/themeMode';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 import { CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';
@@ -114,6 +115,19 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
       settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
     liveTranslateEchoTargetLanguage:
       settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
+    // Sanitize the third-party provider map on every load and save path: it is
+    // otherwise spread verbatim, so a persisted record missing a provider entry
+    // (or carrying a non-boolean enabled / wrong protocol) would silently fall
+    // back to defaults and then be permanently overwritten on the next panel
+    // edit. sanitizeThirdPartyApiSettings backfills missing providers, coerces
+    // enabled to a strict boolean, validates protocol, dedupes models, and
+    // folds legacy openaiCompatible* fields into providers.openai.
+    thirdPartyApi: sanitizeThirdPartyApiSettings(settings.thirdPartyApi, {
+      apiKey: settings.openaiCompatibleApiKey,
+      baseUrl: settings.openaiCompatibleBaseUrl,
+      modelId: settings.openaiCompatibleModelId,
+      models: openaiCompatibleModels,
+    }),
   };
 }
 

@@ -13,6 +13,11 @@ import {
   releaseSessionLoadingForGenerationHandoff,
   unregisterActiveGenerationJob,
 } from '@/features/message-sender/activeGenerationJobs';
+import { isGenerationLeaseHeldByOther } from '@/features/message-sender/generationLease';
+import { broadcastSyncMessage } from '@/stores/chatSyncChannel';
+import { TAB_ID } from '@/stores/tabIdentity';
+import { abortServerStreamJob } from '@/features/stream-jobs/streamAbort';
+import { clearPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 
 type CommandedInputSetter = Dispatch<SetStateAction<InputCommand | null>>;
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
@@ -59,10 +64,14 @@ export const useMessageActions = ({
   handleSendMessage,
   setSessionLoading,
 }: MessageActionsProps) => {
+  /**
+   * @returns `stopped` when a local job was aborted; `no_local_job` when loading is remote/orphan
+   * (and a cross-tab abort was requested); `not_loading` when nothing to stop.
+   */
   const handleStopGenerating = useCallback(
-    (options: { silent?: boolean; skipLoadingUpdate?: boolean } = {}) => {
+    (options: { silent?: boolean; skipLoadingUpdate?: boolean } = {}): 'stopped' | 'no_local_job' | 'not_loading' => {
       const { silent = false, skipLoadingUpdate = false } = options;
-      if (!activeSessionId || !isLoading) return;
+      if (!activeSessionId || !isLoading) return 'not_loading';
 
       const loadingMessage = messages.find((message) => message.isLoading);
       if (loadingMessage) {
@@ -74,6 +83,12 @@ export const useMessageActions = ({
             `User stopped generation for session ${activeSessionId}, job ${generationId}. Silent: ${silent}`,
           );
           controller.abort();
+
+          // Also ask the api container to abort the upstream Gemini
+          // connection (the stream journal keeps the upstream alive across
+          // browser disconnects). Fire-and-forget; the local abort drives UI.
+          void abortServerStreamJob(generationId);
+          clearPendingStreamJob(activeSessionId);
 
           if (!silent) {
             updateAndPersistSessions((prev) =>
@@ -96,22 +111,30 @@ export const useMessageActions = ({
             holdSessionLoadingForGenerationHandoff(activeJobs, activeSessionId);
             unregisterActiveGenerationJob(activeJobs, generationId);
           }
-        } else {
-          logService.error(
-            `Could not find active job to stop for generationId: ${generationId}. Leaving other active jobs untouched.`,
-          );
+          return 'stopped';
         }
-      } else {
-        logService.warn(
-          `handleStopGenerating called for session ${activeSessionId}, but no loading message was found. Leaving other active jobs untouched.`,
-        );
 
-        if (!skipLoadingUpdate) {
-          if (!hasActiveGenerationJobForSession(activeJobs, activeSessionId)) {
-            setSessionLoading(activeSessionId, false);
-          }
-        }
+        logService.error(
+          `Could not find active job to stop for generationId: ${generationId}. Requesting cross-tab abort.`,
+        );
+        broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+        return 'no_local_job';
       }
+
+      logService.warn(
+        `handleStopGenerating called for session ${activeSessionId}, but no loading message was found. Leaving other active jobs untouched.`,
+      );
+
+      if (hasActiveGenerationJobForSession(activeJobs, activeSessionId)) {
+        return 'stopped';
+      }
+
+      // Remote tab is loading (synced isLoading) without a local job.
+      broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+      if (!skipLoadingUpdate) {
+        setSessionLoading(activeSessionId, false);
+      }
+      return 'no_local_job';
     },
     [activeSessionId, isLoading, messages, activeJobs, updateAndPersistSessions, setSessionLoading],
   );
@@ -210,7 +233,19 @@ export const useMessageActions = ({
       if (isLoading) {
         // Stop current generation but keep the session marked as "loading" in UI state
         // because we are about to immediately restart it. This prevents UI flicker.
-        handleStopGenerating({ silent: true, skipLoadingUpdate: true });
+        const stopResult = handleStopGenerating({ silent: true, skipLoadingUpdate: true });
+        if (stopResult === 'no_local_job' || isGenerationLeaseHeldByOther(activeSessionId)) {
+          logService.warn('Retry blocked: generation is owned by another tab', {
+            sessionId: activeSessionId,
+            stopResult,
+          });
+          setAppFileError('This chat is generating in another tab. Stop it there first, or wait for it to finish.');
+          return;
+        }
+      } else if (isGenerationLeaseHeldByOther(activeSessionId)) {
+        logService.warn('Retry blocked: generation lease held by another tab', { sessionId: activeSessionId });
+        setAppFileError('This chat is generating in another tab. Stop it there first, or wait for it to finish.');
+        return;
       }
 
       try {
@@ -229,7 +264,16 @@ export const useMessageActions = ({
         }
       }
     },
-    [activeSessionId, messages, isLoading, handleStopGenerating, handleSendMessage, activeJobs, setSessionLoading],
+    [
+      activeSessionId,
+      messages,
+      isLoading,
+      handleStopGenerating,
+      handleSendMessage,
+      activeJobs,
+      setSessionLoading,
+      setAppFileError,
+    ],
   );
 
   const handleRetryLastTurn = useCallback(async () => {
@@ -273,7 +317,18 @@ export const useMessageActions = ({
       logService.info('User requested Continue Generation', { messageId });
 
       if (isLoading) {
-        handleStopGenerating({ silent: true });
+        const stopResult = handleStopGenerating({ silent: true });
+        if (stopResult === 'no_local_job' || isGenerationLeaseHeldByOther(activeSessionId)) {
+          logService.warn('Continue blocked: generation is owned by another tab', {
+            sessionId: activeSessionId,
+            stopResult,
+          });
+          setAppFileError('This chat is generating in another tab. Stop it there first, or wait for it to finish.');
+          return;
+        }
+      } else if (isGenerationLeaseHeldByOther(activeSessionId)) {
+        setAppFileError('This chat is generating in another tab. Stop it there first, or wait for it to finish.');
+        return;
       }
 
       // IMPORTANT: Ensure UI input is cleared/reset when continuing, to avoid "prefilling" input box

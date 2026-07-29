@@ -23,6 +23,7 @@ describe('getKeyForRequest', () => {
 
   const chatSettings: ChatSettings = {
     modelId: 'gemini-2.5-flash-preview-09-2025',
+    apiMode: 'gemini-native',
     temperature: 1,
     topP: 0.95,
     topK: 64,
@@ -112,6 +113,29 @@ describe('getKeyForRequest', () => {
       key: 'openai-key',
       isNewKey: true,
     });
+  });
+
+  it('uses the session-resolved provider key instead of the global active provider key', () => {
+    const providers = DEFAULT_APP_SETTINGS.thirdPartyApi.providers;
+    const result = getKeyForRequest(
+      {
+        ...DEFAULT_APP_SETTINGS,
+        isThirdPartyApiEnabled: true,
+        apiMode: 'gemini-native',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...providers,
+            openai: { ...providers.openai, apiKey: 'openai-key', enabled: true },
+            kimi: { ...providers.kimi, apiKey: 'kimi-key', enabled: true },
+          },
+        },
+      },
+      chatSettings,
+      { apiMode: 'third-party', provider: { ...providers.kimi, apiKey: 'kimi-key', enabled: true } },
+    );
+
+    expect(result).toEqual({ key: 'kimi-key', isNewKey: true });
   });
 
   it('reports a missing key for third-party mode when the active provider has none', () => {
@@ -234,8 +258,8 @@ describe('getKeyForRequest', () => {
     const anthropicProvider = {
       apiKey: 'sk-ant-test',
       baseUrl: 'https://api.anthropic.com',
-      modelId: 'claude-sonnet-4-6',
-      models: [{ id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', isPinned: true }],
+      modelId: 'claude-sonnet-5',
+      models: [{ id: 'claude-sonnet-5', name: 'Claude Sonnet 5', isPinned: true }],
       protocol: 'anthropic' as const,
     };
     const result = getKeyForRequest(

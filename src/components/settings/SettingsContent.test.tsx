@@ -111,7 +111,7 @@ vi.mock('./sections/ModelsSection', () => ({
         >
           select gemini
         </button>
-        <button data-testid="select-openai-model" onClick={() => props.setModelId('gpt-5.5', 'openai-compatible')}>
+        <button data-testid="select-openai-model" onClick={() => props.setModelId('gpt-5.6-sol', 'openai-compatible')}>
           select openai
         </button>
       </>
@@ -340,7 +340,7 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             isOpenAICompatibleApiEnabled: false,
-            openaiCompatibleModels: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+            openaiCompatibleModels: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
           }}
           availableModels={[{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }]}
           updateSetting={vi.fn()}
@@ -384,9 +384,9 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
+              modelId: 'gpt-5.6-sol',
               models: [
-                { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+                { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
                 { id: 'gpt-4.1', name: 'GPT-4.1' },
               ],
             }),
@@ -444,8 +444,8 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
-              models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
             }),
             modelId: 'gemini-3-flash-preview',
           }}
@@ -488,9 +488,9 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
+              modelId: 'gpt-5.6-sol',
               models: [
-                { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+                { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
                 { id: 'gpt-4.1', name: 'GPT-4.1' },
               ],
             }),
@@ -518,7 +518,7 @@ describe('SettingsContent', () => {
 
     expect(mockShortcutsSection.lastProps!.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true, apiMode: 'third-party' },
       { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party' },
     ]);
   });

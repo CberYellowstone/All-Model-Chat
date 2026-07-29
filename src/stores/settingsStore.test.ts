@@ -128,8 +128,8 @@ describe('settingsStore', () => {
       expect(appSettings.openaiCompatibleApiKey).toBeNull();
       expect(appSettings.openaiCompatibleBaseUrl).toBe('https://api.openai.com/v1');
       expect(appSettings.modelId).toBe('gemini-3.6-flash');
-      expect(appSettings.openaiCompatibleModelId).toBe('gpt-5.5');
-      expect(appSettings.openaiCompatibleModels).toEqual([{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]);
+      expect(appSettings.openaiCompatibleModelId).toBe('gpt-5.6-sol');
+      expect(appSettings.openaiCompatibleModels).toEqual([{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }]);
     });
 
     it('provides English as the default input translation target language', async () => {
@@ -296,6 +296,92 @@ describe('settingsStore', () => {
       const state = useSettingsStore.getState();
       expect(state.appSettings.modelId).toBe('gemini-2.5-flash-preview-09-2025');
       expect(state.appSettings.transcriptionModelId).toBe('gemini-2.5-flash-lite-preview-09-2025');
+    });
+
+    it('sanitizes thirdPartyApi: backfills a provider missing from persisted data', async () => {
+      // Persisted record references deepseek as active but the providers map is
+      // missing the deepseek entry entirely (old version / hand-edited data).
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          thirdPartyApi: {
+            activeProvider: 'deepseek',
+            providers: {
+              openai: {
+                apiKey: 'sk-openai',
+                baseUrl: 'https://api.openai.com/v1',
+                modelId: 'gpt-5.6-sol',
+                models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' }],
+                protocol: 'openai-compatible',
+                enabled: true,
+              },
+            } as unknown as AppSettings['thirdPartyApi']['providers'],
+          } as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const { thirdPartyApi } = useSettingsStore.getState().appSettings;
+      // deepseek entry is backfilled with defaults instead of disappearing.
+      expect(thirdPartyApi.providers.deepseek).toBeDefined();
+      expect(thirdPartyApi.providers.deepseek.baseUrl).toBe('https://api.deepseek.com');
+      expect(thirdPartyApi.providers.deepseek.protocol).toBe('openai-compatible');
+      // The active provider survives.
+      expect(thirdPartyApi.activeProvider).toBe('deepseek');
+    });
+
+    it('sanitizes thirdPartyApi: folds legacy openaiCompatible* fields into providers.openai', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          openaiCompatibleApiKey: 'sk-legacy',
+          openaiCompatibleBaseUrl: 'https://legacy.example.com/v1',
+          openaiCompatibleModelId: 'legacy-gpt',
+          openaiCompatibleModels: [{ id: 'legacy-gpt', name: 'Legacy GPT' }],
+          thirdPartyApi: undefined as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const openai = useSettingsStore.getState().appSettings.thirdPartyApi.providers.openai;
+      expect(openai.apiKey).toBe('sk-legacy');
+      expect(openai.baseUrl).toBe('https://legacy.example.com/v1');
+      expect(openai.modelId).toBe('legacy-gpt');
+      expect(openai.models.some((model) => model.id === 'legacy-gpt')).toBe(true);
+    });
+
+    it('sanitizes thirdPartyApi: coerces protocol/enabled and dedupes models', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          thirdPartyApi: {
+            activeProvider: 'anthropic',
+            providers: {
+              anthropic: {
+                apiKey: 'sk-anthropic',
+                baseUrl: 'https://api.anthropic.com',
+                modelId: 'claude-fable-5',
+                models: [
+                  { id: 'claude-fable-5', name: 'Claude Fable 5' },
+                  { id: 'claude-fable-5', name: 'Claude Fable 5' }, // duplicate
+                ],
+                protocol:
+                  'invalid-protocol' as unknown as AppSettings['thirdPartyApi']['providers']['anthropic']['protocol'],
+                enabled: 'yes' as unknown as boolean,
+              },
+            } as unknown as AppSettings['thirdPartyApi']['providers'],
+          } as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const anthropic = useSettingsStore.getState().appSettings.thirdPartyApi.providers.anthropic;
+      // Invalid protocol falls back to the provider default (anthropic).
+      expect(anthropic.protocol).toBe('anthropic');
+      // Non-strict-boolean enabled coerces to false (only === true stays true).
+      expect(anthropic.enabled).toBe(false);
+      // Duplicate models deduped.
+      expect(anthropic.models.filter((model) => model.id === 'claude-fable-5')).toHaveLength(1);
     });
   });
 

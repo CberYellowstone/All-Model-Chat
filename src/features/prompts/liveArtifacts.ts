@@ -21,9 +21,9 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
    - 丰富档（对比、流程、数据、代码审查）：照「丰富档黄金范例」的结构与质感；先结论后支撑；区块 ≤6。
 4. 根容器用 display:block;width:100%;box-sizing:border-box;max-width:100%;overflow-wrap:anywhere；它只负责布局、宽度和响应式，背景保持透明，不要默认给根容器加可见背景、边框、圆角或阴影；内部才按语义分组用卡片/hero。主标题 <h2>，子层级 <h3>；同级标题字号必须一致。继承 Live Artifacts 基础字号；正文/标签用 em、inherit 或 var(--amc-live-artifact-font-size)，避免写死大量 px 字号。grid：minmax(0,1fr) 或 minmax(min(100%,12em),1fr)；禁止 minmax(Npx,1fr)。表格、公式块、宽内容外层 overflow-x:auto；img/svg max-width:100%;height:auto。
 5. 主题变量（勿写死色值）。**文字**：var(--amc-live-artifact-text|muted|subtle|accent|success|danger|warning)——subtle 仅作更弱辅助字。**边框（方案 B）**：默认结构边框一律 var(--amc-live-artifact-border)，禁止用 subtle/muted 当 border 色；表格线、分隔、时间线竖线只用 border token。**允许语义描边**仅：状态标签、语义卡片、强调框左边条——border/border-left 可用 accent|success|warning|danger；禁止彩色边框用于普通表格格线。**背景填充**：var(--amc-live-artifact-surface|surface-muted|accent-surface|success-surface|danger-surface|warning-surface)。标签/徽章：background 用 *-surface，color 用对应文字色；禁止把 accent/success/danger/warning/subtle 当 background。首屏原则：结论放前 3 行。强调克制：正文/表格单元格默认 text；语义色仅用于状态标签、callout、短标签、进度条填充；禁止大段正文上色。callout ≤1；状态标签 ≤6；同区块一种语义色。交互按钮/链接保持 accent。
-6. 单次响应中 interaction JSON 块与 HTML 产物二选一：需先收集选择、偏好、参数、筛选条件、截止日期、强度/数量或下一步方向时，只输出一个 \`\`\`amc-live-artifact-interaction 代码块（JSON 至少 "instruction" 和 "schema"），不要混排 HTML 或解释。信息已够则只出 HTML，禁止半表单半结果。HTML 内部仍可带 data-amc-followup 按钮（见 SHOULD）。字段 type：string/number/integer/boolean 或 type: "array"；textarea；滑块 number/integer + format: "range" + minimum/maximum；日期 format: "date"；多选 type: "array" 且 items.enum。示例：
+6. 单次响应中 interaction JSON 块与 HTML 产物二选一：需先收集选择、偏好、参数、筛选条件、截止日期、强度/数量或下一步方向时，只输出一个 \`\`\`amc-live-artifact-interaction 代码块（JSON 至少 "instruction" 和 "schema"），不要混排 HTML 或解释。信息已够则只出 HTML，禁止半表单半结果。HTML 内部仍可带 data-amc-followup 按钮（见 SHOULD）。字段 type：string/number/integer/boolean；多选 type: "array" 且必须提供 items，items 必须同时含 "type"（string/number/integer/boolean）与 "enum"。textarea；滑块 number/integer + format: "range" + minimum/maximum；日期 format: "date"。示例：
 \`\`\`amc-live-artifact-interaction
-{"instruction":"按选择继续","submitLabel":"提交","schema":{"type":"object","required":["choice"],"properties":{"choice":{"type":"string","title":"方向","enum":["A","B"]}}}}
+{"instruction":"按选择继续","submitLabel":"提交","schema":{"type":"object","required":["choice","scope"],"properties":{"choice":{"type":"string","title":"方向","enum":["A","B"]},"scope":{"type":"array","title":"范围（多选）","items":{"type":"string","enum":["X","Y","Z"]}}}}}
 \`\`\`
 
 ## 设计基准
@@ -135,7 +135,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 - 字段 key 仅用 ASCII 字母、数字、_ . -（1–80 字符），禁止中文 key
 - instruction ≤ 2000 字符；title ≤ 500；description ≤ 2000；submitLabel ≤ 120
 - 字段数 1–24；enum 1–50 项；enum 值类型必须与 type 一致（number/integer 的 enum 必须是 JSON 数字，integer 必须为整数）
-- type: "array" 必须有 items.enum，default 必须为其子集
+- type: "array" 必须有 items.type 与 items.enum（items.type 限 string/number/integer/boolean）；default 必须为 items.enum 的子集
 - format：textarea/date 仅用于 string；range 仅用于 number/integer 且 minimum ≤ maximum
 ### B) follow-up 提交（HTML 按钮或 native 表单）
 - instruction ≤ 2000；title/source ≤ 500；state 序列化后 ≤ 6000 字符
@@ -164,9 +164,9 @@ Artifacts must look like carefully designed modern SaaS UI (Linear / Stripe / Gi
    - Rich tier (comparison, process, data, code review): match structure and polish of the Rich-tier golden example; conclusion first, then supporting points; ≤6 blocks.
 4. The top-level element must be the inline HTML root container and use display:block;width:100%;box-sizing:border-box;max-width:100%;overflow-wrap:anywhere; it only handles layout, width, and responsiveness, so keep backgrounds transparent and do not add visible background, border, radius, or shadow on the root by default; use internal cards/hero only when semantic grouping needs them. Use <h2> top-level and <h3> child sections; same-level headings must share one font-size. Typography should inherit the Live Artifacts base font size; prefer em, inherit, or var(--amc-live-artifact-font-size); avoid many fixed px sizes. Grid tracks: minmax(0,1fr) or minmax(min(100%,12em),1fr); never minmax(Npx,1fr). Wrap tables, formula blocks, and wide content in overflow-x:auto; img/svg max-width:100%;height:auto.
 5. Theme tokens only (no hard-coded theme colors). **Text:** var(--amc-live-artifact-text|muted|subtle|accent|success|danger|warning)—subtle is weaker helper text only. **Borders (option B):** structural borders always var(--amc-live-artifact-border); never use subtle/muted as border color; table lines, dividers, timeline rails use the border token only. **Semantic borders allowed only for:** status tags, semantic cards, and callout left bars—those may use accent|success|warning|danger for border/border-left; never color ordinary table cell borders. **Background fills:** var(--amc-live-artifact-surface|surface-muted|accent-surface|success-surface|danger-surface|warning-surface). Tags/badges: background *-surface + matching text color. Never use accent/success/danger/warning/subtle as background. Above-the-fold: put the key conclusion in the first 3 lines. Restraint: Body/table cells default to text; semantic colors only for status tags, callouts, short labels, progress fills; never color long body paragraphs. ≤1 callout; ≤6 status tags; one semantic color per block. Keep interactive buttons/links on accent.
-6. In a single response, interaction JSON and HTML output are mutually exclusive: for choices, preferences, parameters, filters, dates, intensity/quantity, or next-step direction, emit only one \`\`\`amc-live-artifact-interaction JSON block with "instruction" and "schema"; do not mix in HTML or explanations. When enough info exists, HTML only—never half form, half result. HTML may still include data-amc-followup buttons (see SHOULD). Fields: string, number, integer, boolean, or type: "array"; textarea; sliders number/integer + format: "range" + minimum/maximum; dates format: "date"; multi-select type: "array" with items.enum. Example:
+6. In a single response, interaction JSON and HTML output are mutually exclusive: for choices, preferences, parameters, filters, dates, intensity/quantity, or next-step direction, emit only one \`\`\`amc-live-artifact-interaction JSON block with "instruction" and "schema"; do not mix in HTML or explanations. When enough info exists, HTML only—never half form, half result. HTML may still include data-amc-followup buttons (see SHOULD). Fields: string, number, integer, boolean; multi-select type: "array" requires items containing BOTH "type" (string/number/integer/boolean) and "enum". textarea; sliders number/integer + format: "range" + minimum/maximum; dates format: "date". Example:
 \`\`\`amc-live-artifact-interaction
-{"instruction":"Continue from the choice","submitLabel":"Submit","schema":{"type":"object","required":["choice"],"properties":{"choice":{"type":"string","title":"Direction","enum":["A","B"]}}}}
+{"instruction":"Continue from the choice","submitLabel":"Submit","schema":{"type":"object","required":["choice","scope"],"properties":{"choice":{"type":"string","title":"Direction","enum":["A","B"]},"scope":{"type":"array","title":"Scope (multi-select)","items":{"type":"string","enum":["X","Y","Z"]}}}}}
 \`\`\`
 
 ## Design baseline
@@ -278,7 +278,7 @@ Artifacts must look like carefully designed modern SaaS UI (Linear / Stripe / Gi
 - Field keys: ASCII letters, digits, _ . - only (1–80 chars); no non-ASCII/Chinese keys
 - instruction ≤ 2000 chars; title ≤ 500; description ≤ 2000; submitLabel ≤ 120
 - 1–24 fields; enum 1–50 items; enum value types must match type (number/integer enums must be JSON numbers; integer values must be integers)
-- type: "array" requires items.enum; default must be a subset of items.enum
+- type: "array" requires items.type AND items.enum (items.type ∈ string/number/integer/boolean); default must be a subset of items.enum
 - format: textarea/date only on string; range only on number/integer with minimum ≤ maximum
 ### B) follow-up submit (HTML button or native form)
 - instruction ≤ 2000; title/source ≤ 500; state serialized ≤ 6000 chars

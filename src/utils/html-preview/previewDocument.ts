@@ -311,47 +311,39 @@ export const buildStreamingHtmlPreviewSrcDoc = (options: { baseFontSize?: number
 };
 
 /**
- * Build an unrestricted HTML preview srcDoc for the preview modal.
- * No sanitization, permissive CSP - allows all external resources.
+ * Build an unrestricted HTML preview srcDoc for the **code-block** preview
+ * window (modal + side panel only).
+ *
+ * Intentionally does NOT apply:
+ * - HTML sanitization (scripts/iframes/event handlers kept)
+ * - Preview CSP meta (no resource blocking)
+ * - Live-artifact theme shell (no height/background/color overrides)
+ * - KaTeX rewrite (avoids mangling literal `$` content)
+ *
+ * Live Artifacts (message bubbles) must keep using `buildHtmlPreviewSrcDoc`.
  */
 export const buildUnrestrictedHtmlPreviewSrcDoc = (
   htmlContent: string,
-  options: { baseFontSize?: number; themeId?: string } = {},
+  _options: { baseFontSize?: number; themeId?: string } = {},
 ): string => {
-  const UNRESTRICTED_CSP = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; object-src *";
-
   if (!htmlContent) {
-    const srcDoc = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
-    return renderPreviewMath(
-      injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId),
-    );
+    return `<!DOCTYPE html><html><head></head><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
   }
 
-  // No sanitization - inject bridge script and permissive CSP
   let srcDoc = htmlContent;
 
-  // Inject CSP
-  if (/<head\b[^>]*>/i.test(srcDoc)) {
-    srcDoc = srcDoc.replace(
-      /<head\b[^>]*>/i,
-      (headTag) => `${headTag}<meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}">`,
-    );
-  } else if (/<html\b[^>]*>/i.test(srcDoc)) {
-    srcDoc = srcDoc.replace(
-      /<html\b[^>]*>/i,
-      (htmlTag) => `${htmlTag}<head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head>`,
-    );
-  } else {
-    srcDoc = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="${UNRESTRICTED_CSP}"></head><body>${srcDoc}</body></html>`;
+  // Wrap fragments so the browser has a full document; do not rewrite existing markup.
+  if (!/<html[\s>]/i.test(srcDoc)) {
+    srcDoc = `<!DOCTYPE html><html><head></head><body>${srcDoc}</body></html>`;
   }
 
-  // Inject bridge script
-  srcDoc = srcDoc.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
+  if (/<\/body>/i.test(srcDoc)) {
+    srcDoc = srcDoc.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
+  } else {
+    srcDoc = `${srcDoc}${PREVIEW_BRIDGE_SCRIPT}`;
+  }
 
-  // Apply theme and math rendering, but skip the strict CSP injection
-  return renderPreviewMath(
-    injectPreviewTheme(injectPreviewBaseFontSize(srcDoc, options.baseFontSize), options.themeId),
-  );
+  return srcDoc;
 };
 
 export const createStaticPreviewSnapshotContainer = (

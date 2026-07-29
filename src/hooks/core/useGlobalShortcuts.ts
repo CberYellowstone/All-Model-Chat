@@ -5,11 +5,7 @@ import type { AppSettings, ChatSettings, ModelOption } from '@/types';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
 import { getTabCycleModelIds } from '@/utils/model/modelCatalog';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import {
-  buildProviderAwareModelList,
-  getThirdPartyProviderConfig,
-  updateActiveThirdPartyProviderConfig,
-} from '@/utils/thirdPartyApiProviders';
+import { buildProviderAwareModelList, getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
 
 interface UseGlobalShortcutsProps {
   appSettings: AppSettings;
@@ -118,25 +114,6 @@ export const useGlobalShortcuts = ({
           const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % cycleModels.length;
           const newModelId = cycleModels[nextIndex];
           if (newModelId) {
-            const targetModel = tabCycleModels.find((model) => model.id === newModelId);
-            if (appSettings.isThirdPartyApiEnabled === true && targetModel?.apiMode === 'third-party') {
-              setAppSettings((prev) => ({
-                ...prev,
-                apiMode: 'third-party',
-                isThirdPartyApiEnabled: true,
-                thirdPartyApi: updateActiveThirdPartyProviderConfig(prev.thirdPartyApi, {
-                  modelId: newModelId,
-                }),
-              }));
-              return;
-            }
-
-            if (isThirdPartyMode) {
-              setAppSettings((prev) => ({
-                ...prev,
-                apiMode: 'gemini-native',
-              }));
-            }
             handleSelectModelInHeader(newModelId);
           }
         }

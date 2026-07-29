@@ -12,8 +12,7 @@ import { logService } from '@/services/logService';
 import { formatApiKeyErrorMessage } from '@/utils/apiKeySelection';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { getModelCapabilities } from '@/utils/model/modelCapabilities';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderModelId } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 
 import { ensureFilesApiReferences, formatFileReferenceErrorMessage } from './fileApiReference';
 import { sendImageEditMessage } from './imageEditStrategy';
@@ -25,6 +24,7 @@ import { sendTtsMessage } from './ttsStrategy';
 import { useChatStreamHandler } from './useChatStreamHandler';
 import { useMessageLifecycle } from './useMessageLifecycle';
 import { useModelRequestRunner } from './useModelRequestRunner';
+import { useStreamResume } from './useStreamResume';
 
 interface MessageSenderProps {
   appSettings: AppSettings;
@@ -77,6 +77,13 @@ export const useMessageSender = (props: MessageSenderProps) => {
     activeJobs,
   });
 
+  const { resumePendingStream } = useStreamResume({
+    appSettings,
+    getStreamHandlers,
+    activeJobs,
+    sessionKeyMapRef,
+  });
+
   const { runMessageLifecycle } = useMessageLifecycle({
     updateAndPersistSessions,
     setSessionLoading,
@@ -107,10 +114,8 @@ export const useMessageSender = (props: MessageSenderProps) => {
       const isFastMode = overrideOptions?.isFastMode ?? false;
 
       const sessionToUpdate = overrideOptions?.settingsOverride ?? currentChatSettings;
-      const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
-      const activeModelId = isOpenAICompatibleMode
-        ? getThirdPartyProviderModelId(appSettings)
-        : sessionToUpdate.modelId;
+      const apiRoute = resolveChatApiRoute(appSettings, sessionToUpdate);
+      const activeModelId = apiRoute.modelId;
       const capabilities = getModelCapabilities(activeModelId);
       const isTtsModel = capabilities.isTtsModel;
       const isImageEditModel = capabilities.isFlashImageModel;
@@ -154,6 +159,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
         isContinueMode && effectiveEditingId ? messages.find((message) => message.id === effectiveEditingId) : null;
       const request = prepareModelRequest({
         activeModelId,
+        apiRoute,
         files: filesToUse,
         keySettings: sessionToUpdate,
         generationId: continueTargetMessage ? (effectiveEditingId ?? undefined) : undefined,
@@ -169,20 +175,21 @@ export const useMessageSender = (props: MessageSenderProps) => {
         return;
       }
       const { keyToUse, shouldLockKey, generationId, abortController: newAbortController } = request;
-      const fileReferenceResult = isOpenAICompatibleMode
-        ? prepareFilesForOpenAICompatibleMode(filesToUse)
-        : await ensureFilesApiReferences({
-            files: filesToUse,
-            apiKey: keyToUse,
-            abortSignal: newAbortController.signal,
-            onFileUpdate: (fileId, patch) => {
-              if (overrideOptions?.files !== undefined) {
-                return;
-              }
+      const fileReferenceResult =
+        apiRoute.apiMode === 'third-party'
+          ? prepareFilesForOpenAICompatibleMode(filesToUse)
+          : await ensureFilesApiReferences({
+              files: filesToUse,
+              apiKey: keyToUse,
+              abortSignal: newAbortController.signal,
+              onFileUpdate: (fileId, patch) => {
+                if (overrideOptions?.files !== undefined) {
+                  return;
+                }
 
-              setSelectedFiles((prev) => prev.map((file) => (file.id === fileId ? { ...file, ...patch } : file)));
-            },
-          });
+                setSelectedFiles((prev) => prev.map((file) => (file.id === fileId ? { ...file, ...patch } : file)));
+              },
+            });
 
       if (!fileReferenceResult.ok) {
         setAppFileError(formatFileReferenceErrorMessage(fileReferenceResult, t));
@@ -297,5 +304,5 @@ export const useMessageSender = (props: MessageSenderProps) => {
     ],
   );
 
-  return { handleSendMessage };
+  return { handleSendMessage, resumePendingStream };
 };

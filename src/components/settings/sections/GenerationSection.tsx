@@ -43,6 +43,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
   const topK = currentSettings.topK ?? 64;
   const isRawModeEnabled = currentSettings.isRawModeEnabled ?? false;
   const hideThinkingInContext = currentSettings.hideThinkingInContext ?? false;
+  const alwaysKeepThinkingInContext = currentSettings.alwaysKeepThinkingInContext ?? false;
   const isAdvancedModeEnabled = useSettingsUiStore((state) => state.isAdvancedModeEnabled);
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
   const [isSystemPromptExpanded, setIsSystemPromptExpanded] = useState(false);
@@ -316,8 +317,20 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
                 <ToggleItem
                   label={t('settingsHideThinkingInContextLabel')}
                   checked={hideThinkingInContext}
-                  onChange={(value) => onUpdateSetting('hideThinkingInContext', value)}
+                  onChange={(value) => {
+                    onUpdateSetting('hideThinkingInContext', value);
+                    if (value) onUpdateSetting('alwaysKeepThinkingInContext', false);
+                  }}
                   tooltip={t('settingsHideThinkingInContextTooltip')}
+                />
+                <ToggleItem
+                  label={t('settingsAlwaysKeepThinkingInContextLabel')}
+                  checked={alwaysKeepThinkingInContext}
+                  onChange={(value) => {
+                    onUpdateSetting('alwaysKeepThinkingInContext', value);
+                    if (value) onUpdateSetting('hideThinkingInContext', false);
+                  }}
+                  tooltip={t('settingsAlwaysKeepThinkingInContextTooltip')}
                 />
               </div>
             )}

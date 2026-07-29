@@ -3,7 +3,7 @@ import { type ChatHistoryItem, type StreamMessageSender, type NonStreamMessageSe
 import { logService } from '@/services/logService';
 import { executeConfiguredApiRequest } from './apiExecutor';
 import { adaptGenAiResponse, mergeGroundingMetadata, type MetadataWithCitations } from './chatResponseAdapter';
-import { getHttpOptionsForContents } from './geminiApiVersion';
+import { getHttpOptionsForContents, withHttpOptionHeaders } from './geminiApiVersion';
 
 const withAbortSignal = <T extends object>(
   config: T | undefined,
@@ -74,6 +74,10 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
   onError,
   onComplete,
   role = 'user',
+  // Gemini-native calls ignore providerId; the param exists only so the shared
+  // StreamMessageSender signature matches the OpenAI/Anthropic senders.
+  _providerId,
+  streamResume,
 ) => {
   logService.info(`Sending message via stateless generateContentStream for ${modelId} (Role: ${role})`);
   let finalUsageMetadata: UsageMetadata | undefined = undefined;
@@ -81,12 +85,21 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
   let finalUrlContextMetadata: unknown = null;
   const contents = [...history, { role, parts }];
 
+  // Stream-journal resume: stamp x-amc-job-id / x-amc-last-seq on the request
+  // so the api container replays the buffered upstream from this cursor.
+  const resumeHeaders = streamResume
+    ? {
+        'x-amc-job-id': streamResume.jobId,
+        'x-amc-last-seq': String(streamResume.lastSeq),
+      }
+    : undefined;
+
   try {
     await executeConfiguredApiRequest({
       apiKey,
       label: `Sending message via stateless generateContentStream for ${modelId} (Role: ${role})`,
       errorLabel: 'Error sending message (stream):',
-      httpOptions: getHttpOptionsForContents(contents),
+      httpOptions: withHttpOptionHeaders(getHttpOptionsForContents(contents), resumeHeaders),
       run: async ({ client: ai }) => {
         if (abortSignal.aborted) {
           logService.warn('Streaming aborted by signal before start.');
@@ -102,6 +115,7 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
           ),
         });
 
+        let resumeSeq = streamResume?.lastSeq ?? 0;
         for await (const chunkResponse of result) {
           if (abortSignal.aborted) {
             logService.warn('Streaming aborted by signal.');
@@ -121,6 +135,13 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
           }
           for (const part of adaptedChunk.parts) {
             onPart(part);
+          }
+          // Each streamed chunk from the SDK maps to one journal event on the
+          // wire (the proxy splits on \n\n). Advance the cursor so a future
+          // resume picks up at the next boundary.
+          if (streamResume?.onSeq) {
+            resumeSeq += 1;
+            streamResume.onSeq(resumeSeq);
           }
         }
       },
@@ -145,6 +166,7 @@ export const sendStatelessMessageNonStreamApi: NonStreamMessageSender = async (
   onError,
   onComplete,
   role = 'user',
+  _providerId,
 ) => {
   logService.info(`Sending message via stateless generateContent (non-stream) for model ${modelId}`);
   const contents = [...history, { role, parts }];

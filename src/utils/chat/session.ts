@@ -9,6 +9,7 @@ import { generateUniqueId } from './ids';
 import { base64ToBlob, blobToBase64 } from '@/utils/file/fileEncoding';
 import { getVisibleChatMessages } from './visibility';
 import { createManagedObjectUrl, releaseManagedObjectUrlsByOwner } from '@/services/objectUrlManager';
+import { TAB_ID } from '@/stores/tabIdentity';
 
 const logSessionWarning = (message: string, data?: unknown) => {
   console.warn(`[session] ${message}`, data);
@@ -45,6 +46,7 @@ export const createNewSession = (
   settings,
   timestamp: Date.now(),
   groupId,
+  createdTabId: TAB_ID,
 });
 
 export const cloneMessagesWithFreshIds = (messages: ChatMessage[]): ChatMessage[] => {

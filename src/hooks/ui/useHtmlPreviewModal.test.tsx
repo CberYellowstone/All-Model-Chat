@@ -71,6 +71,41 @@ describe('useHtmlPreviewModal', () => {
     unmount();
   });
 
+  it('accepts ready messages from same-origin unrestricted previews', () => {
+    const iframe = document.createElement('iframe');
+    const contentWindowStub = {} as Window;
+    Object.defineProperty(iframe, 'contentWindow', {
+      value: contentWindowStub,
+      configurable: true,
+    });
+    const iframeRef = { current: iframe } as RefObject<HTMLIFrameElement>;
+
+    const { result, unmount } = renderHook(
+      () =>
+        useHtmlPreviewModal({
+          isOpen: true,
+          onClose: vi.fn(),
+          htmlContent: '<html><body>Hello</body></html>',
+          iframeRef,
+        }),
+      { attachToDocument: true, wrapper: HtmlPreviewWrapper },
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { channel: HTML_PREVIEW_MESSAGE_CHANNEL, event: 'ready' },
+          origin: window.location.origin,
+          source: contentWindowStub,
+        }),
+      );
+    });
+
+    expect(result.current.isPreviewReady).toBe(true);
+
+    unmount();
+  });
+
   it('closes the preview when the sandboxed iframe reports Escape', () => {
     const onClose = vi.fn();
     const iframe = document.createElement('iframe');

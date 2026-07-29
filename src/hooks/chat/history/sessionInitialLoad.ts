@@ -11,6 +11,7 @@ import {
   sanitizeSessionModel,
   sortSessionsByPinnedAndTimestamp,
 } from './sessionLoaderSettings';
+import { TAB_ID } from '@/stores/tabIdentity';
 
 type SessionLoaderHistoryOptions = Pick<SetActiveSessionOptions, 'history'>;
 
@@ -33,7 +34,7 @@ const inheritAppSystemInstructionForEmptySession = (
   appSettings: AppSettings,
   savedSessions: SavedChatSession[],
 ): { session: SavedChatSession; settingsChanged: boolean } => {
-  if (session.messages.length > 0 || session.settings.systemInstruction?.trim()) {
+  if (session.messages.length > 0 || session.settings.systemInstruction?.trim() || session.createdTabId !== TAB_ID) {
     return { session, settingsChanged: false };
   }
 
@@ -94,6 +95,7 @@ const mergeLoadedSessionMetadata = (
     return {
       ...session,
       ...existing,
+      createdTabId: existing.createdTabId || session.createdTabId,
       settings: {
         ...session.settings,
         ...existing.settings,
@@ -146,7 +148,12 @@ export const loadInitialSessionData = async ({
 
       if (mostRecent) {
         const fullSession = await dbService.getSession(mostRecent.id);
-        if (fullSession && fullSession.messages.length === 0 && !fullSession.settings.systemInstruction) {
+        if (
+          fullSession &&
+          fullSession.messages.length === 0 &&
+          !fullSession.settings.systemInstruction &&
+          (fullSession.createdTabId === TAB_ID || !fullSession.createdTabId)
+        ) {
           logService.info(`Reusing empty recent session: ${mostRecent.id}`);
           const rehydratedBase = rehydrateSessionFiles(sanitizeSessionModel(fullSession));
           const { session: rehydrated, settingsChanged } = inheritAppSystemInstructionForEmptySession(

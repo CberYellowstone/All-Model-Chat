@@ -54,6 +54,55 @@ describe('useMessageActions', () => {
     unmount();
   });
 
+  it('blocks retry when loading is owned by another tab (no local job)', async () => {
+    const handleSendMessage = vi.fn();
+    const setAppFileError = vi.fn();
+    const activeJobs = { current: new Map<string, AbortController>() };
+    const messages: ChatMessage[] = [
+      {
+        id: 'user-1',
+        role: 'user',
+        content: 'retry this',
+        timestamp: new Date('2026-05-01T00:00:00.000Z'),
+      },
+      {
+        id: 'model-1',
+        role: 'model',
+        content: 'partial',
+        isLoading: true,
+        timestamp: new Date('2026-05-01T00:00:01.000Z'),
+      },
+    ];
+
+    const { result, unmount } = renderHook(() =>
+      useMessageActions({
+        messages,
+        isLoading: true,
+        activeSessionId: 'session-current',
+        editingMessageId: null,
+        activeJobs,
+        setCommandedInput: vi.fn(),
+        setSelectedFiles: vi.fn(),
+        setEditingMessageId: vi.fn(),
+        setEditMode: vi.fn(),
+        setAppFileError,
+        updateAndPersistSessions: vi.fn(),
+        setActiveSessionId: vi.fn(),
+        userScrolledUpRef: { current: false },
+        handleSendMessage,
+        setSessionLoading: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleRetryMessage('model-1');
+    });
+
+    expect(handleSendMessage).not.toHaveBeenCalled();
+    expect(setAppFileError).toHaveBeenCalledWith(expect.stringContaining('another tab'));
+    unmount();
+  });
+
   it('keeps the input in stop mode while retry hands off from the aborted generation to the replacement', async () => {
     const setSessionLoading = vi.fn();
     const activeJobs = { current: new Map<string, AbortController>() };

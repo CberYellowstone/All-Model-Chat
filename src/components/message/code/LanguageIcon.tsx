@@ -36,31 +36,34 @@ type LanguageBadgeEntry = Omit<LanguageBadgeConfig, 'iconId'> & {
   iconId?: string;
 };
 
-const TextGlyph: React.FC<{ label: string; className: string }> = ({ label, className }) => (
-  <span
-    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] px-1 text-xs font-black uppercase tracking-[0.12em] ${className}`}
-    aria-hidden="true"
-  >
-    {label}
-  </span>
-);
+const TextGlyph: React.FC<{ label: string; className: string }> = ({ label, className }) => {
+  const isCompact = label.length >= 3;
+  return (
+    <span
+      className={`inline-flex h-5 min-w-5 items-center justify-center overflow-hidden rounded-[5px] font-black uppercase ${
+        isCompact ? 'px-1 text-[9px] tracking-[0.04em]' : 'px-1 text-xs tracking-[0.08em]'
+      } ${className}`}
+      aria-hidden="true"
+    >
+      {label}
+    </span>
+  );
+};
 
 const normalizeLanguage = (language: string) => language.trim().toLowerCase();
 const LANGUAGE_ICON_SIZE = 20;
-const STROKE_LANGUAGE_ICON_SIZE = 18;
 
 const LANGUAGE_BADGE_ENTRIES = [
   {
     aliases: ['py', 'py3', 'python'],
     badgeId: 'python',
     displayName: 'Python',
-    renderIcon: () => <IconPython size={LANGUAGE_ICON_SIZE} className="text-[#4f8ff7]" color="currentColor" />,
+    renderIcon: () => <IconPython size={LANGUAGE_ICON_SIZE} />,
   },
   {
     aliases: ['tsx'],
     badgeId: 'tsx',
-    displayName: 'TypeScript React',
-    compactLabel: 'TSX',
+    displayName: 'TSX',
     renderIcon: () => <IconTypeScript size={LANGUAGE_ICON_SIZE} />,
   },
   {
@@ -79,9 +82,8 @@ const LANGUAGE_BADGE_ENTRIES = [
     aliases: ['jsx', 'react'],
     badgeId: 'jsx',
     iconId: 'react',
-    displayName: 'React JSX',
-    compactLabel: 'JSX',
-    renderIcon: () => <Atom size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-[#61dafb]" />,
+    displayName: 'React',
+    renderIcon: () => <Atom size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-[#61dafb]" />,
   },
   {
     aliases: ['html', 'htm'],
@@ -171,7 +173,7 @@ const LANGUAGE_BADGE_ENTRIES = [
     aliases: ['json', 'json5'],
     badgeId: 'json',
     displayName: 'JSON',
-    renderIcon: () => <FileJson size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-yellow-500" />,
+    renderIcon: () => <FileJson size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-yellow-500" />,
   },
   {
     aliases: ['sql', 'mysql', 'postgres', 'postgresql', 'sqlite', 'plsql'],
@@ -252,9 +254,10 @@ const getLanguageBadgeConfig = (language: string): LanguageBadgeConfig => {
     return {
       badgeId: lang,
       iconId: lang,
-      displayName: lang === 'dot' ? 'Graphviz DOT' : lang === 'graphviz' ? 'Graphviz' : 'Mermaid',
-      compactLabel: lang === 'mermaid' ? 'MMD' : 'DOT',
-      renderIcon: () => <Workflow size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-pink-400" />,
+      // graphviz keeps a meaningful "tool + format" pair; others are a single label
+      displayName: lang === 'dot' ? 'DOT' : lang === 'graphviz' ? 'Graphviz' : 'Mermaid',
+      compactLabel: lang === 'graphviz' ? 'DOT' : undefined,
+      renderIcon: () => <Workflow size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-pink-400" />,
     };
   }
 
@@ -262,10 +265,9 @@ const getLanguageBadgeConfig = (language: string): LanguageBadgeConfig => {
     return {
       badgeId: lang,
       iconId: 'text',
-      displayName: lang === 'md' ? 'Markdown' : lang.toUpperCase(),
-      compactLabel: lang === 'markdown' ? 'MD' : undefined,
+      displayName: lang === 'md' || lang === 'markdown' ? 'Markdown' : lang.toUpperCase(),
       renderIcon: () => (
-        <FileText size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-[var(--theme-text-secondary)]" />
+        <FileText size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-[var(--theme-text-secondary)]" />
       ),
     };
   }
@@ -275,7 +277,7 @@ const getLanguageBadgeConfig = (language: string): LanguageBadgeConfig => {
       badgeId: lang,
       iconId: 'braces',
       displayName: lang.toUpperCase(),
-      renderIcon: () => <Braces size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-violet-400" />,
+      renderIcon: () => <Braces size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-violet-400" />,
     };
   }
 
@@ -283,7 +285,7 @@ const getLanguageBadgeConfig = (language: string): LanguageBadgeConfig => {
     badgeId: lang,
     iconId: 'generic',
     displayName: lang,
-    renderIcon: () => <FileCode2 size={STROKE_LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-gray-400" />,
+    renderIcon: () => <FileCode2 size={LANGUAGE_ICON_SIZE} strokeWidth={2.1} className="text-gray-400" />,
   };
 };
 
@@ -298,7 +300,7 @@ export const LanguageIcon: React.FC<{ language: string }> = ({ language }) => {
     >
       <span
         data-language-icon={config.iconId}
-        className="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center"
+        className="inline-flex h-5 flex-shrink-0 items-center justify-center"
         aria-hidden="true"
       >
         {config.renderIcon()}

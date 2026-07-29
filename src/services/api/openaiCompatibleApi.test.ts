@@ -93,7 +93,7 @@ describe('openaiCompatibleApi', () => {
 
     await sendOpenAICompatibleMessageNonStream(
       'api-key',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       [],
       [{ fileData: { mimeType: 'image/png', fileUri: 'files/abc' } }],
       {
@@ -302,7 +302,7 @@ describe('openaiCompatibleApi', () => {
 
     await sendOpenAICompatibleMessageStream(
       'api-key',
-      'glm-5.1',
+      'glm-5.2',
       [],
       [{ text: 'think then answer' }],
       { baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },

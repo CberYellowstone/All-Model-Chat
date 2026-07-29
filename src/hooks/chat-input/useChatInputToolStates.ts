@@ -18,9 +18,10 @@ const TOOL_SETTING_KEYS: Record<ToggleableChatToolId, ChatToolSettingKey> = {
   codeExecution: 'isCodeExecutionEnabled',
   localPython: 'isLocalPythonEnabled',
   urlContext: 'isUrlContextEnabled',
+  alwaysKeepThinking: 'alwaysKeepThinkingInContext',
 };
 
-const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: ToggleableChatToolId): ChatSettings => {
+export const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: ToggleableChatToolId): ChatSettings => {
   if (toolId === 'codeExecution') {
     return {
       ...settings,
@@ -52,6 +53,17 @@ const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Toggleable
       ...settings,
       isGoogleMapsEnabled: !settings.isGoogleMapsEnabled,
       isGoogleSearchEnabled: !settings.isGoogleMapsEnabled ? false : settings.isGoogleSearchEnabled,
+    };
+  }
+
+  // alwaysKeepThinking and hideThinkingInContext are mutually exclusive — keeping
+  // the model's prior thinking in context only makes sense when it isn't being
+  // collapsed out of history. Mirrors the two-way mutex in GenerationSection.
+  if (toolId === 'alwaysKeepThinking') {
+    return {
+      ...settings,
+      alwaysKeepThinkingInContext: !settings.alwaysKeepThinkingInContext,
+      hideThinkingInContext: !settings.alwaysKeepThinkingInContext ? false : settings.hideThinkingInContext,
     };
   }
 
@@ -106,6 +118,10 @@ export const useChatInputToolStates = ({
       urlContext: {
         isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isUrlContextEnabled,
         onToggle: createToggle('urlContext'),
+      },
+      alwaysKeepThinking: {
+        isEnabled: !!currentChatSettings.alwaysKeepThinkingInContext,
+        onToggle: createToggle('alwaysKeepThinking'),
       },
     }),
     [createToggle, currentChatSettings, isOpenAICompatibleMode],

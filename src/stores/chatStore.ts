@@ -11,6 +11,7 @@ import { logService } from '@/services/logService';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
 import { syncActiveSessionRoute, type SessionHistoryMode } from './sessionRouteSync';
 import { broadcastSyncMessage } from './chatSyncChannel';
+import { TAB_ID } from './tabIdentity';
 import { sanitizeSessionModel, sortSessionsInPlace } from './sessionModels';
 import {
   updateMessageInSession as updateMessageInSessions,
@@ -185,7 +186,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       };
     });
 
-    broadcastSyncMessage({ type: 'SESSION_LOADING', sessionId, isLoading });
+    broadcastSyncMessage({
+      type: 'SESSION_LOADING',
+      sessionId,
+      isLoading,
+      originId: TAB_ID,
+      ts: Date.now(),
+    });
   },
 
   getFileOperationGeneration: () => _fileOperationGeneration,
@@ -308,4 +315,5 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 setupChatStoreSync({
   store: useChatStore,
   localLoadingSessionIds: _localLoadingSessionIds,
+  activeJobs: _activeJobs,
 });

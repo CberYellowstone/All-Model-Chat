@@ -9,6 +9,7 @@ import {
   normalizeImageSizeForModel,
 } from '@/utils/model/modelCapabilities';
 import { getTranslator } from '@/i18n/translations';
+import { readPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 
 interface UseChatEffectsProps {
   activeSessionId: string | null;
@@ -28,6 +29,14 @@ interface UseChatEffectsProps {
   loadInitialData: () => Promise<void>;
   loadChatSession: (id: string) => void;
   startNewChat: () => void;
+  /** Resume a buffered upstream stream after a refresh (no-op when not on the Docker api container). */
+  resumePendingStream?: (target: {
+    sessionId: string;
+    generationId: string;
+    modelId: string;
+    startedAt: number;
+    sessionSettings?: ChatSettings;
+  }) => Promise<void>;
 }
 
 export const useChatEffects = ({
@@ -47,6 +56,7 @@ export const useChatEffects = ({
   loadInitialData,
   loadChatSession,
   startNewChat,
+  resumePendingStream,
 }: UseChatEffectsProps) => {
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   // Guard against re-running initial load when loadInitialData/startNewChat identities
@@ -181,4 +191,52 @@ export const useChatEffects = ({
       prevModelIdRef.current = modelId;
     }
   }, [currentChatSettings.modelId, aspectRatio, imageSize, setAspectRatio, setImageSize]);
+
+  // Resume an in-flight stream after a page refresh: if the api container is
+  // still buffering the upstream under a pending job, reattach the stream
+  // handlers and replay from the last seq. Runs once per active session load.
+  const resumedSessionsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!hasLoadedInitialData || !activeSessionId || !resumePendingStream) {
+      return;
+    }
+    if (resumedSessionsRef.current.has(activeSessionId)) {
+      return;
+    }
+
+    const pending = readPendingStreamJob(activeSessionId);
+    if (!pending) {
+      return;
+    }
+
+    // Only resume when the loaded session still shows the generation as in
+    // flight; otherwise the job already completed (or was persisted done) and
+    // resuming would replay a finished stream.
+    const session = savedSessions.find((candidate) => candidate.id === activeSessionId);
+    const loadingMessage = session?.messages.find(
+      (message) => message.id === pending.generationId && message.isLoading,
+    );
+    if (!loadingMessage) {
+      resumedSessionsRef.current.add(activeSessionId);
+      return;
+    }
+
+    resumedSessionsRef.current.add(activeSessionId);
+    logService.info('Resuming buffered stream after page load.', {
+      sessionId: activeSessionId,
+      generationId: pending.generationId,
+      lastSeq: pending.lastSeq,
+    });
+
+    void resumePendingStream({
+      sessionId: activeSessionId,
+      generationId: pending.generationId,
+      modelId: session?.settings.modelId ?? currentChatSettings.modelId,
+      startedAt: pending.startedAt,
+      sessionSettings: session?.settings ?? currentChatSettings,
+    });
+    // currentChatSettings is read via sessionSettings fallback; listing it
+    // whole (not just .modelId) satisfies exhaustive-deps and keeps the resume
+    // re-evaluating when the active settings object changes.
+  }, [hasLoadedInitialData, activeSessionId, savedSessions, currentChatSettings, resumePendingStream]);
 };

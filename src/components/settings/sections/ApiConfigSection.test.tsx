@@ -228,7 +228,7 @@ describe('ApiConfigSection', () => {
         ...withOpenaiProvider({
           apiKey: 'openai-compatible-key',
           baseUrl: 'https://api.openai.com/v1',
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
         }),
       },
     });
@@ -244,7 +244,7 @@ describe('ApiConfigSection', () => {
     expect(getClientMock).not.toHaveBeenCalled();
     expect(sendOpenAICompatibleMessageNonStreamMock).toHaveBeenCalledWith(
       'openai-compatible-key',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       [],
       [{ text: 'Hello' }],
       {
@@ -307,9 +307,9 @@ describe('ApiConfigSection', () => {
       settings: {
         ...settingsFixture,
         ...withOpenaiProvider({
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
           models: [
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ],
         }),

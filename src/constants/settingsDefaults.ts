@@ -1,5 +1,12 @@
 import { getRuntimeConfigAppSettingsOverrides } from '@/runtime/runtimeConfig';
-import { MediaResolution, type AppSettings, type FilesApiConfig, type ModelOption, type ThinkingLevel } from '@/types';
+import {
+  MediaResolution,
+  type AppSettings,
+  type FilesApiConfig,
+  type ModelOption,
+  type ThinkingLevel,
+  type ApiMode,
+} from '@/types';
 import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL } from '@/utils/apiProxyUrl';
 import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { DEFAULT_THEME_ID } from './themeRegistry';
@@ -26,9 +33,9 @@ const DEFAULT_BASE_FONT_SIZE = 16;
 const DEFAULT_LIVE_ARTIFACTS_CUSTOM_FONT_SIZE = 16;
 const DEFAULT_IS_AUDIO_COMPRESSION_ENABLED = true;
 const DEFAULT_IS_OPENAI_COMPATIBLE_API_ENABLED = false;
-const DEFAULT_OPENAI_COMPATIBLE_MODEL_ID = 'gpt-5.5';
+const DEFAULT_OPENAI_COMPATIBLE_MODEL_ID = 'gpt-5.6-sol';
 const DEFAULT_OPENAI_COMPATIBLE_MODELS: ModelOption[] = [
-  { id: DEFAULT_OPENAI_COMPATIBLE_MODEL_ID, name: 'GPT-5.5', isPinned: true },
+  { id: DEFAULT_OPENAI_COMPATIBLE_MODEL_ID, name: 'GPT-5.6 Sol', isPinned: true },
 ];
 const DEFAULT_MEDIA_RESOLUTION = MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED;
 
@@ -58,8 +65,12 @@ export const DEFAULT_CHAT_SETTINGS = {
   isDeepSearchEnabled: false,
   isRawModeEnabled: false,
   hideThinkingInContext: false,
+  alwaysKeepThinkingInContext: false,
   safetySettings: DEFAULT_SAFETY_SETTINGS,
   mediaResolution: DEFAULT_MEDIA_RESOLUTION,
+  apiMode: 'gemini-native' as ApiMode,
+  thirdPartyProviderId: undefined,
+  thirdPartyModelId: undefined,
 };
 
 const BASE_DEFAULT_APP_SETTINGS: AppSettings = {

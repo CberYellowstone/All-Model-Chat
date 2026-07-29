@@ -146,14 +146,15 @@ export const useHtmlPreviewModal = ({
         return;
       }
 
-      // SECURITY: the sandboxed iframe posts from the opaque origin "null".
-      // Reject messages from any other origin to prevent spoofing.
-      if (event.origin !== 'null') {
+      // Accept opaque-origin (no allow-same-origin) or same-origin posts from our iframe.
+      // Unrestricted code-block preview uses allow-same-origin so demos can use storage APIs.
+      const iframeWindow = iframeRef.current?.contentWindow;
+      if (!iframeWindow || event.source !== iframeWindow) {
         return;
       }
 
-      const iframeWindow = iframeRef.current?.contentWindow;
-      if (iframeWindow && event.source !== iframeWindow) {
+      const allowedOrigin = event.origin === 'null' || event.origin === targetWindow.location.origin;
+      if (!allowedOrigin) {
         return;
       }
 

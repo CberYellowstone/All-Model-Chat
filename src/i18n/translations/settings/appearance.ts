@@ -134,5 +134,10 @@ const appearanceSettings = {
     en: 'Collapse raw reasoning in the UI and remove it from future API context to save tokens.',
     zh: '在界面中折叠原始推理内容，并在后续 API 上下文中省略它以节省 Token。',
   },
+  settingsAlwaysKeepThinkingInContextLabel: { en: 'Always Keep Reasoning in Context', zh: '始终保留思维链' },
+  settingsAlwaysKeepThinkingInContextTooltip: {
+    en: 'Replay the full reasoning text of prior turns in every follow-up API request so the model keeps its earlier reasoning. Mutually exclusive with the option above. Significantly increases token usage and context length.',
+    zh: '将每一轮的完整推理文本回放进后续每一次 API 请求，让模型保留此前的推理。与上方选项互斥。会显著增加 Token 消耗与上下文长度。',
+  },
 };
 export default appearanceSettings;

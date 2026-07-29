@@ -84,6 +84,17 @@ describe('getModelCapabilities', () => {
     expect(capabilities.supportsThinkingLevel).toBe(true);
   });
 
+  it('marks third-party reasoning models as supporting thinking levels', () => {
+    expect(getModelCapabilities('gpt-5.6-sol').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('kimi-k3').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('claude-sonnet-5').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('claude-opus-5').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('claude-fable-5').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('glm-5.2').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('gpt-4o-mini').supportsThinkingLevel).toBe(false);
+    expect(getModelCapabilities('claude-haiku-4-5').supportsThinkingLevel).toBe(false);
+  });
+
   it('exposes raw reasoning prefill support as a model capability', () => {
     expect(getModelCapabilities('gemini-3-flash-preview').supportsRawReasoningPrefill).toBe(true);
     expect(getModelCapabilities('gemini-3.6-flash').supportsRawReasoningPrefill).toBe(true);
@@ -175,6 +186,22 @@ describe('shouldStripThinkingFromContext', () => {
 
   it('honors the explicit strip toggle for non-Gemma models', () => {
     expect(shouldStripThinkingFromContext('gemini-3-flash-preview', true)).toBe(true);
+  });
+
+  it('forces no stripping when alwaysKeepThinkingInContext is true (overrides Gemma default)', () => {
+    expect(shouldStripThinkingFromContext('gemma-4-31b-it', false, true)).toBe(false);
+  });
+
+  it('alwaysKeep wins over hideThinkingInContext', () => {
+    expect(shouldStripThinkingFromContext('gemini-3-flash-preview', true, true)).toBe(false);
+  });
+
+  it('falls back to hide behavior when alwaysKeep is false', () => {
+    expect(shouldStripThinkingFromContext('gemini-3-flash-preview', true, false)).toBe(true);
+  });
+
+  it('falls back to Gemma default when alwaysKeep is undefined', () => {
+    expect(shouldStripThinkingFromContext('gemma-4-31b-it', false, undefined)).toBe(true);
   });
 });
 

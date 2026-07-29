@@ -59,6 +59,21 @@ describe('chat tool registry', () => {
         capabilities: gemmaCapabilities,
         hasLocalPythonHandler: true,
       }).map((tool) => tool.id),
-    ).toEqual(['deepSearch', 'googleSearch', 'googleMaps', 'localPython', 'tokenCount']);
+    ).toEqual(['deepSearch', 'googleSearch', 'googleMaps', 'localPython', 'alwaysKeepThinking', 'tokenCount']);
+  });
+
+  it('hides the keep-thinking tool on Live, TTS, and image-generation models', () => {
+    const liveCapabilities = getModelCapabilities('gemini-3.1-flash-live-preview');
+    const geminiImageCapabilities = getModelCapabilities('gemini-3.1-flash-image-preview');
+    const gemmaCapabilities = getModelCapabilities('gemma-3-27b-it');
+
+    const idsFor = (capabilities: ReturnType<typeof getModelCapabilities>) =>
+      getChatToolsForSurface({ surface: 'tools-menu', capabilities, hasLocalPythonHandler: true }).map(
+        (tool) => tool.id,
+      );
+
+    expect(idsFor(liveCapabilities)).not.toContain('alwaysKeepThinking');
+    expect(idsFor(geminiImageCapabilities)).not.toContain('alwaysKeepThinking');
+    expect(idsFor(gemmaCapabilities)).toContain('alwaysKeepThinking');
   });
 });

@@ -11,6 +11,7 @@ import {
   Calculator,
   AlertTriangle,
   MapPin,
+  Brain,
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconPython } from '@/components/icons';
@@ -73,7 +74,8 @@ const isToggleableToolId = (id: ChatToolId): id is ToggleableChatToolId =>
   id === 'googleMaps' ||
   id === 'codeExecution' ||
   id === 'localPython' ||
-  id === 'urlContext';
+  id === 'urlContext' ||
+  id === 'alwaysKeepThinking';
 
 const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
   switch (icon) {
@@ -91,6 +93,8 @@ const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
       return <Link size={size} strokeWidth={2} />;
     case 'calculator':
       return <Calculator size={size} strokeWidth={2} />;
+    case 'brain':
+      return <Brain size={size} strokeWidth={2} />;
   }
 };
 

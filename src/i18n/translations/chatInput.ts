@@ -118,6 +118,8 @@ export const chatInputTranslations = {
   },
   urlContextLabel: { en: 'URL Context', zh: 'URL 上下文' },
   urlContextShort: { en: 'URL', zh: 'URL' },
+  alwaysKeepThinkingLabel: { en: 'Keep Thinking in Context', zh: '保留思维链' },
+  alwaysKeepThinkingShort: { en: 'Keep', zh: '思维链' },
   toolsTokenCountLabel: { en: 'Token Calculator', zh: 'Token 计算器' },
   tokenCountResult: { en: 'Estimated Tokens: {count}', zh: '预估 Token 数：{count}' },
   tokenCountError: { en: 'Failed to count tokens.', zh: '计算 Token 失败。' },

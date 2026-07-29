@@ -8,6 +8,7 @@ import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasse
 import { Z_INDEX_SIDE_PANEL_MOBILE, Z_INDEX_TOPMOST_OVERLAY } from '@/constants/layout';
 import { useI18n } from '@/contexts/I18nContext';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
+import { buildUnrestrictedHtmlPreviewSrcDoc } from '@/utils/html-preview/previewDocument';
 
 interface PanelTabButtonProps {
   activeTab: 'code' | 'preview';
@@ -127,11 +128,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
           <iframe
             ref={iframeRef}
             className="w-full h-full border-0 block"
-            // SECURITY: Keep allow-same-origin off to prevent access to localStorage/parent DOM.
-            // Allow downloads from rendered HTML previews.
-            sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+            // Match the code-block preview modal: unrestricted rendering (not Live Artifacts).
+            sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-same-origin allow-popups-to-escape-sandbox allow-presentation allow-pointer-lock allow-top-navigation-by-user-activation"
             title={t('sidePanelLivePreview')}
-            srcDoc={debouncedCode}
+            srcDoc={buildUnrestrictedHtmlPreviewSrcDoc(debouncedCode)}
           />
         </div>
       );

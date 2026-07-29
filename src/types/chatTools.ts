@@ -7,11 +7,12 @@ export type ChatToolId =
   | 'codeExecution'
   | 'localPython'
   | 'urlContext'
+  | 'alwaysKeepThinking'
   | 'tokenCount';
 
 export type ToggleableChatToolId = Extract<
   ChatToolId,
-  'deepSearch' | 'googleSearch' | 'googleMaps' | 'codeExecution' | 'localPython' | 'urlContext'
+  'deepSearch' | 'googleSearch' | 'googleMaps' | 'codeExecution' | 'localPython' | 'urlContext' | 'alwaysKeepThinking'
 >;
 
 export interface ChatToolToggleState {
@@ -33,4 +34,5 @@ export type ChatToolSettingKey = Extract<
   | 'isCodeExecutionEnabled'
   | 'isLocalPythonEnabled'
   | 'isUrlContextEnabled'
+  | 'alwaysKeepThinkingInContext'
 >;

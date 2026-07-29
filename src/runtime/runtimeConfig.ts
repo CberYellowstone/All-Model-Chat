@@ -1,6 +1,13 @@
 import type { AppSettings } from '@/types';
 
-type RuntimeConfigKey = 'serverManagedApi' | 'useCustomApiConfig' | 'useApiProxy' | 'apiProxyUrl' | 'pyodideBaseUrl';
+type RuntimeConfigKey =
+  | 'serverManagedApi'
+  | 'useCustomApiConfig'
+  | 'useApiProxy'
+  | 'apiProxyUrl'
+  | 'liveApiBaseUrl'
+  | 'thirdPartyProxyUrl'
+  | 'pyodideBaseUrl';
 
 type RuntimeConfigShape = Partial<Record<RuntimeConfigKey, unknown>>;
 
@@ -47,6 +54,24 @@ function getRuntimeConfig(): RuntimeConfigShape | undefined {
 
 export function getPyodideBaseUrl(): string | null {
   return readNullableString(getRuntimeConfig()?.pyodideBaseUrl) ?? null;
+}
+
+/**
+ * Live API WS proxy base URL injected by the Docker web container
+ * (RUNTIME_LIVE_API_BASE_URL). Returns null in static/Pages deploys so the
+ * frontend falls back to a direct browser WS connection.
+ */
+export function getLiveApiProxyBaseUrl(): string | null {
+  return readNullableString(getRuntimeConfig()?.liveApiBaseUrl) ?? null;
+}
+
+/**
+ * Third-party (OpenAI-compatible / Anthropic) HTTP proxy base URL injected by
+ * the Docker web container (RUNTIME_THIRD_PARTY_PROXY_URL). Returns null in
+ * static/Pages deploys so the frontend falls back to direct browser requests.
+ */
+export function getThirdPartyProxyBaseUrl(): string | null {
+  return readNullableString(getRuntimeConfig()?.thirdPartyProxyUrl) ?? null;
 }
 
 export function getRuntimeConfigAppSettingsOverrides(): Partial<

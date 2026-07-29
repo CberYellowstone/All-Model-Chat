@@ -9,6 +9,7 @@ export const IconHtml5: React.FC<IconProps> = ({ size = defaultSize, className }
     fill="none"
     className={className}
     xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
   >
     <path fill="#E34F26" d="M71,460 L30,0 481,0 440,460 255,512" />
     <path fill="#EF652A" d="M256,472 L405,431 440,37 256,37" />
@@ -332,7 +333,7 @@ export const IconPython: React.FC<IconProps> = ({ size = defaultSize, className 
     <svg
       width={size}
       height={size}
-      viewBox="0 0 110 140"
+      viewBox="-15 0 140 140"
       fill="none"
       className={className}
       xmlns="http://www.w3.org/2000/svg"

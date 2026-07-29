@@ -379,9 +379,9 @@ describe('useApp', () => {
           openai: {
             apiKey: null,
             baseUrl: thirdPartyDefaults.providers.openai.baseUrl,
-            modelId: 'gpt-5.5',
+            modelId: 'gpt-5.6-sol',
             models: [
-              { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+              { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
               { id: 'gpt-4.1', name: 'GPT-4.1' },
             ],
             protocol: 'openai-compatible',
@@ -394,14 +394,17 @@ describe('useApp', () => {
       ...hydratedSession,
       settings: {
         ...hydratedSession.settings,
-        modelId: 'gemini-3-flash-preview',
+        modelId: 'gpt-5.6-sol',
+        apiMode: 'third-party',
+        thirdPartyProviderId: 'openai',
+        thirdPartyModelId: 'gpt-5.6-sol',
       },
     };
     currentChatState.apiModels = [{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }];
 
     const { result, unmount } = renderHook(() => useApp());
 
-    expect(result.current.getCurrentModelDisplayName()).toBe('GPT-5.5');
+    expect(result.current.getCurrentModelDisplayName()).toBe('GPT-5.6 Sol');
 
     unmount();
   });

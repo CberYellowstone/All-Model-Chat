@@ -3,7 +3,7 @@ import type { ChatToolId, ChatToolSettingKey } from '@/types/chatTools';
 
 type ChatToolSurface = 'tools-menu' | 'slash-command';
 
-export type ChatToolIconKey = 'telescope' | 'globe' | 'map' | 'terminal' | 'python' | 'link' | 'calculator';
+export type ChatToolIconKey = 'telescope' | 'globe' | 'map' | 'terminal' | 'python' | 'link' | 'calculator' | 'brain';
 
 export interface ChatToolDefinition {
   id: ChatToolId;
@@ -84,6 +84,15 @@ const CHAT_TOOL_REGISTRY: ChatToolDefinition[] = [
     settingKey: 'isUrlContextEnabled',
     slashCommand: { name: 'url', descriptionKey: 'helpCmdUrl', icon: 'url' },
     isAvailable: ({ capabilities }) => capabilities.permissions.canUseUrlContext,
+  },
+  {
+    id: 'alwaysKeepThinking',
+    labelKey: 'alwaysKeepThinkingLabel',
+    shortLabelKey: 'alwaysKeepThinkingShort',
+    icon: 'brain',
+    settingKey: 'alwaysKeepThinkingInContext',
+    isAvailable: ({ capabilities }) =>
+      !capabilities.isNativeAudioModel && !capabilities.isTtsModel && !capabilities.isImageGenerationModel,
   },
   {
     id: 'tokenCount',

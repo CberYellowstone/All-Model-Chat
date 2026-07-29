@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import {
-  createPersistedStateStorage,
-  readPersistentStorageItem,
-  registerPersistedStoreSync,
-} from './persistentStorage';
+import { createPersistedStateStorage, readPersistentStorageItem } from './persistentStorage';
 
 export type SettingsTab = 'models' | 'interface' | 'api' | 'mcp' | 'data' | 'shortcuts' | 'about';
 export type SettingsTabDescriptor = { id: SettingsTab; labelKey: string };
@@ -122,7 +118,8 @@ export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
     }),
     {
       name: SETTINGS_UI_STORE_STORAGE_KEY,
-      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 150 })),
+      // Tab-private UI chrome (active tab, scroll, advanced toggle).
+      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 150, notifyUpdate: () => {} })),
       partialize: (state) => ({
         activeTab: state.activeTab,
         scrollPositions: state.scrollPositions,
@@ -131,5 +128,3 @@ export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
     },
   ),
 );
-
-registerPersistedStoreSync(useSettingsUiStore, SETTINGS_UI_STORE_STORAGE_KEY);

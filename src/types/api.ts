@@ -43,6 +43,11 @@ export type StreamMessageSender = (
   onError: (error: Error) => void,
   onComplete: StreamMessageCompleteHandler,
   role?: 'user' | 'model',
+  providerId?: string | null,
+  // Optional stream-journal resume context. When provided, the sender stamps
+  // x-amc-job-id / x-amc-last-seq headers so the api container can resume a
+  // buffered upstream instead of restarting it (see server/src/streamJobs.ts).
+  streamResume?: { jobId: string; lastSeq: number; onSeq?: (seq: number) => void },
 ) => Promise<void>;
 
 export type NonStreamMessageSender = (
@@ -55,6 +60,7 @@ export type NonStreamMessageSender = (
   onError: (error: Error) => void,
   onComplete: NonStreamMessageCompleteHandler,
   role?: 'user' | 'model',
+  providerId?: string | null,
 ) => Promise<void>;
 
 export interface LiveClientFunction {

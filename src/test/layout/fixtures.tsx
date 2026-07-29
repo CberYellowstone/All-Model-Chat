@@ -349,7 +349,10 @@ export const createChatRuntimeApp = (value: ChatAreaProviderValue): AppViewModel
       handleContinueGeneration: async (messageId: string) => value.messageList.onContinueGeneration(messageId),
       handleForkMessage: value.messageList.onForkMessage,
       handleQuickTTS: value.messageList.onQuickTTS,
-      handleStopGenerating: value.input.onStopGenerating,
+      handleStopGenerating: (() => {
+        value.input.onStopGenerating();
+        return 'not_loading' as const;
+      }) as (options?: { silent?: boolean; skipLoadingUpdate?: boolean }) => 'stopped' | 'no_local_job' | 'not_loading',
       handleCancelEdit: value.input.onCancelEdit,
       setCommandedInput: vi.fn(),
       handleProcessAndAddFiles: value.input.onProcessFiles,

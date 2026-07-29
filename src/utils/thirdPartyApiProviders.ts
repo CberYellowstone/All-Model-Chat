@@ -34,8 +34,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   openai: {
     apiKey: null,
     baseUrl: 'https://api.openai.com/v1',
-    modelId: 'gpt-5.5',
-    models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+    modelId: 'gpt-5.6-sol',
+    models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -56,8 +56,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     modelId: 'claude-fable-5',
     models: [
       { id: 'claude-fable-5', name: 'Claude Fable 5', isPinned: true },
-      { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
+      { id: 'claude-opus-5', name: 'Claude Opus 5' },
+      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5' },
       { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' },
     ],
     protocol: 'anthropic',
@@ -77,7 +77,7 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     modelId: 'qwen3.7-max',
     models: [
       { id: 'qwen3.7-max', name: 'Qwen3.7 Max', isPinned: true },
-      { id: 'qwen-plus', name: 'Qwen Plus' },
+      { id: 'qwen3.7-plus', name: 'Qwen3.7 Plus' },
     ],
     protocol: 'openai-compatible',
     enabled: false,
@@ -85,8 +85,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   kimi: {
     apiKey: null,
     baseUrl: 'https://api.moonshot.ai/v1',
-    modelId: 'kimi-k2.6',
-    models: [{ id: 'kimi-k2.6', name: 'Kimi K2.6', isPinned: true }],
+    modelId: 'kimi-k3',
+    models: [{ id: 'kimi-k3', name: 'Kimi K3', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -94,10 +94,7 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     apiKey: null,
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     modelId: 'glm-5.2',
-    models: [
-      { id: 'glm-5.2', name: 'GLM-5.2', isPinned: true },
-      { id: 'glm-5.1', name: 'GLM-5.1' },
-    ],
+    models: [{ id: 'glm-5.2', name: 'GLM-5.2', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -147,8 +144,10 @@ export const getThirdPartyProviderConfig = (settings: Pick<AppSettings, 'thirdPa
 export const getThirdPartyProviderModels = (settings: Pick<AppSettings, 'thirdPartyApi'>): ModelOption[] =>
   getThirdPartyProviderConfig(settings).models;
 
-export const getThirdPartyProviderModelId = (settings: Pick<AppSettings, 'thirdPartyApi'>): string =>
-  getThirdPartyProviderConfig(settings).modelId;
+export const getThirdPartyProviderModelId = (
+  settings: Pick<AppSettings, 'thirdPartyApi'>,
+  sessionModelId?: string,
+): string => sessionModelId ?? getThirdPartyProviderConfig(settings).modelId;
 
 /**
  * Returns all enabled third-party providers as { id, config } pairs.

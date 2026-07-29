@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getCorsHeaders, sendJson } from './cors.js';
+import { maybeStreamWithJob } from './streamJobs.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
 
@@ -30,6 +31,9 @@ export interface GeminiProxyConfig {
   geminiApiBase: string;
   geminiApiKey?: string;
   allowedOrigins: string[];
+  // When false (default): a browser-supplied x-goog-api-key wins, the server
+  // key is the fallback (BYOK 兜底). When true: the server key wins.
+  serverKeyPriority?: boolean;
 }
 
 function getConnectionManagedHeaders(value: string | null | undefined): Set<string> {
@@ -45,18 +49,23 @@ function getConnectionManagedHeaders(value: string | null | undefined): Set<stri
   );
 }
 
-function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string): string {
+function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string, serverKeyPriority = false): string {
   const trimmedServerApiKey = serverApiKey?.trim();
-  if (trimmedServerApiKey) {
+  const browserApiKeyHeader = request.headers['x-goog-api-key'];
+  const browserApiKey = Array.isArray(browserApiKeyHeader)
+    ? (browserApiKeyHeader[0]?.trim() ?? '')
+    : (browserApiKeyHeader?.trim() ?? '');
+
+  if (serverKeyPriority && trimmedServerApiKey) {
     return trimmedServerApiKey;
   }
 
-  const browserApiKey = request.headers['x-goog-api-key'];
-  if (Array.isArray(browserApiKey)) {
-    return browserApiKey[0]?.trim() ?? '';
+  // BYOK 兜底: a real browser key wins; otherwise fall back to the server key.
+  if (browserApiKey) {
+    return browserApiKey;
   }
 
-  return browserApiKey?.trim() ?? '';
+  return trimmedServerApiKey ?? '';
 }
 
 function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
@@ -114,7 +123,7 @@ export async function proxyGeminiRequest(
   config: GeminiProxyConfig,
   fetchImpl: typeof fetch,
 ): Promise<void> {
-  const apiKeyForProxy = resolveRequestApiKey(request, config.geminiApiKey);
+  const apiKeyForProxy = resolveRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
 
   if (!apiKeyForProxy) {
     sendJson(request, response, 500, { error: 'GEMINI_API_KEY is not configured.' }, config.allowedOrigins);
@@ -125,6 +134,23 @@ export async function proxyGeminiRequest(
   const upstreamPath = requestUrl.pathname.slice(GEMINI_PROXY_PREFIX.length) || '/';
   const targetBase = config.geminiApiBase.replace(/\/$/, '');
   const upstreamUrl = `${targetBase}${upstreamPath}${requestUrl.search}`;
+
+  // Stream journal: when the browser sends an x-amc-job-id header on a
+  // streamGenerateContent request, the upstream is buffered independently of
+  // the browser connection so a page refresh can resume from the last seq.
+  // No header → ordinary pass-through (today's behavior), fully reversible.
+  if (
+    await maybeStreamWithJob(request, response, upstreamPath, upstreamUrl, {
+      geminiApiBase: config.geminiApiBase,
+      geminiApiKey: config.geminiApiKey,
+      allowedOrigins: config.allowedOrigins,
+      serverKeyPriority: config.serverKeyPriority,
+      fetchImpl,
+    })
+  ) {
+    return;
+  }
+
   const method = request.method || 'GET';
   const hasBody = !['GET', 'HEAD'].includes(method);
   const abortController = new AbortController();

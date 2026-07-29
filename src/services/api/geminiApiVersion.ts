@@ -14,3 +14,19 @@ export const getHttpOptionsForContents = (contents: Array<{ parts?: Part[] }>): 
 
   return undefined;
 };
+
+// Merge an arbitrary set of extra HTTP headers (e.g. the stream-journal
+// x-amc-job-id / x-amc-last-seq) into an existing httpOptions object without
+// clobbering the apiVersion / baseUrl that media-resolution routing depends on.
+export const withHttpOptionHeaders = (
+  httpOptions: GeminiClientHttpOptions | undefined,
+  headers?: Record<string, string>,
+): GeminiClientHttpOptions | undefined => {
+  if (!headers || Object.keys(headers).length === 0) {
+    return httpOptions;
+  }
+  return {
+    ...(httpOptions ?? {}),
+    headers: { ...(httpOptions?.headers ?? {}), ...headers },
+  };
+};

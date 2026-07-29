@@ -3,7 +3,6 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   createPersistedStateStorage,
   readPersistentStorageItem,
-  registerPersistedStoreSync,
   removePersistentStorageItem,
 } from './persistentStorage';
 import { safeJsonParse } from '@/utils/safeJsonParse';
@@ -169,12 +168,12 @@ export const useChatDraftStore = create<ChatDraftState & ChatDraftActions>()(
     }),
     {
       name: CHAT_DRAFT_STORE_STORAGE_KEY,
-      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 300 })),
+      // Tab-private: persist for refresh recovery, but do not cross-tab rehydrate
+      // (would clobber in-progress input in other tabs).
+      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 300, notifyUpdate: () => {} })),
       partialize: (state) => ({
         drafts: pruneEmptyDrafts(state.drafts),
       }),
     },
   ),
 );
-
-registerPersistedStoreSync(useChatDraftStore, CHAT_DRAFT_STORE_STORAGE_KEY);

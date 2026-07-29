@@ -127,8 +127,12 @@ export interface ChatSettings {
   isDeepSearchEnabled?: boolean;
   isRawModeEnabled?: boolean;
   hideThinkingInContext?: boolean;
+  alwaysKeepThinkingInContext?: boolean;
   safetySettings?: SafetySetting[];
   mediaResolution?: MediaResolution;
+  apiMode: ApiMode;
+  thirdPartyProviderId?: ThirdPartyProviderId;
+  thirdPartyModelId?: string;
 }
 
 export type ChatSettingsUpdater = (updater: (prevSettings: ChatSettings) => ChatSettings) => void;

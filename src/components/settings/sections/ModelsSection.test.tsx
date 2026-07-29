@@ -341,7 +341,7 @@ describe('ModelsSection', () => {
     await renderModelsSection({
       availableModels: [
         { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-        { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+        { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'openai-compatible' },
       ],
     });
 
@@ -357,9 +357,9 @@ describe('ModelsSection', () => {
       currentSettings: {
         ...useSettingsStore.getState().appSettings,
         ...buildOpenaiProviderSettings({
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
           models: [
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ],
         }),
@@ -374,7 +374,7 @@ describe('ModelsSection', () => {
     const modelIdInputs = Array.from(
       modelSelector!.querySelectorAll<HTMLInputElement>('input[data-openai-compatible-model-id-input="true"]'),
     );
-    expect(modelIdInputs.map((input) => input.value)).toEqual(['gpt-5.5', 'gpt-4.1']);
+    expect(modelIdInputs.map((input) => input.value)).toEqual(['gpt-5.6-sol', 'gpt-4.1']);
 
     await act(async () => {
       const addButton = Array.from(renderer.container.querySelectorAll('button')).find((button) =>
@@ -403,7 +403,7 @@ describe('ModelsSection', () => {
 
     expect(thirdPartyUpdate).toBeDefined();
     expect(thirdPartyUpdate!.thirdPartyApi.providers.openai.models).toEqual([
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'gpt-4.1', name: 'GPT-4.1' },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
     ]);
@@ -412,7 +412,7 @@ describe('ModelsSection', () => {
   it('fetches active provider models from the models settings screen', async () => {
     const onUpdateSettings = vi.fn();
     fetchOpenAICompatibleModelsMock.mockResolvedValue([
-      { id: 'gpt-5.5', name: 'gpt-5.5' },
+      { id: 'gpt-5.6-sol', name: 'gpt-5.6-sol' },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
     ]);
 
@@ -423,7 +423,7 @@ describe('ModelsSection', () => {
           apiKey: 'openai-compatible-key',
           baseUrl: 'https://api.openai.com/v1',
           modelId: 'missing-model',
-          models: [{ id: 'gpt-5.5', name: 'My GPT', isPinned: true }],
+          models: [{ id: 'gpt-5.6-sol', name: 'My GPT', isPinned: true }],
         }),
       },
       onUpdateSettings,
@@ -447,6 +447,7 @@ describe('ModelsSection', () => {
         'openai-compatible-key',
         'https://api.openai.com/v1',
         expect.any(AbortSignal),
+        'openai',
       );
     });
 
@@ -474,7 +475,7 @@ describe('ModelsSection', () => {
 
     expect(thirdPartyFetchUpdate).toBeDefined();
     expect(thirdPartyFetchUpdate!.thirdPartyApi.providers.openai.models).toEqual([
-      { id: 'gpt-5.5', name: 'My GPT', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'My GPT', isPinned: true },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
     ]);
   });
@@ -482,12 +483,12 @@ describe('ModelsSection', () => {
   it('shows only GPT-compatible model and chat controls in OpenAI-compatible mode', async () => {
     const onUpdateSettings = vi.fn();
     const defaultModels = [
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'gpt-4.1', name: 'GPT-4.1' },
     ];
 
     await renderModelsSection({
-      modelId: 'gpt-5.5',
+      modelId: 'gpt-5.6-sol',
       availableModels: defaultModels,
       defaultModels,
       isOpenAICompatibleMode: true,

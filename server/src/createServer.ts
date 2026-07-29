@@ -1,5 +1,6 @@
 import http from 'node:http';
 import type { ApiServerConfig } from './config.js';
+import { type ThirdPartyProxyRoute } from './config.js';
 import {
   handleLocalClipboardImageRequest,
   LOCAL_CLIPBOARD_IMAGE_PATH,
@@ -12,6 +13,9 @@ import { IMAGE_PROXY_PATH, proxyExternalImage } from './imageProxy.js';
 import { createMcpClientBridge } from './mcpClient.js';
 import { handleMcpRequest } from './mcpRoutes.js';
 import type { McpClientBridge } from './mcpTypes.js';
+import { abortJob } from './streamJobs.js';
+import { STREAM_ABORT_PREFIX } from './streamJobsRoutes.js';
+import { OPENAI_PROXY_PREFIX, proxyThirdPartyRequest, type ThirdPartyProxyConfig } from './thirdPartyProxy.js';
 
 export { readMacOsClipboardPng } from './clipboardImage.js';
 
@@ -22,13 +26,40 @@ interface CreateServerDependencies {
 }
 
 type CreateServerConfig = Pick<ApiServerConfig, 'geminiApiBase' | 'geminiApiKey'> &
-  Partial<Pick<ApiServerConfig, 'allowedOrigins' | 'enableMcpStdio' | 'enableMcpPrivateHttp'>>;
+  Partial<
+    Pick<
+      ApiServerConfig,
+      | 'allowedOrigins'
+      | 'enableMcpStdio'
+      | 'enableMcpPrivateHttp'
+      | 'enableLiveWsProxy'
+      | 'liveWsIdleTimeoutMs'
+      | 'serverKeyPriority'
+      | 'thirdPartyRoutes'
+    >
+  >;
 
 interface ResolvedServerConfig
-  extends Omit<CreateServerConfig, 'allowedOrigins' | 'enableMcpStdio' | 'enableMcpPrivateHttp'>, GeminiProxyConfig {
+  extends
+    Omit<
+      CreateServerConfig,
+      | 'allowedOrigins'
+      | 'enableMcpStdio'
+      | 'enableMcpPrivateHttp'
+      | 'enableLiveWsProxy'
+      | 'liveWsIdleTimeoutMs'
+      | 'serverKeyPriority'
+      | 'thirdPartyRoutes'
+    >,
+    GeminiProxyConfig,
+    ThirdPartyProxyConfig {
   allowedOrigins: string[];
   enableMcpStdio: boolean;
   enableMcpPrivateHttp: boolean;
+  enableLiveWsProxy: boolean;
+  liveWsIdleTimeoutMs: number;
+  serverKeyPriority: boolean;
+  thirdPartyRoutes: Record<string, ThirdPartyProxyRoute>;
 }
 
 export function createServer(config: CreateServerConfig, dependencies: CreateServerDependencies = {}): http.Server {
@@ -37,6 +68,10 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
     allowedOrigins: config.allowedOrigins ?? [],
     enableMcpStdio: config.enableMcpStdio ?? false,
     enableMcpPrivateHttp: config.enableMcpPrivateHttp ?? false,
+    enableLiveWsProxy: config.enableLiveWsProxy ?? false,
+    liveWsIdleTimeoutMs: config.liveWsIdleTimeoutMs ?? 300_000,
+    serverKeyPriority: config.serverKeyPriority ?? false,
+    thirdPartyRoutes: config.thirdPartyRoutes ?? {},
   };
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -75,6 +110,10 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
             status: 'ok',
             timestamp: new Date().toISOString(),
             uptimeSeconds: Math.floor(process.uptime()),
+            capabilities: {
+              liveWsProxy: resolvedConfig.enableLiveWsProxy,
+              thirdPartyProxy: Object.keys(resolvedConfig.thirdPartyRoutes).length > 0,
+            },
           },
           resolvedConfig.allowedOrigins,
         );
@@ -105,7 +144,29 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
         return;
       }
 
+      if (path === OPENAI_PROXY_PREFIX || path.startsWith(`${OPENAI_PROXY_PREFIX}/`)) {
+        await proxyThirdPartyRequest(request, response, resolvedConfig, fetchImpl);
+        return;
+      }
+
       if (path === GEMINI_PROXY_PREFIX || path.startsWith(`${GEMINI_PROXY_PREFIX}/`)) {
+        // Stream-abort endpoint: the browser POSTs here when the user clicks
+        // "stop" so the upstream is killed in addition to the local abort.
+        if (path.startsWith(`${STREAM_ABORT_PREFIX}/`)) {
+          const jobId = path.slice(`${STREAM_ABORT_PREFIX}/`.length);
+          if (method === 'POST' && jobId) {
+            const aborted = abortJob(jobId);
+            sendJson(
+              request,
+              response,
+              aborted ? 200 : 404,
+              aborted ? { ok: true } : { error: 'job not found' },
+              resolvedConfig.allowedOrigins,
+            );
+            return;
+          }
+        }
+
         await proxyGeminiRequest(request, response, resolvedConfig, fetchImpl);
         return;
       }
@@ -116,3 +177,8 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
     }
   });
 }
+
+// Live API uses a WebSocket upgrade, which the HTTP request handler above never
+// sees. The host (index.ts) calls attachLiveWsUpgrade on the returned server to
+// take over /api/live upgrades.
+export { attachLiveWsUpgrade } from './liveWsProxy.js';

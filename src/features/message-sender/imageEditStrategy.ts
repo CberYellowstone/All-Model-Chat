@@ -107,9 +107,12 @@ export const sendImageEditMessage = async ({
     runMessageLifecycle,
     execute: async () => {
       const { contentParts: promptParts } = await buildContentParts(text, imageFiles, currentChatSettings.modelId);
+      const alwaysKeepThinking =
+        currentChatSettings.alwaysKeepThinkingInContext ?? appSettings.alwaysKeepThinkingInContext ?? false;
       const shouldStripThinking = shouldStripThinkingFromContext(
         currentChatSettings.modelId,
         currentChatSettings.hideThinkingInContext ?? appSettings.hideThinkingInContext,
+        alwaysKeepThinking,
       );
 
       let historyMessages = messages;
@@ -124,6 +127,8 @@ export const sendImageEditMessage = async ({
           historyMessages,
           shouldStripThinking,
           currentChatSettings.modelId,
+          false,
+          alwaysKeepThinking,
         );
       } catch (error) {
         throw translateImageHistoryError(error, t);

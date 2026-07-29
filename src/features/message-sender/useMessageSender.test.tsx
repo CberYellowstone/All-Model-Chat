@@ -315,7 +315,10 @@ describe('useMessageSender', () => {
 
     const { result, unmount } = renderMessageSender({
       currentChatSettings: {
-        modelId: 'gemini-3-pro-image-preview',
+        modelId: 'gpt-5.6-sol',
+        apiMode: 'third-party',
+        thirdPartyProviderId: 'openai',
+        thirdPartyModelId: 'gpt-5.6-sol',
       },
       selectedFiles: [
         createUploadedFile({
@@ -438,12 +441,15 @@ describe('useMessageSender', () => {
           activeProvider: 'openai',
           providers: {
             ...createDefaultThirdPartyApiSettings().providers,
-            openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.5' },
+            openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.6-sol' },
           },
         },
       },
       currentChatSettings: {
-        modelId: 'gemini-3-pro-image-preview',
+        modelId: 'gpt-5.6-sol',
+        apiMode: 'third-party',
+        thirdPartyProviderId: 'openai',
+        thirdPartyModelId: 'gpt-5.6-sol',
       },
       selectedFiles,
       setAppFileError,
@@ -453,7 +459,7 @@ describe('useMessageSender', () => {
       await result.current.handleSendMessage({ text: 'summarize this image' });
     });
 
-    expect(mockGetModelCapabilities).toHaveBeenCalledWith('gpt-5.5');
+    expect(mockGetModelCapabilities).toHaveBeenCalledWith('gpt-5.6-sol');
     expect(mockGetFileMetadataApi).not.toHaveBeenCalled();
     expect(setAppFileError).toHaveBeenCalledWith(null);
     expect(mockSendImageEditMessage).not.toHaveBeenCalled();
@@ -470,7 +476,7 @@ describe('useMessageSender', () => {
           }),
         ],
         editingMessageId: null,
-        activeModelId: 'gpt-5.5',
+        activeModelId: 'gpt-5.6-sol',
         isContinueMode: false,
         isFastMode: false,
         request: expect.objectContaining({
@@ -511,12 +517,15 @@ describe('useMessageSender', () => {
           activeProvider: 'openai',
           providers: {
             ...createDefaultThirdPartyApiSettings().providers,
-            openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.5' },
+            openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.6-sol' },
           },
         },
       },
       currentChatSettings: {
-        modelId: 'gemini-3-pro-image-preview',
+        modelId: 'gpt-5.6-sol',
+        apiMode: 'third-party',
+        thirdPartyProviderId: 'openai',
+        thirdPartyModelId: 'gpt-5.6-sol',
       },
       selectedFiles,
       setAppFileError,
@@ -526,7 +535,7 @@ describe('useMessageSender', () => {
       await result.current.handleSendMessage({ text: 'describe this image' });
     });
 
-    expect(mockGetModelCapabilities).toHaveBeenCalledWith('gpt-5.5');
+    expect(mockGetModelCapabilities).toHaveBeenCalledWith('gpt-5.6-sol');
     expect(mockGetFileMetadataApi).not.toHaveBeenCalled();
     expect(setAppFileError).toHaveBeenCalledWith(
       'OpenAI 兼容模式不能发送 Gemini Files API 远端引用。请重新附加 remote-reference.png 作为本地图片、音频或文本文件，或切回 Gemini API。',

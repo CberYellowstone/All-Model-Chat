@@ -164,7 +164,7 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
                     onBlur={() => handleTrimModel(row.rowId)}
                     data-openai-compatible-model-id-input="true"
                     className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-mono text-[var(--theme-text-primary)] transition-colors placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] focus:bg-[var(--theme-bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]/15"
-                    placeholder="gpt-5.5"
+                    placeholder="gpt-5.6-sol"
                     aria-label={`${t('settingsOpenAICompatibleModelIdShort')} ${index + 1}`}
                   />
                 </div>

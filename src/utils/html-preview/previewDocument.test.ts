@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
+  buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -367,5 +368,38 @@ describe('htmlPreview utilities', () => {
     const srcDoc = buildHtmlPreviewSrcDoc('<section>wide</section>');
 
     expect(srcDoc).toContain('body{overflow-x:auto;}');
+  });
+
+  it('builds unrestricted code-block previews without CSP, sanitization, or theme height clamps', () => {
+    const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc(
+      [
+        '<html><head><script src="https://cdn.example/app.js"></script></head>',
+        '<body style="min-height:100vh">',
+        '<script>window.boot=1</script>',
+        '<iframe src="https://example.com/embed"></iframe>',
+        '<button onclick="alert(1)">Go</button>',
+        '<p>Budget $20</p>',
+        '</body></html>',
+      ].join(''),
+    );
+
+    expect(srcDoc).toContain('cdn.example/app.js');
+    expect(srcDoc).toContain('<script>window.boot=1</script>');
+    expect(srcDoc).toContain('<iframe src="https://example.com/embed"></iframe>');
+    expect(srcDoc).toContain('onclick="alert(1)"');
+    expect(srcDoc).toContain('Budget $20');
+    expect(srcDoc).toContain('min-height:100vh');
+    expect(srcDoc).toContain(HTML_PREVIEW_MESSAGE_CHANNEL);
+    expect(srcDoc).not.toContain('Content-Security-Policy');
+    expect(srcDoc).not.toContain('height:auto!important');
+    expect(srcDoc).not.toContain('data-amc-live-artifact-theme');
+  });
+
+  it('wraps unrestricted HTML fragments without rewriting their markup', () => {
+    const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc('<section onclick="x()">Hi</section>');
+
+    expect(srcDoc).toContain('<section onclick="x()">Hi</section>');
+    expect(srcDoc).toContain('<html>');
+    expect(srcDoc).toContain(HTML_PREVIEW_MESSAGE_CHANNEL);
   });
 });

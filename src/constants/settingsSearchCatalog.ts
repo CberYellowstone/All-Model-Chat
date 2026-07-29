@@ -213,6 +213,13 @@ const modelsEntries: SettingsSearchEntry[] = [
     groupKey: 'settingsTabModels',
   },
   {
+    id: 'models-always-keep-thinking',
+    tab: 'models',
+    labelKey: 'settingsAlwaysKeepThinkingInContextLabel',
+    descriptionKey: 'settingsAlwaysKeepThinkingInContextTooltip',
+    groupKey: 'settingsTabModels',
+  },
+  {
     id: 'models-tts-voice',
     tab: 'models',
     labelKey: 'settingsTtsVoice',

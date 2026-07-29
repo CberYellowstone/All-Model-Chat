@@ -111,6 +111,7 @@ export interface SavedChatSession {
   settings: ChatSettings;
   isPinned?: boolean;
   groupId?: string | null;
+  createdTabId?: string; // for tab-isolated empty session reuse
 }
 
 export interface PreloadedMessage {

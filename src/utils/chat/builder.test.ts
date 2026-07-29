@@ -590,4 +590,56 @@ describe('createChatHistoryForApi', () => {
     });
     expect(history[0].parts[1]).toEqual({ text: 'Please analyze the attached CSV' });
   });
+
+  // ── alwaysKeepThinkingInContext ──
+
+  it('injects thoughts as a leading text part when alwaysKeepThinkingInContext is true', async () => {
+    const msgs = [
+      makeMessage('user', 'What is 2+2?'),
+      makeMessage('model', 'Four', { thoughts: 'Two plus two equals four.' }),
+    ];
+    const history = await createChatHistoryForApi(msgs, false, undefined, false, true);
+    const modelParts = history[1].parts;
+    expect(modelParts[0].text).toBe('<thinking>\nTwo plus two equals four.\n</thinking>');
+    expect(modelParts[modelParts.length - 1].text).toBe('Four');
+  });
+
+  it('does not inject when the switch is off', async () => {
+    const msgs = [makeMessage('model', 'Four', { thoughts: 'secret reasoning' })];
+    const history = await createChatHistoryForApi(msgs, false, undefined, false, false);
+    expect(history[0].parts.some((p) => p.text?.includes('<thinking>'))).toBe(false);
+  });
+
+  it('does not inject on user messages', async () => {
+    const msgs = [makeMessage('user', 'Hi', { thoughts: 'should not appear' })];
+    const history = await createChatHistoryForApi(msgs, false, undefined, false, true);
+    expect(history[0].parts.some((p) => p.text?.includes('<thinking>'))).toBe(false);
+  });
+
+  it('skips injection when thoughts are empty or whitespace', async () => {
+    const msgs = [makeMessage('model', 'Four', { thoughts: '   \n  ' })];
+    const history = await createChatHistoryForApi(msgs, false, undefined, false, true);
+    expect(history[0].parts.some((p) => p.text?.includes('<thinking>'))).toBe(false);
+  });
+
+  it('keeps thoughtSignature last when injecting over apiParts', async () => {
+    const msgs = [
+      makeMessage('model', '', {
+        thoughts: 'reasoning text',
+        apiParts: [{ text: 'visible' }, { text: 'sig-carrier', thoughtSignature: 'sig-1' }],
+      }),
+    ];
+    const history = await createChatHistoryForApi(msgs, false, undefined, false, true);
+    const parts = history[0].parts;
+    expect(parts[0].text).toBe('<thinking>\nreasoning text\n</thinking>');
+    expect(parts[parts.length - 1]).toMatchObject({ text: 'sig-carrier', thoughtSignature: 'sig-1' });
+  });
+
+  it('injects even for Gemma models when the switch is on (strip forced false)', async () => {
+    const msgs = [makeMessage('model', 'Answer', { thoughts: 'gemma reasoning' })];
+    // stripThinking=false here because shouldStripThinkingFromContext returns
+    // false when alwaysKeep=true; the builder trusts the caller's flag.
+    const history = await createChatHistoryForApi(msgs, false, 'gemma-4-31b-it', false, true);
+    expect(history[0].parts[0].text).toBe('<thinking>\ngemma reasoning\n</thinking>');
+  });
 });

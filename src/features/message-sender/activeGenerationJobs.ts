@@ -1,4 +1,5 @@
 import type { MutableRefObject } from 'react';
+import { releaseGenerationLease, stopGenerationLeaseHeartbeat } from './generationLease';
 
 type ActiveJobsRef = MutableRefObject<Map<string, AbortController>>;
 
@@ -57,6 +58,25 @@ export const hasActiveGenerationJobForSession = (activeJobs: ActiveJobsRef, sess
   return hasActiveJob;
 };
 
+/** Abort every in-flight generation job for a session (e.g. remote ABORT_GENERATION). */
+export const abortActiveGenerationJobsForSession = (activeJobs: ActiveJobsRef, sessionId: string): number => {
+  const jobSessions = getJobSessions(activeJobs);
+  let aborted = 0;
+
+  for (const [jobId, jobSessionId] of [...jobSessions.entries()]) {
+    if (jobSessionId !== sessionId) {
+      continue;
+    }
+    const controller = activeJobs.current.get(jobId);
+    if (controller) {
+      controller.abort();
+      aborted += 1;
+    }
+  }
+
+  return aborted;
+};
+
 export const holdSessionLoadingForGenerationHandoff = (activeJobs: ActiveJobsRef, sessionId: string) => {
   getHandoffSessions(activeJobs).add(sessionId);
 };
@@ -74,6 +94,8 @@ export const releaseSessionLoadingForGenerationHandoff = ({
   const hadHandoff = handoffSessions.delete(sessionId);
 
   if (hadHandoff && !hasActiveGenerationJobForSession(activeJobs, sessionId)) {
+    stopGenerationLeaseHeartbeat(sessionId);
+    releaseGenerationLease(sessionId);
     setSessionLoading(sessionId, false);
   }
 };

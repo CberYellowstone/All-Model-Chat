@@ -4,6 +4,7 @@ import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { createNewSession } from '@/utils/chat/session';
 import { focusChatInput } from '@/utils/chat-input/focus';
 import { resolveModelSwitchSettings } from '@/utils/model/modelSwitchSettings';
+import { getEnabledThirdPartyProviders, resolveProviderForModelId } from '@/utils/thirdPartyApiProviders';
 
 interface UseModelSelectionProps {
   appSettings: AppSettings;
@@ -42,15 +43,31 @@ export const useModelSelection = ({
 }: UseModelSelectionProps) => {
   const handleSelectModelInHeader = useCallback(
     (modelId: string) => {
+      const thirdPartyModels = getEnabledThirdPartyProviders(appSettings);
+      const isThirdPartyModel = thirdPartyModels.some(({ config }) => config.models.some((m) => m.id === modelId));
+      const provider = isThirdPartyModel ? resolveProviderForModelId(appSettings, modelId) : undefined;
       const sourceSettings = activeSessionId ? currentChatSettings : appSettings;
       const resolvedModelSettings: Partial<IndividualChatSettings> = resolveModelSwitchSettings({
         currentSettings: currentChatSettings,
         sourceSettings,
         targetModelId: modelId,
       });
+      const routingSettings: Pick<IndividualChatSettings, 'apiMode' | 'thirdPartyProviderId' | 'thirdPartyModelId'> =
+        isThirdPartyModel && provider
+          ? {
+              apiMode: 'third-party',
+              thirdPartyProviderId: provider.id,
+              thirdPartyModelId: modelId,
+            }
+          : {
+              apiMode: 'gemini-native',
+              thirdPartyProviderId: undefined,
+              thirdPartyModelId: undefined,
+            };
+      const nextModelSettings = { ...resolvedModelSettings, ...routingSettings };
 
       if (!activeSessionId) {
-        const sessionSettings = { ...DEFAULT_CHAT_SETTINGS, ...appSettings, ...resolvedModelSettings };
+        const sessionSettings = { ...DEFAULT_CHAT_SETTINGS, ...appSettings, ...nextModelSettings };
         const newSession = createNewSession(sessionSettings);
 
         updateAndPersistSessions((prev) => [newSession, ...prev]);
@@ -62,18 +79,24 @@ export const useModelSelection = ({
           updateAndPersistSessions((prev) =>
             prev.map((session) =>
               session.id === activeSessionId
-                ? { ...session, settings: { ...session.settings, ...resolvedModelSettings } }
+                ? { ...session, settings: { ...session.settings, ...nextModelSettings } }
                 : session,
             ),
           );
-        } else if (hasResolvedModelSettingChanges(currentChatSettings, resolvedModelSettings)) {
-          setCurrentChatSettings((prev) => ({
-            ...prev,
-            thinkingBudget: resolvedModelSettings.thinkingBudget ?? prev.thinkingBudget,
-            thinkingLevel: resolvedModelSettings.thinkingLevel,
-          }));
+        } else {
+          const routingChanged =
+            currentChatSettings.apiMode !== routingSettings.apiMode ||
+            currentChatSettings.thirdPartyProviderId !== routingSettings.thirdPartyProviderId ||
+            currentChatSettings.thirdPartyModelId !== routingSettings.thirdPartyModelId;
+          if (routingChanged || hasResolvedModelSettingChanges(currentChatSettings, resolvedModelSettings)) {
+            setCurrentChatSettings((prev) => ({
+              ...prev,
+              ...nextModelSettings,
+            }));
+          }
         }
       }
+
       userScrolledUpRef.current = false;
       focusChatInput();
     },

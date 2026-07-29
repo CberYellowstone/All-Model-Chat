@@ -25,8 +25,8 @@ describe('OpenAICompatibleModelListEditor', () => {
     act(() => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
-          models={[{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]}
-          selectedModelId="gpt-5.5"
+          models={[{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }]}
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={onModelsChange}
           onSelectedModelChange={vi.fn()}
         />,
@@ -44,7 +44,7 @@ describe('OpenAICompatibleModelListEditor', () => {
       renderer.container.querySelectorAll<HTMLInputElement>('input[data-openai-compatible-model-id-input="true"]'),
     );
 
-    expect(inputs.map((input) => input.value)).toEqual(['gpt-5.5', '']);
+    expect(inputs.map((input) => input.value)).toEqual(['gpt-5.6-sol', '']);
 
     act(() => {
       const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
@@ -53,7 +53,7 @@ describe('OpenAICompatibleModelListEditor', () => {
     });
 
     expect(onModelsChange).toHaveBeenCalledWith([
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
     ]);
   });
@@ -123,10 +123,10 @@ describe('OpenAICompatibleModelListEditor', () => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
           models={[
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ]}
-          selectedModelId="gpt-5.5"
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={onModelsChange}
           onSelectedModelChange={vi.fn()}
         />,
@@ -139,11 +139,11 @@ describe('OpenAICompatibleModelListEditor', () => {
 
     act(() => {
       const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
-      descriptor?.set?.call(inputs[1], 'gpt-5.5');
+      descriptor?.set?.call(inputs[1], 'gpt-5.6-sol');
       inputs[1].dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    expect(onModelsChange).toHaveBeenLastCalledWith([{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]);
+    expect(onModelsChange).toHaveBeenLastCalledWith([{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }]);
   });
 
   it('selects the first remaining model when the active model is removed', () => {
@@ -154,10 +154,10 @@ describe('OpenAICompatibleModelListEditor', () => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
           models={[
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ]}
-          selectedModelId="gpt-5.5"
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={onModelsChange}
           onSelectedModelChange={onSelectedModelChange}
         />,
@@ -181,11 +181,11 @@ describe('OpenAICompatibleModelListEditor', () => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
           models={[
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'deepseek-chat', name: 'DeepSeek Chat' },
-            { id: 'qwen-plus', name: 'Qwen Plus' },
+            { id: 'qwen3.7-plus', name: 'Qwen3.7 Plus' },
           ]}
-          selectedModelId="gpt-5.5"
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={vi.fn()}
           onSelectedModelChange={vi.fn()}
         />,
@@ -219,8 +219,8 @@ describe('OpenAICompatibleModelListEditor', () => {
     act(() => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
-          models={[{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]}
-          selectedModelId="gpt-5.5"
+          models={[{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }]}
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={onModelsChange}
           onSelectedModelChange={vi.fn()}
         />,
@@ -238,7 +238,7 @@ describe('OpenAICompatibleModelListEditor', () => {
     );
 
     act(() => {
-      setInputValue(batchTextarea, 'gpt-5.5\ndeepseek-chat, qwen-plus; deepseek-chat');
+      setInputValue(batchTextarea, 'gpt-5.6-sol\ndeepseek-chat, qwen3.7-plus; deepseek-chat');
     });
 
     act(() => {
@@ -248,9 +248,9 @@ describe('OpenAICompatibleModelListEditor', () => {
     });
 
     expect(onModelsChange).toHaveBeenLastCalledWith([
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
-      { id: 'qwen-plus', name: 'qwen-plus' },
+      { id: 'qwen3.7-plus', name: 'qwen3.7-plus' },
     ]);
     expect(document.body.textContent).toContain('Added 2 models.');
   });
@@ -258,16 +258,16 @@ describe('OpenAICompatibleModelListEditor', () => {
   it('previews fetched models before importing the selected new IDs', async () => {
     const onModelsChange = vi.fn();
     const onFetchModels = vi.fn().mockResolvedValue([
-      { id: 'gpt-5.5', name: 'GPT-5.5' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
-      { id: 'qwen-plus', name: 'qwen-plus' },
+      { id: 'qwen3.7-plus', name: 'qwen3.7-plus' },
     ]);
 
     await act(async () => {
       renderer.root.render(
         <OpenAICompatibleModelListEditor
-          models={[{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]}
-          selectedModelId="gpt-5.5"
+          models={[{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }]}
+          selectedModelId="gpt-5.6-sol"
           onModelsChange={onModelsChange}
           onSelectedModelChange={vi.fn()}
           onFetchModelsForImportPreview={onFetchModels}
@@ -283,7 +283,7 @@ describe('OpenAICompatibleModelListEditor', () => {
 
     await vi.waitFor(() => {
       expect(document.body.textContent).toContain('deepseek-chat');
-      expect(document.body.textContent).toContain('qwen-plus');
+      expect(document.body.textContent).toContain('qwen3.7-plus');
     });
 
     const fetchedCheckboxes = Array.from(
@@ -303,7 +303,7 @@ describe('OpenAICompatibleModelListEditor', () => {
     });
 
     expect(onModelsChange).toHaveBeenLastCalledWith([
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
       { id: 'deepseek-chat', name: 'deepseek-chat' },
     ]);
     expect(document.body.textContent).toContain('Imported 1 models.');

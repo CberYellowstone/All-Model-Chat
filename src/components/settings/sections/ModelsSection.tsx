@@ -49,6 +49,7 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
   const hasOpenAIEnvKey = !!viteEnv?.VITE_OPENAI_API_KEY;
   const isThirdPartyApiEnabled = currentSettings.isThirdPartyApiEnabled === true;
   const activeProvider = getThirdPartyProviderConfig(currentSettings);
+  const activeProviderId = currentSettings.thirdPartyApi?.activeProvider ?? null;
 
   const updateSetting: SettingsUpdateHandler = (key, value) => {
     onUpdateSettings({ [key]: value } as Partial<AppSettings>);
@@ -104,8 +105,13 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
     try {
       const fetchedModels =
         activeProvider.protocol === 'anthropic'
-          ? await fetchAnthropicModels(firstKey, activeProvider.baseUrl, new AbortController().signal)
-          : await fetchOpenAICompatibleModels(firstKey, activeProvider.baseUrl, new AbortController().signal);
+          ? await fetchAnthropicModels(firstKey, activeProvider.baseUrl, new AbortController().signal, activeProviderId)
+          : await fetchOpenAICompatibleModels(
+              firstKey,
+              activeProvider.baseUrl,
+              new AbortController().signal,
+              activeProviderId,
+            );
 
       if (fetchedModels.length === 0) {
         setModelFetchStatus('error');

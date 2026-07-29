@@ -30,6 +30,9 @@ export const createChatSettings = (overrides: Partial<ChatSettings> = {}): ChatS
   hideThinkingInContext: false,
   safetySettings: [],
   mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+  apiMode: 'gemini-native',
+  thirdPartyProviderId: undefined,
+  thirdPartyModelId: undefined,
   ...overrides,
 });
 

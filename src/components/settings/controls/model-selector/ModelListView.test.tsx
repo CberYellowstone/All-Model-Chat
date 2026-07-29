@@ -44,7 +44,7 @@ describe('ModelListView', () => {
         <ModelListView
           availableModels={[
             { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-            { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'openai-compatible' },
           ]}
           selectedModelId="gemini-3-flash-preview"
           selectedApiMode="gemini-native"
@@ -59,15 +59,15 @@ describe('ModelListView', () => {
     expect(geminiSection?.textContent).toContain('Gemini');
     expect(geminiSection?.textContent).toContain('Gemini 3 Flash Preview');
     expect(openaiSection?.textContent).toContain('OpenAI Compatible');
-    expect(openaiSection?.textContent).toContain('GPT-5.5');
+    expect(openaiSection?.textContent).toContain('GPT-5.6 Sol');
 
     act(() => {
       renderer.container
-        .querySelector('[data-testid="settings-model-option-gpt-5.5"]')
+        .querySelector('[data-testid="settings-model-option-gpt-5.6-sol"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(onSelectModel).toHaveBeenCalledWith('gpt-5.5', 'openai-compatible');
+    expect(onSelectModel).toHaveBeenCalledWith('gpt-5.6-sol', 'openai-compatible');
   });
 
   it('renders extra model list content inside the list container', () => {
