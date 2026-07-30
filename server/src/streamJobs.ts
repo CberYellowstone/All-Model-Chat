@@ -1,135 +1,26 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { Readable } from 'node:stream';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getCorsHeaders, sendJson } from './cors.js';
-export const JOB_ID_HEADER = 'x-amc-job-id';
-export const LAST_SEQ_HEADER = 'x-amc-last-seq';
+import {
+  JOB_ID_HEADER,
+  LAST_SEQ_HEADER,
+  getJob,
+  createJob,
+  finishJob,
+  pumpUpstreamBodyIntoJob,
+  flushToResponse,
+  type StreamJob,
+} from './streamJobStore.js';
+
+// Re-export the shared job-store primitives so existing callers
+// (createServer, geminiProxy, tests) keep importing from a single module.
+// thirdPartyProxy imports directly from streamJobStore instead.
+export { abortJob } from './streamJobStore.js';
 
 const isStreamPath = (pathname: string): boolean => pathname.includes(':streamGenerateContent');
 
-export interface StreamJobChunk {
-  seq: number;
-  data: string;
-}
+export { JOB_ID_HEADER, LAST_SEQ_HEADER } from './streamJobStore.js';
 
-export interface StreamJob {
-  id: string;
-  firstSeq: number;
-  chunks: StreamJobChunk[];
-  done: boolean;
-  error?: string;
-  abortController: AbortController;
-  listeners: Set<() => void>;
-  createdAt: number;
-  updatedAt: number;
-  bufferedBytes: number;
-}
-
-const JOB_TTL_MS = 10 * 60_000; // completed jobs retained for 10 min
-const JOB_HARD_LIMIT_MS = 60 * 60_000; // hard cap 60 min even while in flight
-const MAX_BUFFER_BYTES = 8 * 1024 * 1024;
-const MAX_DROP_RATIO = 0.25;
-
-const jobs = new Map<string, StreamJob>();
-
-// Periodically evict expired jobs. unref() so the timer never keeps the process
-// alive on its own (the HTTP server owns lifetime).
-const sweeper = setInterval(() => {
-  const now = Date.now();
-  for (const [id, job] of jobs) {
-    const expired = job.done && now - job.updatedAt > JOB_TTL_MS;
-    const tooOld = now - job.createdAt > JOB_HARD_LIMIT_MS;
-    if (expired || tooOld) {
-      // If a job is still in flight past the hard limit, abort the upstream so
-      // it cannot leak forever behind an orphaned listener.
-      if (!job.done) {
-        try {
-          job.abortController.abort();
-        } catch {
-          /* ignore */
-        }
-      }
-      jobs.delete(id);
-    }
-  }
-}, 60_000);
-sweeper.unref();
-
-export const getJob = (id: string): StreamJob | undefined => jobs.get(id);
-
-export const createJob = (id: string): StreamJob => {
-  const job: StreamJob = {
-    id,
-    firstSeq: 1,
-    chunks: [],
-    done: false,
-    abortController: new AbortController(),
-    listeners: new Set(),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    bufferedBytes: 0,
-  };
-  jobs.set(id, job);
-  return job;
-};
-
-export const appendChunk = (job: StreamJob, data: string): void => {
-  const seq = job.firstSeq + job.chunks.length;
-  job.chunks.push({ seq, data });
-  job.updatedAt = Date.now();
-  job.bufferedBytes += data.length;
-
-  // Bounded buffer: drop the oldest chunk bucket so a runaway stream cannot
-  // exhaust memory. Resume callers can only rejoin the tail after a drop.
-  if (job.bufferedBytes > MAX_BUFFER_BYTES) {
-    const drop = Math.max(1, Math.ceil(job.chunks.length * MAX_DROP_RATIO));
-    const removed = job.chunks.splice(0, drop);
-    job.firstSeq += removed.length;
-    job.bufferedBytes = job.chunks.reduce((sum, chunk) => sum + chunk.data.length, 0);
-  }
-
-  for (const notify of job.listeners) {
-    try {
-      notify();
-    } catch {
-      /* a listener throwing must not break the producer */
-    }
-  }
-};
-
-export const finishJob = (job: StreamJob, error?: string): void => {
-  if (job.done) {
-    return;
-  }
-  job.done = true;
-  if (error) {
-    job.error = error;
-  }
-  job.updatedAt = Date.now();
-  const listeners = job.listeners;
-  job.listeners = new Set();
-  for (const notify of listeners) {
-    try {
-      notify();
-    } catch {
-      /* ignore */
-    }
-  }
-};
-
-export const abortJob = (id: string): boolean => {
-  const job = jobs.get(id);
-  if (!job || job.done) {
-    return false;
-  }
-  try {
-    job.abortController.abort();
-  } catch {
-    /* ignore */
-  }
-  finishJob(job, 'aborted by client');
-  return true;
-};
+// ── Gemini-specific header builders ─────────────────────────────────────────
 
 interface GeminiStreamProxyConfig {
   geminiApiBase: string;
@@ -183,6 +74,7 @@ const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
   'content-length',
   'cookie',
   'host',
+  'x-gemini-upstream-base-url',
 ]);
 
 function getConnectionManagedHeaderSet(value: string | null | undefined): Set<string> {
@@ -222,49 +114,47 @@ function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
   return headers;
 }
 
-// Append the raw upstream body to the job's chunk buffer, splitting on SSE
-// event boundaries (\n\n) so each chunk maps to one complete SSE event. This
-// keeps resume precise: a reconnect resumes at the exact next event boundary.
-function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Response): Promise<void> {
-  return (async () => {
-    let buffer = '';
-    for await (const bytes of Readable.fromWeb(upstreamResponse.body as unknown as NodeReadableStream)) {
-      buffer += bytes.toString('utf8');
-      let idx: number;
-      while ((idx = buffer.indexOf('\n\n')) !== -1) {
-        const rawEvent = buffer.slice(0, idx + 2);
-        buffer = buffer.slice(idx + 2);
-        if (rawEvent.trim()) {
-          appendChunk(job, rawEvent.replace(/\r\n/g, '\n'));
-        }
-      }
-    }
-    if (buffer.trim()) {
-      appendChunk(job, buffer);
-    }
-    finishJob(job);
-  })().catch((error: unknown) => {
-    finishJob(job, error instanceof Error ? error.message : String(error));
-  });
-}
+// ── Gemini-specific upstream runner ─────────────────────────────────────────
 
-// Fan out the buffered chunks to the browser response, from `cursor + 1`
-// onward. Each call drains everything currently buffered. When the job is
-// done, the response is closed. Returns the new cursor.
-const flushToResponse = (job: StreamJob, response: ServerResponse, cursor: number): number => {
-  let nextCursor = cursor;
-  for (const chunk of job.chunks) {
-    if (chunk.seq > nextCursor && chunk.seq >= job.firstSeq) {
-      if (!response.write(chunk.data)) {
-        // Backpressure: Node will emit 'drain'; we just stop here and let the
-        // next listener tick push more. Avoid advancing past an unwritten seq.
-        break;
-      }
-      nextCursor = chunk.seq;
+async function runUpstream(
+  job: StreamJob,
+  request: IncomingMessage,
+  upstreamUrl: string,
+  apiKey: string,
+  fetchImpl: typeof fetch,
+): Promise<void> {
+  try {
+    const hasBody = !['GET', 'HEAD'].includes(request.method || 'POST');
+    const requestInit: RequestInit & { duplex?: 'half' } = {
+      method: request.method || 'POST',
+      headers: buildProxyHeaders(request, apiKey),
+      signal: job.abortController.signal,
+      // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a
+      // private network host after the input URL passed validation.
+      redirect: 'manual',
+    };
+    if (hasBody) {
+      requestInit.body = request as unknown as BodyInit;
+      requestInit.duplex = 'half';
     }
+
+    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
+
+    if (!upstreamResponse.ok || !upstreamResponse.body) {
+      finishJob(job, `upstream ${upstreamResponse.status}`);
+      return;
+    }
+
+    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
+  } catch (error) {
+    if (job.abortController.signal.aborted) {
+      // Aborted by client (stream-abort endpoint); already finished with that
+      // reason. Don't overwrite the abort error.
+      return;
+    }
+    finishJob(job, error instanceof Error ? error.message : String(error));
   }
-  return nextCursor;
-};
+}
 
 /**
  * Handles a streaming Gemini request with job journaling. If no `x-amc-job-id`
@@ -366,44 +256,4 @@ export async function maybeStreamWithJob(
   }
 
   return true;
-}
-
-async function runUpstream(
-  job: StreamJob,
-  request: IncomingMessage,
-  upstreamUrl: string,
-  apiKey: string,
-  fetchImpl: typeof fetch,
-): Promise<void> {
-  try {
-    const hasBody = !['GET', 'HEAD'].includes(request.method || 'POST');
-    const requestInit: RequestInit & { duplex?: 'half' } = {
-      method: request.method || 'POST',
-      headers: buildProxyHeaders(request, apiKey),
-      signal: job.abortController.signal,
-      // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a
-      // private network host after the input URL passed validation.
-      redirect: 'manual',
-    };
-    if (hasBody) {
-      requestInit.body = request as unknown as BodyInit;
-      requestInit.duplex = 'half';
-    }
-
-    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
-
-    if (!upstreamResponse.ok || !upstreamResponse.body) {
-      finishJob(job, `upstream ${upstreamResponse.status}`);
-      return;
-    }
-
-    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
-  } catch (error) {
-    if (job.abortController.signal.aborted) {
-      // Aborted by client (stream-abort endpoint); already finished with that
-      // reason. Don't overwrite the abort error.
-      return;
-    }
-    finishJob(job, error instanceof Error ? error.message : String(error));
-  }
 }
