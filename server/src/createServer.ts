@@ -14,7 +14,7 @@ import { createMcpClientBridge } from './mcpClient.js';
 import { handleMcpRequest } from './mcpRoutes.js';
 import type { McpClientBridge } from './mcpTypes.js';
 import { abortJob } from './streamJobs.js';
-import { STREAM_ABORT_PREFIX } from './streamJobsRoutes.js';
+import { STREAM_ABORT_PREFIX, UNIFIED_STREAM_ABORT_PREFIX } from './streamJobsRoutes.js';
 import { OPENAI_PROXY_PREFIX, proxyThirdPartyRequest, type ThirdPartyProxyConfig } from './thirdPartyProxy.js';
 
 export { readMacOsClipboardPng } from './clipboardImage.js';
@@ -149,9 +149,28 @@ export function createServer(config: CreateServerConfig, dependencies: CreateSer
         return;
       }
 
+      // Unified stream-abort endpoint: terminates any job in the shared store
+      // regardless of provider (Gemini, OpenAI-compatible, or Anthropic). Placed
+      // before the provider blocks so it works for every provider's job id.
+      if (path.startsWith(`${UNIFIED_STREAM_ABORT_PREFIX}/`)) {
+        const jobId = path.slice(`${UNIFIED_STREAM_ABORT_PREFIX}/`.length);
+        if (method === 'POST' && jobId) {
+          const aborted = abortJob(jobId);
+          sendJson(
+            request,
+            response,
+            aborted ? 200 : 404,
+            aborted ? { ok: true } : { error: 'job not found' },
+            resolvedConfig.allowedOrigins,
+          );
+          return;
+        }
+      }
+
       if (path === GEMINI_PROXY_PREFIX || path.startsWith(`${GEMINI_PROXY_PREFIX}/`)) {
-        // Stream-abort endpoint: the browser POSTs here when the user clicks
-        // "stop" so the upstream is killed in addition to the local abort.
+        // Legacy stream-abort alias: the browser POSTs here when the user
+        // clicks "stop" so the upstream is killed in addition to the local
+        // abort. Kept for backward compat; routes to the same shared store.
         if (path.startsWith(`${STREAM_ABORT_PREFIX}/`)) {
           const jobId = path.slice(`${STREAM_ABORT_PREFIX}/`.length);
           if (method === 'POST' && jobId) {
