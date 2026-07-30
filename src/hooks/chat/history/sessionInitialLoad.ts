@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { ACTIVE_CHAT_SESSION_ID_KEY } from '@/constants/storageKeys';
 import { dbService } from '@/services/db/dbService';
 import { logService } from '@/services/logService';
+import { readLastActiveSessionSnapshot } from '@/utils/chat/lastActiveSession';
 import type { SetActiveSessionOptions } from '@/stores/chatStore';
 import type { AppSettings, ChatGroup, ChatMessage, ChatSettings, SavedChatSession } from '@/types';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
@@ -178,7 +179,25 @@ export const loadInitialSessionData = async ({
 
       if (!reused) {
         logService.info('No active session found or empty session to reuse, starting fresh chat.');
-        startNewChat(sortedList.length > 0 ? sortedList[0] : undefined, { history: 'replace' });
+
+        // 优先以"最后活跃会话"（即点击 Logo 时所在页面）作为模板。
+        const lastActiveSnapshot = readLastActiveSessionSnapshot();
+        let templateSession: SavedChatSession | undefined;
+
+        if (lastActiveSnapshot) {
+          const existing = sortedList.find((session) => session.id === lastActiveSnapshot.sessionId);
+          templateSession = existing
+            ? { ...existing, settings: lastActiveSnapshot.settings } // 用最新快照设置覆盖（源页可能刚改过设置）
+            : {
+                id: lastActiveSnapshot.sessionId,
+                title: 'New Chat',
+                timestamp: Date.now(),
+                messages: [],
+                settings: lastActiveSnapshot.settings,
+              };
+        }
+
+        startNewChat(templateSession ?? sortedList[0], { history: 'replace' });
       }
     }
   } catch (error) {

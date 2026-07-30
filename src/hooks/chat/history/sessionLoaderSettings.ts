@@ -25,7 +25,7 @@ export const createSettingsForNewChat = ({
   explicitTemplateSession,
   excludeTemplateSessionId,
 }: CreateSettingsForNewChatOptions): ChatSettings => {
-  let settingsForNewChat: ChatSettings = {
+  const baseSettings: ChatSettings = {
     ...DEFAULT_CHAT_SETTINGS,
     ...appSettings,
     lockedApiKey: null,
@@ -34,23 +34,21 @@ export const createSettingsForNewChat = ({
   const templateSession =
     explicitTemplateSession || getMostRecentTemplateSession(savedSessions, excludeTemplateSessionId);
 
-  if (templateSession) {
-    const sanitizedTemplate = sanitizeSessionModel(templateSession);
-    settingsForNewChat = {
-      ...settingsForNewChat,
-      modelId: sanitizedTemplate.settings.modelId,
-      apiMode: sanitizedTemplate.settings.apiMode,
-      thirdPartyProviderId: sanitizedTemplate.settings.thirdPartyProviderId,
-      thirdPartyModelId: sanitizedTemplate.settings.thirdPartyModelId,
-      isGoogleSearchEnabled: sanitizedTemplate.settings.isGoogleSearchEnabled,
-      isCodeExecutionEnabled: sanitizedTemplate.settings.isCodeExecutionEnabled,
-      isUrlContextEnabled: sanitizedTemplate.settings.isUrlContextEnabled,
-      isDeepSearchEnabled: sanitizedTemplate.settings.isDeepSearchEnabled,
-      thinkingBudget: sanitizedTemplate.settings.thinkingBudget,
-      thinkingLevel: sanitizedTemplate.settings.thinkingLevel,
-      ttsVoice: sanitizedTemplate.settings.ttsVoice,
-    };
+  if (!templateSession) {
+    return baseSettings;
   }
 
-  return settingsForNewChat;
+  const sanitizedTemplateSettings = sanitizeSessionModel(templateSession).settings;
+
+  return {
+    ...baseSettings,
+    // 全量继承模板会话的设置：modelId、apiMode、thirdParty*、temperature/topP/topK、
+    // thinkingBudget/thinkingLevel、ttsVoice、mediaResolution，以及所有工具开关
+    // （Google Search / Maps / Code Execution / Pyodide / URL Context / Deep Search / Keep Thinking）。
+    ...sanitizedTemplateSettings,
+    // systemInstruction 属于会话内容（如场景提示词），沿用全局默认，保持现有语义。
+    systemInstruction: baseSettings.systemInstruction,
+    // 锁定 API Key 始终重置，新聊天重新轮换。
+    lockedApiKey: null,
+  };
 };

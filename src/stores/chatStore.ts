@@ -25,6 +25,7 @@ import {
 } from './sessionPersistence';
 import { persistSessionChanges } from './sessionPersistenceEffects';
 import { setupChatStoreSync } from './chatStoreSync';
+import { setupLastActiveSessionSync } from './lastActiveSessionSync';
 import { createChatUiSlice, type ChatUiSliceActions, type ChatUiSliceState } from './chatStoreSlices';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 
@@ -317,3 +318,4 @@ setupChatStoreSync({
   localLoadingSessionIds: _localLoadingSessionIds,
   activeJobs: _activeJobs,
 });
+setupLastActiveSessionSync(useChatStore);

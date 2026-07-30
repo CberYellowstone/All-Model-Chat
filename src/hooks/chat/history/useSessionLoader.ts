@@ -161,17 +161,9 @@ export const useSessionLoader = ({
       if (activeChat && activeChat.messages.length === 0 && !activeChat.settings.systemInstruction) {
         logService.info('Already on an empty chat, reusing session.');
         userScrolledUpRef.current = false;
-        const settingsForReusedChat = buildSettingsForNewChat(explicitTemplateSession, {
+        const settingsForReusedChat = buildSettingsForNewChat(explicitTemplateSession ?? activeChat, {
           excludeTemplateSessionId: activeSessionId,
         });
-        if (!explicitTemplateSession) {
-          const currentEmptyChatSettings = normalizeSessionModel(activeChat).settings;
-          settingsForReusedChat.modelId = currentEmptyChatSettings.modelId;
-          settingsForReusedChat.thinkingBudget = currentEmptyChatSettings.thinkingBudget;
-          settingsForReusedChat.thinkingLevel = currentEmptyChatSettings.thinkingLevel;
-          settingsForReusedChat.ttsVoice = currentEmptyChatSettings.ttsVoice;
-          settingsForReusedChat.mediaResolution = currentEmptyChatSettings.mediaResolution;
-        }
 
         setCommandedInput({ text: '', id: Date.now(), mode: 'replace' });
         setSelectedFiles([]);
@@ -203,7 +195,8 @@ export const useSessionLoader = ({
 
       retainOutgoingSessionDraft();
 
-      const settingsForNewChat = buildSettingsForNewChat(explicitTemplateSession);
+      // 默认以当前页会话为模板，保证模型与工具设置和当前页一致。
+      const settingsForNewChat = buildSettingsForNewChat(explicitTemplateSession ?? activeChat);
 
       const newSession = createNewSession(settingsForNewChat);
 
@@ -232,7 +225,6 @@ export const useSessionLoader = ({
       setAppFileError,
       buildSettingsForNewChat,
       retainOutgoingSessionDraft,
-      normalizeSessionModel,
     ],
   );
 
