@@ -2,6 +2,7 @@ export const commonTranslations = {
   cancel: { en: 'Cancel', zh: '取消' },
   save: { en: 'Save', zh: '保存' },
   add: { en: 'Add', zh: '添加' },
+  back: { en: 'Back', zh: '返回' },
   delete: { en: 'Delete', zh: '删除' },
   edit: { en: 'Edit', zh: '编辑' },
   expand: { en: 'Expand', zh: '展开' },

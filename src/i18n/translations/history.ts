@@ -15,6 +15,8 @@ export const historyTranslations = {
   historyCopySuffix: { en: 'Copy', zh: '副本' },
   historyCopyTitle: { en: '{title} (Copy)', zh: '{title}（副本）' },
   historyDragSession: { en: 'Drag to move chat', zh: '拖动以移动聊天' },
+  historyMoveToGroup: { en: 'Move to group', zh: '移动到分组' },
+  historyNoGroup: { en: 'No group', zh: '无分组' },
   generatingTitle: { en: 'Generating title...', zh: '生成标题中…' },
   newGroupTitle: { en: 'Untitled', zh: '无标题' },
   exportChat: { en: 'Export Chat', zh: '导出对话' },

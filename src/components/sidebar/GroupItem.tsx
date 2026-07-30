@@ -5,7 +5,10 @@ import type { SessionItem } from './SessionItem';
 import { GroupItemMenu } from './GroupItemMenu';
 import { LimitedSessionList } from './LimitedSessionList';
 
-export type SessionItemPassedProps = Omit<React.ComponentProps<typeof SessionItem>, 'session'>;
+export type SessionItemPassedProps = Omit<
+  React.ComponentProps<typeof SessionItem>,
+  'session'
+>;
 
 interface GroupItemProps extends SessionItemPassedProps {
   group: ChatGroup;
@@ -50,7 +53,7 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
     activeMenu,
     loadingSessionIds: sessionItemProps.loadingSessionIds,
     generatingTitleSessionIds: sessionItemProps.generatingTitleSessionIds,
-    newlyTitledSessionId: sessionItemProps.newlyTitledSessionId,
+    newlyTitledSessionIds: sessionItemProps.newlyTitledSessionIds,
     editInputRef,
     menuRef,
     onSelectSession: sessionItemProps.onSelectSession,
@@ -58,6 +61,8 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
     onDeleteSession: sessionItemProps.onDeleteSession,
     onDuplicateSession: sessionItemProps.onDuplicateSession,
     onOpenExportModal: sessionItemProps.onOpenExportModal,
+    onMoveSessionToGroup: sessionItemProps.onMoveSessionToGroup,
+    groups: sessionItemProps.groups,
     handleStartEdit: sessionItemProps.handleStartEdit,
     handleRenameConfirm,
     handleRenameKeyDown,
@@ -92,8 +97,16 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
         <summary
           className="list-none flex items-center justify-between px-1 py-2 rounded-lg cursor-pointer hover:bg-[var(--theme-bg-tertiary)] group"
           onClick={(e) => {
+            if (e.detail > 1) {
+              // 双击由 onDoubleClick 处理，跳过展开切换
+              return;
+            }
             e.preventDefault();
             onToggleGroupExpansion(group.id);
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            handleGroupStartEdit(group);
           }}
         >
           <div className="flex items-center gap-2 min-w-0">

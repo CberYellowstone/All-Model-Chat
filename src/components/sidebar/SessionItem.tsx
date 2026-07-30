@@ -1,7 +1,7 @@
 import React, { useState, type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Pin, MoreHorizontal } from 'lucide-react';
-import { type SavedChatSession } from '@/types';
+import { type ChatGroup, type SavedChatSession } from '@/types';
 import { SessionItemMenu } from './SessionItemMenu';
 import { LoadingDots } from '@/components/shared/LoadingDots';
 
@@ -12,7 +12,8 @@ interface SessionItemProps {
   activeMenu: string | null;
   loadingSessionIds: Set<string>;
   generatingTitleSessionIds: Set<string>;
-  newlyTitledSessionId: string | null;
+  newlyTitledSessionIds: ReadonlySet<string>;
+  groups: ChatGroup[];
   editInputRef: RefObject<HTMLInputElement>;
   menuRef: RefObject<HTMLDivElement>;
   onSelectSession: (sessionId: string) => void;
@@ -20,6 +21,7 @@ interface SessionItemProps {
   onDeleteSession: (sessionId: string) => void;
   onDuplicateSession: (sessionId: string) => void;
   onOpenExportModal: (sessionId?: string) => void | Promise<void>;
+  onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;
   handleStartEdit: (item: SavedChatSession) => void;
   handleRenameConfirm: () => void;
   handleRenameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -39,7 +41,8 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     activeMenu,
     loadingSessionIds,
     generatingTitleSessionIds,
-    newlyTitledSessionId,
+    newlyTitledSessionIds,
+    groups,
     editInputRef,
     menuRef,
     onSelectSession,
@@ -47,6 +50,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     onDeleteSession,
     onDuplicateSession,
     onOpenExportModal,
+    onMoveSessionToGroup,
     handleStartEdit,
     handleRenameConfirm,
     handleRenameKeyDown,
@@ -71,7 +75,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
       onContextMenu={handleContextMenu}
       className={`group relative rounded-lg my-0.5 transition-all duration-150 ease-out ${
         session.id === activeSessionId || isRightClickAnimating ? 'bg-[var(--theme-bg-accent)]/10' : ''
-      } ${newlyTitledSessionId === session.id ? 'title-update-animate' : ''} ${isActive ? 'z-20' : ''}`}
+      } ${newlyTitledSessionIds.has(session.id) ? 'title-update-animate' : ''} ${isActive ? 'z-20' : ''}`}
     >
       <div
         className={`relative w-full text-left pl-2.5 pr-1 py-2 text-sm transition-colors rounded-lg text-[var(--theme-text-primary)] ${
@@ -97,6 +101,11 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
                 e.preventDefault();
                 onSelectSession(session.id);
               }
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleStartEdit(session);
             }}
             className="flex w-full min-w-0 items-center pr-8 no-underline text-inherit"
             aria-current={session.id === activeSessionId ? 'page' : undefined}
@@ -135,6 +144,8 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
         <SessionItemMenu
           session={session}
           menuRef={menuRef}
+          groups={groups}
+          onMoveSessionToGroup={onMoveSessionToGroup}
           onStartEdit={() => {
             handleStartEdit(session);
             setActiveMenu(null);
