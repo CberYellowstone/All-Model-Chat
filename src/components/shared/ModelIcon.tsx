@@ -3,11 +3,31 @@ import { Box, Sparkles } from 'lucide-react';
 import geminiIconUrl from '@/assets/model-icons/gemini.svg';
 import gemmaIconUrl from '@/assets/model-icons/gemma.svg';
 import nanoBananaIconUrl from '@/assets/model-icons/nanobanana.svg';
+import openaiLogoUrl from '@/assets/model-icons/providers/openai.png';
+import deepseekLogoUrl from '@/assets/model-icons/providers/deepseek.png';
+import anthropicLogoUrl from '@/assets/model-icons/providers/anthropic.png';
+import openrouterLogoUrl from '@/assets/model-icons/providers/openrouter.png';
+import qwenLogoUrl from '@/assets/model-icons/providers/qwen.png';
+import kimiLogoUrl from '@/assets/model-icons/providers/kimi.png';
+import glmLogoUrl from '@/assets/model-icons/providers/glm.png';
+import customLogoUrl from '@/assets/model-icons/providers/custom.png';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
+import { THIRD_PARTY_PROVIDER_LABELS } from '@/utils/thirdPartyApiProviders';
 import { type ModelOption, type ThirdPartyProviderId } from '@/types';
 
-/** Brand SVGs read smaller than stroke icons at the same px; 22 keeps list rows balanced. */
+/** Brand logos/PNGs read smaller than stroke icons at the same px; 22 keeps list rows balanced. */
 const MODEL_ICON_SIZE = 22;
+
+const THIRD_PARTY_PROVIDER_LOGO: Record<ThirdPartyProviderId, string> = {
+  openai: openaiLogoUrl,
+  deepseek: deepseekLogoUrl,
+  anthropic: anthropicLogoUrl,
+  openrouter: openrouterLogoUrl,
+  qwen: qwenLogoUrl,
+  kimi: kimiLogoUrl,
+  glm: glmLogoUrl,
+  custom: customLogoUrl,
+};
 
 const THIRD_PARTY_PROVIDER_ICON_COLOR: Partial<Record<ThirdPartyProviderId, string>> = {
   openai: 'text-emerald-500 dark:text-emerald-400',
@@ -42,6 +62,25 @@ const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIc
     height={size}
     draggable={false}
     data-model-brand-icon={brand}
+    className="flex-shrink-0 object-contain"
+    style={{ width: size, height: size }}
+  />
+);
+
+const ProviderLogo = ({
+  providerId,
+  size = MODEL_ICON_SIZE,
+}: {
+  providerId: ThirdPartyProviderId;
+  size?: number;
+}) => (
+  <img
+    src={THIRD_PARTY_PROVIDER_LOGO[providerId]}
+    alt={THIRD_PARTY_PROVIDER_LABELS[providerId] ?? providerId}
+    width={size}
+    height={size}
+    draggable={false}
+    data-model-provider-logo={providerId}
     className="flex-shrink-0 object-contain"
     style={{ width: size, height: size }}
   />
@@ -88,8 +127,9 @@ export const getModelIcon = (model: ModelOption | undefined) => {
   }
 
   if (model.providerId) {
-    const color = THIRD_PARTY_PROVIDER_ICON_COLOR[model.providerId] ?? 'text-[var(--theme-text-tertiary)]';
-    return <Box size={MODEL_ICON_SIZE} className={`${color} flex-shrink-0`} strokeWidth={1.5} />;
+    // When a provider logo asset exists it takes precedence over the colored
+    // box fallback so the picker shows the real brand mark.
+    return <ProviderLogo providerId={model.providerId} />;
   }
 
   if (model.isPinned) {
@@ -106,3 +146,5 @@ export const getModelIcon = (model: ModelOption | undefined) => {
     />
   );
 };
+
+export { THIRD_PARTY_PROVIDER_LOGO, THIRD_PARTY_PROVIDER_ICON_COLOR };

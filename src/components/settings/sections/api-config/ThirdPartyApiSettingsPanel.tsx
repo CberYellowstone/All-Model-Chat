@@ -11,6 +11,7 @@ import {
   getThirdPartyProviderConfig,
   updateThirdPartyProviderConfig,
 } from '@/utils/thirdPartyApiProviders';
+import { THIRD_PARTY_PROVIDER_LOGO } from '@/components/shared/ModelIcon';
 import { ApiKeyInput } from './ApiKeyInput';
 import { ApiConnectionTester } from './ApiConnectionTester';
 import { OpenAICompatibleModelListEditor } from './OpenAICompatibleModelListEditor';
@@ -102,6 +103,15 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                   ) : (
                     <ChevronRight size={14} className="text-[var(--theme-text-tertiary)]" strokeWidth={2} />
                   )}
+                  <img
+                    src={THIRD_PARTY_PROVIDER_LOGO[providerId]}
+                    alt={THIRD_PARTY_PROVIDER_LABELS[providerId]}
+                    width={18}
+                    height={18}
+                    draggable={false}
+                    className="flex-shrink-0 object-contain"
+                    style={{ width: 18, height: 18 }}
+                  />
                   <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate">
                     {THIRD_PARTY_PROVIDER_LABELS[providerId]}
                   </span>
