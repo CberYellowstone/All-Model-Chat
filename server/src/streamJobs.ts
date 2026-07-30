@@ -2,9 +2,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson } from './cors.js';
 import {
   JOB_ID_HEADER,
-  LAST_SEQ_HEADER,
-  getJob,
-  createJob,
   finishJob,
   pumpUpstreamBodyIntoJob,
   maybeStreamWithSharedJob,
