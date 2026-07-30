@@ -5,6 +5,7 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 import { getCorsHeaders, sendJson } from './cors.js';
 import type { ThirdPartyProxyRoute } from './config.js';
+import { finishJob, maybeStreamWithSharedJob, pumpUpstreamBodyIntoJob, type StreamJob } from './streamJobStore.js';
 
 export const OPENAI_PROXY_PREFIX = '/api/openai';
 
@@ -236,6 +237,22 @@ export async function proxyThirdPartyRequest(
     return;
   }
 
+  // Stream journal: when the browser sends an x-amc-job-id header on a
+  // streaming request, the upstream is buffered independently of the browser
+  // connection so a page refresh can resume from the last seq — exactly like
+  // the Gemini path. No header → ordinary pass-through (today's behavior),
+  // fully reversible. The SSE split logic (\n\n boundaries, CRLF normalization)
+  // in pumpUpstreamBodyIntoJob is provider-agnostic: OpenAI's `data: {...}\n\n`
+  // frames, the trailing `[DONE]` marker, and Anthropic's `event:`/`data:`
+  // blocks all split cleanly on \n\n and buffer as whole events.
+  if (
+    await maybeStreamWithSharedJob(request, response, { allowedOrigins: config.allowedOrigins }, (job) => {
+      void runThirdPartyUpstream(job, request, upstreamUrl, route, resolved.providerId, fetchImpl);
+    })
+  ) {
+    return;
+  }
+
   const hasBody = !['GET', 'HEAD'].includes(method);
   const abortController = new AbortController();
   const abortUpstream = () => {
@@ -314,5 +331,54 @@ export async function proxyThirdPartyRequest(
   } finally {
     request.off('aborted', abortUpstream);
     response.off('close', abortUpstream);
+  }
+}
+
+/**
+ * Detached upstream fetch for the third-party journal path. Mirrors the Gemini
+ * runUpstream: fires the fetch on the job's abort signal (so the stream-abort
+ * endpoint can kill it), pumps the SSE body into the job buffer, and finishes
+ * the job on completion or error. A browser disconnect does NOT abort this —
+ * only the stream-abort endpoint or the sweeper does.
+ */
+async function runThirdPartyUpstream(
+  job: StreamJob,
+  request: IncomingMessage,
+  upstreamUrl: string,
+  route: ResolvedRoute,
+  providerId: string,
+  fetchImpl: typeof fetch,
+): Promise<void> {
+  try {
+    const method = request.method || 'POST';
+    const hasBody = !['GET', 'HEAD'].includes(method);
+    const requestInit: RequestInit & { duplex?: 'half' } = {
+      method,
+      headers: buildProxyHeaders(request, route, providerId),
+      signal: job.abortController.signal,
+      // redirect: 'manual' so a public third-party baseUrl cannot 302 into a
+      // private network host after the input URL passed validation.
+      redirect: 'manual',
+    };
+    if (hasBody) {
+      requestInit.body = request as unknown as BodyInit;
+      requestInit.duplex = 'half';
+    }
+
+    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
+
+    if (!upstreamResponse.ok || !upstreamResponse.body) {
+      finishJob(job, `upstream ${upstreamResponse.status}`);
+      return;
+    }
+
+    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
+  } catch (error) {
+    if (job.abortController.signal.aborted) {
+      // Aborted by client (stream-abort endpoint); already finished with that
+      // reason. Don't overwrite the abort error.
+      return;
+    }
+    finishJob(job, error instanceof Error ? error.message : String(error));
   }
 }

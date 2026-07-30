@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { getCorsHeaders, sendJson } from './cors.js';
+import { sendJson } from './cors.js';
 import {
   JOB_ID_HEADER,
   LAST_SEQ_HEADER,
@@ -7,18 +7,16 @@ import {
   createJob,
   finishJob,
   pumpUpstreamBodyIntoJob,
-  flushToResponse,
+  maybeStreamWithSharedJob,
   type StreamJob,
 } from './streamJobStore.js';
 
 // Re-export the shared job-store primitives so existing callers
 // (createServer, geminiProxy, tests) keep importing from a single module.
 // thirdPartyProxy imports directly from streamJobStore instead.
-export { abortJob } from './streamJobStore.js';
+export { abortJob, JOB_ID_HEADER, LAST_SEQ_HEADER } from './streamJobStore.js';
 
 const isStreamPath = (pathname: string): boolean => pathname.includes(':streamGenerateContent');
-
-export { JOB_ID_HEADER, LAST_SEQ_HEADER } from './streamJobStore.js';
 
 // ── Gemini-specific header builders ─────────────────────────────────────────
 
@@ -186,74 +184,11 @@ export async function maybeStreamWithJob(
     return true;
   }
 
-  let job = getJob(jobId);
-  if (!job) {
-    job = createJob(jobId);
-    // Fire the upstream fetch detached from the browser connection so that a
-    // browser disconnect does not cancel the upstream. The fetch reads the
-    // request body lazily; if the browser never sent a body (e.g. an abort
-    // probe) the upstream fetch will fail fast and finish the job.
+  // Delegate the shared journal plumbing to streamJobStore: create the job if
+  // missing, fire the Gemini-specific upstream fetch detached, then attach the
+  // browser response to the buffered chunks. A browser disconnect only
+  // unsubscribes (does NOT abort upstream), so a page refresh can resume.
+  return maybeStreamWithSharedJob(request, response, { allowedOrigins: config.allowedOrigins }, (job) => {
     void runUpstream(job, request, upstreamUrl, apiKey, config.fetchImpl);
-  }
-
-  const lastSeqHeader = request.headers[LAST_SEQ_HEADER];
-  const lastSeqRaw = Array.isArray(lastSeqHeader) ? lastSeqHeader[0] : lastSeqHeader;
-  const lastSeq = Number(lastSeqRaw ?? 0) || 0;
-
-  // Terminal-job short-circuit: if the upstream already finished with an error
-  // (e.g. a 429/500 at the start, or a mid-stream failure that completed the
-  // job before this request attached), surface it as a 502 with the real cause
-  // so the SDK routes through streamOnError and the user sees the actual
-  // reason — instead of an HTTP 200 with an empty body that looks like the
-  // model simply returned nothing. Must run before writeHead(200) commits the
-  // SSE headers, after which the status can no longer change.
-  if (job.done && job.error) {
-    sendJson(request, response, 502, { error: job.error }, config.allowedOrigins);
-    return true;
-  }
-
-  response.writeHead(200, {
-    ...getCorsHeaders(request, config.allowedOrigins),
-    'content-type': 'text/event-stream; charset=utf-8',
-    'cache-control': 'no-store',
-    'x-accel-buffering': 'no',
   });
-
-  let cursor = lastSeq;
-
-  const flush = () => {
-    if (response.writableEnded || response.destroyed) {
-      return;
-    }
-    cursor = flushToResponse(job as StreamJob, response, cursor);
-    if (job?.done) {
-      job.listeners.delete(flush);
-      // If the upstream finished with an error after we already started
-      // streaming, we can no longer change the 200 status; destroy the socket
-      // so the SDK detects the broken stream and routes to streamOnError with
-      // the real cause rather than ending cleanly as if the model replied with
-      // nothing.
-      if (job.error) {
-        console.error('[stream-jobs] upstream finished with error after headers sent:', job.error);
-        response.destroy(new Error(job.error));
-        return;
-      }
-      response.end();
-    }
-  };
-
-  // Drain anything already buffered (covers the resume case where the job
-  // already has history, and the just-started case where the first events
-  // landed before this listener attached).
-  flush();
-  if (job && !job.done) {
-    job.listeners.add(flush);
-    // Key difference vs. the normal proxy: a browser disconnect here only
-    // unsubscribes. The upstream keeps running so a refresh can resume.
-    response.on('close', () => {
-      job?.listeners.delete(flush);
-    });
-  }
-
-  return true;
 }

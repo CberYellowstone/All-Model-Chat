@@ -1,6 +1,7 @@
-import type { ServerResponse } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { getCorsHeaders, sendJson } from './cors.js';
 
 // Request headers that gate stream journaling. Exported so every provider's
 // proxy (Gemini, OpenAI-compatible, Anthropic) and the unified abort route
@@ -194,4 +195,120 @@ export function flushToResponse(job: StreamJob, response: ServerResponse, cursor
     }
   }
   return nextCursor;
+}
+
+// ── Shared SSE attach helper ─────────────────────────────────────────────────
+
+interface AttachJobStreamConfig {
+  allowedOrigins: string[];
+}
+
+/**
+ * Helper for a provider proxy that wants the full journal treatment: detect
+ * the job-id header, create the job if missing, fire the (provider-specific)
+ * upstream fetch detached from the browser connection, then attach the browser
+ * response to the buffered job. Returns true when handled, false when the
+ * request had no job-id header (caller falls through to pass-through).
+ *
+ * `startUpstream` receives the job and must begin the detached upstream fetch
+ * (the provider supplies the URL, headers, abort signal wiring, and fetch impl).
+ * It is only invoked for a brand-new job.
+ */
+export async function maybeStreamWithSharedJob(
+  request: IncomingMessage,
+  response: ServerResponse,
+  config: AttachJobStreamConfig,
+  startUpstream: (job: StreamJob) => void,
+): Promise<boolean> {
+  const jobIdRaw = request.headers[JOB_ID_HEADER];
+  const jobId = (Array.isArray(jobIdRaw) ? jobIdRaw[0] : jobIdRaw)?.trim();
+  if (!jobId) {
+    return false;
+  }
+
+  let job = getJob(jobId);
+  if (!job) {
+    job = createJob(jobId);
+    // Fire the upstream fetch detached from the browser connection so that a
+    // browser disconnect does not cancel the upstream. The fetch reads the
+    // request body lazily; if the browser never sent a body (e.g. an abort
+    // probe) the upstream fetch will fail fast and finish the job.
+    startUpstream(job);
+  }
+
+  return attachJobStream(request, response, config, job);
+}
+
+/**
+ * Attach a browser SSE response to an existing job and fan out the buffered
+ * chunks. Provider-agnostic. The caller must have already created the job and
+ * (for a new job) started the upstream fetch; this function only manages the
+ * browser-side subscription. Returns true when handled.
+ */
+export async function attachJobStream(
+  request: IncomingMessage,
+  response: ServerResponse,
+  config: AttachJobStreamConfig,
+  job: StreamJob,
+): Promise<boolean> {
+  const lastSeqHeader = request.headers[LAST_SEQ_HEADER];
+  const lastSeqRaw = Array.isArray(lastSeqHeader) ? lastSeqHeader[0] : lastSeqHeader;
+  const lastSeq = Number(lastSeqRaw ?? 0) || 0;
+
+  // Terminal-job short-circuit: if the upstream already finished with an error
+  // (e.g. a 429/500 at the start, or a mid-stream failure that completed the
+  // job before this request attached), surface it as a 502 with the real cause
+  // so the client routes through its error handler and the user sees the actual
+  // reason — instead of an HTTP 200 with an empty body that looks like the
+  // model simply returned nothing. Must run before writeHead(200) commits the
+  // SSE headers, after which the status can no longer change.
+  if (job.done && job.error) {
+    sendJson(request, response, 502, { error: job.error }, config.allowedOrigins);
+    return true;
+  }
+
+  response.writeHead(200, {
+    ...getCorsHeaders(request, config.allowedOrigins),
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-accel-buffering': 'no',
+  });
+
+  let cursor = lastSeq;
+
+  const flush = () => {
+    if (response.writableEnded || response.destroyed) {
+      return;
+    }
+    cursor = flushToResponse(job, response, cursor);
+    if (job?.done) {
+      job.listeners.delete(flush);
+      // If the upstream finished with an error after we already started
+      // streaming, we can no longer change the 200 status; destroy the socket
+      // so the client detects the broken stream and routes to its error handler
+      // with the real cause rather than ending cleanly as if the model replied
+      // with nothing.
+      if (job.error) {
+        console.error('[stream-jobs] upstream finished with error after headers sent:', job.error);
+        response.destroy(new Error(job.error));
+        return;
+      }
+      response.end();
+    }
+  };
+
+  // Drain anything already buffered (covers the resume case where the job
+  // already has history, and the just-started case where the first events
+  // landed before this listener attached).
+  flush();
+  if (job && !job.done) {
+    job.listeners.add(flush);
+    // Key difference vs. the normal proxy: a browser disconnect here only
+    // unsubscribes. The upstream keeps running so a refresh can resume.
+    response.on('close', () => {
+      job?.listeners.delete(flush);
+    });
+  }
+
+  return true;
 }
