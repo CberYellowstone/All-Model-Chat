@@ -82,6 +82,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
     getStreamHandlers,
     activeJobs,
     sessionKeyMapRef,
+    setSessionLoading,
   });
 
   const { runMessageLifecycle } = useMessageLifecycle({

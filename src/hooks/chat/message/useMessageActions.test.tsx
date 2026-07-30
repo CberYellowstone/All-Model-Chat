@@ -50,7 +50,10 @@ describe('useMessageActions', () => {
     });
 
     expect(otherAbort).not.toHaveBeenCalled();
-    expect(setSessionLoading).toHaveBeenCalledWith('session-current', false);
+    // Without a local job to abort, the hook now broadcasts ABORT_GENERATION
+    // and leaves loading state management to the owner tab — it no longer
+    // optimistically clears the local loading flag.
+    expect(setSessionLoading).not.toHaveBeenCalled();
     unmount();
   });
 

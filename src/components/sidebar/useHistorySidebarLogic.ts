@@ -1,6 +1,6 @@
 import { logService } from '@/services/logService';
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { type SavedChatSession, type ChatGroup } from '@/types';
+import type { SavedChatSession, ChatGroup } from '@/types';
 import { useWindowContext } from '@/contexts/WindowContext';
 import { useI18n } from '@/contexts/I18nContext';
 import { DESKTOP_BREAKPOINT_PX, FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
@@ -105,13 +105,14 @@ export const useHistorySidebarLogic = ({
   const [editingItem, setEditingItem] = useState<{ type: 'session' | 'group'; id: string; title: string } | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [newlyTitledSessionId, setNewlyTitledSessionId] = useState<string | null>(null);
+  const [newlyTitledSessionIds, setNewlyTitledSessionIds] = useState<ReadonlySet<string>>(new Set());
   const [searchResults, setSearchResults] = useState<{ query: string; ids: Set<string> } | null>(null);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const prevGeneratingTitleSessionIdsRef = useRef<Set<string>>(new Set());
+  const titleTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const { document: targetDocument, window: targetWindow } = useWindowContext();
 
@@ -146,12 +147,40 @@ export const useHistorySidebarLogic = ({
     prevIds.forEach((id) => {
       if (!generatingTitleSessionIds.has(id)) completedIds.add(id);
     });
-    completedIds.forEach((completedId) => {
-      setNewlyTitledSessionId(completedId);
-      setTimeout(() => setNewlyTitledSessionId((p) => (p === completedId ? null : p)), TITLE_UPDATE_FEEDBACK_MS);
-    });
+    // 在任何早期返回之前更新 ref，以防止重复检测。
     prevGeneratingTitleSessionIdsRef.current = generatingTitleSessionIds;
+    if (completedIds.size === 0) return;
+    // Defer the state update outside the effect to satisfy set-state-in-effect.
+    const timer = setTimeout(() => {
+      setNewlyTitledSessionIds((prev) => {
+        const next = new Set(prev);
+        completedIds.forEach((id) => next.add(id));
+        return next;
+      });
+      completedIds.forEach((completedId) => {
+        const existing = titleTimersRef.current.get(completedId);
+        if (existing) clearTimeout(existing);
+        titleTimersRef.current.set(
+          completedId,
+          setTimeout(() => {
+            titleTimersRef.current.delete(completedId);
+            setNewlyTitledSessionIds((prev) => {
+              const next = new Set(prev);
+              next.delete(completedId);
+              return next;
+            });
+          }, TITLE_UPDATE_FEEDBACK_MS),
+        );
+      });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [generatingTitleSessionIds]);
+
+  // Clean up all pending title animation timers on unmount.
+  useEffect(() => () => {
+    titleTimersRef.current.forEach((timer) => clearTimeout(timer));
+    titleTimersRef.current.clear();
+  }, []);
 
   // Debounced DB-backed content search.
   useEffect(() => {
@@ -296,7 +325,7 @@ export const useHistorySidebarLogic = ({
     setActiveMenu,
     dragOverId,
     setDragOverId,
-    newlyTitledSessionId,
+    newlyTitledSessionIds,
     menuRef,
     editInputRef,
     searchInputRef,

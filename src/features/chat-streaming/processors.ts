@@ -89,7 +89,7 @@ export const finalizeMessages = ({
         completedMessage.content = t('emptyResponseError');
       }
 
-      if (isLastMessageOfRun) {
+      if (isLastMessageOfRun && !isAborted) {
         completedMessageForNotification = completedMessage;
       }
       return completedMessage;

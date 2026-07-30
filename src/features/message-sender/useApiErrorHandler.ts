@@ -36,6 +36,7 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
               thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
               isLoading: false,
               generationEndTime: new Date(),
+              stoppedByUser: true,
             })),
           );
         }

@@ -130,10 +130,11 @@ export const useMessageActions = ({
       }
 
       // Remote tab is loading (synced isLoading) without a local job.
+      // Broadcast the abort request and let the owner tab handle cleanup and
+      // broadcast the resulting SESSION_LOADING=false. The stale-check loop
+      // (clearStaleRemoteLoading, every 30s) will clean up orphaned entries
+      // if the owner tab crashed before it could respond.
       broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
-      if (!skipLoadingUpdate) {
-        setSessionLoading(activeSessionId, false);
-      }
       return 'no_local_job';
     },
     [activeSessionId, isLoading, messages, activeJobs, updateAndPersistSessions, setSessionLoading],

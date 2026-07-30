@@ -253,6 +253,20 @@ export const chatInputTranslations = {
     en: 'Text-to-speech audio has been generated.',
     zh: '文本转语音音频已生成。',
   },
+  messageSenderImageEditReadyTitle: { en: 'Image Ready', zh: '图片已生成' },
+  messageSenderImageEditReadyBody: {
+    en: 'Image generation finished.',
+    zh: '图片生成完毕。',
+  },
+  messageSenderResponseReadyTitle: { en: 'Response Ready', zh: '回复已完成' },
+  messageSenderResponseErrorTitle: {
+    en: 'Response Finished with Error',
+    zh: '回复完成（含错误）',
+  },
+  messageSenderResponseReadyBody: {
+    en: 'Media or tool response received',
+    zh: '已收到媒体或工具响应',
+  },
   messageSenderImageEditResultPrefix: { en: 'Image {index}: ', zh: '图片 {index}：' },
   messageSenderImageEditNoImageGenerated: {
     en: 'No image was generated for this request.',

@@ -285,4 +285,30 @@ export const messagesTranslations = {
   },
   codeFullscreenMonitor: { en: 'Monitor Fullscreen', zh: '显示器全屏' },
   codeFullscreenModal: { en: 'Preview Overlay', zh: '预览弹窗' },
+
+  // Live Artifact Interaction Diagnostic (P0-1)
+  liveArtifactInteractionInvalidTitle: {
+    en: 'Interaction form generation failed',
+    zh: '交互表单生成失败',
+  },
+  liveArtifactInteractionInvalidReasonLead: {
+    en: 'The spec failed validation:',
+    zh: '验证未通过：',
+  },
+  liveArtifactInteractionRepairsApplied: {
+    en: 'Some issues were auto-fixed:',
+    zh: '以下项已自动修正：',
+  },
+  liveArtifactInteractionRetry: {
+    en: 'Ask model to fix',
+    zh: '让模型修正',
+  },
+  liveArtifactInteractionRetryPrompt: {
+    en: 'The previous amc-live-artifact-interaction JSON failed validation. Please output only the corrected JSON block (keep instruction and schema structure). Issues:\n{reasons}',
+    zh: '上一次输出的 amc-live-artifact-interaction JSON 校验失败。请修正后仅重新输出该 JSON 块（保持 instruction 与 schema 结构）。问题：\n{reasons}',
+  },
+  liveArtifactInteractionRawJson: {
+    en: 'Raw JSON',
+    zh: '原始 JSON',
+  },
 };

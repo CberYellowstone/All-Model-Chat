@@ -18,6 +18,7 @@ import {
   type UserMessageCollapseController,
 } from './userMessageCollapse';
 import { resolveLiveArtifactsFontSize } from '@/utils/live-artifacts/liveArtifactsFontSize';
+import { isLiveArtifactsModeFromSettings } from '@/utils/live-artifacts/liveArtifactsMode';
 
 interface MessageTextProps {
   message: ChatMessage;
@@ -77,6 +78,21 @@ export const MessageText: React.FC<MessageTextProps> = ({
   const userMessageCollapseRegionId = `${message.id}-message-text`;
   const collapsedMaxHeight = baseFontSize * USER_MESSAGE_COLLAPSED_LINE_HEIGHT * USER_MESSAGE_COLLAPSE_LINE_THRESHOLD;
   const liveArtifactFontSize = useMemo(() => resolveLiveArtifactsFontSize(appSettings), [appSettings]);
+  const liveArtifactsMode = useMemo(
+    () =>
+      isLiveArtifactsModeFromSettings({
+        systemInstruction: appSettings.systemInstruction,
+        promptMode: appSettings.liveArtifactsPromptMode,
+        liveArtifactsSystemPrompt: appSettings.liveArtifactsSystemPrompt,
+        liveArtifactsSystemPrompts: appSettings.liveArtifactsSystemPrompts,
+      }),
+    [
+      appSettings.systemInstruction,
+      appSettings.liveArtifactsPromptMode,
+      appSettings.liveArtifactsSystemPrompt,
+      appSettings.liveArtifactsSystemPrompts,
+    ],
+  );
 
   const prevIsLoadingRef = useRef(isLoading);
   useEffect(() => {
@@ -133,6 +149,7 @@ export const MessageText: React.FC<MessageTextProps> = ({
           onOpenSidePanel={onOpenSidePanel}
           files={message.files}
           liveArtifactFontSize={liveArtifactFontSize}
+          liveArtifactsMode={liveArtifactsMode}
         />
       ) : effectiveContent ? (
         <div data-user-message-collapsed={shouldOfferUserMessageCollapse ? String(isUserMessageCollapsed) : undefined}>
@@ -159,6 +176,7 @@ export const MessageText: React.FC<MessageTextProps> = ({
                 hideThinkingInContext={appSettings.hideThinkingInContext}
                 files={message.files}
                 liveArtifactFontSize={liveArtifactFontSize}
+                liveArtifactsMode={liveArtifactsMode}
               />
             </div>
           </div>

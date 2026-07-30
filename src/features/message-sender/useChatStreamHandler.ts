@@ -20,6 +20,7 @@ import { getContentDeltaFromPart, mergeUniqueFiles } from '@/features/chat-strea
 import { finishActiveGenerationJob } from './activeGenerationJobs';
 import { clearOwnedPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { buildCompletionNotificationBody, emitCompletionFeedback } from './completionFeedback';
+import { getTranslator } from '@/i18n/translations';
 
 type SessionsUpdater = (
   updater: (prev: SavedChatSession[]) => SavedChatSession[],
@@ -186,7 +187,13 @@ export const useChatStreamHandler = ({
                 isAborted: abortController.signal.aborted,
               });
 
-              if (finalizationResult.completedMessageForNotification) {
+              if (finalizationResult.completedMessageForNotification
+                && !abortController.signal.aborted) {
+                const t = getTranslator(lang);
+                const notificationTitle =
+                  finalizationResult.completedMessageForNotification.role === 'error'
+                    ? t('messageSenderResponseErrorTitle')
+                    : t('messageSenderResponseReadyTitle');
                 void emitCompletionFeedback(
                   {
                     isCompletionNotificationEnabled: appSettings.isCompletionNotificationEnabled,
@@ -194,7 +201,7 @@ export const useChatStreamHandler = ({
                   },
                   {
                     notification: {
-                      title: 'Response Ready',
+                      title: notificationTitle,
                       body: buildCompletionNotificationBody(finalizationResult.completedMessageForNotification),
                     },
                   },

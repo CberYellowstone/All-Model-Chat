@@ -12,7 +12,7 @@ describe('HtmlPreviewContent', () => {
       '<html><head><script src="https://cdn.example/app.js"></script></head><body><button onclick="run()">Hello</button></body></html>';
 
     act(() => {
-      renderer.root.render(<HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlWithScript} scale={1} />);
+      renderer.root.render(<HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlWithScript} scale={1} contentHeight={0} />);
     });
 
     const iframe = renderer.container.querySelector('iframe');

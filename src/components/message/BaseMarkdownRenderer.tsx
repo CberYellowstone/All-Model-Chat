@@ -38,6 +38,7 @@ export interface MarkdownRendererProps {
   interactiveMode?: 'enabled' | 'disabled';
   contentPreNormalized?: boolean;
   liveArtifactFontSize?: number;
+  liveArtifactsMode?: boolean;
 }
 
 type MarkdownCodeProps = React.ComponentPropsWithoutRef<'code'> & {
@@ -139,6 +140,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
     interactiveMode = 'enabled',
     contentPreNormalized = false,
     liveArtifactFontSize,
+    liveArtifactsMode,
     remarkPlugins,
     rehypePlugins,
   }) => {
@@ -297,6 +299,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
               onOpenSidePanel={onOpenSidePanel}
               liveArtifactFontSize={liveArtifactFontSize}
               themeId={themeId}
+              liveArtifactsMode={liveArtifactsMode}
             >
               {codeElement || children}
             </CodeBlock>
@@ -320,6 +323,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
         t,
         themeId,
         liveArtifactFontSize,
+        liveArtifactsMode,
       ],
     );
 
@@ -356,6 +360,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             onOpenSidePanel={onOpenSidePanel}
             liveArtifactFontSize={liveArtifactFontSize}
             themeId={themeId}
+            liveArtifactsMode={liveArtifactsMode}
           >
             <code className={`language-${singleLiveArtifact.language}`}>{singleLiveArtifact.code}</code>
           </CodeBlock>

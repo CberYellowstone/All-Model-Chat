@@ -1,11 +1,12 @@
 import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback, useEffect, useRef } from 'react';
 import { type AppSettings, type SavedChatSession } from '@/types';
-import { logService } from '@/services/logService';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { generateSessionTitle } from '@/utils/chat/session';
 import { generateTitleApi } from '@/services/api/generation/textApi';
 import { getVisibleChatMessages } from '@/utils/chat/visibility';
 import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { dbService } from '@/services/db/dbService';
+import { logService } from '@/services/logService';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
@@ -111,6 +112,18 @@ export const useAutoTitling = ({
 
         if (!userContent.trim() && !modelContent.trim()) {
           logService.info(`Skipping title generation for session ${sessionId} due to empty content.`);
+          return;
+        }
+
+        // 跨 tab 去重：从 DB 重新加载会话，如果另一 tab 已经起了标题则跳过。
+        const freshSession = await dbService.getSession(sessionId);
+        if (!freshSession) {
+          logService.info(`Session ${sessionId} no longer exists; skipping title generation.`);
+          return;
+        }
+        const freshTitle = freshSession.title;
+        if (freshTitle !== 'New Chat' && freshTitle !== generateSessionTitle(freshSession.messages)) {
+          logService.info(`Session ${sessionId} already has a custom title; skipping title generation.`);
           return;
         }
 

@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import React, { type RefObject } from 'react';
+import React, { useRef, useState, useEffect, type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildUnrestrictedHtmlPreviewSrcDoc } from '@/utils/html-preview/previewDocument';
 
@@ -7,16 +7,35 @@ interface HtmlPreviewContentProps {
   iframeRef: RefObject<HTMLIFrameElement>;
   htmlContent: string;
   scale: number;
+  contentHeight: number;
 }
 
-export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRef, htmlContent, scale }) => {
+export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRef, htmlContent, scale, contentHeight }) => {
   const { t } = useI18n();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const updateHeight = () => setContainerHeight(container.clientHeight);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  const iframeHeight =
+    contentHeight > 0
+      ? `${Math.max(contentHeight, containerHeight) / scale}px`
+      : `${100 / scale}%`;
+
   const handleIframeError = (event: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
     logService.error('Iframe loading error:', event);
   };
 
   return (
-    <div className="flex-grow relative overflow-auto custom-scrollbar bg-[var(--theme-bg-tertiary)]">
+    <div ref={containerRef} className="flex-grow relative overflow-auto custom-scrollbar bg-[var(--theme-bg-tertiary)]">
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.05]"
         style={{
@@ -32,7 +51,7 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRe
         className="border-none bg-white shadow-sm origin-top-left"
         style={{
           width: `${100 / scale}%`,
-          height: `${100 / scale}%`,
+          height: iframeHeight,
           transform: `scale(${scale})`,
         }}
         // Code-block preview is intentionally unrestricted so full HTML/CSS/JS demos

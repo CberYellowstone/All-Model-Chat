@@ -4,8 +4,10 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getCorsHeaders, sendJson } from './cors.js';
 import { maybeStreamWithJob } from './streamJobs.js';
+import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
+export const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
@@ -24,6 +26,7 @@ const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
   'content-length',
   'cookie',
   'host',
+  'x-gemini-upstream-base-url',
 ]);
 const STRIPPED_PROXY_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, 'content-encoding', 'content-length']);
 
@@ -66,6 +69,36 @@ function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string, s
   }
 
   return trimmedServerApiKey ?? '';
+}
+
+/**
+ * Parse and validate the x-gemini-upstream-base-url header. Returns a validated
+ * trailing-slash-stripped base URL string, or null when the header is absent or
+ * fails SSRF validation. When present and valid, the proxy uses this as the
+ * upstream target instead of config.geminiApiBase.
+ *
+ * Security constraints (matching thirdPartyProxy):
+ *  - https only
+ *  - no embedded credentials
+ *  - non-private network host (SSRF guard via isPrivateNetworkHostname)
+ */
+function resolveUpstreamBaseOverride(request: IncomingMessage): string | null {
+  const raw = request.headers[GEMINI_UPSTREAM_BASE_HEADER];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value || typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'https:') return null;
+    if (url.username || url.password) return null;
+    if (isPrivateNetworkHostname(url.hostname)) return null;
+    return trimmed.replace(/\/$/, '');
+  } catch {
+    return null;
+  }
 }
 
 function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
@@ -132,7 +165,12 @@ export async function proxyGeminiRequest(
 
   const requestUrl = new URL(request.url || '/', 'http://localhost');
   const upstreamPath = requestUrl.pathname.slice(GEMINI_PROXY_PREFIX.length) || '/';
-  const targetBase = config.geminiApiBase.replace(/\/$/, '');
+
+  // Override the upstream target when the browser sends a validated
+  // x-gemini-upstream-base-url header (e.g. a user-configured proxy address).
+  // When absent or invalid, falls back to config.geminiApiBase (the default).
+  const upstreamBaseOverride = resolveUpstreamBaseOverride(request);
+  const targetBase = upstreamBaseOverride ?? config.geminiApiBase.replace(/\/$/, '');
   const upstreamUrl = `${targetBase}${upstreamPath}${requestUrl.search}`;
 
   // Stream journal: when the browser sends an x-amc-job-id header on a

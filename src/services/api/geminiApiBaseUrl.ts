@@ -1,6 +1,6 @@
 import type { AppSettings } from '@/types';
 import { DEFAULT_GEMINI_API_BASE_URL, normalizeGeminiApiBaseUrl } from '@/utils/apiProxyUrl';
-import { getLiveApiProxyBaseUrl } from '@/runtime/runtimeConfig';
+import { getGeminiApiProxyBaseUrl, hasDeploymentApiContainer, getLiveApiProxyBaseUrl } from '@/runtime/runtimeConfig';
 
 type GeminiApiBaseUrlSettings = Pick<AppSettings, 'useCustomApiConfig' | 'useApiProxy' | 'apiProxyUrl'>;
 
@@ -12,19 +12,70 @@ export const resolveConfiguredGeminiBaseUrl = (appSettings: GeminiApiBaseUrlSett
 const isAbsoluteHttpUrl = (url: string): boolean => /^https?:\/\//i.test(url.trim());
 
 /**
- * Whether the configured Gemini base URL is a relative path (e.g. the Docker
- * default "/api/gemini"). Only in that case do browser requests traverse our
- * own api container, where the stream-journal lives — so only then is it
- * worth stamping x-amc-job-id for resume. Absolute proxy URLs (e.g.
- * "https://api-proxy.de/gemini") bypass the api container, so journaling is a
- * no-op there and we skip the header.
+ * The URL the browser should send Gemini API requests TO.
+ *
+ * - Docker runtime: always the api container's relative path (e.g. "/api/gemini")
+ *   so all requests route through our backend whether or not the user configured
+ *   an absolute upstream proxy URL.
+ * - Static/Pages: what the user configured, or the default Gemini API URL.
+ */
+export const resolveGeminiFrontendBaseUrl = (appSettings: GeminiApiBaseUrlSettings): string => {
+  const runtimeBaseUrl = getGeminiApiProxyBaseUrl();
+  if (runtimeBaseUrl) {
+    return normalizeGeminiApiBaseUrl(runtimeBaseUrl);
+  }
+  const configuredBaseUrl = resolveConfiguredGeminiBaseUrl(appSettings);
+  return normalizeGeminiApiBaseUrl(configuredBaseUrl ?? DEFAULT_GEMINI_API_BASE_URL);
+};
+
+/**
+ * Whether the effective frontend base URL is a relative path, meaning the
+ * browser sends Gemini requests through our own api container where the
+ * stream-journal lives. Only then is it worth stamping x-amc-job-id for resume.
+ *
+ * Absolute proxy URLs bypass the api container, so journaling would be a no-op
+ * there and we skip the header.
  */
 export const isGeminiProxyRelativePath = (appSettings: GeminiApiBaseUrlSettings): boolean => {
+  if (hasDeploymentApiContainer()) return true;
   const configured = resolveConfiguredGeminiBaseUrl(appSettings);
   return Boolean(configured) && !isAbsoluteHttpUrl(configured as string);
 };
 
+/**
+ * When true, the browser should attach an x-gemini-upstream-base-url request
+ * header telling the backend where the user's upstream proxy actually lives.
+ * This happens when the deployment has an api container (Docker) AND the user
+ * configured an absolute upstream proxy URL that differs from the frontend URL.
+ */
+export const shouldAttachGeminiUpstreamHeader = (appSettings: GeminiApiBaseUrlSettings): boolean => {
+  if (!hasDeploymentApiContainer()) return false;
+  const configured = resolveConfiguredGeminiBaseUrl(appSettings);
+  return Boolean(configured) && isAbsoluteHttpUrl(configured as string);
+};
+
+/**
+ * The normalized upstream base URL to send in the x-gemini-upstream-base-url
+ * header. Returns null when no absolute upstream is configured.
+ */
+export const getNormalizedUpstreamBaseUrl = (appSettings: GeminiApiBaseUrlSettings): string | null => {
+  const configured = resolveConfiguredGeminiBaseUrl(appSettings);
+  if (!configured || !isAbsoluteHttpUrl(configured)) return null;
+  return normalizeGeminiApiBaseUrl(configured);
+};
+
+/**
+ * The base URL to use when constructing the SDK's GoogleGenAI client.
+ *
+ * In Docker mode, always points to the api container's relative path so that
+ * requests go through our backend. In static/Pages mode, uses the configured
+ * upstream or the default Gemini API URL.
+ */
 export const getGeminiApiBaseUrlForSettings = (settings?: GeminiApiBaseUrlSettings | null): string => {
+  const runtimeBaseUrl = getGeminiApiProxyBaseUrl();
+  if (runtimeBaseUrl) {
+    return normalizeGeminiApiBaseUrl(runtimeBaseUrl);
+  }
   const configuredBaseUrl = settings ? resolveConfiguredGeminiBaseUrl(settings) : null;
   return normalizeGeminiApiBaseUrl(configuredBaseUrl ?? DEFAULT_GEMINI_API_BASE_URL);
 };

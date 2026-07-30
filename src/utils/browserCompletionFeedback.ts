@@ -22,28 +22,36 @@ export const showNotification = async (title: string, options?: NotificationOpti
   }
 
   const show = () => {
-    const notification = new Notification(title, {
-      ...options,
-      tag: 'amc-webui-response',
-      renotify: true,
-    } as NotificationOptionsWithTag);
+    try {
+      const notification = new Notification(title, {
+        ...options,
+        tag: 'amc-webui-response',
+        renotify: true,
+      } as NotificationOptionsWithTag);
 
-    notification.onclick = () => {
-      window.focus();
-      notification.close();
-    };
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
 
-    setTimeout(() => {
-      notification.close();
-    }, 7000);
+      setTimeout(() => {
+        notification.close();
+      }, 7000);
+    } catch (error) {
+      logService.warn('Failed to create notification.', { error });
+    }
   };
 
   if (Notification.permission === 'granted') {
     show();
   } else if (Notification.permission !== 'denied') {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      show();
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        show();
+      }
+    } catch (error) {
+      logService.warn('Failed to request notification permission.', { error });
     }
   }
 };
@@ -60,13 +68,13 @@ const getAudioContext = () => {
   return sharedAudioContext;
 };
 
-export const playCompletionSound = () => {
+export const playCompletionSound = async () => {
   try {
     const audioContext = getAudioContext();
     if (!audioContext) return;
 
     if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(() => {});
+      await audioContext.resume().catch(() => undefined);
     }
 
     const playNote = (frequency: number, startTime: number, duration: number) => {

@@ -228,6 +228,12 @@ export const sendImageEditMessage = async ({
           apiParts: combinedApiParts,
           generationEndTime: new Date(),
         },
+        feedback: {
+          notification: {
+            title: t('messageSenderImageEditReadyTitle'),
+            body: t('messageSenderImageEditReadyBody'),
+          },
+        },
       };
     },
   });

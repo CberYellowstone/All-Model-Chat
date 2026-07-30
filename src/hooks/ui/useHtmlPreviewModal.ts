@@ -42,9 +42,12 @@ type DocumentWithWebkitFullscreen = Document & {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'escape' | 'followup' | 'selection' | 'diagnostic';
+  event?: 'ready' | 'resize' | 'escape' | 'followup' | 'selection' | 'diagnostic';
   payload?: unknown;
+  height?: number;
 };
+
+const MAX_PREVIEW_CONTENT_HEIGHT = 200_000;
 
 export const useHtmlPreviewModal = ({
   isOpen,
@@ -62,6 +65,7 @@ export const useHtmlPreviewModal = ({
   const [isPreviewReady, setIsPreviewReady] = useState(false);
 
   const [isDirectFullscreenLaunch, setIsDirectFullscreenLaunch] = useState(initialTrueFullscreenRequest);
+  const [contentHeight, setContentHeight] = useState(0);
 
   const { document: targetDocument, window: targetWindow } = useWindowContext();
   const { enterFullscreen, exitFullscreen } = useFullscreen();
@@ -79,6 +83,7 @@ export const useHtmlPreviewModal = ({
     if (isOpen) {
       setIsActuallyOpen(true);
       setScale(1);
+      setContentHeight(0);
       setIsPreviewReady(false);
       setIsDirectFullscreenLaunch(initialTrueFullscreenRequest);
     } else {
@@ -159,7 +164,14 @@ export const useHtmlPreviewModal = ({
       }
 
       if (data.event === 'ready') {
+        setContentHeight(0);
         setIsPreviewReady(true);
+        return;
+      }
+
+      if (data.event === 'resize' && typeof data.height === 'number' && Number.isFinite(data.height)) {
+        const nextHeight = Math.min(Math.ceil(data.height), MAX_PREVIEW_CONTENT_HEIGHT);
+        setContentHeight((current) => (current === nextHeight ? current : nextHeight));
         return;
       }
 
@@ -321,6 +333,7 @@ export const useHtmlPreviewModal = ({
     isDirectFullscreenLaunch,
     scale,
     isPreviewReady,
+    contentHeight,
     isScreenshotting,
     handleZoomIn,
     handleZoomOut,

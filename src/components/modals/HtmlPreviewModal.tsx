@@ -31,6 +31,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
     isDirectFullscreenLaunch,
     scale,
     isPreviewReady,
+    contentHeight,
     isScreenshotting,
     handleZoomIn,
     handleZoomOut,
@@ -97,7 +98,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
           onClose={onClose}
         />
 
-        <HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlContent} scale={scale} />
+        <HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlContent} scale={scale} contentHeight={contentHeight} />
       </div>
     </div>,
     targetDocument.body,

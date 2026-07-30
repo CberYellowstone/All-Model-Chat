@@ -158,7 +158,7 @@ export const useApp = (): AppViewModel => {
     sessionTitle,
   });
 
-  useAppFavicon({ isLoading, activeSessionId });
+  useAppFavicon({ activeSessionId });
 
   const dataExport = useDataExport({
     appSettings,

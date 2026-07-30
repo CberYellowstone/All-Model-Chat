@@ -141,10 +141,17 @@ export function setupChatStoreSync({
           break;
         }
 
+        // 本 tab 持有该会话有效租约时，远端 false 不得覆盖本地 loading。
+        // 持有方完成时租约已先释放，不受影响；崩溃残留由 clearStaleRemoteLoading（30s 间隔）兜底。
+        const ownLease = readGenerationLease(syncMessage.sessionId);
+        const ownsFreshLease = Boolean(
+          ownLease && ownLease.tabId === TAB_ID && now() - ownLease.ts < GENERATION_LEASE_TTL_MS,
+        );
+
         store.getState().setLoadingSessionIds((previousLoadingSessionIds) => {
           const nextLoadingSessionIds = new Set(previousLoadingSessionIds);
           if (syncMessage.isLoading) nextLoadingSessionIds.add(syncMessage.sessionId);
-          else nextLoadingSessionIds.delete(syncMessage.sessionId);
+          else if (!ownsFreshLease) nextLoadingSessionIds.delete(syncMessage.sessionId);
           return nextLoadingSessionIds;
         });
         break;
