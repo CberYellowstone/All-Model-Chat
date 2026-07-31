@@ -53,7 +53,7 @@ const TextGlyph: React.FC<{ label: string; className: string }> = ({ label, clas
 const normalizeLanguage = (language: string) => language.trim().toLowerCase();
 const LANGUAGE_ICON_SIZE = 20;
 
-const LANGUAGE_BADGE_ENTRIES = [
+const LANGUAGE_BADGE_ENTRIES: LanguageBadgeEntry[] = [
   {
     aliases: ['py', 'py3', 'python'],
     badgeId: 'python',
