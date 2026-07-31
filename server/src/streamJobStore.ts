@@ -158,13 +158,15 @@ export function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Respon
   return (async () => {
     let buffer = '';
     for await (const bytes of Readable.fromWeb(upstreamResponse.body as unknown as NodeReadableStream)) {
-      buffer += bytes.toString('utf8');
+      // Normalize CRLF/CR line endings to LF FIRST so \n\n splitting works
+      // for upstreams that send \r\n\r\n events (e.g. aistudio-to-api).
+      buffer += bytes.toString('utf8').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       let idx: number;
       while ((idx = buffer.indexOf('\n\n')) !== -1) {
         const rawEvent = buffer.slice(0, idx + 2);
         buffer = buffer.slice(idx + 2);
         if (rawEvent.trim()) {
-          appendChunk(job, rawEvent.replace(/\r\n/g, '\n'));
+          appendChunk(job, rawEvent);
         }
       }
     }
