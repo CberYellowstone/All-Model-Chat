@@ -172,9 +172,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
   }, [diagnosis, props.cacheKey, isInteractionFence]);
 
   const isStreamingInteractionCandidate =
-    isInteractionFence &&
-    Boolean(props.isLoading) &&
-    isLikelyStreamingLiveArtifactInteractionJson(resolvedCodeText);
+    isInteractionFence && Boolean(props.isLoading) && isLikelyStreamingLiveArtifactInteractionJson(resolvedCodeText);
   // Fenced Live Artifacts (amc-live-artifact-html) always go through ArtifactFrame.
   // Do not gate on isLikelyHtml: that helper rejects common fragments that include
   // <style> tags or are only partially closed while streaming, which used to leave

@@ -599,7 +599,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
   const spec = cloneRaw(parsed) as Record<string, unknown>;
 
   // Validate instruction
-  if (spec.instruction === undefined || spec.instruction === null || typeof spec.instruction !== 'string' || !spec.instruction.trim()) {
+  if (
+    spec.instruction === undefined ||
+    spec.instruction === null ||
+    typeof spec.instruction !== 'string' ||
+    !spec.instruction.trim()
+  ) {
     addError(errors, 'INSTRUCTION_MISSING', 'The "instruction" field is required and must be a non-empty string.');
   } else if ((spec.instruction as string).trim().length > MAX_TEXT_LENGTH) {
     const len = (spec.instruction as string).trim().length;
@@ -607,7 +612,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
   }
 
   // Validate title
-  if (spec.title !== undefined && spec.title !== null && typeof spec.title === 'string' && spec.title.trim().length > MAX_SHORT_TEXT_LENGTH) {
+  if (
+    spec.title !== undefined &&
+    spec.title !== null &&
+    typeof spec.title === 'string' &&
+    spec.title.trim().length > MAX_SHORT_TEXT_LENGTH
+  ) {
     const len = spec.title.trim().length;
     spec.title = spec.title.trim().slice(0, MAX_SHORT_TEXT_LENGTH);
     addError(repairs, 'TITLE_TOO_LONG', `"title" truncated from ${len} to ${MAX_SHORT_TEXT_LENGTH} characters.`, {
@@ -617,7 +627,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
   }
 
   // Validate description
-  if (spec.description !== undefined && spec.description !== null && typeof spec.description === 'string' && spec.description.trim().length > MAX_TEXT_LENGTH) {
+  if (
+    spec.description !== undefined &&
+    spec.description !== null &&
+    typeof spec.description === 'string' &&
+    spec.description.trim().length > MAX_TEXT_LENGTH
+  ) {
     const len = spec.description.trim().length;
     spec.description = spec.description.trim().slice(0, MAX_TEXT_LENGTH);
     addError(repairs, 'DESCRIPTION_TOO_LONG', `"description" truncated from ${len} to ${MAX_TEXT_LENGTH} characters.`, {
@@ -627,7 +642,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
   }
 
   // Validate submitLabel
-  if (spec.submitLabel !== undefined && spec.submitLabel !== null && typeof spec.submitLabel === 'string' && spec.submitLabel.trim().length > 120) {
+  if (
+    spec.submitLabel !== undefined &&
+    spec.submitLabel !== null &&
+    typeof spec.submitLabel === 'string' &&
+    spec.submitLabel.trim().length > 120
+  ) {
     const len = spec.submitLabel.trim().length;
     spec.submitLabel = spec.submitLabel.trim().slice(0, 120);
     addError(repairs, 'SUBMIT_LABEL_TOO_LONG', `"submitLabel" truncated from ${len} to 120 characters.`, {
@@ -666,10 +686,15 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
   }
 
   if (propertyEntries.length > MAX_FIELDS) {
-    addError(errors, 'TOO_MANY_FIELDS', `Number of fields (${propertyEntries.length}) exceeds the maximum of ${MAX_FIELDS}.`, {
-      count: propertyEntries.length,
-      max: MAX_FIELDS,
-    });
+    addError(
+      errors,
+      'TOO_MANY_FIELDS',
+      `Number of fields (${propertyEntries.length}) exceeds the maximum of ${MAX_FIELDS}.`,
+      {
+        count: propertyEntries.length,
+        max: MAX_FIELDS,
+      },
+    );
     return { spec: null, errors, repairs };
   }
 
@@ -724,7 +749,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
       const t = prop.title.trim();
       if (t.length > MAX_SHORT_TEXT_LENGTH) {
         normalized.title = t.slice(0, MAX_SHORT_TEXT_LENGTH);
-        addError(repairs, 'TITLE_TOO_LONG', `Property "${key}" title truncated from ${t.length} to ${MAX_SHORT_TEXT_LENGTH} chars.`, { key, originalLength: t.length, max: MAX_SHORT_TEXT_LENGTH });
+        addError(
+          repairs,
+          'TITLE_TOO_LONG',
+          `Property "${key}" title truncated from ${t.length} to ${MAX_SHORT_TEXT_LENGTH} chars.`,
+          { key, originalLength: t.length, max: MAX_SHORT_TEXT_LENGTH },
+        );
       } else if (t) {
         normalized.title = t;
       }
@@ -735,7 +765,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
       const d = prop.description.trim();
       if (d.length > MAX_TEXT_LENGTH) {
         normalized.description = d.slice(0, MAX_TEXT_LENGTH);
-        addError(repairs, 'DESCRIPTION_TOO_LONG', `Property "${key}" description truncated from ${d.length} to ${MAX_TEXT_LENGTH} chars.`, { key, originalLength: d.length, max: MAX_TEXT_LENGTH });
+        addError(
+          repairs,
+          'DESCRIPTION_TOO_LONG',
+          `Property "${key}" description truncated from ${d.length} to ${MAX_TEXT_LENGTH} chars.`,
+          { key, originalLength: d.length, max: MAX_TEXT_LENGTH },
+        );
       } else if (d) {
         normalized.description = d;
       }
@@ -747,8 +782,17 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
       if (f.length <= 80) {
         normalized.format = f;
         // Validate format-type compatibility
-        if ((f === 'textarea' && type !== 'string') || (f === 'date' && type !== 'string') || (f === 'range' && type !== 'number' && type !== 'integer')) {
-          addError(errors, 'FORMAT_TYPE_MISMATCH', `Property "${key}" has format "${f}" which is incompatible with type "${type}".`, { key, format: f, type });
+        if (
+          (f === 'textarea' && type !== 'string') ||
+          (f === 'date' && type !== 'string') ||
+          (f === 'range' && type !== 'number' && type !== 'integer')
+        ) {
+          addError(
+            errors,
+            'FORMAT_TYPE_MISMATCH',
+            `Property "${key}" has format "${f}" which is incompatible with type "${type}".`,
+            { key, format: f, type },
+          );
           propError = true;
         }
       }
@@ -770,18 +814,33 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
           if (enumValues.length > 50) {
             const dropped = enumValues.length - 50;
             enumValues = enumValues.slice(0, 50);
-            addError(repairs, 'ENUM_TOO_MANY', `Property "${key}" enum truncated from ${dropped + 50} to 50 items (${dropped} dropped).`, { key, originalLength: dropped + 50, max: 50, dropped });
+            addError(
+              repairs,
+              'ENUM_TOO_MANY',
+              `Property "${key}" enum truncated from ${dropped + 50} to 50 items (${dropped} dropped).`,
+              { key, originalLength: dropped + 50, max: 50, dropped },
+            );
           }
 
           // Coerce number/integer enum values
           if (scalarType === 'number' || scalarType === 'integer') {
             const coerced = tryCoerceNumberArray(enumValues as LiveArtifactInteractionPrimitive[], scalarType);
             if (!coerced.repaired && coerced.values.length === 0) {
-              addError(errors, 'ENUM_TYPE_MISMATCH', `Property "${key}" enum values must be numeric for type "${scalarType}".`, { key });
+              addError(
+                errors,
+                'ENUM_TYPE_MISMATCH',
+                `Property "${key}" enum values must be numeric for type "${scalarType}".`,
+                { key },
+              );
               propError = true;
             } else {
               if (coerced.repaired) {
-                addError(repairs, 'ENUM_TYPE_MISMATCH', `Property "${key}" enum values coerced from strings/floats to ${scalarType}.`, { key });
+                addError(
+                  repairs,
+                  'ENUM_TYPE_MISMATCH',
+                  `Property "${key}" enum values coerced from strings/floats to ${scalarType}.`,
+                  { key },
+                );
               }
               normalized.enum = coerced.values;
             }
@@ -789,7 +848,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
             if ((enumValues as LiveArtifactInteractionPrimitive[]).every((v) => typeof v === 'boolean')) {
               normalized.enum = enumValues as boolean[];
             } else {
-              addError(errors, 'ENUM_TYPE_MISMATCH', `Property "${key}" enum values must be booleans for type "boolean".`, { key });
+              addError(
+                errors,
+                'ENUM_TYPE_MISMATCH',
+                `Property "${key}" enum values must be booleans for type "boolean".`,
+                { key },
+              );
               propError = true;
             }
           } else {
@@ -802,7 +866,11 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
       const minimum = typeof prop.minimum === 'number' && Number.isFinite(prop.minimum) ? prop.minimum : undefined;
       const maximum = typeof prop.maximum === 'number' && Number.isFinite(prop.maximum) ? prop.maximum : undefined;
       if (minimum !== undefined && maximum !== undefined && minimum > maximum) {
-        addError(errors, 'RANGE_MIN_GT_MAX', `Property "${key}" minimum (${minimum}) exceeds maximum (${maximum}).`, { key, minimum, maximum });
+        addError(errors, 'RANGE_MIN_GT_MAX', `Property "${key}" minimum (${minimum}) exceeds maximum (${maximum}).`, {
+          key,
+          minimum,
+          maximum,
+        });
         propError = true;
       } else {
         if (minimum !== undefined) normalized.minimum = minimum;
@@ -824,9 +892,19 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
               // Check if it's something like 3.0 that can be coerced
               if (Number.isInteger(Math.round(rawDefault)) && Math.abs(rawDefault - Math.round(rawDefault)) < 1e-10) {
                 normalized.default = Math.round(rawDefault);
-                addError(repairs, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default rounded from ${rawDefault} to ${Math.round(rawDefault)}.`, { key, originalValue: rawDefault });
+                addError(
+                  repairs,
+                  'DEFAULT_TYPE_MISMATCH',
+                  `Property "${key}" default rounded from ${rawDefault} to ${Math.round(rawDefault)}.`,
+                  { key, originalValue: rawDefault },
+                );
               } else {
-                addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be an integer for type "integer".`, { key });
+                addError(
+                  errors,
+                  'DEFAULT_TYPE_MISMATCH',
+                  `Property "${key}" default must be an integer for type "integer".`,
+                  { key },
+                );
                 defErr = true;
               }
             } else {
@@ -836,25 +914,47 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
             const num = Number(rawDefault);
             if (Number.isFinite(num) && !(scalarType === 'integer' && !Number.isInteger(num))) {
               normalized.default = scalarType === 'integer' ? Math.round(num) : num;
-              addError(repairs, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default coerced from string "${rawDefault}" to number ${normalized.default}.`, { key, originalValue: rawDefault, coercedValue: normalized.default });
+              addError(
+                repairs,
+                'DEFAULT_TYPE_MISMATCH',
+                `Property "${key}" default coerced from string "${rawDefault}" to number ${normalized.default}.`,
+                { key, originalValue: rawDefault, coercedValue: normalized.default },
+              );
             } else {
-              addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be numeric for type "${scalarType}".`, { key });
+              addError(
+                errors,
+                'DEFAULT_TYPE_MISMATCH',
+                `Property "${key}" default must be numeric for type "${scalarType}".`,
+                { key },
+              );
               defErr = true;
             }
           } else {
-            addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be a number for type "${scalarType}".`, { key });
+            addError(
+              errors,
+              'DEFAULT_TYPE_MISMATCH',
+              `Property "${key}" default must be a number for type "${scalarType}".`,
+              { key },
+            );
             defErr = true;
           }
         } else if (scalarType === 'boolean') {
           if (typeof rawDefault !== 'boolean') {
-            addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be a boolean for type "boolean".`, { key });
+            addError(
+              errors,
+              'DEFAULT_TYPE_MISMATCH',
+              `Property "${key}" default must be a boolean for type "boolean".`,
+              { key },
+            );
             defErr = true;
           } else {
             normalized.default = rawDefault;
           }
         } else {
           if (typeof rawDefault !== 'string') {
-            addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be a string for type "string".`, { key });
+            addError(errors, 'DEFAULT_TYPE_MISMATCH', `Property "${key}" default must be a string for type "string".`, {
+              key,
+            });
             defErr = true;
           } else {
             normalized.default = rawDefault;
@@ -865,7 +965,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
         if (!defErr && enumAvailable && normalized.default !== undefined) {
           const defVal = normalized.default as LiveArtifactInteractionPrimitive;
           if (!normalized.enum!.some((e) => arePrimitiveValuesEqual(e, defVal))) {
-            addError(errors, 'DEFAULT_NOT_IN_ENUM', `Property "${key}" default value "${defVal}" is not in the enum options.`, { key, value: defVal });
+            addError(
+              errors,
+              'DEFAULT_NOT_IN_ENUM',
+              `Property "${key}" default value "${defVal}" is not in the enum options.`,
+              { key, value: defVal },
+            );
             propError = true;
           }
         }
@@ -895,7 +1000,9 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
           addError(errors, 'ITEMS_TYPE_UNSUPPORTED', `Property "${key}" items type could not be inferred.`, { key });
           propError = true;
         } else if (!Array.isArray(items.enum) || items.enum.length === 0) {
-          addError(errors, 'ITEMS_ENUM_MISSING', `Property "${key}" items must have a non-empty "enum" array.`, { key });
+          addError(errors, 'ITEMS_ENUM_MISSING', `Property "${key}" items must have a non-empty "enum" array.`, {
+            key,
+          });
           propError = true;
         } else {
           let enumValues = items.enum as unknown[];
@@ -904,7 +1011,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
           if (enumValues.length > 50) {
             const dropped = enumValues.length - 50;
             enumValues = enumValues.slice(0, 50);
-            addError(repairs, 'ENUM_TOO_MANY', `Property "${key}" items enum truncated from ${dropped + 50} to 50 items (${dropped} dropped).`, { key, originalLength: dropped + 50, max: 50, dropped });
+            addError(
+              repairs,
+              'ENUM_TOO_MANY',
+              `Property "${key}" items enum truncated from ${dropped + 50} to 50 items (${dropped} dropped).`,
+              { key, originalLength: dropped + 50, max: 50, dropped },
+            );
           }
 
           // Coerce number/integer items
@@ -912,12 +1024,22 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
           if (itemsType === 'number' || itemsType === 'integer') {
             const coerced = tryCoerceNumberArray(enumValues as LiveArtifactInteractionPrimitive[], itemsType);
             if (coerced.values.length === 0) {
-              addError(errors, 'ITEMS_ENUM_TYPE_MIXED', `Property "${key}" items enum values must be numeric for type "${itemsType}".`, { key });
+              addError(
+                errors,
+                'ITEMS_ENUM_TYPE_MIXED',
+                `Property "${key}" items enum values must be numeric for type "${itemsType}".`,
+                { key },
+              );
               propError = true;
             } else {
               coercedEnum = coerced.values;
               if (coerced.repaired) {
-                addError(repairs, 'ENUM_TYPE_MISMATCH', `Property "${key}" items enum values coerced from strings/floats to ${itemsType}.`, { key });
+                addError(
+                  repairs,
+                  'ENUM_TYPE_MISMATCH',
+                  `Property "${key}" items enum values coerced from strings/floats to ${itemsType}.`,
+                  { key },
+                );
               }
             }
           } else {
@@ -938,7 +1060,12 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
                   .filter((n: unknown): n is string => typeof n === 'string')
                   .slice(0, finalEnum!.length);
               } else {
-                addError(errors, 'ENUM_NAME_LENGTH_MISMATCH', `Property "${key}" items.enumNames length (${items.enumNames.length}) must match items.enum length (${finalEnum!.length}).`, { key });
+                addError(
+                  errors,
+                  'ENUM_NAME_LENGTH_MISMATCH',
+                  `Property "${key}" items.enumNames length (${items.enumNames.length}) must match items.enum length (${finalEnum!.length}).`,
+                  { key },
+                );
                 propError = true;
               }
             }
@@ -949,23 +1076,43 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
               // Default for array
               if (prop.default !== undefined) {
                 if (!Array.isArray(prop.default)) {
-                  addError(errors, 'ARRAY_DEFAULT_INVALID', `Property "${key}" default must be an array for type "array".`, { key });
+                  addError(
+                    errors,
+                    'ARRAY_DEFAULT_INVALID',
+                    `Property "${key}" default must be an array for type "array".`,
+                    { key },
+                  );
                   propError = true;
                 } else {
                   const defArr = prop.default as unknown[];
                   if (defArr.some((v) => !isPrimitive(v))) {
-                    addError(errors, 'ARRAY_DEFAULT_INVALID', `Property "${key}" default array contains non-primitive values.`, { key });
+                    addError(
+                      errors,
+                      'ARRAY_DEFAULT_INVALID',
+                      `Property "${key}" default array contains non-primitive values.`,
+                      { key },
+                    );
                     propError = true;
                   } else {
                     const coercedDef = tryCoerceNumberArray(defArr as LiveArtifactInteractionPrimitive[], itemsType);
                     if (coercedDef.values.length === 0) {
-                      addError(errors, 'ARRAY_DEFAULT_INVALID', `Property "${key}" default array values could not be coerced.`, { key });
+                      addError(
+                        errors,
+                        'ARRAY_DEFAULT_INVALID',
+                        `Property "${key}" default array values could not be coerced.`,
+                        { key },
+                      );
                       propError = true;
                     } else {
                       const seen = new Set<LiveArtifactInteractionPrimitive>();
                       for (const item of coercedDef.values) {
                         if (seen.has(item) || !finalEnum!.some((e) => arePrimitiveValuesEqual(e, item))) {
-                          addError(errors, 'ARRAY_DEFAULT_INVALID', `Property "${key}" default contains values not in items.enum or duplicates.`, { key });
+                          addError(
+                            errors,
+                            'ARRAY_DEFAULT_INVALID',
+                            `Property "${key}" default contains values not in items.enum or duplicates.`,
+                            { key },
+                          );
                           propError = true;
                           break;
                         }
@@ -1034,11 +1181,7 @@ export const diagnoseLiveArtifactInteraction = (content: string): LiveArtifactIn
  */
 export const hasLiveArtifactInteractionShape = (content: string): boolean => {
   const trimmed = content.trim();
-  return (
-    trimmed.startsWith('{') &&
-    trimmed.includes('"instruction"') &&
-    trimmed.includes('"schema"')
-  );
+  return trimmed.startsWith('{') && trimmed.includes('"instruction"') && trimmed.includes('"schema"');
 };
 
 export const getLiveArtifactInteractionDefaultValue = (

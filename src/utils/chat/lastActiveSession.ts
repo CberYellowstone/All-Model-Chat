@@ -13,9 +13,7 @@ export interface LastActiveSessionSnapshot {
 
 const getStorage = (): Storage | null => (typeof localStorage === 'undefined' ? null : localStorage);
 
-export const writeLastActiveSessionSnapshot = (
-  snapshot: Omit<LastActiveSessionSnapshot, 'ts'> | null,
-): void => {
+export const writeLastActiveSessionSnapshot = (snapshot: Omit<LastActiveSessionSnapshot, 'ts'> | null): void => {
   const storage = getStorage();
   if (!storage) return;
   try {

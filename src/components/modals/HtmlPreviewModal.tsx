@@ -98,7 +98,12 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
           onClose={onClose}
         />
 
-        <HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlContent} scale={scale} contentHeight={contentHeight} />
+        <HtmlPreviewContent
+          iframeRef={iframeRef}
+          htmlContent={htmlContent}
+          scale={scale}
+          contentHeight={contentHeight}
+        />
       </div>
     </div>,
     targetDocument.body,

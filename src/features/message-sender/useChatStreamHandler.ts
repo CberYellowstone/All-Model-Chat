@@ -187,8 +187,7 @@ export const useChatStreamHandler = ({
                 isAborted: abortController.signal.aborted,
               });
 
-              if (finalizationResult.completedMessageForNotification
-                && !abortController.signal.aborted) {
+              if (finalizationResult.completedMessageForNotification && !abortController.signal.aborted) {
                 const t = getTranslator(lang);
                 const notificationTitle =
                   finalizationResult.completedMessageForNotification.role === 'error'

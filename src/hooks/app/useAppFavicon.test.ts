@@ -15,20 +15,18 @@ const { mockReadGenerationLease, mockIsGenerationLeaseFresh, mockGetTintedFavico
   // The hook tints the favicon at runtime via canvas. In jsdom there's no real
   // image decode, so mock the tinting to return a deterministic href per state
   // color. The color→state mapping mirrors FAVICON_STATE_COLORS in the source.
-  mockGetTintedFaviconUrl: vi.fn<(baseSrc: string, color: string) => Promise<string | null>>(
-    (_baseSrc, color) => {
-      if (color === '#4f7cf5') {
-        return Promise.resolve('http://localhost/favicon-generating.png');
-      }
-      if (color === '#22c55e') {
-        return Promise.resolve('http://localhost/favicon-success.png');
-      }
-      if (color === '#ef4444') {
-        return Promise.resolve('http://localhost/favicon-error.png');
-      }
-      return Promise.resolve(null);
-    },
-  ),
+  mockGetTintedFaviconUrl: vi.fn<(baseSrc: string, color: string) => Promise<string | null>>((_baseSrc, color) => {
+    if (color === '#4f7cf5') {
+      return Promise.resolve('http://localhost/favicon-generating.png');
+    }
+    if (color === '#22c55e') {
+      return Promise.resolve('http://localhost/favicon-success.png');
+    }
+    if (color === '#ef4444') {
+      return Promise.resolve('http://localhost/favicon-error.png');
+    }
+    return Promise.resolve(null);
+  }),
 }));
 
 vi.mock('@/features/message-sender/generationLease', () => ({
@@ -51,9 +49,7 @@ const mockChatStoreState = vi.hoisted(() => ({
   activeMessages: [] as ChatMessage[],
 }));
 
-const mockChatStoreSubscribers = vi.hoisted(
-  () => new Set<(state: unknown, previousState: unknown) => void>(),
-);
+const mockChatStoreSubscribers = vi.hoisted(() => new Set<(state: unknown, previousState: unknown) => void>());
 
 vi.mock('@/stores/chatStore', () => {
   const useChatStore = Object.assign(
@@ -75,11 +71,7 @@ vi.mock('@/stores/chatStore', () => {
   return { useChatStore };
 });
 
-import {
-  useAppFavicon,
-  isLocalGeneration,
-  getOutcomeFromMessage,
-} from './useAppFavicon';
+import { useAppFavicon, isLocalGeneration, getOutcomeFromMessage } from './useAppFavicon';
 
 const DEFAULT_HREF = 'http://localhost/favicon.png';
 const GENERATING_HREF = 'http://localhost/favicon-generating.png';

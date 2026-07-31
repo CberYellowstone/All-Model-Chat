@@ -133,8 +133,7 @@ export const useAppFavicon = ({ activeSessionId }: UseAppFaviconProps) => {
     link.href = href;
   };
 
-  const getStateHref = (state: FaviconState): string | null =>
-    stateHrefsRef.current[state] ?? defaultHrefRef.current;
+  const getStateHref = (state: FaviconState): string | null => stateHrefsRef.current[state] ?? defaultHrefRef.current;
 
   const evaluate = useCallback(
     (sessionId: string | null) => {
@@ -145,8 +144,7 @@ export const useAppFavicon = ({ activeSessionId }: UseAppFaviconProps) => {
       }
 
       const wasLocal = lastLocalRef.current.get(sessionId) ?? false;
-      const genNow =
-        useChatStore.getState().loadingSessionIds.has(sessionId) && isLocalGeneration(sessionId);
+      const genNow = useChatStore.getState().loadingSessionIds.has(sessionId) && isLocalGeneration(sessionId);
 
       if (genNow) {
         lastLocalRef.current.set(sessionId, true);

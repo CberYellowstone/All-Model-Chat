@@ -10,7 +10,12 @@ interface HtmlPreviewContentProps {
   contentHeight: number;
 }
 
-export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRef, htmlContent, scale, contentHeight }) => {
+export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({
+  iframeRef,
+  htmlContent,
+  scale,
+  contentHeight,
+}) => {
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -25,10 +30,7 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({ iframeRe
     return () => observer.disconnect();
   }, []);
 
-  const iframeHeight =
-    contentHeight > 0
-      ? `${Math.max(contentHeight, containerHeight) / scale}px`
-      : `${100 / scale}%`;
+  const iframeHeight = contentHeight > 0 ? `${Math.max(contentHeight, containerHeight) / scale}px` : `${100 / scale}%`;
 
   const handleIframeError = (event: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
     logService.error('Iframe loading error:', event);

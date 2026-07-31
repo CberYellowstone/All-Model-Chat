@@ -32,16 +32,7 @@ describe('getModelIcon', () => {
     expect(html).not.toContain('data-model-provider-logo');
   });
 
-  it.each([
-    'openai',
-    'anthropic',
-    'qwen',
-    'deepseek',
-    'kimi',
-    'glm',
-    'openrouter',
-    'custom',
-  ] as const)(
+  it.each(['openai', 'anthropic', 'qwen', 'deepseek', 'kimi', 'glm', 'openrouter', 'custom'] as const)(
     'renders the brand logo <img> for provider %s',
     (providerId: ThirdPartyProviderId) => {
       const html = renderIconHtml({

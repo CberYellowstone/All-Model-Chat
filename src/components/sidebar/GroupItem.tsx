@@ -5,10 +5,7 @@ import type { SessionItem } from './SessionItem';
 import { GroupItemMenu } from './GroupItemMenu';
 import { LimitedSessionList } from './LimitedSessionList';
 
-export type SessionItemPassedProps = Omit<
-  React.ComponentProps<typeof SessionItem>,
-  'session'
->;
+export type SessionItemPassedProps = Omit<React.ComponentProps<typeof SessionItem>, 'session'>;
 
 interface GroupItemProps extends SessionItemPassedProps {
   group: ChatGroup;

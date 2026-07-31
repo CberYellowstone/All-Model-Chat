@@ -177,10 +177,13 @@ export const useHistorySidebarLogic = ({
   }, [generatingTitleSessionIds]);
 
   // Clean up all pending title animation timers on unmount.
-  useEffect(() => () => {
-    titleTimersRef.current.forEach((timer) => clearTimeout(timer));
-    titleTimersRef.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      titleTimersRef.current.forEach((timer) => clearTimeout(timer));
+      titleTimersRef.current.clear();
+    },
+    [],
+  );
 
   // Debounced DB-backed content search.
   useEffect(() => {

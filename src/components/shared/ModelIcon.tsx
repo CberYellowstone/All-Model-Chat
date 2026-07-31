@@ -67,13 +67,7 @@ const BrandModelIcon = ({ brand, size = MODEL_ICON_SIZE }: { brand: ModelBrandIc
   />
 );
 
-const ProviderLogo = ({
-  providerId,
-  size = MODEL_ICON_SIZE,
-}: {
-  providerId: ThirdPartyProviderId;
-  size?: number;
-}) => (
+const ProviderLogo = ({ providerId, size = MODEL_ICON_SIZE }: { providerId: ThirdPartyProviderId; size?: number }) => (
   <img
     src={THIRD_PARTY_PROVIDER_LOGO[providerId]}
     alt={THIRD_PARTY_PROVIDER_LABELS[providerId] ?? providerId}

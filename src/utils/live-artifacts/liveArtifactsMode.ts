@@ -23,10 +23,7 @@ export function isLiveArtifactsModeActive(args: {
   }
 
   // Check prompt mode override
-  if (
-    promptMode &&
-    liveArtifactsSystemPrompts?.[promptMode]?.trim()
-  ) {
+  if (promptMode && liveArtifactsSystemPrompts?.[promptMode]?.trim()) {
     const overridePrompt = liveArtifactsSystemPrompts[promptMode]!.trim();
     if (instruction === overridePrompt) {
       return true;
@@ -51,12 +48,7 @@ export function isLiveArtifactsModeFromSettings(args: {
   liveArtifactsSystemPrompt?: string | null;
   liveArtifactsSystemPrompts?: Partial<Record<LiveArtifactsPromptMode, string>> | null;
 }): boolean {
-  const {
-    systemInstruction,
-    promptMode,
-    liveArtifactsSystemPrompt,
-    liveArtifactsSystemPrompts,
-  } = args;
+  const { systemInstruction, promptMode, liveArtifactsSystemPrompt, liveArtifactsSystemPrompts } = args;
 
   if (!systemInstruction) return false;
 

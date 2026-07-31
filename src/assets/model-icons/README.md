@@ -18,14 +18,13 @@ Provider brand logos (PNG, 1024×1024) rendered as `<img>` in the model picker
 and the third-party settings panel for each enabled provider's models. Sourced
 from the VoiceHotkey provider-logo set.
 
-| File            | Provider (`ThirdPartyProviderId`) |
-| --------------- | --------------------------------- |
-| `openai.png`    | `openai`                          |
-| `deepseek.png`  | `deepseek`                        |
-| `anthropic.png` | `anthropic`                       |
-| `openrouter.png`| `openrouter`                      |
-| `qwen.png`      | `qwen`                            |
-| `kimi.png`      | `kimi`                            |
-| `glm.png`       | `glm`                             |
-| `custom.png`    | `custom`                          |
-
+| File             | Provider (`ThirdPartyProviderId`) |
+| ---------------- | --------------------------------- |
+| `openai.png`     | `openai`                          |
+| `deepseek.png`   | `deepseek`                        |
+| `anthropic.png`  | `anthropic`                       |
+| `openrouter.png` | `openrouter`                      |
+| `qwen.png`       | `qwen`                            |
+| `kimi.png`       | `kimi`                            |
+| `glm.png`        | `glm`                             |
+| `custom.png`     | `custom`                          |
