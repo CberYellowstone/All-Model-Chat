@@ -57,6 +57,7 @@ vi.mock('./generationLease', () => ({
   releaseGenerationLease: vi.fn(),
   startGenerationLeaseHeartbeat: vi.fn(),
   stopGenerationLeaseHeartbeat: vi.fn(),
+  isGenerationLeaseHeldByTab: vi.fn(() => false),
 }));
 
 vi.mock('./activeGenerationJobs', () => ({
@@ -72,7 +73,7 @@ vi.mock('@/services/logService', async () => {
 import { useStreamResume } from './useStreamResume';
 import { createAppSettings, createChatSettings } from '@/test/data/factories';
 import { startActiveGenerationJob, unregisterActiveGenerationJob } from './activeGenerationJobs';
-import { tryAcquireGenerationLease } from './generationLease';
+import { tryAcquireGenerationLease, isGenerationLeaseHeldByTab } from './generationLease';
 
 const SESSION_ID = 'session-1';
 const GENERATION_ID = 'gen-1';
@@ -150,11 +151,31 @@ describe('useStreamResume', () => {
     mockIsGeminiProxyRelativePath.mockReturnValue(true);
     mockIsServerManagedApiEnabledForProxyRequests.mockReturnValue(false);
     mockGetGeminiKeyForRequest.mockReturnValue({ key: 'byok-key', isNewKey: false });
+    (isGenerationLeaseHeldByTab as ReturnType<typeof vi.fn>).mockReturnValue(false);
     mockSendStatelessMessageStreamApi.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('skips resume when THIS tab already holds the generation lease (send in flight)', async () => {
+    recordJob();
+    (isGenerationLeaseHeldByTab as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    const { result } = renderResume();
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    // No second stream attach: the live send already consumes the buffered job.
+    expect(mockSendStatelessMessageStreamApi).not.toHaveBeenCalled();
+    expect(tryAcquireGenerationLease).not.toHaveBeenCalled();
   });
 
   it('resumes with the server-managed sentinel when no key is cached and the proxy is server-managed', async () => {

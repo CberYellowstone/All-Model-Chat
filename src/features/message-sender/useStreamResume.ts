@@ -12,6 +12,7 @@ import {
 } from '@/utils/apiKeySelection';
 import { TAB_ID } from '@/stores/tabIdentity';
 import {
+  isGenerationLeaseHeldByTab,
   releaseGenerationLease,
   startGenerationLeaseHeartbeat,
   stopGenerationLeaseHeartbeat,
@@ -91,6 +92,20 @@ export const useStreamResume = ({
 
       const pending = readPendingStreamJob(target.sessionId);
       if (!pending || pending.generationId !== target.generationId) {
+        return;
+      }
+
+      // If THIS tab already holds the generation lease for the session, the
+      // original send is still running in this tab (runMessageLifecycle holds
+      // the lease for the whole turn). Attaching a second stream handler would
+      // deliver every buffered event twice. After a page refresh the lease
+      // belongs to the old page and is stale, so this check does not block
+      // genuine refresh-resume.
+      if (isGenerationLeaseHeldByTab(target.sessionId)) {
+        logService.info('Stream resume skipped: generation still in flight in this tab.', {
+          sessionId: target.sessionId,
+          generationId: pending.generationId,
+        });
         return;
       }
 

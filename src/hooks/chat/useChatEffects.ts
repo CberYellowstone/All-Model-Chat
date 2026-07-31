@@ -10,6 +10,7 @@ import {
 } from '@/utils/model/modelCapabilities';
 import { getTranslator } from '@/i18n/translations';
 import { readPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
+import { isGenerationLeaseHeldByTab } from '@/features/message-sender/generationLease';
 
 interface UseChatEffectsProps {
   activeSessionId: string | null;
@@ -206,6 +207,17 @@ export const useChatEffects = ({
 
     const pending = readPendingStreamJob(activeSessionId);
     if (!pending) {
+      return;
+    }
+
+    // This tab already owns the generation lease → the send is still running
+    // in THIS tab (runMessageLifecycle holds the lease for the whole turn).
+    // Resuming would attach a second stream handler to the same job and the
+    // buffered events would be delivered to both, doubling the output. The
+    // live send already re-attaches on its own after transient disconnects,
+    // so skipping the resume here is safe. After a page refresh the lease is
+    // stale (belongs to the old page) and resume proceeds normally.
+    if (isGenerationLeaseHeldByTab(activeSessionId)) {
       return;
     }
 

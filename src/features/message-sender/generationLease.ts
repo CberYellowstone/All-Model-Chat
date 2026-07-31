@@ -74,6 +74,18 @@ export const isGenerationLeaseHeldByOther = (sessionId: string): boolean => {
 };
 
 /**
+ * Whether THIS tab currently holds the generation lease for the session,
+ * without writing or refreshing anything. Used by stream resume to detect
+ * that a live send is already in progress in this tab (the lease is held for
+ * the duration of a turn by runMessageLifecycle) so it does not attach a
+ * second handler to the same stream job and double the output.
+ */
+export const isGenerationLeaseHeldByTab = (sessionId: string): boolean => {
+  const lease = readGenerationLease(sessionId);
+  return Boolean(lease && lease.tabId === TAB_ID);
+};
+
+/**
  * Acquire or refresh a per-session generation lease for this tab.
  * Returns false when another tab holds a fresh lease.
  */
