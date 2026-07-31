@@ -46,18 +46,13 @@ export const LiveArtifactInteractionDiagnostic: React.FC<LiveArtifactInteraction
       className="my-3 rounded-lg border border-[var(--theme-border-primary)] bg-[var(--theme-bg-model-message)] p-4 shadow-sm"
       style={baseFontSize ? { fontSize: `${baseFontSize}px` } : undefined}
     >
-      {/* Header */}
       <div className="flex items-start gap-3">
         <AlertTriangle size={20} style={{ color: ERROR_ICON_COLOR, flexShrink: 0, marginTop: '0.15em' }} />
         <div className="min-w-0 flex-1">
-          <h3
-            className="text-[1em] font-semibold"
-            style={{ color: 'var(--theme-text-danger)' }}
-          >
+          <h3 className="text-[1em] font-semibold" style={{ color: 'var(--theme-text-danger)' }}>
             {t('liveArtifactInteractionInvalidTitle')}
           </h3>
 
-          {/* Errors */}
           {diagnosis.errors.length > 0 && (
             <div className="mt-2">
               <p className="text-[0.875em] font-medium text-[var(--theme-text-primary)]">
@@ -77,7 +72,6 @@ export const LiveArtifactInteractionDiagnostic: React.FC<LiveArtifactInteraction
             </div>
           )}
 
-          {/* Repairs */}
           {diagnosis.repairs.length > 0 && (
             <div className="mt-2">
               <p className="text-[0.8em] italic" style={{ color: 'var(--theme-text-secondary)' }}>
@@ -99,7 +93,6 @@ export const LiveArtifactInteractionDiagnostic: React.FC<LiveArtifactInteraction
         </div>
       </div>
 
-      {/* Collapsible raw JSON */}
       <div className="mt-3">
         <button
           type="button"
@@ -120,7 +113,6 @@ export const LiveArtifactInteractionDiagnostic: React.FC<LiveArtifactInteraction
         )}
       </div>
 
-      {/* Retry button */}
       {onFollowUp && diagnosis.errors.length > 0 && (
         <div className="mt-3 flex justify-start">
           <button

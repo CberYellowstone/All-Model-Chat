@@ -42,11 +42,10 @@ interface ResumeTarget {
   sessionSettings?: IndividualChatSettings;
 }
 
-export interface StreamResumeApi {
+interface StreamResumeApi {
   /** Resume any pending stream job for the active session after a page load. */
   resumePendingStream: (target: ResumeTarget) => Promise<void>;
 }
-
 /**
  * After a page refresh, if the api container is still buffering an upstream
  * stream for this session (recorded in localStorage as a "pending stream

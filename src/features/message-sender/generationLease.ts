@@ -1,7 +1,7 @@
 import { TAB_ID } from '@/stores/tabIdentity';
 
 export const GENERATION_LEASE_TTL_MS = 120_000;
-export const GENERATION_LEASE_HEARTBEAT_MS = 30_000;
+const GENERATION_LEASE_HEARTBEAT_MS = 30_000;
 
 export interface GenerationLease {
   tabId: string;

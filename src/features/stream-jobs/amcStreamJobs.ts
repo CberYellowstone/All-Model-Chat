@@ -1,5 +1,4 @@
 import { TAB_ID } from '@/stores/tabIdentity';
-import { logService } from '@/services/logService';
 
 /**
  * Persistent record of an in-flight streamed generation that the api container
@@ -11,7 +10,7 @@ import { logService } from '@/services/logService';
  * session id, in localStorage so it survives a reload. Cleared on completion,
  * abort, or error.
  */
-export interface PendingStreamJob {
+interface PendingStreamJob {
   sessionId: string;
   generationId: string;
   /** Job id sent to the api container; today this equals generationId. */
@@ -153,12 +152,6 @@ export const clearPendingStreamJob = (sessionId: string): void => {
   }
 };
 
-/** Whether this tab owns the pending job for the session (multi-tab guard). */
-export const isPendingStreamJobOwnedByTab = (sessionId: string): boolean => {
-  const job = readPendingStreamJob(sessionId);
-  return Boolean(job && job.tabId === TAB_ID);
-};
-
 /**
  * Remove the pending record only if this tab owns it. Returns true when a
  * record was removed. Used so a non-owning tab does not clobber another tab's
@@ -171,11 +164,4 @@ export const clearOwnedPendingStreamJob = (sessionId: string): boolean => {
   }
   clearPendingStreamJob(sessionId);
   return true;
-};
-
-export const PENDING_STREAM_JOB_TTL_MS = PENDING_JOB_TTL_MS;
-
-// Re-exported for the message-sender wiring so it can log resume decisions.
-export const logResume = (message: string, context?: unknown): void => {
-  logService.info(message, context);
 };
