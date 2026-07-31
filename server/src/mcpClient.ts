@@ -30,7 +30,7 @@ const APP_VERSION = (() => {
   }
 })();
 
-export interface McpClientBridgeOptions {
+interface McpClientBridgeOptions {
   allowPrivateHttp?: boolean;
   fetchImpl?: FetchLike;
   /** Override idle eviction for tests. */

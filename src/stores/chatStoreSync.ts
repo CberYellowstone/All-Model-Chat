@@ -11,7 +11,7 @@ import { getChatSyncChannel } from './chatSyncChannel';
 import type { UpdaterOrValue } from './stateUpdaters';
 
 /** How often to sweep remote loading flags that lost their lease. */
-export const SESSION_LOADING_STALE_CHECK_MS = 30_000;
+const SESSION_LOADING_STALE_CHECK_MS = 30_000;
 
 interface ChatSyncStore {
   getState: () => {

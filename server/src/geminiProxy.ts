@@ -7,7 +7,7 @@ import { maybeStreamWithJob } from './streamJobs.js';
 import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
-export const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
+const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',

@@ -65,9 +65,9 @@ sweeper.unref();
 
 // ── CRUD ────────────────────────────────────────────────────────────────────
 
-export const getJob = (id: string): StreamJob | undefined => jobs.get(id);
+const getJob = (id: string): StreamJob | undefined => jobs.get(id);
 
-export const createJob = (id: string): StreamJob => {
+const createJob = (id: string): StreamJob => {
   const job: StreamJob = {
     id,
     firstSeq: 1,
@@ -83,7 +83,7 @@ export const createJob = (id: string): StreamJob => {
   return job;
 };
 
-export const appendChunk = (job: StreamJob, data: string): void => {
+const appendChunk = (job: StreamJob, data: string): void => {
   const seq = job.firstSeq + job.chunks.length;
   job.chunks.push({ seq, data });
   job.updatedAt = Date.now();
@@ -184,7 +184,7 @@ export function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Respon
  * onward. Each call drains everything currently buffered. When the job is
  * done, the response is closed. Returns the new cursor.
  */
-export function flushToResponse(job: StreamJob, response: ServerResponse, cursor: number): number {
+function flushToResponse(job: StreamJob, response: ServerResponse, cursor: number): number {
   let nextCursor = cursor;
   for (const chunk of job.chunks) {
     if (chunk.seq > nextCursor && chunk.seq >= job.firstSeq) {
@@ -247,7 +247,7 @@ export async function maybeStreamWithSharedJob(
  * (for a new job) started the upstream fetch; this function only manages the
  * browser-side subscription. Returns true when handled.
  */
-export async function attachJobStream(
+async function attachJobStream(
   request: IncomingMessage,
   response: ServerResponse,
   config: AttachJobStreamConfig,

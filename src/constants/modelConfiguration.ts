@@ -22,7 +22,7 @@ export const MODELS_SUPPORTING_RAW_MODE = [
 ];
 
 /** Built-in model IDs removed from the app; remap saved settings to a supported replacement. */
-export const REMOVED_MODEL_ID_MIGRATIONS: Readonly<Record<string, string>> = {
+const REMOVED_MODEL_ID_MIGRATIONS: Readonly<Record<string, string>> = {
   'gemini-3.1-flash-lite': 'gemini-3.5-flash-lite',
   'models/gemini-3.1-flash-lite': 'gemini-3.5-flash-lite',
   // Exact IDs only — must not match gemini-3.5-flash-lite.

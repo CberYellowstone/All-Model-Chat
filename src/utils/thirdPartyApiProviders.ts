@@ -141,14 +141,6 @@ export const getThirdPartyProviderConfig = (settings: Pick<AppSettings, 'thirdPa
   return thirdPartyApi.providers[thirdPartyApi.activeProvider] ?? thirdPartyApi.providers.openai;
 };
 
-export const getThirdPartyProviderModels = (settings: Pick<AppSettings, 'thirdPartyApi'>): ModelOption[] =>
-  getThirdPartyProviderConfig(settings).models;
-
-export const getThirdPartyProviderModelId = (
-  settings: Pick<AppSettings, 'thirdPartyApi'>,
-  sessionModelId?: string,
-): string => sessionModelId ?? getThirdPartyProviderConfig(settings).modelId;
-
 /**
  * Returns all enabled third-party providers as { id, config } pairs.
  * A provider is considered enabled only when `config.enabled === true`.
@@ -270,8 +262,3 @@ export const updateThirdPartyProviderConfig = (
     }),
   },
 });
-
-export const updateActiveThirdPartyProviderConfig = (
-  thirdPartyApi: ThirdPartyApiSettings,
-  updates: Partial<ThirdPartyProviderConfig>,
-): ThirdPartyApiSettings => updateThirdPartyProviderConfig(thirdPartyApi, thirdPartyApi.activeProvider, updates);

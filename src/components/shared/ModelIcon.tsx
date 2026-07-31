@@ -29,17 +29,6 @@ const THIRD_PARTY_PROVIDER_LOGO: Record<ThirdPartyProviderId, string> = {
   custom: customLogoUrl,
 };
 
-const THIRD_PARTY_PROVIDER_ICON_COLOR: Partial<Record<ThirdPartyProviderId, string>> = {
-  openai: 'text-emerald-500 dark:text-emerald-400',
-  deepseek: 'text-blue-500 dark:text-blue-400',
-  anthropic: 'text-orange-500 dark:text-orange-400',
-  openrouter: 'text-fuchsia-500 dark:text-fuchsia-400',
-  qwen: 'text-violet-500 dark:text-violet-400',
-  kimi: 'text-cyan-500 dark:text-cyan-400',
-  glm: 'text-rose-500 dark:text-rose-400',
-  custom: 'text-slate-500 dark:text-slate-400',
-};
-
 type ModelBrandIconKey = 'gemini' | 'gemma' | 'nanobanana';
 
 const BRAND_ICON_SRC: Record<ModelBrandIconKey, string> = {
@@ -141,4 +130,4 @@ export const getModelIcon = (model: ModelOption | undefined) => {
   );
 };
 
-export { THIRD_PARTY_PROVIDER_LOGO, THIRD_PARTY_PROVIDER_ICON_COLOR };
+export { THIRD_PARTY_PROVIDER_LOGO };

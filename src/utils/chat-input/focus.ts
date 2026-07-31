@@ -1,6 +1,6 @@
 import { CHAT_INPUT_TEXTAREA_SELECTOR } from '@/constants/layout';
 
-export type FocusChatInputOptions = {
+type FocusChatInputOptions = {
   /** Place the caret at the end of the current input value after focusing. */
   caret?: 'end';
 };

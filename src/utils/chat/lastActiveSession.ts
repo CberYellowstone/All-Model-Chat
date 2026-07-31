@@ -5,7 +5,7 @@ import type { ChatSettings } from '@/types';
  * 最后活跃会话快照。存于 localStorage（跨标签共享），
  * 让新开的标签页能以"源标签页正在查看的会话"为模板创建新聊天。
  */
-export interface LastActiveSessionSnapshot {
+interface LastActiveSessionSnapshot {
   sessionId: string;
   settings: ChatSettings;
   ts: number;

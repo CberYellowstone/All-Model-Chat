@@ -75,22 +75,6 @@ export function getThirdPartyProxyBaseUrl(): string | null {
 }
 
 /**
- * Whether the deployment routes third-party (OpenAI-compatible / Anthropic)
- * requests through our own api container where the stream-journal lives. True
- * only when the Docker web container injected a relative third-party proxy URL
- * (e.g. "/api/openai"). False in static/Pages deploys where the browser calls
- * the upstream directly and journaling is impossible — there is no container
- * to buffer the upstream independent of the browser connection.
- *
- * This gates x-amc-job-id stamping and resume for third-party streams, the same
- * way isGeminiProxyRelativePath gates the Gemini path.
- */
-export function isThirdPartyProxyRelativePath(): boolean {
-  const proxyUrl = getThirdPartyProxyBaseUrl();
-  return Boolean(proxyUrl) && !/^https?:\/\//i.test((proxyUrl ?? '').trim());
-}
-
-/**
  * Whether the deployment provides an api container that can proxy /api/gemini
  * requests. True only when the runtime config (Docker web-server.js) explicitly
  * enables the proxy AND sets it to a relative path. False in static/Pages

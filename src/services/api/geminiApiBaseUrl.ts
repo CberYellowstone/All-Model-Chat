@@ -12,23 +12,6 @@ export const resolveConfiguredGeminiBaseUrl = (appSettings: GeminiApiBaseUrlSett
 const isAbsoluteHttpUrl = (url: string): boolean => /^https?:\/\//i.test(url.trim());
 
 /**
- * The URL the browser should send Gemini API requests TO.
- *
- * - Docker runtime: always the api container's relative path (e.g. "/api/gemini")
- *   so all requests route through our backend whether or not the user configured
- *   an absolute upstream proxy URL.
- * - Static/Pages: what the user configured, or the default Gemini API URL.
- */
-export const resolveGeminiFrontendBaseUrl = (appSettings: GeminiApiBaseUrlSettings): string => {
-  const runtimeBaseUrl = getGeminiApiProxyBaseUrl();
-  if (runtimeBaseUrl) {
-    return normalizeGeminiApiBaseUrl(runtimeBaseUrl);
-  }
-  const configuredBaseUrl = resolveConfiguredGeminiBaseUrl(appSettings);
-  return normalizeGeminiApiBaseUrl(configuredBaseUrl ?? DEFAULT_GEMINI_API_BASE_URL);
-};
-
-/**
  * Whether the effective frontend base URL is a relative path, meaning the
  * browser sends Gemini requests through our own api container where the
  * stream-journal lives. Only then is it worth stamping x-amc-job-id for resume.
