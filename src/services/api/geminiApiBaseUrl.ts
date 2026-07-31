@@ -67,14 +67,16 @@ export const getNormalizedUpstreamBaseUrl = (appSettings: GeminiApiBaseUrlSettin
 /**
  * The base URL to use when constructing the SDK's GoogleGenAI client.
  *
- * In Docker mode, always points to the api container's relative path so that
- * requests go through our backend. In static/Pages mode, uses the configured
- * upstream or the default Gemini API URL.
+ * In Docker mode, points to the api container via the deployment's proxy path
+ * (e.g. "/api/gemini"), resolved against the current origin into an absolute
+ * http(s) URL so the @google/genai SDK's internal `new URL(...)` does not throw
+ * "Invalid URL" on a bare relative path. Requests still traverse our backend.
+ * In static/Pages mode, uses the configured upstream or the default Gemini API URL.
  */
 export const getGeminiApiBaseUrlForSettings = (settings?: GeminiApiBaseUrlSettings | null): string => {
   const runtimeBaseUrl = getGeminiApiProxyBaseUrl();
   if (runtimeBaseUrl) {
-    return normalizeGeminiApiBaseUrl(runtimeBaseUrl);
+    return normalizeGeminiApiBaseUrl(toAbsoluteHttpUrl(runtimeBaseUrl));
   }
   const configuredBaseUrl = settings ? resolveConfiguredGeminiBaseUrl(settings) : null;
   return normalizeGeminiApiBaseUrl(configuredBaseUrl ?? DEFAULT_GEMINI_API_BASE_URL);
