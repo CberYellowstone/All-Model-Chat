@@ -95,7 +95,7 @@ describe('GenerationSection', () => {
     await act(async () => {
       renderer.root.render(
         <GenerationSection
-          modelId="gemini-robotics-er-1.6-preview"
+          modelId="gemini-robotics-er-2-preview"
           currentSettings={ultraHighSettings}
           onUpdateSetting={vi.fn()}
         />,

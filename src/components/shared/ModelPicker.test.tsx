@@ -47,7 +47,7 @@ describe('getModelIcon', () => {
 
   it('uses the Gemini SVG brand icon for Gemini Robotics models', () => {
     const roboticsMarkup = renderToStaticMarkup(
-      getModelIcon({ id: 'gemini-robotics-er-1.6-preview', name: 'Gemini Robotics-ER 1.6 Preview' }),
+      getModelIcon({ id: 'gemini-robotics-er-2-preview', name: 'Gemini Robotics-ER 2 Preview' }),
     );
 
     expect(roboticsMarkup).toContain('data-model-brand-icon="gemini"');

@@ -1,4 +1,5 @@
 import type { ModelOption } from '@/types';
+import { ROBOTICS_MODEL } from './modelConfiguration';
 
 type ModelRegistryGroup =
   | 'defaultPinned'
@@ -57,12 +58,12 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     },
   },
   {
-    id: 'gemini-robotics-er-1.6-preview',
-    name: 'Gemini Robotics-ER 1.6',
+    id: ROBOTICS_MODEL,
+    name: 'Gemini Robotics-ER 2',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest'],
     groupLabels: {
-      liveArtifacts: 'Gemini Robotics-ER 1.6',
-      connectionTest: 'Gemini Robotics-ER 1.6',
+      liveArtifacts: 'Gemini Robotics-ER 2',
+      connectionTest: 'Gemini Robotics-ER 2',
     },
   },
   {

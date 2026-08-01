@@ -23,7 +23,7 @@ describe('buildModelCatalog', () => {
       { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS Preview' },
       { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image Preview' },
       { id: 'gemma-4-31b-it', name: 'Gemma 4 31B IT' },
-      { id: 'gemini-robotics-er-1.6-preview', name: 'Gemini Robotics-ER 1.6 Preview' },
+      { id: 'gemini-robotics-er-2-preview', name: 'Gemini Robotics-ER 2 Preview' },
     ];
 
     const entries = buildModelCatalog(models);
@@ -48,7 +48,7 @@ describe('buildModelCatalog', () => {
       group: 'standard',
       badgeKeys: expect.arrayContaining(['gemma']),
     });
-    expect(getEntry(entries, 'gemini-robotics-er-1.6-preview')).toMatchObject({
+    expect(getEntry(entries, 'gemini-robotics-er-2-preview')).toMatchObject({
       category: 'robotics',
       group: 'standard',
       badgeKeys: expect.arrayContaining(['robotics']),

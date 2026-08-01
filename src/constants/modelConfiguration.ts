@@ -1,5 +1,11 @@
 export const DEFAULT_MODEL_ID = 'gemini-3.6-flash';
 
+/**
+ * Single source of truth for the Gemini Robotics ER model id.
+ * The previous ER generation (preview) shut down 2026-08-31; migrated to ER 2.
+ */
+export const ROBOTICS_MODEL = 'gemini-robotics-er-2-preview';
+
 export const REQUIRED_THINKING_MODEL_IDS: readonly string[] = [
   'gemini-3.1-pro-preview',
   'models/gemini-3.1-pro-preview',
@@ -18,7 +24,7 @@ export const MODELS_SUPPORTING_RAW_MODE = [
   'gemini-3.5-flash-lite',
   'gemini-3-flash-preview',
   'gemini-3.1-pro-preview',
-  'gemini-robotics-er-1.6-preview',
+  ROBOTICS_MODEL,
 ];
 
 /** Built-in model IDs removed from the app; remap saved settings to a supported replacement. */
@@ -52,7 +58,7 @@ export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number
     range: thinkingBudgetRange(128, 32768),
   },
   {
-    modelIds: ['gemini-robotics-er-1.6-preview', 'models/gemini-robotics-er-1.6-preview'],
+    modelIds: [ROBOTICS_MODEL, `models/${ROBOTICS_MODEL}`],
     range: thinkingBudgetRange(128, 24576),
   },
 ]);

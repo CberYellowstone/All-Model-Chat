@@ -543,25 +543,25 @@ describe('buildGenerationConfig', () => {
     expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
 
-  it('includes thinkingBudget config for Gemini Robotics-ER 1.6', async () => {
-    const config = await buildGenerationConfig('gemini-robotics-er-1.6-preview', 'sys', baseConfig, false, 1024);
+  it('includes thinkingBudget config for Gemini Robotics-ER 2', async () => {
+    const config = await buildGenerationConfig('gemini-robotics-er-2-preview', 'sys', baseConfig, false, 1024);
     expect(config.thinkingConfig).toEqual({
       thinkingBudget: 1024,
       includeThoughts: true,
     });
   });
 
-  it('preserves auto thinking for Gemini Robotics-ER 1.6', async () => {
-    const config = await buildGenerationConfig('gemini-robotics-er-1.6-preview', 'sys', baseConfig, false, -1);
+  it('preserves auto thinking for Gemini Robotics-ER 2', async () => {
+    const config = await buildGenerationConfig('gemini-robotics-er-2-preview', 'sys', baseConfig, false, -1);
     expect(config.thinkingConfig).toEqual({
       includeThoughts: true,
       thinkingLevel: 'HIGH',
     });
   });
 
-  it('uses thinkingLevel when budget is 0 for Gemini Robotics-ER 1.6', async () => {
+  it('uses thinkingLevel when budget is 0 for Gemini Robotics-ER 2', async () => {
     const config = await buildGenerationConfig(
-      'gemini-robotics-er-1.6-preview',
+      'gemini-robotics-er-2-preview',
       'sys',
       baseConfig,
       false,
@@ -887,7 +887,7 @@ describe('appendFunctionDeclarationsToTools', () => {
 
   it('keeps custom function declarations alongside built-in tools for Gemini Robotics models', () => {
     const config = appendFunctionDeclarationsToTools(
-      'gemini-robotics-er-1.6-preview',
+      'gemini-robotics-er-2-preview',
       { tools: [{ googleSearch: {} }] },
       [
         {

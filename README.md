@@ -51,6 +51,10 @@
 - **Docker 部署模式**：`web + api` 双服务部署，普通 Gemini 请求走 `/api/gemini/*`，第三方兼容接口走 `/api/openai/*`，Live API 走 `/api/live` 的 WebSocket 全代理
 - **静态前端 + 独立 API 模式**：前端部署到 Pages/CDN，后端单独托管 Node API 服务
 
+> 📢 **Gemini Robotics-ER 模型迁移公告（2026-08-01）**
+> 项目已停止支持 `gemini-robotics-er-1.6-preview`（该模型已于 **2026-08-31** 停服），内置模型已迁移至 **`gemini-robotics-er-2-preview`**，全项目统一由常量 `ROBOTICS_MODEL`（`src/constants/modelConfiguration.ts`）定义。
+> 使用 Robotics 模型前：1) 请确保 `GEMINI_API_KEY` 已在 [AI Studio](https://aistudio.google.com/api-keys) 添加 API 限制，无限制 Key 会返回 `403 Forbidden`；2) 建议 `thinking_level` 默认 `medium`（延迟与性能平衡），仅高精度空间任务使用 `high`；3) 高精度场景可对同一输入多次查询取平均以降低方差。
+
 ## API 模式说明
 
 ### Gemini 原生模式
@@ -246,6 +250,8 @@ docker compose up -d --build
 > 若要对公网开放，请额外引入鉴权、配额/限流、滥用防护、审计与租户隔离等能力。
 
 ### 运行时配置与环境变量
+
+> 📌 **Gemini Robotics-ER 模型的 API Key 前置条件**（`gemini-robotics-er-2-preview` 等 Robotics 端点）：Google 要求该模型的 API Key **必须已在 [AI Studio](https://aistudio.google.com/api-keys) 添加 API 限制**（restriction），无限制的 Key 会被拒绝并返回 `403 Forbidden`。使用 Robotics 模型前请在 AI Studio 为对应 Key 配置限制（如限定项目/域名），并在部署文档与 CI secrets 说明中同步该要求。
 
 部署时请区分两类配置：
 
@@ -475,7 +481,7 @@ OpenAI 兼容模式使用独立模型列表，可在设置中手动维护或从�
 | 类型           | 模型                                                                                                            |
 | :------------- | :-------------------------------------------------------------------------------------------------------------- |
 | **Gemini 3.x** | gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.1-pro-preview                  |
-| **Robotics**   | gemini-robotics-er-1.6-preview                                                                                  |
+| **Robotics**   | gemini-robotics-er-2-preview                                                                                  |
 | **Gemma 4**    | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                              |
 | **图片生成**   | gemini-2.5-flash-image, gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image |
 | **TTS**        | gemini-3.1-flash-tts-preview (30 种语音)                                                                        |

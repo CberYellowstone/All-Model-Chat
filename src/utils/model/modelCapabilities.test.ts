@@ -10,8 +10,8 @@ import {
 } from './modelCapabilities';
 
 describe('raw mode support', () => {
-  it('includes Gemini Robotics-ER 1.6', () => {
-    expect(MODELS_SUPPORTING_RAW_MODE).toContain('gemini-robotics-er-1.6-preview');
+  it('includes Gemini Robotics-ER 2', () => {
+    expect(MODELS_SUPPORTING_RAW_MODE).toContain('gemini-robotics-er-2-preview');
   });
 });
 
@@ -70,8 +70,8 @@ describe('getModelCapabilities', () => {
     expect(capabilities.supportsThinkingLevel).toBe(false);
   });
 
-  it('marks Gemini Robotics-ER 1.6 as supporting thinking levels', () => {
-    const capabilities = getModelCapabilities('gemini-robotics-er-1.6-preview');
+  it('marks Gemini Robotics-ER 2 as supporting thinking levels', () => {
+    const capabilities = getModelCapabilities('gemini-robotics-er-2-preview');
 
     expect(capabilities.supportsThinkingLevel).toBe(true);
     expect(capabilities.isGemini3).toBe(false);

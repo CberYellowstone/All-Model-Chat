@@ -58,7 +58,7 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
 
   // Determine the target "Fast" level based on model capabilities
   // Gemini 3 Flash models support MINIMAL thinking for maximum speed
-  // Gemini Robotics-ER 1.6 matches Flash here; other Gemini 3 models
+  // Gemini Robotics-ER matches Flash here; other Gemini 3 models
   // (like Pro) typically bottom out at LOW.
   const targetFastLevel = isFlashModel || isGeminiRoboticsModel ? 'MINIMAL' : 'LOW';
 

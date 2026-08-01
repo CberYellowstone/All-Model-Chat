@@ -51,6 +51,10 @@ The project currently focuses on one main application shape: a **Vite + React SP
 - **Docker mode**: a `web + api` deployment where regular Gemini requests call `/api/gemini/*`, while Live API connects directly from the browser with the local key.
 - **Static frontend + standalone API mode**: deploy the frontend to Pages/CDN and run the Node API service separately.
 
+> 📢 **Gemini Robotics-ER model migration notice (2026-08-01)**
+> Support for `gemini-robotics-er-1.6-preview` has been dropped (the model was shut down on **2026-08-31**). The built-in Robotics model is now **`gemini-robotics-er-2-preview`**, defined once as the `ROBOTICS_MODEL` constant (`src/constants/modelConfiguration.ts`).
+> Before using Robotics models: 1) make sure your `GEMINI_API_KEY` has restrictions configured in [AI Studio](https://aistudio.google.com/api-keys) — unrestricted keys return `403 Forbidden`; 2) keep `thinking_level` at `medium` by default (best latency/performance balance), reserving `high` for high-precision spatial tasks; 3) for high-precision tasks, query multiple times and average the results to reduce variance.
+
 ## API Modes
 
 ### Gemini Native
@@ -447,12 +451,14 @@ AMC-WebUI/
 
 ## Gemini Native Default Models
 
+> 📌 **Prerequisite for Gemini Robotics-ER models** (`gemini-robotics-er-2-preview` and other Robotics endpoints): Google requires the API key to have **restrictions configured in [AI Studio](https://aistudio.google.com/api-keys)**. Requests with unrestricted keys are rejected with a `403 Forbidden` error. Configure restrictions (e.g. limit by project/domain) for any key used with Robotics models, and keep this requirement in sync in deployment docs and CI secrets.
+
 OpenAI Compatible mode uses a separate model list that you can manage manually or fetch from a compatible endpoint. The table below lists the built-in Gemini Native defaults.
 
 | Type             | Models                                                                                                                  |
 | :--------------- | :---------------------------------------------------------------------------------------------------------------------- |
 | Gemini 3.x       | `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.1-pro-preview`                  |
-| Robotics         | `gemini-robotics-er-1.6-preview`                                                                                        |
+| Robotics         | `gemini-robotics-er-2-preview`                                                                                        |
 | Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                                  |
 | Image generation | `gemini-2.5-flash-image`, `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image` |
 | TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                                           |
