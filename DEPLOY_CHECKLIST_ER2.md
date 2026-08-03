@@ -16,6 +16,7 @@ Gemini Robotics ER 1.6 已于 2026-08-31 停服；本项目已迁移到
 ## 阶段 A · Staging 验证
 
 1. **跑冒烟脚本**（连真实 API，在 staging 环境或本地执行）：
+
    ```bash
    GEMINI_API_KEY=<受限key> node scripts/smoke_robotics.mjs
    ```
@@ -23,6 +24,7 @@ Gemini Robotics ER 1.6 已于 2026-08-31 停服；本项目已迁移到
    - 期望：退出码 0；每项 `point=[y,x]`（0–1000 整数）与非空 `label`。
    - 若自建端点/代理：`GEMINI_API_BASE=<endpoint>` 同命令验证代理链路
      （注意：interactions 端点由 SDK 走 `POST /v1beta/interactions`，代理需支持该路径）。
+
 2. **观察指标**（连续 ≥10 次调用或 ≥30 分钟）：
    - 错误率：`5xx / 403 / 429` 计数。
    - 平均延迟与 P95；高分辨率输入或 `thinking_level: high` 会显著增加延迟（官方限制说明）。
