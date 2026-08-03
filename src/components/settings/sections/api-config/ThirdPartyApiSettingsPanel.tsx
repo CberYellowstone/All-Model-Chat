@@ -116,12 +116,12 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                     {THIRD_PARTY_PROVIDER_LABELS[providerId]}
                   </span>
                   {isEnabled && !hasKey && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-status-warning-bg)] text-[var(--theme-status-warning-text)]">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-bg-warning)] text-[var(--theme-text-warning)]">
                       {t('thirdPartyApiKeyMissing')}
                     </span>
                   )}
                   {isEnabled && hasKey && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-status-success-bg)] text-[var(--theme-status-success-text)]">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--theme-bg-success)] text-[var(--theme-text-success)]">
                       {t('thirdPartyApiReady')}
                     </span>
                   )}
@@ -158,14 +158,14 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                         const warning = getOpenAICompatibleBaseUrlWarning(expandedConfig.baseUrl);
                         if (warning === 'chat-completions-endpoint') {
                           return (
-                            <p className="text-xs text-[var(--theme-status-warning-text)]">
+                            <p className="text-xs text-[var(--theme-text-warning)]">
                               {t('thirdPartyApiBaseUrlChatCompletionsWarning')}
                             </p>
                           );
                         }
                         if (warning === 'models-endpoint') {
                           return (
-                            <p className="text-xs text-[var(--theme-status-warning-text)]">
+                            <p className="text-xs text-[var(--theme-text-warning)]">
                               {t('thirdPartyApiBaseUrlModelsWarning')}
                             </p>
                           );

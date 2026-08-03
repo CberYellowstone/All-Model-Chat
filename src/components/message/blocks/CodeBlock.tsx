@@ -214,10 +214,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
     );
   }
 
-  if (isInteractive && isStreamingInteractionCandidate) {
-    return <LiveArtifactInteractionPendingFrame label={t('thinkingText')} baseFontSize={props.liveArtifactFontSize} />;
-  }
-
   if (showInlineHtmlPreview) {
     return (
       <ArtifactFrame

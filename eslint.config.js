@@ -77,7 +77,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/chat/input/ChatInputArea.tsx', 'src/components/chat/input/HiddenFileInputs.tsx'],
+    files: ['src/components/chat/input/ChatInputArea.tsx', 'src/components/chat/input/files/HiddenFileInputs.tsx'],
     rules: {
       'react-hooks/refs': 'off',
     },
