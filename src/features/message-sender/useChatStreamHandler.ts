@@ -110,6 +110,55 @@ export const useChatStreamHandler = ({
           aborted: abortController.signal.aborted,
         });
 
+        // 空回复兜底：流正常结束（未中止）却没有任何正式内容产出时，不应静默
+        // 保存一条空消息。上游/代理可能返回"只思考、不输出"的响应（O:0），或
+        // SDK 解析漏掉文本 part——这两种情况前端此前都当作成功。改为走错误路径，
+        // 保留思考内容并明确提示，避免用户看到"回复到一半中断且无任何提示"。
+        if (!abortController.signal.aborted && streamState.content.trim() === '') {
+          const hasMeaningfulApiPart = streamState.apiParts.some((part) => {
+            const anyPart = part as Part & {
+              text?: string;
+              executableCode?: unknown;
+              codeExecutionResult?: unknown;
+              inlineData?: unknown;
+              functionCall?: unknown;
+            };
+            return Boolean(
+              (anyPart.text && anyPart.text.trim().length > 0) ||
+                anyPart.executableCode ||
+                anyPart.codeExecutionResult ||
+                anyPart.inlineData ||
+                anyPart.functionCall,
+            );
+          });
+          if (!hasMeaningfulApiPart) {
+            const emptyReplyError = new Error(
+              lang === 'zh'
+                ? '模型没有返回任何回答（只产出了思考过程）。请重试或降低思考等级。'
+                : 'The model returned no reply (only reasoning was produced). Please retry or lower the thinking level.',
+            );
+            emptyReplyError.name = 'EmptyReplyError';
+            logService.warn(`Empty reply detected for message ${generationId} in session ${currentSessionId}`);
+            handleApiError(
+              emptyReplyError,
+              currentSessionId,
+              generationId,
+              'Error',
+              streamState.content,
+              streamState.thoughts,
+            );
+            finishActiveGenerationJob({
+              activeJobs,
+              setSessionLoading,
+              sessionId: currentSessionId,
+              generationId,
+            });
+            clearOwnedPendingStreamJob(currentSessionId);
+            streamingStore.clear(generationId);
+            return;
+          }
+        }
+
         if (appSettings.isStreamingEnabled && !streamState.firstContentPartTime) {
           streamState = {
             ...streamState,
