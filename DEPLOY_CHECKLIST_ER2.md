@@ -19,6 +19,7 @@ Gemini Robotics ER 1.6 已于 2026-08-31 停服；本项目已迁移到
    ```bash
    GEMINI_API_KEY=<受限key> node scripts/smoke_robotics.mjs
    ```
+
    - 期望：退出码 0；每项 `point=[y,x]`（0–1000 整数）与非空 `label`。
    - 若自建端点/代理：`GEMINI_API_BASE=<endpoint>` 同命令验证代理链路
      （注意：interactions 端点由 SDK 走 `POST /v1beta/interactions`，代理需支持该路径）。
