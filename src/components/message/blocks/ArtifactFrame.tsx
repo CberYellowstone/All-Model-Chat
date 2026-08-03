@@ -118,16 +118,13 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   // Incremented when KaTeX finishes loading so the final srcDoc (which embeds
   // rendered math) is recomputed after the first render skipped the formulas.
   const [katexReadyTick, setKatexReadyTick] = useState(0);
-  const finalSrcDoc = useMemo(
-    () => {
-      // katexReadyTick is an intentional invalidation token: reading it ties the
-      // memo to the lazy KaTeX load so the first render (which skips formulas)
-      // is recomputed once the chunk has arrived.
-      void katexReadyTick;
-      return buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId });
-    },
-    [baseFontSize, html, katexReadyTick, themeId],
-  );
+  const finalSrcDoc = useMemo(() => {
+    // katexReadyTick is an intentional invalidation token: reading it ties the
+    // memo to the lazy KaTeX load so the first render (which skips formulas)
+    // is recomputed once the chunk has arrived.
+    void katexReadyTick;
+    return buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId });
+  }, [baseFontSize, html, katexReadyTick, themeId]);
   const frameHeight =
     frameHeightState.heightCacheKey === heightCacheKey
       ? frameHeightState.height
