@@ -8,6 +8,7 @@ import { usePreloadedScenarios } from '@/hooks/scenarios/usePreloadedScenarios';
 import { useMessageSender } from '@/features/message-sender/useMessageSender';
 import { useChatScroll } from './useChatScroll';
 import { useAutoTitling } from './useAutoTitling';
+import { useAutoTitleBackfill } from './useAutoTitleBackfill';
 import { useSuggestions } from './useSuggestions';
 import { useChatState } from './useChatState';
 import { useChatActions } from './useChatActions';
@@ -203,6 +204,7 @@ export const useChat = (
     setGeneratingTitleSessionIds,
     sessionKeyMapRef,
   });
+  useAutoTitleBackfill({ appSettings, language });
   useSuggestions({ appSettings, activeChat, isLoading, updateMessageInSession, language, sessionKeyMapRef });
 
   const { loadChatSession, startNewChat, handleDeleteChatHistorySession } = historyHandler;
