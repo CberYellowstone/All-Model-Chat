@@ -7,7 +7,11 @@ export const sanitizeModelOptions = (models: ModelOption[]): ModelOption[] => {
   const seenIds = new Set<string>();
 
   return models.reduce<ModelOption[]>((sanitized, model) => {
-    const normalizedId = migrateRemovedModelId(model.id.trim()) ?? model.id.trim();
+    // Removed-model migrations (migrateRemovedModelId) apply ONLY to the
+    // selected-model pointer (resolveSupportedModelId / tab cycle ids), never to
+    // user-defined custom list entries. Rewriting an entry here silently changed
+    // or dropped ids the user typed in the list editor (issue #114).
+    const normalizedId = model.id.trim();
 
     if (!normalizedId || seenIds.has(normalizedId)) {
       return sanitized;

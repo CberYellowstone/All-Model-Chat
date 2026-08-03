@@ -1,13 +1,12 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { ThinkingTimer } from '@/components/message/ThinkingTimer';
 import { formatDuration } from '@/utils/durationFormat';
 
 interface ThinkingHeaderProps {
   isLoading: boolean;
-  lastThought: { title: string; content: string; isFallback: boolean } | null;
   thinkingTimeMs?: number;
   generationStartTime?: Date;
   firstTokenTimeMs?: number;
@@ -16,7 +15,6 @@ interface ThinkingHeaderProps {
 
 export const ThinkingHeader: React.FC<ThinkingHeaderProps> = ({
   isLoading,
-  lastThought,
   thinkingTimeMs,
   generationStartTime,
   firstTokenTimeMs,
@@ -43,7 +41,7 @@ export const ThinkingHeader: React.FC<ThinkingHeaderProps> = ({
           {isLoading ? (
             <>
               <span className="text-base font-bold uppercase tracking-wider text-[var(--theme-text-secondary)] truncate opacity-90">
-                {lastThought && !lastThought.isFallback ? lastThought.title : t('thinkingText')}
+                {t('thinkingText')}
               </span>
               <div className="flex items-baseline gap-2 mt-0.5 min-w-0">
                 <span className="text-sm text-[var(--theme-text-tertiary)] truncate font-mono">
@@ -67,7 +65,8 @@ export const ThinkingHeader: React.FC<ThinkingHeaderProps> = ({
             </>
           ) : (
             <div className="flex items-baseline gap-2 min-w-0">
-              <span className="text-base text-[var(--theme-text-secondary)] font-medium truncate opacity-90">
+              <span className="flex items-center gap-1.5 text-base text-[var(--theme-text-secondary)] font-medium truncate opacity-90">
+                <Check size={16} strokeWidth={2.5} className="text-[var(--theme-text-success)] flex-shrink-0" />
                 {thinkingTimeMs !== undefined
                   ? t('thinkingTookTime').replace(
                       '{duration}',

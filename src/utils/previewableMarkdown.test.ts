@@ -1,11 +1,63 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  extractAutoPreviewableBlock,
   extractPreviewableCodeBlock,
+  getAutoPreviewType,
   getCodeBlockPreviewType,
   isLikelyHtml,
   isLikelyStreamingHtmlArtifact,
   normalizePreviewableMarkdownContent,
 } from './previewableMarkdown';
+
+describe('auto-preview strict detection (no content sniffing of mislabeled languages)', () => {
+  it('never auto-preview mislabeled fenced blocks with an explicit non-HTML language', () => {
+    expect(getAutoPreviewType('<div>Ready</div>', 'python')).toBeNull();
+    expect(getAutoPreviewType('<table><tr><td>x</td></tr></table>', 'text')).toBeNull();
+    expect(getAutoPreviewType('<button>Go</button>', 'css')).toBeNull();
+  });
+
+  it('auto-previews fenced blocks with explicit html/svg languages', () => {
+    expect(getAutoPreviewType('<div>Ready</div>', 'html')).toBe('html');
+    expect(getAutoPreviewType('<div>Ready</div>', 'HTML')).toBe('html');
+    expect(getAutoPreviewType('<div>Ready</div>', 'htm')).toBe('html');
+    expect(getAutoPreviewType('<svg viewBox="0 0 10 10"></svg>', 'svg')).toBe('svg');
+  });
+
+  it('never auto-previews Live Artifact fences since they already render inline', () => {
+    // amc-live-artifact-html blocks are shown inline via ArtifactFrame in the
+    // message stream, so the auto-open path must skip them (a fullscreen modal
+    // on top of the inline preview would be redundant).
+    expect(getAutoPreviewType('<div>Ready</div>', 'amc-live-artifact-html')).toBeNull();
+    expect(extractAutoPreviewableBlock('```amc-live-artifact-html\n<div>Ready</div>\n```')).toBeNull();
+  });
+
+  it('auto-previews unlabeled fenced blocks only when they are full HTML/SVG documents', () => {
+    expect(getAutoPreviewType('<html><body>Hello</body></html>', '')).toBe('html');
+    expect(getAutoPreviewType('<svg viewBox="0 0 10 10"><circle r="4" /></svg>', '')).toBe('svg');
+    expect(getAutoPreviewType('<div>Ready</div>', '')).toBeNull();
+  });
+
+  it('extracts only strict auto-preview targets from mixed markdown', () => {
+    expect(
+      extractAutoPreviewableBlock('Intro\n\n```python\n<div>Ready</div>\n```\n\n```html\n<span>Go</span>\n```'),
+    ).toEqual({ content: '<span>Go</span>', markupType: 'html' });
+    expect(extractAutoPreviewableBlock('```text\n<table><tr><td>x</td></tr></table>\n```')).toBeNull();
+    expect(extractAutoPreviewableBlock('```css\n<button>Go</button>\n```')).toBeNull();
+  });
+
+  it('falls back to a full unlabeled HTML/SVG document but not a bare fragment', () => {
+    expect(extractAutoPreviewableBlock('<!DOCTYPE html><html><body>Hello</body></html>')).toEqual({
+      content: '<!DOCTYPE html><html><body>Hello</body></html>',
+      markupType: 'html',
+    });
+    expect(extractAutoPreviewableBlock('<div>Ready</div>')).toBeNull();
+  });
+
+  it('keeps the manual preview path (getCodeBlockPreviewType) lenient for mislabeled fragments', () => {
+    // Manual preview button behavior must be preserved.
+    expect(getCodeBlockPreviewType('<div style="display:flex"><span>Ready</span></div>', 'css')).toBe('html');
+  });
+});
 
 describe('previewableMarkdown detection', () => {
   it('only treats standalone html documents as previewable html by content', () => {

@@ -107,7 +107,7 @@ const appendChunk = (job: StreamJob, data: string): void => {
   }
 };
 
-export const finishJob = (job: StreamJob, error?: string): void => {
+const finishJob = (job: StreamJob, error?: string): void => {
   if (job.done) {
     return;
   }
@@ -148,13 +148,62 @@ export const abortJob = (id: string): boolean => {
 // ── Generic SSE helpers (provider-agnostic) ─────────────────────────────────
 
 /**
+ * Fire a detached upstream fetch for a journaled stream job and pump its SSE
+ * body into the job buffer. Shared by the Gemini and third-party proxies —
+ * the only provider difference is how the request headers are built, supplied
+ * via `buildHeaders`. Uses the job's abort signal so the stream-abort endpoint
+ * can kill it; a browser disconnect does NOT abort this — only the abort
+ * endpoint or the sweeper does.
+ */
+export async function runDetachedUpstream(
+  job: StreamJob,
+  request: IncomingMessage,
+  upstreamUrl: string,
+  buildHeaders: () => Headers,
+  fetchImpl: typeof fetch,
+): Promise<void> {
+  try {
+    const method = request.method || 'POST';
+    const hasBody = !['GET', 'HEAD'].includes(method);
+    const requestInit: RequestInit & { duplex?: 'half' } = {
+      method,
+      headers: buildHeaders(),
+      signal: job.abortController.signal,
+      // redirect: 'manual' so a public upstream base cannot 302 into a
+      // private network host after the input URL passed validation.
+      redirect: 'manual',
+    };
+    if (hasBody) {
+      requestInit.body = request as unknown as BodyInit;
+      requestInit.duplex = 'half';
+    }
+
+    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
+
+    if (!upstreamResponse.ok || !upstreamResponse.body) {
+      finishJob(job, `upstream ${upstreamResponse.status}`);
+      return;
+    }
+
+    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
+  } catch (error) {
+    if (job.abortController.signal.aborted) {
+      // Aborted by client (stream-abort endpoint); already finished with that
+      // reason. Don't overwrite the abort error.
+      return;
+    }
+    finishJob(job, error instanceof Error ? error.message : String(error));
+  }
+}
+
+/**
  * Append the raw upstream body to the job's chunk buffer, splitting on SSE
  * event boundaries (\n\n) so each chunk maps to one complete SSE event. This
  * keeps resume precise: a reconnect resumes at the exact next event boundary.
  *
  * Works for any SSE-based stream (Gemini, OpenAI-compatible, Anthropic).
  */
-export function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Response): Promise<void> {
+function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Response): Promise<void> {
   return (async () => {
     let buffer = '';
     for await (const bytes of Readable.fromWeb(upstreamResponse.body as unknown as NodeReadableStream)) {

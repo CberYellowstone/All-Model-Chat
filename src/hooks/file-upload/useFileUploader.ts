@@ -54,8 +54,16 @@ export const useFileUploader = ({
         return;
       }
 
-      const needsApiKeyForUpload = checkBatchNeedsApiKey(preflight.filesToUpload, appSettings);
-      const filesRequiringApi = getFilesRequiringFileApi(preflight.filesToUpload, appSettings);
+      const needsApiKeyForUpload = checkBatchNeedsApiKey(
+        preflight.filesToUpload,
+        appSettings,
+        currentChatSettings.apiMode,
+      );
+      const filesRequiringApi = getFilesRequiringFileApi(
+        preflight.filesToUpload,
+        appSettings,
+        currentChatSettings.apiMode,
+      );
 
       let keyToUse: string | null = null;
       if (needsApiKeyForUpload) {
@@ -85,6 +93,7 @@ export const useFileUploader = ({
             forceFileApi: filesRequiringApi.has(file),
             defaultResolution,
             appSettings,
+            apiMode: currentChatSettings.apiMode,
             setSelectedFiles: writeSelectedFiles,
             uploadStatsRef,
             t,

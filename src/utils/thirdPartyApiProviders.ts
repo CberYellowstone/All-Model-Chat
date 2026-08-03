@@ -108,7 +108,7 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   },
 };
 
-export const DEFAULT_THIRD_PARTY_API_SETTINGS: ThirdPartyApiSettings = {
+const DEFAULT_THIRD_PARTY_API_SETTINGS: ThirdPartyApiSettings = {
   activeProvider: 'openai',
   providers: DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS,
 };

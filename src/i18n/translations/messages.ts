@@ -229,6 +229,7 @@ export const messagesTranslations = {
   exportNotApplicable: { en: 'N/A', zh: '不适用' },
   tokensUnit: { en: 'tokens', zh: 'Token' },
   thinkingText: { en: 'Thinking...', zh: '思考中…' },
+  thinkingLatestStep: { en: 'Latest thought', zh: '最新思考' },
   thinkingTookTime: { en: 'Thought for {duration}', zh: '已思考 {duration}' },
   thinkingProcess: { en: 'Thought Process', zh: '推理过程' },
   thinkingShowOriginal: { en: 'Show Original', zh: '显示原文' },

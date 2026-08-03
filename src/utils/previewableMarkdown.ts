@@ -230,6 +230,65 @@ export const getCodeBlockPreviewType = (textContent: string, language?: string):
   return getPreviewMarkupType(textContent);
 };
 
+// Strict classifier for the automatic preview-open path. Unlike
+// getCodeBlockPreviewType, it never content-sniffs: an explicit non-HTML/SVG
+// language (python, css, text, …) is treated as author intent and returns
+// null even when the body happens to look like HTML. Only an explicit
+// html/svg label, or an unlabeled full HTML/SVG document, counts as a
+// preview target for auto-open.
+export const getAutoPreviewType = (textContent: string, language?: string): PreviewMarkupType | null => {
+  const normalizedLanguage = normalizeLanguage(language);
+
+  // Live Artifacts (amc-live-artifact-html) are already rendered inline in the
+  // message stream via ArtifactFrame, so auto-open skips them: a fullscreen
+  // modal on top of the inline preview would be redundant.
+  if (isLiveArtifactLanguage(normalizedLanguage)) {
+    return null;
+  }
+
+  if (HTML_LANGUAGE_ALIASES.has(normalizedLanguage)) {
+    return 'html';
+  }
+
+  if (SVG_LANGUAGE_ALIASES.has(normalizedLanguage)) {
+    return 'svg';
+  }
+
+  if (normalizedLanguage) {
+    return null;
+  }
+
+  return getStandaloneDocumentPreviewType(textContent);
+};
+
+// Strict variant of extractPreviewableCodeBlock for the automatic preview-open
+// path: fenced blocks are classified with getAutoPreviewType (no sniffing of
+// mislabeled languages), and a fallback to the whole document only fires for a
+// complete unlabeled HTML/SVG document — never for a bare fragment.
+export const extractAutoPreviewableBlock = (
+  markdownContent: string,
+): { content: string; markupType: PreviewMarkupType } | null => {
+  if (!markdownContent) return null;
+
+  for (const match of markdownContent.matchAll(FENCED_CODE_BLOCK_REGEX)) {
+    const rawLanguage = match[1] ?? '';
+    const rawContent = match[2] ?? '';
+    const content = rawContent.trim();
+    const markupType = getAutoPreviewType(content, rawLanguage);
+
+    if (markupType) {
+      return { content, markupType };
+    }
+  }
+
+  const standaloneDocumentType = getStandaloneDocumentPreviewType(markdownContent);
+  if (standaloneDocumentType) {
+    return { content: markdownContent.trim(), markupType: standaloneDocumentType };
+  }
+
+  return null;
+};
+
 export const extractPreviewableCodeBlock = (
   markdownContent: string,
 ): { content: string; markupType: PreviewMarkupType } | null => {

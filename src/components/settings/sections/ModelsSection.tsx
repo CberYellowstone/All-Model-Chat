@@ -7,7 +7,7 @@ import { ModelSelector } from '@/components/settings/controls/ModelSelector';
 import { fetchOpenAICompatibleModels } from '@/services/api/openaiCompatibleApi';
 import { fetchAnthropicModels } from '@/services/api/anthropicApi';
 import { parseApiKeys } from '@/utils/apiKeySelection';
-import { getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
+import { getThirdPartyProviderConfig, updateThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
 import { SETTINGS_SECTION_CARD_CLASS } from '@/constants/designTokens';
 import { LiveArtifactsSection } from './LiveArtifactsSection';
 import { GenerationSection } from './GenerationSection';
@@ -70,14 +70,15 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
   const resolveProviderKey = (): string | null => activeProvider.apiKey || viteEnv?.VITE_OPENAI_API_KEY || null;
 
   const updateActiveProviderField = (partial: Partial<typeof activeProvider>) => {
+    const activeProviderId = currentSettings.thirdPartyApi.activeProvider;
     onUpdateSettings({
-      thirdPartyApi: {
-        ...currentSettings.thirdPartyApi,
-        providers: {
-          ...currentSettings.thirdPartyApi.providers,
-          [currentSettings.thirdPartyApi.activeProvider]: { ...activeProvider, ...partial },
-        },
-      },
+      // Reuse updateThirdPartyProviderConfig so provider edits go through the
+      // same sanitize path as the API settings panel (dedupe, protocol check).
+      thirdPartyApi: updateThirdPartyProviderConfig(
+        currentSettings.thirdPartyApi,
+        activeProviderId,
+        partial as Partial<typeof activeProvider>,
+      ),
     });
   };
 

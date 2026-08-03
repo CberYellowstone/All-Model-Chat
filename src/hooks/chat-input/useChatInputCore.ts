@@ -12,7 +12,6 @@ import { useLiveApi } from '@/hooks/live-api/useLiveApi';
 import { useTextAreaInsert } from '@/hooks/useTextAreaInsert';
 import { useChatInputState } from './useChatInputState';
 import { useChatInputToolStates } from './useChatInputToolStates';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 
 export const useChatInputCore = () => {
   const { t } = useI18n();
@@ -69,7 +68,10 @@ export const useChatInputCore = () => {
   const { document: targetDocument } = useWindowContext();
   const insertText = useTextAreaInsert(inputState.textareaRef, inputState.setInputText);
 
-  const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
+  // Bbox/guide prompts only apply on the Gemini-native API, so the gate mirrors the
+  // active session's routing decision (resolveChatApiRoute) — not the global appSettings
+  // mode, which stays stale after switching to a differently-routed chat.
+  const isThirdPartyChat = currentChatSettings.apiMode === 'third-party';
   const toolStates = useChatInputToolStates({
     currentChatSettings,
     isLoading,
@@ -118,9 +120,9 @@ export const useChatInputCore = () => {
     onLiveTranscript,
     liveClientFunctions,
     onToggleBBox,
-    isBBoxModeActive: !isOpenAICompatibleMode && isBboxSystemInstruction(currentChatSettings.systemInstruction),
+    isBBoxModeActive: !isThirdPartyChat && isBboxSystemInstruction(currentChatSettings.systemInstruction),
     onToggleGuide,
-    isGuideModeActive: !isOpenAICompatibleMode && isHdGuideSystemInstruction(currentChatSettings.systemInstruction),
+    isGuideModeActive: !isThirdPartyChat && isHdGuideSystemInstruction(currentChatSettings.systemInstruction),
     onToggleQuadImages,
     themeId,
   };

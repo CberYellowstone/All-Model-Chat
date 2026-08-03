@@ -20,7 +20,6 @@
  */
 import { GoogleGenAI } from '@google/genai';
 import fs from 'node:fs';
-import path from 'node:path';
 
 const MODEL = process.env.ROBOTICS_MODEL ?? 'gemini-robotics-er-2-preview';
 const DEFAULT_IMAGE = new URL('../public/app-logo.png', import.meta.url).pathname;

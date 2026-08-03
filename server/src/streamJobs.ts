@@ -1,12 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson } from './cors.js';
-import {
-  JOB_ID_HEADER,
-  finishJob,
-  pumpUpstreamBodyIntoJob,
-  maybeStreamWithSharedJob,
-  type StreamJob,
-} from './streamJobStore.js';
+import { JOB_ID_HEADER, runDetachedUpstream, maybeStreamWithSharedJob, type StreamJob } from './streamJobStore.js';
+import { copyProxyRequestHeaders } from './proxyHeaders.js';
 
 // Re-export the shared job-store primitives so existing callers
 // (createServer, geminiProxy, tests) keep importing from a single module.
@@ -52,18 +47,7 @@ function resolveRequestApiKey(request: RequestLike, serverApiKey?: string, serve
 // Mirrors buildProxyHeaders in geminiProxy.ts, but standalone so this module
 // stays self-contained. Strips hop-by-hop + connection-managed + sensitive
 // headers, then stamps the resolved key.
-const HOP_BY_HOP_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
 const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  ...HOP_BY_HOP_HEADERS,
   'accept-encoding',
   'authorization',
   'content-length',
@@ -72,38 +56,8 @@ const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
   'x-gemini-upstream-base-url',
 ]);
 
-function getConnectionManagedHeaderSet(value: string | null | undefined): Set<string> {
-  if (!value) {
-    return new Set();
-  }
-  return new Set(
-    value
-      .split(',')
-      .map((headerName) => headerName.trim().toLowerCase())
-      .filter((headerName) => headerName.length > 0),
-  );
-}
-
 function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
-  const headers = new Headers();
-  const connectionManagedHeaders = getConnectionManagedHeaderSet(
-    Array.isArray(request.headers.connection) ? request.headers.connection.join(',') : request.headers.connection,
-  );
-
-  for (const [name, value] of Object.entries(request.headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    const normalizedName = name.toLowerCase();
-    if (STRIPPED_PROXY_REQUEST_HEADERS.has(normalizedName) || connectionManagedHeaders.has(normalizedName)) {
-      continue;
-    }
-    if (Array.isArray(value)) {
-      headers.set(normalizedName, value.join(','));
-      continue;
-    }
-    headers.set(normalizedName, value);
-  }
+  const headers = copyProxyRequestHeaders(request, STRIPPED_PROXY_REQUEST_HEADERS);
 
   headers.set('x-goog-api-key', apiKey);
   return headers;
@@ -111,45 +65,17 @@ function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
 
 // ── Gemini-specific upstream runner ─────────────────────────────────────────
 
-async function runUpstream(
+/**
+ * Detached upstream fetch for the Gemini journal path. The actual fetch/pump
+ * logic is shared (runDetachedUpstream); only the header construction differs.
+ */
+const runUpstream = (
   job: StreamJob,
   request: IncomingMessage,
   upstreamUrl: string,
   apiKey: string,
   fetchImpl: typeof fetch,
-): Promise<void> {
-  try {
-    const hasBody = !['GET', 'HEAD'].includes(request.method || 'POST');
-    const requestInit: RequestInit & { duplex?: 'half' } = {
-      method: request.method || 'POST',
-      headers: buildProxyHeaders(request, apiKey),
-      signal: job.abortController.signal,
-      // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a
-      // private network host after the input URL passed validation.
-      redirect: 'manual',
-    };
-    if (hasBody) {
-      requestInit.body = request as unknown as BodyInit;
-      requestInit.duplex = 'half';
-    }
-
-    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
-
-    if (!upstreamResponse.ok || !upstreamResponse.body) {
-      finishJob(job, `upstream ${upstreamResponse.status}`);
-      return;
-    }
-
-    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
-  } catch (error) {
-    if (job.abortController.signal.aborted) {
-      // Aborted by client (stream-abort endpoint); already finished with that
-      // reason. Don't overwrite the abort error.
-      return;
-    }
-    finishJob(job, error instanceof Error ? error.message : String(error));
-  }
-}
+) => runDetachedUpstream(job, request, upstreamUrl, () => buildProxyHeaders(request, apiKey), fetchImpl);
 
 /**
  * Handles a streaming Gemini request with job journaling. If no `x-amc-job-id`

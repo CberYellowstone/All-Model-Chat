@@ -8,6 +8,7 @@ import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { DEFAULT_THOUGHT_TRANSLATION_MODEL_ID } from '@/constants/modelConfiguration';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { ThinkingHeader } from './thoughts/ThinkingHeader';
+import { ThinkingStrip } from './thoughts/ThinkingStrip';
 import { ThinkingActions } from './thoughts/ThinkingActions';
 import { ThoughtContent } from './thoughts/ThoughtContent';
 import { useMessageStream } from '@/hooks/ui/useMessageStream';
@@ -57,6 +58,13 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
   const { isCopied, copyToClipboard } = useCopyToClipboard(2000);
 
   const lastThought = useMemo(() => parseThoughtProcess(effectiveThoughts), [effectiveThoughts]);
+
+  // Preview strip is a "thinking in progress" indicator: visible while thoughts
+  // are still streaming, regardless of whether the full message has finished
+  // loading. thinkingTimeMs is set when thoughts switch to content (both
+  // official API and third-party), so it's the reliable signal that thinking
+  // has ended.
+  const showThinkingStrip = !isExpanded && !!isLoading && lastThought !== null && message.thinkingTimeMs === undefined;
 
   if (!areThoughtsVisible) return null;
 
@@ -110,6 +118,9 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
   };
   const toggleExpanded = () => setIsExpanded((value) => !value);
   const handleToggleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ignore key events bubbling up from inner buttons so Enter/Space on the
+    // translate/copy actions no longer collapses the accordion or cancels the click.
+    if (e.target !== e.currentTarget) return;
     if (e.key !== 'Enter' && e.key !== ' ') {
       return;
     }
@@ -135,7 +146,6 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
         >
           <ThinkingHeader
             isLoading={!!isLoading}
-            lastThought={lastThought}
             thinkingTimeMs={message.thinkingTimeMs}
             generationStartTime={message.generationStartTime}
             firstTokenTimeMs={message.firstTokenTimeMs}
@@ -157,13 +167,13 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
           </div>
         </div>
 
+        {showThinkingStrip && <ThinkingStrip lastThought={lastThought} />}
+
         <div className={`thought-process-accordion ${isExpanded ? 'expanded' : ''}`}>
           <div className="thought-process-inner">
             <ThoughtContent
               messageId={messageId}
               isLoading={!!isLoading}
-              lastThought={lastThought}
-              thinkingTimeMs={message.thinkingTimeMs}
               content={isShowingTranslation && translatedThoughts ? translatedThoughts : effectiveThoughts}
               onImageClick={onImageClick}
               onOpenHtmlPreview={onOpenHtmlPreview}

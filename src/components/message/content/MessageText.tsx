@@ -4,7 +4,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { LazyMarkdownRenderer } from '@/components/message/LazyMarkdownRenderer';
 import { GroundedResponse } from '@/components/message/GroundedResponse';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
-import { extractPreviewableCodeBlock, normalizePreviewableMarkdownContent } from '@/utils/previewableMarkdown';
+import { extractAutoPreviewableBlock, normalizePreviewableMarkdownContent } from '@/utils/previewableMarkdown';
 import { useSmoothStreaming } from '@/hooks/ui/useSmoothStreaming';
 import { useMessageStream } from '@/hooks/ui/useMessageStream';
 import { extractRawThinkingBlocks } from '@/utils/chat/reasoning';
@@ -99,8 +99,11 @@ export const MessageText: React.FC<MessageTextProps> = ({
     let previewTimeout: number | null = null;
 
     if (prevIsLoadingRef.current && !isLoading) {
-      if (appSettings.autoFullscreenHtml && message.role === 'model' && effectiveContent) {
-        const previewableBlock = extractPreviewableCodeBlock(effectiveContent);
+      if (appSettings.autoFullscreenHtml && message.role === 'model' && markdownContent) {
+        // Strict auto-open path: only explicit html/svg/amc-live-artifact-html
+        // fences or an unlabeled full HTML/SVG document trigger the preview, so
+        // code labeled python/css/text never opens the preview by content sniffing.
+        const previewableBlock = extractAutoPreviewableBlock(markdownContent);
         if (previewableBlock) {
           previewTimeout = window.setTimeout(() => {
             onOpenHtmlPreview(previewableBlock.content, { initialTrueFullscreen: false });
@@ -115,7 +118,7 @@ export const MessageText: React.FC<MessageTextProps> = ({
         clearTimeout(previewTimeout);
       }
     };
-  }, [isLoading, appSettings.autoFullscreenHtml, effectiveContent, message.role, onOpenHtmlPreview]);
+  }, [isLoading, appSettings.autoFullscreenHtml, markdownContent, message.role, onOpenHtmlPreview]);
 
   // Avoid showing the primary spinner when content, audio, or MessageThoughts already covers the loading state.
   const showPrimaryThinkingIndicator =

@@ -24,7 +24,7 @@ import {
 } from './modelConfiguration';
 import { DEFAULT_SAFETY_SETTINGS } from './safetySettings';
 import { DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE, DEFAULT_TRANSLATION_TARGET_LANGUAGE } from './translationOptions';
-import { DEFAULT_THIRD_PARTY_API_SETTINGS } from '@/utils/thirdPartyApiProviders';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 
 export const DEFAULT_SYSTEM_INSTRUCTION = '';
 
@@ -73,7 +73,7 @@ export const DEFAULT_CHAT_SETTINGS = {
   thirdPartyModelId: undefined,
 };
 
-const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
+const BASE_DEFAULT_APP_SETTINGS: Omit<AppSettings, 'thirdPartyApi'> = {
   ...DEFAULT_CHAT_SETTINGS,
   themeId: DEFAULT_THEME_ID,
   baseFontSize: DEFAULT_BASE_FONT_SIZE,
@@ -126,13 +126,16 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   tabModelCycleIds: undefined,
   liveTranslateTargetLanguageCode: 'en',
   liveTranslateEchoTargetLanguage: false,
-  thirdPartyApi: DEFAULT_THIRD_PARTY_API_SETTINGS,
 };
 
 export function getDefaultAppSettings(): AppSettings {
   return {
     ...BASE_DEFAULT_APP_SETTINGS,
     ...getRuntimeConfigAppSettingsOverrides(),
+    // Fresh clone per call: a shared module-level thirdPartyApi object would
+    // leak mutations from one consumer into every other default. The provider
+    // configs (incl. the models array) must be copied, not shared by reference.
+    thirdPartyApi: createDefaultThirdPartyApiSettings(),
   };
 }
 

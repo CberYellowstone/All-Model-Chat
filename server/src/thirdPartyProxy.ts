@@ -5,23 +5,16 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 import { getCorsHeaders, sendJson } from './cors.js';
 import type { ThirdPartyProxyRoute } from './config.js';
-import { finishJob, maybeStreamWithSharedJob, pumpUpstreamBodyIntoJob, type StreamJob } from './streamJobStore.js';
+import { runDetachedUpstream, maybeStreamWithSharedJob, type StreamJob } from './streamJobStore.js';
+import {
+  STRIPPED_PROXY_RESPONSE_HEADERS,
+  copyProxyRequestHeaders,
+  getConnectionManagedHeaders,
+} from './proxyHeaders.js';
 
 export const OPENAI_PROXY_PREFIX = '/api/openai';
 
-const HOP_BY_HOP_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
-
 const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  ...HOP_BY_HOP_HEADERS,
   'accept-encoding',
   'content-length',
   'cookie',
@@ -36,8 +29,6 @@ const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
   'x-third-party-base-url',
 ]);
 
-const STRIPPED_PROXY_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, 'content-encoding', 'content-length']);
-
 const THIRD_PARTY_PROVIDER_HEADER = 'x-third-party-provider';
 // When the server route table has no entry for a provider (pure BYOK), the
 // browser supplies the provider's real baseUrl here so the proxy can still
@@ -48,19 +39,6 @@ export interface ThirdPartyProxyConfig {
   thirdPartyRoutes: Record<string, ThirdPartyProxyRoute>;
   serverKeyPriority?: boolean;
   allowedOrigins: string[];
-}
-
-function getConnectionManagedHeaders(value: string | null | undefined): Set<string> {
-  if (!value) {
-    return new Set();
-  }
-
-  return new Set(
-    value
-      .split(',')
-      .map((headerName) => headerName.trim().toLowerCase())
-      .filter((headerName) => headerName.length > 0),
-  );
 }
 
 function resolveProviderId(request: IncomingMessage): string | null {
@@ -133,28 +111,7 @@ const resolveRoute = (
 };
 
 function buildProxyHeaders(request: IncomingMessage, route: ResolvedRoute, providerId: string): Headers {
-  const headers = new Headers();
-  const connectionManagedHeaders = getConnectionManagedHeaders(
-    Array.isArray(request.headers.connection) ? request.headers.connection.join(',') : request.headers.connection,
-  );
-
-  for (const [name, value] of Object.entries(request.headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-
-    const normalizedName = name.toLowerCase();
-    if (STRIPPED_PROXY_REQUEST_HEADERS.has(normalizedName) || connectionManagedHeaders.has(normalizedName)) {
-      continue;
-    }
-
-    if (Array.isArray(value)) {
-      headers.set(normalizedName, value.join(','));
-      continue;
-    }
-
-    headers.set(normalizedName, value);
-  }
+  const headers = copyProxyRequestHeaders(request, STRIPPED_PROXY_REQUEST_HEADERS);
 
   headers.set(THIRD_PARTY_PROVIDER_HEADER, providerId);
 
@@ -341,44 +298,12 @@ export async function proxyThirdPartyRequest(
  * the job on completion or error. A browser disconnect does NOT abort this —
  * only the stream-abort endpoint or the sweeper does.
  */
-async function runThirdPartyUpstream(
+const runThirdPartyUpstream = (
   job: StreamJob,
   request: IncomingMessage,
   upstreamUrl: string,
   route: ResolvedRoute,
   providerId: string,
   fetchImpl: typeof fetch,
-): Promise<void> {
-  try {
-    const method = request.method || 'POST';
-    const hasBody = !['GET', 'HEAD'].includes(method);
-    const requestInit: RequestInit & { duplex?: 'half' } = {
-      method,
-      headers: buildProxyHeaders(request, route, providerId),
-      signal: job.abortController.signal,
-      // redirect: 'manual' so a public third-party baseUrl cannot 302 into a
-      // private network host after the input URL passed validation.
-      redirect: 'manual',
-    };
-    if (hasBody) {
-      requestInit.body = request as unknown as BodyInit;
-      requestInit.duplex = 'half';
-    }
-
-    const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
-
-    if (!upstreamResponse.ok || !upstreamResponse.body) {
-      finishJob(job, `upstream ${upstreamResponse.status}`);
-      return;
-    }
-
-    await pumpUpstreamBodyIntoJob(job, upstreamResponse);
-  } catch (error) {
-    if (job.abortController.signal.aborted) {
-      // Aborted by client (stream-abort endpoint); already finished with that
-      // reason. Don't overwrite the abort error.
-      return;
-    }
-    finishJob(job, error instanceof Error ? error.message : String(error));
-  }
-}
+): Promise<void> =>
+  runDetachedUpstream(job, request, upstreamUrl, () => buildProxyHeaders(request, route, providerId), fetchImpl);

@@ -5,22 +5,16 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getCorsHeaders, sendJson } from './cors.js';
 import { maybeStreamWithJob } from './streamJobs.js';
 import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
+import {
+  STRIPPED_PROXY_RESPONSE_HEADERS,
+  copyProxyRequestHeaders,
+  getConnectionManagedHeaders,
+} from './proxyHeaders.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
 const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
 
-const HOP_BY_HOP_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
 const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  ...HOP_BY_HOP_HEADERS,
   'accept-encoding',
   'authorization',
   'content-length',
@@ -28,7 +22,6 @@ const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
   'host',
   'x-gemini-upstream-base-url',
 ]);
-const STRIPPED_PROXY_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, 'content-encoding', 'content-length']);
 
 export interface GeminiProxyConfig {
   geminiApiBase: string;
@@ -37,19 +30,6 @@ export interface GeminiProxyConfig {
   // When false (default): a browser-supplied x-goog-api-key wins, the server
   // key is the fallback (BYOK 兜底). When true: the server key wins.
   serverKeyPriority?: boolean;
-}
-
-function getConnectionManagedHeaders(value: string | null | undefined): Set<string> {
-  if (!value) {
-    return new Set();
-  }
-
-  return new Set(
-    value
-      .split(',')
-      .map((headerName) => headerName.trim().toLowerCase())
-      .filter((headerName) => headerName.length > 0),
-  );
 }
 
 function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string, serverKeyPriority = false): string {
@@ -102,28 +82,7 @@ function resolveUpstreamBaseOverride(request: IncomingMessage): string | null {
 }
 
 function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
-  const headers = new Headers();
-  const connectionManagedHeaders = getConnectionManagedHeaders(
-    Array.isArray(request.headers.connection) ? request.headers.connection.join(',') : request.headers.connection,
-  );
-
-  for (const [name, value] of Object.entries(request.headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-
-    const normalizedName = name.toLowerCase();
-    if (STRIPPED_PROXY_REQUEST_HEADERS.has(normalizedName) || connectionManagedHeaders.has(normalizedName)) {
-      continue;
-    }
-
-    if (Array.isArray(value)) {
-      headers.set(normalizedName, value.join(','));
-      continue;
-    }
-
-    headers.set(normalizedName, value);
-  }
+  const headers = copyProxyRequestHeaders(request, STRIPPED_PROXY_REQUEST_HEADERS);
 
   headers.set('x-goog-api-key', apiKey);
   return headers;

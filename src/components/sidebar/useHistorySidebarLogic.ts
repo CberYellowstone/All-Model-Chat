@@ -5,6 +5,7 @@ import { useWindowContext } from '@/contexts/WindowContext';
 import { useI18n } from '@/contexts/I18nContext';
 import { DESKTOP_BREAKPOINT_PX, FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { dbService } from '@/services/db/dbService';
+import { isSessionDrag } from './sidebarDragTypes';
 
 type HistoryTranslator = (key: string) => string;
 
@@ -105,6 +106,7 @@ export const useHistorySidebarLogic = ({
   const [editingItem, setEditingItem] = useState<{ type: 'session' | 'group'; id: string; title: string } | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [draggingSessionId, setDraggingSessionId] = useState<string | null>(null);
   const [newlyTitledSessionIds, setNewlyTitledSessionIds] = useState<ReadonlySet<string>>(new Set());
   const [searchResults, setSearchResults] = useState<{ query: string; ids: Set<string> } | null>(null);
 
@@ -281,16 +283,27 @@ export const useHistorySidebarLogic = ({
   };
 
   const handleDragOver = (event: React.DragEvent) => {
+    if (!isSessionDrag(event)) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (event: React.DragEvent, groupId: string | null) => {
+    if (!isSessionDrag(event)) return;
     event.preventDefault();
     event.stopPropagation();
     const sessionId = event.dataTransfer.getData('sessionId');
     const targetGroupId = groupId === 'all-conversations' ? null : groupId;
     if (sessionId) onMoveSessionToGroup(sessionId, targetGroupId);
+    setDragOverId(null);
+  };
+
+  const handleSessionDragStart = (sessionId: string) => {
+    setDraggingSessionId(sessionId);
+  };
+
+  const handleSessionDragEnd = () => {
+    setDraggingSessionId(null);
     setDragOverId(null);
   };
 
@@ -328,6 +341,8 @@ export const useHistorySidebarLogic = ({
     setActiveMenu,
     dragOverId,
     setDragOverId,
+    draggingSessionId,
+    setDraggingSessionId,
     newlyTitledSessionIds,
     menuRef,
     editInputRef,
@@ -344,6 +359,8 @@ export const useHistorySidebarLogic = ({
     handleDragOver,
     handleDrop,
     handleMainDragLeave,
+    handleSessionDragStart,
+    handleSessionDragEnd,
     handleMiniSearchClick,
     handleEmptySpaceClick,
     handleSessionSelect,

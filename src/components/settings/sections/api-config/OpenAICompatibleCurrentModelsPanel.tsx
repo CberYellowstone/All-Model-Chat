@@ -7,6 +7,7 @@ import {
   getOpenAICompatibleModelName,
   openaiCompatibleModelMatchesSearch,
 } from './openaiCompatibleModelListState';
+import { useOpenAICompatibleModelRowHandlers } from './useOpenAICompatibleModelRowHandlers';
 
 interface OpenAICompatibleCurrentModelsPanelProps {
   rows: EditableOpenAICompatibleModelRow[];
@@ -29,26 +30,8 @@ export const OpenAICompatibleCurrentModelsPanel: React.FC<OpenAICompatibleCurren
       ),
     [modelSearchText, rows],
   );
-
-  const handleUpdateModel = (rowId: string, id: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id } : row)));
-  };
-
-  const handleUpdateModelName = (rowId: string, name: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name } : row)));
-  };
-
-  const handleTrimModel = (rowId: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id: row.id.trim() } : row)));
-  };
-
-  const handleTrimModelName = (rowId: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name: row.name.trim() } : row)));
-  };
-
-  const handleRemoveModel = (rowId: string) => {
-    onCommitRows(rows.filter((row) => row.rowId !== rowId));
-  };
+  const { handleUpdateModel, handleUpdateModelName, handleTrimModel, handleTrimModelName, handleRemoveModel } =
+    useOpenAICompatibleModelRowHandlers(rows, onCommitRows);
 
   return (
     <section className="min-w-0 space-y-3">

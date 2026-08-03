@@ -15,6 +15,7 @@ import {
   normalizeOpenAICompatibleModelRows,
   toEditableOpenAICompatibleModelRows,
 } from './openaiCompatibleModelListState';
+import { useOpenAICompatibleModelRowHandlers } from './useOpenAICompatibleModelRowHandlers';
 
 interface OpenAICompatibleModelListEditorProps {
   models: ModelOption[];
@@ -68,6 +69,8 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
       onSelectedModelChange(modelIds[0]);
     }
   };
+  const { handleUpdateModel, handleUpdateModelName, handleTrimModel, handleTrimModelName, handleRemoveModel } =
+    useOpenAICompatibleModelRowHandlers(rows, commitRows);
 
   const handleAddModel = () => {
     setEditorState({
@@ -79,26 +82,6 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
   const handleOpenFetchPreview = () => {
     setIsManagerOpen(true);
     setFetchRequestId((requestId) => requestId + 1);
-  };
-
-  const handleUpdateModel = (rowId: string, id: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id } : row)));
-  };
-
-  const handleUpdateModelName = (rowId: string, name: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name } : row)));
-  };
-
-  const handleTrimModel = (rowId: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id: row.id.trim() } : row)));
-  };
-
-  const handleTrimModelName = (rowId: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name: row.name.trim() } : row)));
-  };
-
-  const handleRemoveModel = (rowId: string) => {
-    commitRows(rows.filter((row) => row.rowId !== rowId));
   };
 
   return (

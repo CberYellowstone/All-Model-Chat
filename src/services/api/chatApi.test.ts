@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Part } from '@google/genai';
 
 const { mockGetConfiguredApiClient, mockGenerateContent, mockGenerateContentStream } = vi.hoisted(() => ({
@@ -509,5 +509,191 @@ describe('chatApi media resolution routing', () => {
       undefined,
       undefined,
     );
+  });
+});
+
+describe('chatApi stream idle watchdog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockGetConfiguredApiClient.mockResolvedValue({
+      models: {
+        generateContent: mockGenerateContent,
+        generateContentStream: mockGenerateContentStream,
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Simulates the real SDK: the stream generator is tied to the abort signal
+  // the SDK receives in config, so aborting that signal settles a pending read.
+  // (The real SDK wires config.abortSignal into the fetch; aborting it makes
+  // reader.read() resolve done.) It yields one chunk to establish the stream,
+  // then sits in a silent window (the deep-search server-side search gap) until
+  // the abort signal fires.
+  const abortableStalledStream = (args: unknown) =>
+    (async function* () {
+      const config = (args as { config?: { abortSignal?: AbortSignal } })?.config;
+      yield { candidates: [{ content: { parts: [{ text: 'thinking…' }] } }] };
+      if (config?.abortSignal) {
+        await new Promise<void>((resolve) => {
+          if (config.abortSignal?.aborted) {
+            resolve();
+            return;
+          }
+          config.abortSignal?.addEventListener('abort', () => resolve(), { once: true });
+        });
+      }
+    })();
+
+  it('surfaces a stream error when no chunk arrives within the idle budget', async () => {
+    mockGenerateContentStream.mockImplementation(abortableStalledStream);
+
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+
+    const sendPromise = sendStatelessMessageStreamApi(
+      'key',
+      'gemini-3-flash-preview',
+      [],
+      [{ text: 'deep search question' }],
+      { tools: [{ googleSearch: {} }] },
+      new AbortController().signal,
+      vi.fn(),
+      vi.fn(),
+      onError,
+      onComplete,
+    );
+
+    // Advance past the default 60s idle budget (plus one watchdog tick).
+    // advanceTimersByTimeAsync lets the abort→resolve microtasks flush so the
+    // stalled generator settles and the loop reaches its timeout branch.
+    await vi.advanceTimersByTimeAsync(70_000);
+    await sendPromise;
+
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ name: 'StreamIdleTimeoutError' }));
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('does not trip the watchdog while chunks keep arriving within the budget', async () => {
+    let releaseSecondChunk!: () => void;
+    const secondChunkGate = new Promise<void>((resolve) => {
+      releaseSecondChunk = resolve;
+    });
+    mockGenerateContentStream.mockResolvedValue(
+      (async function* () {
+        yield { candidates: [{ content: { parts: [{ text: 'first' }] } }] };
+        await secondChunkGate;
+        yield { candidates: [{ content: { parts: [{ text: 'second' }] } }] };
+      })(),
+    );
+
+    const onPart = vi.fn();
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+
+    const sendPromise = sendStatelessMessageStreamApi(
+      'key',
+      'gemini-3-flash-preview',
+      [],
+      [{ text: 'question' }],
+      {},
+      new AbortController().signal,
+      onPart,
+      vi.fn(),
+      onError,
+      onComplete,
+    );
+
+    // A 30s gap (typical deep-search server-side search window) is within the
+    // default 60s budget: the watchdog must NOT fire.
+    await vi.advanceTimersByTimeAsync(30_000);
+    releaseSecondChunk();
+    await sendPromise;
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalled();
+    expect(onPart).toHaveBeenNthCalledWith(1, { text: 'first' });
+    expect(onPart).toHaveBeenNthCalledWith(2, { text: 'second' });
+  });
+
+  it('leaves the partial stream intact and reports completion when chunks flow continuously', async () => {
+    mockGenerateContentStream.mockResolvedValue(
+      (async function* () {
+        yield { candidates: [{ content: { parts: [{ text: 'alpha' }] } }] };
+        yield { candidates: [{ content: { parts: [{ text: 'beta' }] } }] };
+      })(),
+    );
+
+    const onPart = vi.fn();
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+
+    const sendPromise = sendStatelessMessageStreamApi(
+      'key',
+      'gemini-3-flash-preview',
+      [],
+      [{ text: 'question' }],
+      {},
+      new AbortController().signal,
+      onPart,
+      vi.fn(),
+      onError,
+      onComplete,
+    );
+    await sendPromise;
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalled();
+    expect(onPart).toHaveBeenNthCalledWith(1, { text: 'alpha' });
+    expect(onPart).toHaveBeenNthCalledWith(2, { text: 'beta' });
+  });
+
+  it('does not report a timeout when the user aborts mid-stream', async () => {
+    // Generator that stalls until the user abort fires (the watchdog shares the
+    // same signal, but must NOT treat a user stop as an idle timeout).
+    mockGenerateContentStream.mockImplementation((args: unknown) => {
+      const config = (args as { config?: { abortSignal?: AbortSignal } })?.config;
+      return (async function* () {
+        yield { candidates: [{ content: { parts: [{ text: 'partial' }] } }] };
+        await new Promise<void>((resolve) => {
+          if (config?.abortSignal?.aborted) {
+            resolve();
+            return;
+          }
+          config?.abortSignal?.addEventListener('abort', () => resolve(), { once: true });
+        });
+      })();
+    });
+
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+    const abortController = new AbortController();
+
+    const sendPromise = sendStatelessMessageStreamApi(
+      'key',
+      'gemini-3-flash-preview',
+      [],
+      [{ text: 'question' }],
+      {},
+      abortController.signal,
+      vi.fn(),
+      vi.fn(),
+      onError,
+      onComplete,
+    );
+
+    // Let the stream establish, then the user hits Esc before the idle budget
+    // elapses. The watchdog must NOT fire: the stream simply ends (onComplete),
+    // and the caller's own abort signal flags the stop.
+    await vi.advanceTimersByTimeAsync(1_000);
+    abortController.abort();
+    await sendPromise;
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalled();
   });
 });

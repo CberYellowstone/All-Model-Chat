@@ -1,4 +1,4 @@
-import { splitMarkdownSegments } from '@/utils/markdownSegments';
+import { splitMarkdownSegments, transformMarkdownTextSegments } from '@/utils/markdownSegments';
 import { escapeHtml } from '@/utils/escapeHtml';
 
 const GEMMA_THOUGHT_CHANNEL_REGEX = /<\|channel(?:\|thought>|>thought\s*)([\s\S]*?)\s*<channel\|>/gi;
@@ -121,11 +121,6 @@ const createThinkingBlockMarkup = (innerContent: string, isLoading: boolean, sum
 
   return `<details${openAttribute}><summary>${escapedSummaryLabel}</summary><div>${escapedContent}</div></details>`;
 };
-
-const transformMarkdownTextSegments = (value: string, transform: (segment: string) => string): string =>
-  splitMarkdownSegments(value)
-    .map((segment) => (segment.type === 'literal' ? segment.value : transform(segment.value)))
-    .join('');
 
 export const wrapReasoningMarkup = (value: string, isLoading: boolean, summaryLabel: string): string =>
   transformMarkdownTextSegments(value, (segment) => {

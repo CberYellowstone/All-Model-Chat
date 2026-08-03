@@ -2,8 +2,6 @@ import { useCallback, useMemo } from 'react';
 import type { ChatSettings } from '@/types';
 import type { ChatToolSettingKey, ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { useChatStore } from '@/stores/chatStore';
-import { useSettingsStore } from '@/stores/settingsStore';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 
 interface UseChatInputToolStatesParams {
   currentChatSettings: ChatSettings;
@@ -81,7 +79,10 @@ export const useChatInputToolStates = ({
 }: UseChatInputToolStatesParams): ChatToolToggleStates => {
   const activeSessionId = useChatStore((state) => state.activeSessionId);
   const setCurrentChatSettings = useChatStore((state) => state.setCurrentChatSettings);
-  const isOpenAICompatibleMode = useSettingsStore((state) => isThirdPartyApiActive(state.appSettings));
+  // The Gemini tools below only work on the Gemini-native API, so the gate must mirror
+  // the active session's routing decision (resolveChatApiRoute) — not the global
+  // appSettings mode, which stays stale after switching to a differently-routed chat.
+  const isThirdPartyChat = currentChatSettings.apiMode === 'third-party';
 
   const createToggle = useCallback(
     (toolId: ToggleableChatToolId) => () => {
@@ -96,27 +97,27 @@ export const useChatInputToolStates = ({
   return useMemo(
     () => ({
       deepSearch: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isDeepSearchEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isDeepSearchEnabled,
         onToggle: createToggle('deepSearch'),
       },
       googleSearch: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleSearchEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isGoogleSearchEnabled,
         onToggle: createToggle('googleSearch'),
       },
       googleMaps: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleMapsEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isGoogleMapsEnabled,
         onToggle: createToggle('googleMaps'),
       },
       codeExecution: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isCodeExecutionEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isCodeExecutionEnabled,
         onToggle: createToggle('codeExecution'),
       },
       localPython: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isLocalPythonEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isLocalPythonEnabled,
         onToggle: createToggle('localPython'),
       },
       urlContext: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isUrlContextEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isUrlContextEnabled,
         onToggle: createToggle('urlContext'),
       },
       alwaysKeepThinking: {
@@ -124,6 +125,6 @@ export const useChatInputToolStates = ({
         onToggle: createToggle('alwaysKeepThinking'),
       },
     }),
-    [createToggle, currentChatSettings, isOpenAICompatibleMode],
+    [createToggle, currentChatSettings, isThirdPartyChat],
   );
 };

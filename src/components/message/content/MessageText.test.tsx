@@ -143,6 +143,98 @@ describe('MessageText', () => {
     expect(onOpenHtmlPreview).not.toHaveBeenCalled();
   });
 
+  it('does not auto-open previews for code blocks with non-HTML languages, even when content looks like HTML', () => {
+    const onOpenHtmlPreview = vi.fn();
+    const loadingMessage = {
+      id: 'message-mislabeled-html',
+      role: 'model' as const,
+      content: '```python\n<div style="display:flex"><span>Ready</span></div>\n```',
+      isLoading: true,
+      timestamp: new Date('2026-04-21T00:00:00.000Z'),
+    };
+    const loadedMessage = {
+      ...loadingMessage,
+      isLoading: false,
+    };
+
+    const renderMessage = (message: typeof loadingMessage) => (
+      <MessageText
+        message={message}
+        showThoughts={false}
+        appSettings={createAppSettings({ autoFullscreenHtml: true, hideThinkingInContext: false })}
+        themeId="pearl"
+        baseFontSize={16}
+        onImageClick={vi.fn()}
+        onOpenHtmlPreview={onOpenHtmlPreview}
+        expandCodeBlocksByDefault={false}
+        isMermaidRenderingEnabled={true}
+        isGraphvizRenderingEnabled={true}
+        onOpenSidePanel={vi.fn()}
+      />
+    );
+
+    act(() => {
+      renderer.render(renderMessage(loadingMessage));
+    });
+
+    act(() => {
+      renderer.render(renderMessage(loadedMessage));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(onOpenHtmlPreview).not.toHaveBeenCalled();
+  });
+
+  it('auto-opens previews for code blocks with an explicit html language', () => {
+    const onOpenHtmlPreview = vi.fn();
+    const loadingMessage = {
+      id: 'message-explicit-html',
+      role: 'model' as const,
+      content: '```html\n<div style="display:flex"><span>Ready</span></div>\n```',
+      isLoading: true,
+      timestamp: new Date('2026-04-21T00:00:00.000Z'),
+    };
+    const loadedMessage = {
+      ...loadingMessage,
+      isLoading: false,
+    };
+
+    const renderMessage = (message: typeof loadingMessage) => (
+      <MessageText
+        message={message}
+        showThoughts={false}
+        appSettings={createAppSettings({ autoFullscreenHtml: true, hideThinkingInContext: false })}
+        themeId="pearl"
+        baseFontSize={16}
+        onImageClick={vi.fn()}
+        onOpenHtmlPreview={onOpenHtmlPreview}
+        expandCodeBlocksByDefault={false}
+        isMermaidRenderingEnabled={true}
+        isGraphvizRenderingEnabled={true}
+        onOpenSidePanel={vi.fn()}
+      />
+    );
+
+    act(() => {
+      renderer.render(renderMessage(loadingMessage));
+    });
+
+    act(() => {
+      renderer.render(renderMessage(loadedMessage));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(onOpenHtmlPreview).toHaveBeenCalledWith('<div style="display:flex"><span>Ready</span></div>', {
+      initialTrueFullscreen: false,
+    });
+  });
+
   it('omits live raw reasoning markup from the visible answer body', () => {
     mockUseMessageStream.mockReturnValue({
       streamContent: 'drafting the answer',

@@ -12,6 +12,7 @@ import { useHistorySidebarLogic } from './useHistorySidebarLogic';
 import { SIDEBAR_CLICKABLE_ICON_BUTTON_CLASS, SIDEBAR_ICON_LINK_BUTTON_CLASS } from './sidebarStyles';
 import { LimitedSessionList } from './LimitedSessionList';
 import { isDarkThemeId } from '@/utils/themeMode';
+import { isSessionDrag } from './sidebarDragTypes';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -147,6 +148,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     setActiveMenu,
     dragOverId,
     setDragOverId,
+    draggingSessionId,
     newlyTitledSessionIds,
     menuRef,
     editInputRef,
@@ -161,6 +163,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     handleDragOver,
     handleDrop,
     handleMainDragLeave,
+    handleSessionDragStart,
+    handleSessionDragEnd,
     handleMiniSearchClick,
     handleEmptySpaceClick,
     handleSessionSelect,
@@ -176,6 +180,51 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onMoveSessionToGroup,
     onSelectSession,
   });
+
+  // Auto-scroll: while dragging a session near the top/bottom edge of the list,
+  // nudge the scroll position each frame so the user can reach sessions that
+  // are out of view. Only active during a session drag; stopped on leave/drop.
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollRafRef = React.useRef<number | null>(null);
+  const EDGE_SCROLL_ZONE_PX = 48;
+
+  const stopEdgeScroll = () => {
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  };
+
+  const startEdgeScroll = (container: HTMLDivElement, direction: number) => {
+    if (scrollRafRef.current !== null) return;
+    const step = () => {
+      container.scrollTop += direction;
+      scrollRafRef.current = requestAnimationFrame(step);
+    };
+    scrollRafRef.current = requestAnimationFrame(step);
+  };
+
+  const handleScrollContainerDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isSessionDrag(event)) {
+      stopEdgeScroll();
+      return;
+    }
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const distanceFromTop = event.clientY - rect.top;
+    const distanceFromBottom = rect.bottom - event.clientY;
+
+    if (distanceFromTop < EDGE_SCROLL_ZONE_PX) {
+      const speed = Math.max(1, Math.ceil((EDGE_SCROLL_ZONE_PX - distanceFromTop) / 8));
+      startEdgeScroll(container, -speed);
+    } else if (distanceFromBottom < EDGE_SCROLL_ZONE_PX) {
+      const speed = Math.max(1, Math.ceil((EDGE_SCROLL_ZONE_PX - distanceFromBottom) / 8));
+      startEdgeScroll(container, speed);
+    } else {
+      stopEdgeScroll();
+    }
+  };
 
   const ungroupedSessions = sessionsByGroupId.get(null) || [];
   const pinnedUngrouped = ungroupedSessions.filter((session) => session.isPinned);
@@ -203,11 +252,18 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     setEditingItem,
     toggleMenu,
     setActiveMenu,
+    setDragOverId,
+    draggingSessionId,
+    onSessionDragStart: handleSessionDragStart,
+    onSessionDragEnd: handleSessionDragEnd,
   };
 
   const [listParentRef] = useAutoAnimate<HTMLDivElement>({ duration: 200 });
   const expandedPaneRef = React.useRef<HTMLDivElement>(null);
   const searchTitle = t('historySearchButton') + (searchChatsShortcut ? ` (${searchChatsShortcut})` : '');
+
+  // Cancel any pending edge-scroll rAF on unmount.
+  React.useEffect(() => () => stopEdgeScroll(), []);
 
   React.useEffect(() => {
     const pane = expandedPaneRef.current as (HTMLDivElement & { inert?: boolean }) | null;
@@ -260,8 +316,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           searchChatsShortcut={searchChatsShortcut}
         />
         <div
+          ref={scrollContainerRef}
           className="flex-grow overflow-y-auto custom-scrollbar p-2 cursor-ew-resize"
           onClick={handleEmptySpaceClick}
+          onDragOver={handleScrollContainerDragOver}
+          onDrop={stopEdgeScroll}
+          onDragLeave={stopEdgeScroll}
+          onDragEnd={stopEdgeScroll}
         >
           {sessions.length === 0 && !searchQuery ? (
             <p className="p-4 text-xs sm:text-sm text-center text-[var(--theme-text-tertiary)] cursor-auto">
@@ -272,8 +333,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
               ref={listParentRef}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, 'all-conversations')}
-              onDragEnter={() => setDragOverId('all-conversations')}
+              onDragEnter={(e) => {
+                if (!isSessionDrag(e)) return;
+                setDragOverId('all-conversations');
+              }}
               onDragLeave={handleMainDragLeave}
+              onDragEnd={handleSessionDragEnd}
               className={`rounded-lg transition-colors min-h-[50px] cursor-auto ${dragOverId === 'all-conversations' ? 'bg-[var(--theme-bg-accent)] bg-opacity-10 ring-2 ring-[var(--theme-bg-accent)] ring-inset ring-opacity-50' : ''}`}
             >
               {sortedGroups.map((group) => (
@@ -286,7 +351,6 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
                   handleGroupStartEdit={(item) => handleStartEdit('group', item)}
                   handleDrop={handleDrop}
                   handleDragOver={handleDragOver}
-                  setDragOverId={setDragOverId}
                   onDeleteGroup={onDeleteGroup}
                   {...sessionItemSharedProps}
                 />

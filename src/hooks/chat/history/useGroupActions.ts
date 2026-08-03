@@ -49,7 +49,9 @@ export const useGroupActions = ({ updateAndPersistGroups, updateAndPersistSessio
     (sessionId: string, groupId: string | null) => {
       logService.info(`Moving session ${sessionId} to group ${groupId}`);
       updateAndPersistSessions((prev) =>
-        prev.map((session) => (session.id === sessionId ? { ...session, groupId } : session)),
+        prev.map((session) =>
+          session.id === sessionId ? (session.groupId === groupId ? session : { ...session, groupId }) : session,
+        ),
       );
     },
     [updateAndPersistSessions],

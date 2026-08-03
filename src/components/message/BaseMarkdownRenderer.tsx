@@ -9,7 +9,7 @@ import { DeferredDiagramBlock } from './blocks/DeferredDiagramBlock';
 import { type UploadedFile, type SideViewContent } from '@/types';
 import { extractTextFromNode } from '@/utils/reactNodeText';
 import { InlineCode } from './code/InlineCode';
-import { splitMarkdownSegments } from '@/utils/markdownSegments';
+import { transformMarkdownTextSegments } from '@/utils/markdownSegments';
 import { stripGemmaThoughtMarkup, wrapReasoningMarkup } from '@/utils/chat/reasoning';
 import { normalizePreviewableMarkdownContent } from '@/utils/previewableMarkdown';
 import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
@@ -73,11 +73,6 @@ interface BaseMarkdownRendererProps extends MarkdownRendererProps {
 
 const INLINE_MATH_OPERATOR_REGEX = /(?:^|[^A-Za-z])(?:\d+\s*[=+\-*/<>]\s*\d+|[A-Za-z]\s*[=+\-*/<>]\s*[A-Za-z0-9])/;
 const INLINE_MATH_MARKER_REGEX = /[\\^_{}]/;
-
-const transformMarkdownTextSegments = (value: string, transform: (segment: string) => string): string =>
-  splitMarkdownSegments(value)
-    .map((segment) => (segment.type === 'literal' ? segment.value : transform(segment.value)))
-    .join('');
 
 const SINGLE_LIVE_ARTIFACT_FENCE_REGEX =
   /^```(amc-live-artifact-html|amc-live-artifact-interaction)\n([\s\S]*?)\n?```\s*$/;

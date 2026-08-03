@@ -29,4 +29,13 @@ describe('SessionItem spacing', () => {
       'onExport={() => { onSelectSession(session.id); onOpenExportModal(); setActiveMenu(null); }}',
     );
   });
+
+  it('writes the session id to dataTransfer on drag start so drop targets can move the session', () => {
+    const source = normalizeSource(fs.readFileSync(sessionItemPath, 'utf8'));
+
+    expect(source).toContain('e.dataTransfer.setData(SESSION_DRAG_TYPE, session.id)');
+    expect(source).toContain("e.dataTransfer.effectAllowed = 'move'");
+    expect(source).toContain('onDragEnd');
+    expect(source).not.toContain('draggable={false}');
+  });
 });

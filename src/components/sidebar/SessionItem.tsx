@@ -4,6 +4,7 @@ import { Pin, MoreHorizontal } from 'lucide-react';
 import { type ChatGroup, type SavedChatSession } from '@/types';
 import { SessionItemMenu } from './SessionItemMenu';
 import { LoadingDots } from '@/components/shared/LoadingDots';
+import { SESSION_DRAG_TYPE } from './sidebarDragTypes';
 
 interface SessionItemProps {
   session: SavedChatSession;
@@ -28,6 +29,10 @@ interface SessionItemProps {
   setEditingItem: (item: { type: 'session' | 'group'; id: string; title: string } | null) => void;
   toggleMenu: (e: React.MouseEvent, id: string) => void;
   setActiveMenu: (id: string | null) => void;
+  setDragOverId: (id: string | null) => void;
+  draggingSessionId: string | null;
+  onSessionDragStart: (sessionId: string) => void;
+  onSessionDragEnd: () => void;
 }
 
 const RIGHT_CLICK_MENU_FEEDBACK_MS = 200;
@@ -57,17 +62,54 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     setEditingItem,
     toggleMenu,
     setActiveMenu,
+    draggingSessionId,
+    onSessionDragStart,
+    onSessionDragEnd,
   } = props;
 
   const [isRightClickAnimating, setIsRightClickAnimating] = useState(false);
   const isActive = activeMenu === session.id;
   const displayTitle = session.title === 'New Chat' ? t('newChat') : session.title;
+  const isBeingDragged = draggingSessionId === session.id;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsRightClickAnimating(true);
     setActiveMenu(session.id);
     setTimeout(() => setIsRightClickAnimating(false), RIGHT_CLICK_MENU_FEEDBACK_MS);
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
+    e.dataTransfer.setData(SESSION_DRAG_TYPE, session.id);
+    e.dataTransfer.effectAllowed = 'move';
+    onSessionDragStart(session.id);
+
+    // Build a compact, unobtrusive drag image (pin + title) so the ghost does
+    // not show the whole row snapshot. It must be in the DOM at dragstart, and
+    // is removed on the next tick after setDragImage captures it.
+    const ghost = document.createElement('div');
+    ghost.className =
+      'fixed top-0 left-0 z-[9999] pointer-events-none flex items-center gap-2 rounded-md bg-[var(--theme-bg-primary)] px-2.5 py-1.5 text-sm font-medium text-[var(--theme-text-primary)] shadow-lg';
+    if (session.isPinned) {
+      const pinIcon = document.createElement('span');
+      pinIcon.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>';
+      ghost.appendChild(pinIcon);
+    }
+    const label = document.createElement('span');
+    label.textContent = displayTitle;
+    ghost.appendChild(label);
+    document.body.appendChild(ghost);
+
+    e.dataTransfer.setDragImage(ghost, 12, 12);
+
+    // A drop landing outside the app never fires onDragEnd, so schedule the
+    // removal here regardless.
+    window.setTimeout(() => ghost.remove(), 0);
+  };
+
+  const handleDragEnd = () => {
+    onSessionDragEnd();
   };
 
   return (
@@ -80,7 +122,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
       <div
         className={`relative w-full text-left pl-2.5 pr-1 py-2 text-sm transition-colors rounded-lg text-[var(--theme-text-primary)] ${
           session.id === activeSessionId ? 'font-medium' : 'hover:bg-[var(--theme-bg-tertiary)]'
-        }`}
+        } ${isBeingDragged ? 'opacity-40 scale-[0.98]' : ''}`}
       >
         {editingItem?.type === 'session' && editingItem.id === session.id ? (
           <input
@@ -95,7 +137,9 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
         ) : (
           <a
             href={`/chat/${session.id}`}
-            draggable={false}
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
             onClick={(e) => {
               if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
                 e.preventDefault();
