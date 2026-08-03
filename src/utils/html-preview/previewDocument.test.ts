@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
   buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
+  loadKatex,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
@@ -11,6 +12,13 @@ import {
 } from './previewDocument';
 
 describe('htmlPreview utilities', () => {
+  // KaTeX is now loaded lazily so the math chunk is not pulled into every
+  // markdown message. The math-rendering tests need it in memory, so load it
+  // up front before asserting rendered `class="katex"` output.
+  beforeAll(async () => {
+    await loadKatex();
+  });
+
   it('injects the iframe bridge script into preview documents', () => {
     const srcDoc = buildHtmlPreviewSrcDoc('<html><head><title>Demo</title></head><body>Hello</body></html>');
 

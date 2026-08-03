@@ -1,5 +1,5 @@
 import { act } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { logService } from '@/services/logService';
 import { setupTestRenderer } from '@/test/render/renderer';
 import {
@@ -8,8 +8,15 @@ import {
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
+  loadKatex,
 } from '@/utils/html-preview/previewDocument';
 import { ArtifactFrame } from './ArtifactFrame';
+
+// KaTeX is loaded lazily so the math chunk is not pulled into every markdown
+// message. Tests that assert rendered `class="katex"` output need it in memory.
+beforeAll(async () => {
+  await loadKatex();
+});
 
 const createRect = (overrides: Partial<DOMRect> = {}): DOMRect =>
   ({

@@ -6,6 +6,7 @@ import {
   buildStreamingHtmlPreviewRenderPayload,
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
+  whenKatexReady,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -114,14 +115,23 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     heightCacheKey,
     height: readCachedFrameHeight(heightCacheKey, streamingHeightCacheKey),
   }));
+  // Incremented when KaTeX finishes loading so the final srcDoc (which embeds
+  // rendered math) is recomputed after the first render skipped the formulas.
+  const [katexReadyTick, setKatexReadyTick] = useState(0);
+  const finalSrcDoc = useMemo(
+    () => {
+      // katexReadyTick is an intentional invalidation token: reading it ties the
+      // memo to the lazy KaTeX load so the first render (which skips formulas)
+      // is recomputed once the chunk has arrived.
+      void katexReadyTick;
+      return buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId });
+    },
+    [baseFontSize, html, katexReadyTick, themeId],
+  );
   const frameHeight =
     frameHeightState.heightCacheKey === heightCacheKey
       ? frameHeightState.height
       : readCachedFrameHeight(heightCacheKey, streamingHeightCacheKey);
-  const finalSrcDoc = useMemo(
-    () => buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId }),
-    [baseFontSize, html, themeId],
-  );
   const srcDoc = isLoading ? streamingSrcDoc : finalSrcDoc;
 
   useLayoutEffect(() => {
@@ -221,6 +231,25 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   useEffect(() => {
     return () => clearStreamingFlushTimeout();
   }, [clearStreamingFlushTimeout]);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    // When the final srcDoc first meets a TeX delimiter, renderPreviewMath
+    // returns it unrendered and kicks off the lazy KaTeX load. Re-render once
+    // the chunk is available so embedded formulas appear. The promise resolves
+    // immediately after the first load, so this is a no-op on later frames.
+    let cancelled = false;
+    void whenKatexReady().then(() => {
+      if (!cancelled) {
+        setKatexReadyTick((tick) => tick + 1);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<HtmlPreviewBridgeMessage>) => {

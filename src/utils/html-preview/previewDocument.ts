@@ -1,5 +1,3 @@
-import katex from 'katex';
-import katexCss from 'katex/dist/katex.min.css?inline';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { PREVIEW_BRIDGE_SCRIPT } from './previewBridgeScript';
 import { sanitizeElementTree } from './previewSanitizer';
@@ -14,6 +12,46 @@ export {
 } from './previewMessageProtocol';
 
 const KATEX_STYLE_ATTRIBUTE = 'data-amc-katex';
+
+/**
+ * KaTeX is a heavy (~300KB) dependency used only when an HTML preview actually
+ * contains TeX math. It is loaded lazily so the static import graph from
+ * ArtifactFrame → previewDocument does not force every markdown message to
+ * download the math chunk.
+ */
+type KatexModule = { default: typeof import('katex').default };
+let katexInstance: typeof import('katex').default | null = null;
+let katexCss: string | null = null;
+let katexLoadingPromise: Promise<void> | null = null;
+let katexReadyResolve: (() => void) | null = null;
+
+const katexReadyPromise = new Promise<void>((resolve) => {
+  katexReadyResolve = resolve;
+});
+
+export const loadKatex = (): Promise<void> => {
+  if (!katexLoadingPromise) {
+    katexLoadingPromise = Promise.all([
+      import('katex').then((module: KatexModule) => {
+        katexInstance = module.default;
+      }),
+      import('katex/dist/katex.min.css?inline').then((cssModule) => {
+        katexCss = cssModule.default as string;
+      }),
+    ])
+      .then(() => {
+        katexReadyResolve?.();
+      })
+      .catch(() => {
+        katexLoadingPromise = null;
+        throw new Error('Failed to load KaTeX');
+      });
+  }
+
+  return katexLoadingPromise;
+};
+
+export const whenKatexReady = (): Promise<void> => katexReadyPromise;
 const PREVIEW_CONTENT_SECURITY_POLICY =
   "default-src 'none'; img-src https: data: blob:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' https: blob:; font-src https: data:; media-src https: data: blob:; connect-src https: data: blob:; worker-src blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const PREVIEW_CONTENT_SECURITY_POLICY_META = `<meta http-equiv="Content-Security-Policy" content="${PREVIEW_CONTENT_SECURITY_POLICY}">`;
@@ -104,8 +142,11 @@ const createRenderedMathFragment = (targetDocument: Document, value: string): Do
     }
 
     try {
+      if (!katexInstance) {
+        continue;
+      }
       const template = targetDocument.createElement('template');
-      template.innerHTML = katex.renderToString(latex, {
+      template.innerHTML = katexInstance.renderToString(latex, {
         displayMode,
         throwOnError: false,
         strict: false,
@@ -175,6 +216,15 @@ const injectKatexStyles = (targetDocument: Document) => {
 
 const renderPreviewMath = (srcDoc: string): string => {
   if (!hasTexMathDelimiterCandidate(srcDoc) || typeof DOMParser === 'undefined') {
+    return srcDoc;
+  }
+
+  if (!katexInstance) {
+    // First sight of a math delimiter in a preview: kick off the lazy KaTeX
+    // load and return the untouched source this frame. ArtifactFrame subscribes
+    // to whenKatexReady() and re-renders once the chunk has arrived, so the
+    // formula appears a tick later instead of blocking every message on it.
+    void loadKatex();
     return srcDoc;
   }
 
