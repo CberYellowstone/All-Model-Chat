@@ -1,4 +1,4 @@
-import React, { useState, type RefObject } from 'react';
+import React, { useRef, useState, type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Pin, MoreHorizontal } from 'lucide-react';
 import { type ChatGroup, type SavedChatSession } from '@/types';
@@ -68,9 +68,20 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
   } = props;
 
   const [isRightClickAnimating, setIsRightClickAnimating] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const isActive = activeMenu === session.id;
   const displayTitle = session.title === 'New Chat' ? t('newChat') : session.title;
   const isBeingDragged = draggingSessionId === session.id;
+
+  // A slight pointer move (< 10px) while pressing is a jittery click, not a
+  // drag. Native HTML5 drag has a ~5px threshold, so a 6px wiggle triggers
+  // dragstart/end but never fires click. Treat such a micro-drag as a click so
+  // the session still activates, without disturbing real drag-to-group.
+  const isMicroDrag = (e: React.DragEvent<HTMLAnchorElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return false;
+    return Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10 && e.timeStamp - start.t < 500;
+  };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -80,6 +91,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
     e.dataTransfer.setData(SESSION_DRAG_TYPE, session.id);
     e.dataTransfer.effectAllowed = 'move';
     onSessionDragStart(session.id);
@@ -108,7 +120,11 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     window.setTimeout(() => ghost.remove(), 0);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent<HTMLAnchorElement>) => {
+    if (isMicroDrag(e)) {
+      dragStartRef.current = null;
+      onSelectSession(session.id);
+    }
     onSessionDragEnd();
   };
 

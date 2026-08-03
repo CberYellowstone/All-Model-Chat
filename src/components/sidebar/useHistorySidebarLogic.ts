@@ -5,7 +5,7 @@ import { useWindowContext } from '@/contexts/WindowContext';
 import { useI18n } from '@/contexts/I18nContext';
 import { DESKTOP_BREAKPOINT_PX, FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { dbService } from '@/services/db/dbService';
-import { isSessionDrag } from './sidebarDragTypes';
+import { SESSION_DRAG_TYPE, isSessionDrag } from './sidebarDragTypes';
 
 type HistoryTranslator = (key: string) => string;
 
@@ -292,7 +292,7 @@ export const useHistorySidebarLogic = ({
     if (!isSessionDrag(event)) return;
     event.preventDefault();
     event.stopPropagation();
-    const sessionId = event.dataTransfer.getData('sessionId');
+    const sessionId = event.dataTransfer.getData(SESSION_DRAG_TYPE);
     const targetGroupId = groupId === 'all-conversations' ? null : groupId;
     if (sessionId) onMoveSessionToGroup(sessionId, targetGroupId);
     setDragOverId(null);
