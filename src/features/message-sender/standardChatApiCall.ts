@@ -87,16 +87,17 @@ const createNonStreamCompleteHandler =
     streamOnPart,
     onThoughtChunk,
     streamOnComplete,
+    source,
   }: Pick<
     StreamHandlerFunctions,
     'streamOnPart' | 'onThoughtChunk' | 'streamOnComplete'
-  >): NonStreamMessageCompleteHandler =>
+  > & { source?: 'gemini' | 'third-party' }): NonStreamMessageCompleteHandler =>
   (parts, thoughts, usage, grounding, urlContext) => {
     for (const part of parts) {
-      streamOnPart(part, { recordFirstToken: false });
+      streamOnPart(part, { recordFirstToken: false, source });
     }
     if (thoughts) {
-      onThoughtChunk(thoughts, { recordFirstToken: false });
+      onThoughtChunk(thoughts, { recordFirstToken: false, source });
     }
     streamOnComplete(usage, grounding, urlContext);
   };
@@ -174,6 +175,7 @@ export const performStandardChatApiCall = async ({
     streamOnPart,
     onThoughtChunk,
     streamOnComplete: wrappedStreamOnComplete,
+    source: activeProvider ? 'third-party' : 'gemini',
   });
 
   if (activeProvider) {
@@ -191,6 +193,11 @@ export const performStandardChatApiCall = async ({
     const providerId = apiRoute.providerId ?? null;
 
     if (appSettings.isStreamingEnabled) {
+      // Stamp thinking provenance on every third-party streaming callback; the
+      // first chunk decides the strip mode, so wrapping here (single point for
+      // both Anthropic and OpenAI-compatible streams) covers the whole run.
+      const thirdPartyOnThoughtChunk = (chunk: string) => onThoughtChunk(chunk, { source: 'third-party' });
+      const thirdPartyOnPart = (part: ContentPart) => streamOnPart(part, { source: 'third-party' });
       await routeThrownStreamError(
         () =>
           isAnthropic
@@ -201,8 +208,8 @@ export const performStandardChatApiCall = async ({
                 finalParts,
                 providerConfig,
                 newAbortController.signal,
-                streamOnPart,
-                onThoughtChunk,
+                thirdPartyOnPart,
+                thirdPartyOnThoughtChunk,
                 streamOnError,
                 streamOnComplete,
                 finalRole,
@@ -215,8 +222,8 @@ export const performStandardChatApiCall = async ({
                 finalParts,
                 providerConfig,
                 newAbortController.signal,
-                streamOnPart,
-                onThoughtChunk,
+                thirdPartyOnPart,
+                thirdPartyOnThoughtChunk,
                 streamOnError,
                 streamOnComplete,
                 finalRole,

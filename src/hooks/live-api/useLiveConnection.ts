@@ -6,13 +6,12 @@ import { logService } from '@/services/logService';
 import type { AppSettings, LiveTranscriptHandler } from '@/types';
 import type { LiveErrorState } from '@/utils/live-api/liveErrorState';
 import { useStateWithRef } from '@/hooks/useStateWithRef';
+import { isGemini31FlashLiveModel } from '@/utils/model/modelCapabilities';
 
 const MAX_RECONNECT_RETRIES = 5;
 const RECONNECT_BASE_DELAY_MS = 1000;
 
 type LiveRealtimeInput = Parameters<LiveSession['sendRealtimeInput']>[0];
-
-const isGemini31FlashLiveModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-3.1-flash-live');
 
 const toGemini31FlashLiveRealtimeInput = (part: Part): LiveRealtimeInput | null => {
   if (typeof part.text === 'string' && Object.keys(part).every((key) => key === 'text')) {

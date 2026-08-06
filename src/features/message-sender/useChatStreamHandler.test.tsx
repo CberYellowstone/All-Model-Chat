@@ -328,4 +328,54 @@ describe('useChatStreamHandler thinking-end sync', () => {
     const secondCommit = writtenMessages.filter((m) => m.thinkingTimeMs !== undefined).at(-1);
     expect(secondCommit?.thinkingTimeMs).toBeDefined();
   });
+
+  it('stamps third-party thinking provenance from options.source on the first thought', () => {
+    const writtenMessages: { thinkingSource?: string }[] = [];
+    const { onThoughtChunk } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingSource?: string }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    onThoughtChunk('Third-party reasoning', { source: 'third-party' });
+
+    expect(writtenMessages.find((message) => message.thinkingSource !== undefined)?.thinkingSource).toBe('third-party');
+  });
+
+  it('stamps third-party provenance on parts carrying inline <thinking> tags', () => {
+    const writtenMessages: { thinkingSource?: string }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingSource?: string }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    streamOnPart({ text: '<thinking>Plan.</thinking>Answer' }, { source: 'third-party' });
+
+    expect(writtenMessages.find((message) => message.thinkingSource !== undefined)?.thinkingSource).toBe('third-party');
+  });
+
+  it('leaves thinkingSource unset for Gemini-native thinking (no source passed)', () => {
+    const writtenMessages: { thinkingSource?: string }[] = [];
+    const { onThoughtChunk } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingSource?: string }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    onThoughtChunk('Gemini-native reasoning');
+
+    // Only third-party thinking needs the explicit source; an unset value lets
+    // the renderer allow Gemini-style sections, so nothing is stamped.
+    expect(writtenMessages.some((message) => message.thinkingSource !== undefined)).toBe(false);
+  });
+
+  it('does not stamp provenance when no thought is produced', () => {
+    const writtenMessages: { thinkingSource?: string }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingSource?: string }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    streamOnPart({ text: 'Direct answer' });
+
+    expect(writtenMessages.some((message) => message.thinkingSource !== undefined)).toBe(false);
+  });
 });

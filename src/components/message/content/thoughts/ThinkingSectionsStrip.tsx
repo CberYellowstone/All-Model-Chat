@@ -11,21 +11,19 @@ interface ThinkingSectionsStripProps {
 const SCROLL_FOLLOW_THRESHOLD_PX = 24;
 
 // Sectioned view for Gemini-style thinking streams (each section opens with a
-// `**Title**` line). The header row is sticky: the previous title degrades to a
-// hint beside the section counter, the current title is bold with a slide-in
-// animation, and the body viewport caps at 5 lines (short content shrinks to its
-// natural height, longer content locks to the cap and scrolls) while
-// auto-following the newest line. Scrolling up pauses follow-up and reveals a
-// "back to latest" button. When a new section arrives, keying the body window on
-// the section count remounts it (scroll resets to the top) and re-shows the
-// "latest" affordance.
+// `**Title**` line). The header row is sticky: the current title is bold with a
+// slide-in animation beside the section counter, and the body viewport caps at
+// 5 lines (short content shrinks to its natural height, longer content locks to
+// the cap and scrolls) while auto-following the newest line. Scrolling up
+// pauses follow-up and reveals a "back to latest" button. When a new section
+// arrives, keying the body window on the section count remounts it (scroll
+// resets to the top) and re-shows the "latest" affordance.
 export const ThinkingSectionsStrip: React.FC<ThinkingSectionsStripProps> = ({ sections }) => {
   const { t } = useI18n();
   const bodyRef = useRef<HTMLDivElement>(null);
   const [isFollowing, setIsFollowing] = useState(true);
 
   const currentSection = sections[sections.length - 1];
-  const previousSection = sections.length > 1 ? sections[sections.length - 2] : null;
 
   // Auto-follow while the user has not scrolled up. Keying the body on the
   // section count already remounts it on a new section, so scroll starts at the
@@ -75,15 +73,6 @@ export const ThinkingSectionsStrip: React.FC<ThinkingSectionsStripProps> = ({ se
         </div>
 
         <div className="flex min-w-0 flex-shrink-0 items-center gap-1.5">
-          {previousSection?.title && (
-            <span
-              data-thinking-section-prev-title="true"
-              className="hidden max-w-[10rem] truncate text-xs text-[var(--theme-text-tertiary)] sm:inline-block"
-              title={previousSection.title}
-            >
-              ‹ {previousSection.title}
-            </span>
-          )}
           <span
             data-thinking-section-counter="true"
             className="flex-shrink-0 rounded-full bg-[var(--theme-bg-tertiary)] px-1.5 py-0.5 font-mono text-[10px] leading-none text-[var(--theme-text-tertiary)]"

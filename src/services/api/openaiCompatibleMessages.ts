@@ -1,23 +1,10 @@
 import type { Part } from '@google/genai';
 import type { ChatHistoryItem, ThinkingLevel } from '@/types';
 import { isAudioMimeType, isImageMimeType } from '@/utils/file/fileTypeClassification';
+import { isGlmModel, isKimiK3Model, isOpenAIGpt5FamilyModel } from '@/utils/model/modelCapabilities';
 import type { OpenAICompatibleChatConfig, OpenAIMessage, OpenAIMessageContent } from './openaiCompatibleTypes';
 
 const OPENAI_COMPATIBLE_FILE_DATA_ERROR = 'OpenAI-compatible mode cannot send Gemini Files API file references.';
-
-const isGlmModel = (modelId: string): boolean => modelId.toLowerCase().startsWith('glm-');
-
-/** OpenAI GPT-5 family (incl. gpt-5.6-sol/terra/luna) supports chat-completions reasoning_effort. */
-const isOpenAIGpt5FamilyModel = (modelId: string): boolean => {
-  const lower = modelId.toLowerCase();
-  return lower.startsWith('gpt-5') || lower.includes('/gpt-5');
-};
-
-/** Kimi K3 configures reasoning via top-level reasoning_effort (low | high | max). */
-const isKimiK3Model = (modelId: string): boolean => {
-  const lower = modelId.toLowerCase();
-  return lower === 'kimi-k3' || lower.startsWith('kimi-k3-') || lower.includes('kimi-k3');
-};
 
 const mapThinkingLevelToOpenAIReasoningEffort = (level: ThinkingLevel | undefined): string => {
   switch (level) {

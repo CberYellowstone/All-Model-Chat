@@ -309,6 +309,47 @@ describe('MessageThoughts', () => {
     );
   });
 
+  it('renders third-party thinking as a flat strip even when thoughts contain sectioned headers', () => {
+    mockUseMessageStream.mockReturnValue({
+      streamContent: '',
+      streamThoughts: '',
+    });
+
+    act(() => {
+      renderer.render(
+        <MessageThoughts
+          message={{
+            id: 'message-third-party-strip',
+            role: 'model',
+            content: '',
+            thoughts: '**Step one**\nReasoning detail',
+            isLoading: true,
+            thinkingActive: true,
+            thinkingSource: 'third-party',
+            timestamp: new Date('2026-04-21T00:00:00.000Z'),
+          }}
+          showThoughts={true}
+          appSettings={createAppSettings()}
+          themeId="pearl"
+          onImageClick={vi.fn()}
+          onOpenHtmlPreview={vi.fn()}
+          expandCodeBlocksByDefault={false}
+          isMermaidRenderingEnabled={true}
+          isGraphvizRenderingEnabled={true}
+          onOpenSidePanel={vi.fn()}
+        />,
+      );
+    });
+
+    // thinkingSource='third-party' forces the flat strip even though the
+    // thoughts look like a Gemini sectioned stream (a `**Title**` line).
+    const strip = renderer.container.querySelector('[data-thinking-strip="true"]');
+    expect(strip).not.toBeNull();
+    expect(strip?.getAttribute('data-thinking-mode')).toBe('flat');
+    expect(strip?.textContent).not.toContain('Section');
+    expect(renderer.container.querySelector('[data-thinking-section-body="true"]')).toBeNull();
+  });
+
   it('expands and collapses the thought panel from keyboard activation', () => {
     act(() => {
       renderer.render(

@@ -41,7 +41,7 @@ describe('ThinkingStrip', () => {
 
     const strip = renderer.container.querySelector('[data-thinking-strip="true"]');
     expect(strip?.textContent).toContain('Plan details');
-    // The previous title span (truncate font-semibold) is gone.
+    // The flat strip has no title row — no bold title span anywhere.
     expect(strip?.querySelector('.truncate.font-semibold')).toBeNull();
     expect(strip?.querySelector('.font-semibold')).toBeNull();
   });
@@ -54,6 +54,25 @@ describe('ThinkingStrip', () => {
     expect(renderer.container.querySelector('[data-thinking-strip="true"]')?.getAttribute('data-thinking-mode')).toBe(
       'flat',
     );
+  });
+
+  it('keeps Gemini flat tails scrollable but locks third-party tails to the latest lines', () => {
+    act(() => {
+      renderer.render(<ThinkingStrip thoughtsTail="Line one\nLine two\nLine three" />);
+    });
+    const geminiViewport = renderer.container.querySelector('[data-thinking-strip-viewport="true"]');
+    expect(geminiViewport?.getAttribute('class')).toContain('overflow-y-auto');
+    expect(geminiViewport?.getAttribute('class')).not.toContain('overflow-hidden');
+
+    act(() => {
+      renderer.render(
+        <ThinkingStrip thoughtsTail="Line one\nLine two\nLine three" thinkingSource="third-party" />,
+      );
+    });
+    const thirdPartyViewport = renderer.container.querySelector('[data-thinking-strip-viewport="true"]');
+    // Third-party thinking is locked to the latest lines — no manual scroll up.
+    expect(thirdPartyViewport?.getAttribute('class')).toContain('overflow-hidden');
+    expect(thirdPartyViewport?.getAttribute('class')).not.toContain('overflow-y-auto');
   });
 
   it('routes sectioned input to the sectioned strip', () => {
@@ -74,14 +93,36 @@ describe('ThinkingStrip', () => {
     expect(strip?.getAttribute('data-thinking-mode')).toBe('sections');
     // Current (last) title is shown.
     expect(strip?.textContent).toContain('Final Answer');
-    // Previous title provides context above the fold.
-    expect(strip?.textContent).toContain('Interpreting the Query');
     // Section counter renders.
     expect(strip?.textContent).toContain('Section 2');
     // The body window caps at the 5-line height.
     const body = renderer.container.querySelector('[data-thinking-section-body="true"]') as HTMLElement | null;
     expect(body?.style.maxHeight).toBe(`${THINKING_STRIP_CONTENT_HEIGHT_REM}rem`);
     expect(body?.textContent).toContain('Done.');
+  });
+
+  it('forces flat mode for third-party thinking even with sectioned content', () => {
+    act(() => {
+      renderer.render(
+        <ThinkingStrip
+          thoughtsTail="**Interpreting the Query**\nThe user asks about X."
+          thinkingSource="third-party"
+          sections={[
+            { title: 'Interpreting the Query', body: 'The user asks about X.' },
+            { title: 'Final Answer', body: 'Done.' },
+          ]}
+        />,
+      );
+    });
+
+    const strip = renderer.container.querySelector('[data-thinking-strip="true"]');
+    expect(strip).not.toBeNull();
+    // Third-party thinking never renders as a sectioned, titled strip — markdown
+    // headers in its reasoning are just flat text.
+    expect(strip?.getAttribute('data-thinking-mode')).toBe('flat');
+    expect(strip?.textContent).not.toContain('Section 2');
+    expect(strip?.textContent).not.toContain('Final Answer');
+    expect(renderer.container.querySelector('[data-thinking-section-body="true"]')).toBeNull();
   });
 
   it('falls back to the flat tail when sections is null or empty', () => {

@@ -183,7 +183,13 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
           </div>
         </div>
 
-        {showThinkingStrip && <ThinkingStrip thoughtsTail={thoughtsTail} sections={thinkingSections} />}
+        {showThinkingStrip && (
+          <ThinkingStrip
+            thoughtsTail={thoughtsTail}
+            sections={thinkingSections}
+            thinkingSource={message.thinkingSource}
+          />
+        )}
 
         <div className={`thought-process-accordion ${isExpanded ? 'expanded' : ''}`}>
           <div className="thought-process-inner">

@@ -434,13 +434,24 @@ describe('standardChatStrategy', () => {
         thinkingLevel: 'LOW',
       }),
       expect.any(AbortSignal),
-      streamOnPart,
-      onThoughtChunk,
+      expect.any(Function),
+      expect.any(Function),
       streamOnError,
       streamOnComplete,
       'user',
       'openai',
     );
+
+    // The streaming callbacks are wrapped so every chunk stamps thinking
+    // provenance: the first part/thought forces the flat strip for third-party.
+    const [wrappedOnPart, wrappedOnThoughtChunk] = mockSendOpenAICompatibleMessageStream.mock.calls[0].slice(6, 8) as [
+      (part: object) => void,
+      (chunk: string) => void,
+    ];
+    wrappedOnPart({ text: '**Step**\nreasoning' });
+    expect(streamOnPart).toHaveBeenCalledWith({ text: '**Step**\nreasoning' }, { source: 'third-party' });
+    wrappedOnThoughtChunk('reasoning');
+    expect(onThoughtChunk).toHaveBeenCalledWith('reasoning', { source: 'third-party' });
 
     unmount();
   });

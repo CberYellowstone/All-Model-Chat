@@ -25,7 +25,8 @@ const isNativeAudioModel = (modelId: string): boolean => {
   return lowerId.includes('native-audio') || lowerId.includes('-live-') || lowerId.includes('live-translate');
 };
 
-const isGemini31FlashLiveModel = (modelId: string): boolean => modelId.toLowerCase().includes('gemini-3.1-flash-live');
+export const isGemini31FlashLiveModel = (modelId: string): boolean =>
+  modelId.toLowerCase().includes('gemini-3.1-flash-live');
 
 const isGemini31FlashImageModel = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
@@ -38,18 +39,22 @@ const isGemini31FlashLiteImageModel = (modelId: string): boolean =>
 
 const isTtsModel = (modelId: string): boolean => modelId.toLowerCase().includes('tts');
 
-const isOpenAIGpt5FamilyModel = (modelId: string): boolean => {
+export const isOpenAIGpt5FamilyModel = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
   return lowerId.startsWith('gpt-5') || lowerId.includes('/gpt-5');
 };
 
-const isKimiK3Model = (modelId: string): boolean => {
+export const isKimiK3Model = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
   return lowerId === 'kimi-k3' || lowerId.startsWith('kimi-k3-') || lowerId.includes('kimi-k3');
 };
 
-/** Claude models that accept output_config.effort (adaptive thinking). */
-const isAnthropicEffortModel = (modelId: string): boolean => {
+/**
+ * Models that use adaptive thinking + output_config.effort.
+ * Manual extended thinking (`thinking: { type: "enabled", budget_tokens }`) is rejected
+ * on Claude Sonnet 5 / Opus 5 / Opus 4.8 / Fable 5 — use effort instead.
+ */
+export const isAnthropicEffortModel = (modelId: string): boolean => {
   const id = modelId.toLowerCase();
   if (/fable|mythos/.test(id)) {
     return true;
@@ -60,10 +65,12 @@ const isAnthropicEffortModel = (modelId: string): boolean => {
   );
 };
 
+/** GLM-5 series models use the OpenAI-compatible thinking parameter. */
+export const isGlmModel = (modelId: string): boolean => modelId.toLowerCase().startsWith('glm-');
+
 const supportsThinkingLevel = (modelId: string): boolean => {
-  const lowerId = modelId.toLowerCase();
   // GLM-5 series supports thinking via the OpenAI-compatible thinking parameter.
-  if (lowerId.startsWith('glm-')) {
+  if (isGlmModel(modelId)) {
     return true;
   }
   // Third-party reasoning controls mapped in openaiCompatibleMessages / anthropicMessages.

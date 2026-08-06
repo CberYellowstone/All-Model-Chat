@@ -76,6 +76,11 @@ export interface ChatMessage {
   // round trips and resumed thinking keep it true); the thinking strip keys
   // off this so re-entered thinking re-shows instead of staying collapsed.
   thinkingActive?: boolean;
+  // Source of the thinking text, recorded the first time a thought arrives.
+  // Third-party streams are forced into the flat strip (5-line scroll, no
+  // titles) regardless of content, so a markdown header in third-party
+  // reasoning can never masquerade as a Gemini sectioned stream.
+  thinkingSource?: 'gemini' | 'third-party';
   promptTokens?: number;
   cachedPromptTokens?: number;
   completionTokens?: number;

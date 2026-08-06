@@ -23,6 +23,10 @@ export interface StreamHandlerOptions {
    *  not advance the first-token timestamp, which would otherwise be stamped at
    *  completion time and zero out the "thinking took" display. */
   recordFirstToken?: boolean;
+  /** Provenance of the thought text, stamped on the message the first time a
+   *  thought arrives. `'third-party'` forces the flat strip (no sectioned
+   *  rendering); `'gemini'` (or undefined) allows Gemini-style sections. */
+  source?: 'gemini' | 'third-party';
 }
 
 export interface StreamHandlerFunctions {

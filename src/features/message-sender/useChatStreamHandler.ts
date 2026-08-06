@@ -73,6 +73,28 @@ export const useChatStreamHandler = ({
       // reducer stays pure).
       const inlineThinkingParser = createInlineThinkingParserState();
 
+      // Record the thinking provenance (Gemini-native vs third-party) on the
+      // message the first time a thought arrives, so the renderer can force
+      // third-party thinking into the flat strip. The patch is idempotent and
+      // cheap; streaming calls it on every chunk via onFirstPart.
+      const syncThinkingSource = (source?: 'gemini' | 'third-party') => {
+        if (!source) {
+          return;
+        }
+        updateAndPersistSessions(
+          (prev) =>
+            updateMessageInSession(prev, currentSessionId, generationId, (message) =>
+              message.thinkingSource === source
+                ? message
+                : {
+                    ...message,
+                    thinkingSource: source,
+                  },
+            ),
+          { persist: false },
+        );
+      };
+
       const syncFirstTokenTime = (previousFirstTokenTimeMs?: number) => {
         if (previousFirstTokenTimeMs === undefined && streamState.firstTokenTimeMs !== undefined) {
           updateAndPersistSessions(
@@ -356,6 +378,11 @@ export const useChatStreamHandler = ({
         const previousLastContentPartTime = streamState.lastContentPartTime;
         const previousFiles = streamState.files;
 
+        // Stamp thinking provenance as soon as the stream produces anything —
+        // the very first part/thought decides whether third-party thinking is
+        // forced into the flat strip.
+        syncThinkingSource(options?.source);
+
         // Split inline reasoning tags out of text deltas. Third-party providers
         // (DeepSeek-R1 style) stream their chain of thought inside the text
         // part; without this it would land in content, never feed thoughts, and
@@ -410,6 +437,7 @@ export const useChatStreamHandler = ({
       const onThoughtChunk = (thoughtChunk: string, options?: StreamHandlerOptions) => {
         const previousFirstTokenTimeMs = streamState.firstTokenTimeMs;
         const previousFirstContentPartTime = streamState.firstContentPartTime;
+        syncThinkingSource(options?.source);
         streamState = reduceMessageStreamEvent(streamState, {
           type: 'thought',
           text: thoughtChunk,
