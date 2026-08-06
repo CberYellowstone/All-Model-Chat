@@ -17,6 +17,10 @@ import { resolveChatExactPricing } from '@/utils/chatPricingEvidence';
 import { updateMessageInSession, updateSessionById } from '@/utils/chat/sessionMutations';
 import { createMessageStreamState, reduceMessageStreamEvent } from '@/features/chat-streaming/messageStreamReducer';
 import { getContentDeltaFromPart, mergeUniqueFiles } from '@/features/chat-streaming/messageStreamParts';
+import {
+  createInlineThinkingParserState,
+  pushInlineThinkingChunk,
+} from '@/features/chat-streaming/inlineThinkingParser';
 import { finishActiveGenerationJob } from './activeGenerationJobs';
 import { clearOwnedPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { buildCompletionNotificationBody, emitCompletionFeedback } from './completionFeedback';
@@ -64,6 +68,11 @@ export const useChatStreamHandler = ({
       // Reset store for this new generation
       streamingStore.clear(generationId);
 
+      // Splits inline reasoning tags (<thinking>/<think>) out of text deltas
+      // for third-party providers. Per-generation state lives here (the
+      // reducer stays pure).
+      const inlineThinkingParser = createInlineThinkingParserState();
+
       const syncFirstTokenTime = (previousFirstTokenTimeMs?: number) => {
         if (previousFirstTokenTimeMs === undefined && streamState.firstTokenTimeMs !== undefined) {
           updateAndPersistSessions(
@@ -81,13 +90,21 @@ export const useChatStreamHandler = ({
       // interleaved code-execution and resumed thinking active. We commit
       // thinkingTimeMs exactly once per switch so ThinkingHeader settles while
       // the rest of the reply streams, then re-open thinking when the model
-      // thinks again.
-      const syncThinkingEnd = (previousFirstContentPartTime: Date | null, previousThoughts: string) => {
+      // thinks again. Two details:
+      //  - The "thoughts exist" check reads the post-reduce state, because an
+      //    inline-reasoning chunk can carry both the closing tag and the answer
+      //    (thought + content land in the same part, so pre-reduce thoughts are
+      //    still empty).
+      //  - The "new content" check compares lastContentPartTime, not a
+      //    first-content-part flag: that flag stays true forever after the
+      //    first content switch, which would block the second commit on
+      //    interleaved thought/content streams (problem B).
+      const syncThinkingEnd = (previousLastContentPartTime: Date | undefined) => {
         if (
           hasCommittedThinkingTime ||
-          previousFirstContentPartTime !== null ||
           streamState.lastContentPartTime === undefined ||
-          !previousThoughts
+          streamState.lastContentPartTime === previousLastContentPartTime ||
+          !streamState.thoughts
         ) {
           return;
         }
@@ -273,6 +290,11 @@ export const useChatStreamHandler = ({
                 newModelMessageIds,
                 currentChatSettings,
                 language: lang,
+                // Non-streaming replies are replayed at completion time
+                // (recordFirstToken:false in standardChatApiCall), so there is
+                // no per-chunk thought timing to separate from answer timing:
+                // thinkingTimeMs for those runs means the whole round-trip
+                // duration, which is the expected semantic here.
                 firstContentPartTime: streamState.firstContentPartTime,
                 lastThoughtChunkTimeMs: streamState.lastThoughtChunkTimeMs,
                 usageMetadata: streamState.usage,
@@ -331,21 +353,45 @@ export const useChatStreamHandler = ({
       const streamOnPart = (part: Part, options?: StreamHandlerOptions) => {
         const previousFirstTokenTimeMs = streamState.firstTokenTimeMs;
         const previousFirstContentPartTime = streamState.firstContentPartTime;
+        const previousLastContentPartTime = streamState.lastContentPartTime;
         const previousFiles = streamState.files;
-        const previousThoughts = streamState.thoughts;
-        const contentDelta = getContentDeltaFromPart(part);
+
+        // Split inline reasoning tags out of text deltas. Third-party providers
+        // (DeepSeek-R1 style) stream their chain of thought inside the text
+        // part; without this it would land in content, never feed thoughts, and
+        // never be timed. Plain text passes through untouched, so Gemini and
+        // Raw Mode paths are unaffected. Non-text parts keep the raw delta.
+        const anyPart = part as Part & { text?: string };
+        const split = typeof anyPart.text === 'string' ? pushInlineThinkingChunk(inlineThinkingParser, anyPart.text) : undefined;
+        const contentDelta = split ? split.content : getContentDeltaFromPart(part);
+        const thoughtDelta = split ? split.thought : '';
 
         streamState = reduceMessageStreamEvent(streamState, {
           type: 'part',
           part,
+          contentDelta,
+          thoughtDelta,
           receivedAt: new Date(),
           recordFirstToken: options?.recordFirstToken,
         });
         syncFirstTokenTime(previousFirstTokenTimeMs);
-        syncThinkingEnd(previousFirstContentPartTime, previousThoughts);
+
+        // Re-entered thinking after a content switch (interleaved thought /
+        // content streams): clear the settled value so the strip and the live
+        // timer come back. Inline thought deltas need the same resume as
+        // Gemini-native onThoughtChunk. When one chunk carries thought then
+        // content (closer + answer together), resume runs before the end-sync
+        // so the new segment still commits its own duration.
+        if (thoughtDelta) {
+          syncThinkingResume(previousFirstContentPartTime);
+        }
+        syncThinkingEnd(previousLastContentPartTime);
 
         if (contentDelta) {
           streamingStore.updateContent(generationId, contentDelta);
+        }
+        if (thoughtDelta) {
+          streamingStore.updateThoughts(generationId, thoughtDelta);
         }
 
         const newFiles = streamState.files.filter((file) => !previousFiles.some((existing) => existing.id === file.id));

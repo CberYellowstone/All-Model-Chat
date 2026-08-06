@@ -54,25 +54,21 @@ export const ThinkingHeader: React.FC<ThinkingHeaderProps> = ({
               )}
             </div>
           ) : isLoading ? (
-            <>
+            <div className="flex items-baseline gap-2 min-w-0">
               <span className="text-base font-bold uppercase tracking-wider text-[var(--theme-text-secondary)] truncate opacity-90">
                 {t('thinkingText')}
               </span>
-              <div className="flex items-baseline gap-2 mt-0.5 min-w-0">
+              {effectiveTimerStartMs !== null && (
                 <span className="text-sm text-[var(--theme-text-tertiary)] truncate font-mono">
-                  {effectiveTimerStartMs !== null ? (
-                    <ThinkingTimer startTimeMs={effectiveTimerStartMs} />
-                  ) : (
-                    <span className="animate-pulse">{t('thinkingText')}</span>
-                  )}
+                  <ThinkingTimer startTimeMs={effectiveTimerStartMs} />
                 </span>
-                {firstTokenTimeMs !== undefined && (
-                  <span className="text-xs text-[var(--theme-text-tertiary)] font-mono opacity-70 whitespace-nowrap">
-                    {t('metricsTtft')}: {(firstTokenTimeMs / 1000).toFixed(2)}s
-                  </span>
-                )}
-              </div>
-            </>
+              )}
+              {firstTokenTimeMs !== undefined && (
+                <span className="text-xs text-[var(--theme-text-tertiary)] font-mono opacity-70 whitespace-nowrap">
+                  {t('metricsTtft')}: {(firstTokenTimeMs / 1000).toFixed(2)}s
+                </span>
+              )}
+            </div>
           ) : (
             <div className="flex items-baseline gap-2 min-w-0">
               <span className="flex items-center gap-1.5 text-base text-[var(--theme-text-secondary)] font-medium truncate opacity-90">

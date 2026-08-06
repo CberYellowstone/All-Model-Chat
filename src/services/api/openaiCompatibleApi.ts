@@ -4,7 +4,11 @@ import { deduplicateModelsById } from '@/utils/model/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildOpenAICompatibleRequestBody } from './openaiCompatibleMessages';
-import { extractOpenAICompatibleMessageText, extractOpenAICompatibleReasoningText } from './openaiCompatibleResponses';
+import {
+  extractOpenAICompatibleMessageText,
+  extractOpenAICompatibleReasoningDelta,
+  extractOpenAICompatibleReasoningText,
+} from './openaiCompatibleResponses';
 import { readOpenAICompatibleStreamEvents } from './openaiCompatibleStream';
 import {
   asOpenAICompatibleConfig,
@@ -172,7 +176,7 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
     }
 
     await readOpenAICompatibleStreamEvents(response, abortSignal, (payload) => {
-      const reasoningContent = payload.choices?.[0]?.delta?.reasoning_content;
+      const reasoningContent = extractOpenAICompatibleReasoningDelta(payload);
       if (reasoningContent) {
         onThoughtChunk(reasoningContent);
       }

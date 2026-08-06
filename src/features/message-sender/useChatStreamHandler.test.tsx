@@ -9,6 +9,7 @@ const {
   finishActiveGenerationJobMock,
   clearOwnedPendingStreamJobMock,
   logWarnMock,
+  streamingStoreMock,
 } = vi.hoisted(() => ({
   handleApiErrorMock: vi.fn(),
   updateMessageInSessionMock: vi.fn(),
@@ -17,6 +18,7 @@ const {
   finishActiveGenerationJobMock: vi.fn(),
   clearOwnedPendingStreamJobMock: vi.fn(),
   logWarnMock: vi.fn(),
+  streamingStoreMock: { updateContent: vi.fn(), updateThoughts: vi.fn(), clear: vi.fn() },
 }));
 
 vi.mock('./useApiErrorHandler', () => ({
@@ -46,7 +48,7 @@ vi.mock('@/services/logService', async () => {
 });
 
 vi.mock('@/services/streamingStore', () => ({
-  streamingStore: { updateContent: vi.fn(), updateThoughts: vi.fn(), clear: vi.fn() },
+  streamingStore: streamingStoreMock,
 }));
 
 vi.mock('@/utils/model/modelUsageStats', () => ({
@@ -260,5 +262,70 @@ describe('useChatStreamHandler thinking-end sync', () => {
     // Replay must not stamp first-token or commit thinking at completion time.
     expect(writtenMessages.some((message) => message.firstTokenTimeMs !== undefined)).toBe(false);
     expect(writtenMessages.some((message) => message.thinkingTimeMs !== undefined)).toBe(false);
+  });
+
+  it('splits inline <thinking> tags out of text parts and times the segment', () => {
+    const writtenMessages: { thinkingTimeMs?: number }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    // Inline reasoning never calls onThoughtChunk — it rides the text part.
+    streamOnPart({ text: '<thinking>Let me plan.</thinking>Here is the answer' });
+
+    // The thought text is split out of the content and routed to the store.
+    expect(streamingStoreMock.updateThoughts).toHaveBeenCalledWith('generation-1', 'Let me plan.');
+    expect(streamingStoreMock.updateContent).toHaveBeenCalledWith('generation-1', 'Here is the answer');
+    // The segment commits once the visible answer arrives.
+    const thinkingPatch = writtenMessages.find((message) => message.thinkingTimeMs !== undefined);
+    expect(thinkingPatch?.thinkingTimeMs).toBeDefined();
+    expect(thinkingPatch?.thinkingTimeMs).toBeGreaterThan(0);
+  });
+
+  it('times a thought-only inline chunk without committing, then commits on the next content chunk', () => {
+    const writtenMessages: { thinkingTimeMs?: number; thinkingActive?: boolean }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number; thinkingActive?: boolean }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    // First chunk is reasoning only (opener split from the closer).
+    streamOnPart({ text: '<thinking>Drafting' });
+
+    expect(streamingStoreMock.updateThoughts).toHaveBeenCalledWith('generation-1', 'Drafting');
+    expect(streamingStoreMock.updateContent).not.toHaveBeenCalled();
+    expect(writtenMessages.some((message) => message.thinkingTimeMs !== undefined)).toBe(false);
+
+    // Second chunk closes the block and carries the answer.
+    streamOnPart({ text: ' carefully.</thinking>Done' });
+
+    expect(streamingStoreMock.updateContent).toHaveBeenCalledWith('generation-1', 'Done');
+    const thinkingPatch = writtenMessages.find((message) => message.thinkingTimeMs !== undefined);
+    expect(thinkingPatch?.thinkingTimeMs).toBeDefined();
+    expect(thinkingPatch?.thinkingTimeMs).toBeGreaterThan(0);
+  });
+
+  it('re-settles thinking for interleaved inline thought after a content switch', () => {
+    const writtenMessages: { thinkingTimeMs?: number; thinkingActive?: boolean }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number; thinkingActive?: boolean }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    streamOnPart({ text: '<thinking>First pass</thinking>Answer one' });
+    const firstCommit = writtenMessages.find((message) => message.thinkingTimeMs !== undefined);
+    expect(firstCommit?.thinkingTimeMs).toBeDefined();
+
+    // Re-entered thinking after the switch: resume clears the settled value.
+    streamOnPart({ text: '<thinking>Second pass</thinking>' });
+    const resumeWrite = writtenMessages[writtenMessages.length - 1];
+    expect(resumeWrite?.thinkingTimeMs).toBeUndefined();
+    expect(resumeWrite?.thinkingActive).toBe(true);
+
+    // The second content chunk commits a fresh duration.
+    streamOnPart({ text: 'Answer two' });
+    const secondCommit = writtenMessages.filter((m) => m.thinkingTimeMs !== undefined).at(-1);
+    expect(secondCommit?.thinkingTimeMs).toBeDefined();
   });
 });
