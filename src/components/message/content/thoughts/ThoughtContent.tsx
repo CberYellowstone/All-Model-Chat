@@ -14,6 +14,7 @@ interface ThoughtContentProps {
   isGraphvizRenderingEnabled: boolean;
   themeId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
+  unwrapMislabeledHtmlBlocks?: boolean;
 }
 
 export const ThoughtContent: React.FC<ThoughtContentProps> = ({
@@ -27,6 +28,7 @@ export const ThoughtContent: React.FC<ThoughtContentProps> = ({
   isGraphvizRenderingEnabled,
   themeId,
   onOpenSidePanel,
+  unwrapMislabeledHtmlBlocks,
 }) => {
   // Subscribe to live thoughts if loading
   const { streamThoughts } = useMessageStream(messageId, isLoading);
@@ -47,6 +49,7 @@ export const ThoughtContent: React.FC<ThoughtContentProps> = ({
           allowHtml={true}
           themeId={themeId}
           onOpenSidePanel={onOpenSidePanel}
+          unwrapMislabeledHtmlBlocks={unwrapMislabeledHtmlBlocks}
         />
       </div>
     </div>

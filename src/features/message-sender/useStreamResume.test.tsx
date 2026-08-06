@@ -63,6 +63,7 @@ vi.mock('./generationLease', () => ({
 vi.mock('./activeGenerationJobs', () => ({
   startActiveGenerationJob: vi.fn(),
   unregisterActiveGenerationJob: vi.fn(),
+  hasActiveGenerationJobForSession: vi.fn(() => false),
 }));
 
 vi.mock('@/services/logService', async () => {
@@ -72,9 +73,12 @@ vi.mock('@/services/logService', async () => {
 
 import { useStreamResume } from './useStreamResume';
 import { createAppSettings, createChatSettings } from '@/test/data/factories';
-import { startActiveGenerationJob, unregisterActiveGenerationJob } from './activeGenerationJobs';
+import {
+  startActiveGenerationJob,
+  unregisterActiveGenerationJob,
+  hasActiveGenerationJobForSession,
+} from './activeGenerationJobs';
 import { tryAcquireGenerationLease, isGenerationLeaseHeldByTab } from './generationLease';
-
 const SESSION_ID = 'session-1';
 const GENERATION_ID = 'gen-1';
 const MODEL_ID = 'gemini-3.1-pro-preview';
@@ -109,6 +113,7 @@ const renderResume = (opts: RenderOpts = {}) => {
     sessionKeyMapRef.current.set(SESSION_ID, opts.cachedKey);
   }
   const activeJobs = { current: new Map<string, AbortController>() };
+  const setSessionLoading = vi.fn();
 
   const getStreamHandlers = mockGetStreamHandlers as unknown as (
     ...args: unknown[]
@@ -121,11 +126,12 @@ const renderResume = (opts: RenderOpts = {}) => {
         getStreamHandlers,
         activeJobs,
         sessionKeyMapRef,
+        setSessionLoading,
       }),
     { language: 'en' },
   );
 
-  return { result, sessionKeyMapRef, activeJobs };
+  return { result, sessionKeyMapRef, activeJobs, setSessionLoading };
 };
 
 const recordJob = (overrides: Partial<{ tabId: string; generationId: string }> = {}) => {
@@ -159,9 +165,10 @@ describe('useStreamResume', () => {
     vi.restoreAllMocks();
   });
 
-  it('skips resume when THIS tab already holds the generation lease (send in flight)', async () => {
+  it('skips resume when THIS tab holds the lease AND a live in-memory job (send in flight)', async () => {
     recordJob();
     (isGenerationLeaseHeldByTab as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    vi.mocked(hasActiveGenerationJobForSession).mockReturnValue(true);
     const { result } = renderResume();
 
     await act(async () => {
@@ -176,6 +183,45 @@ describe('useStreamResume', () => {
     // No second stream attach: the live send already consumes the buffered job.
     expect(mockSendStatelessMessageStreamApi).not.toHaveBeenCalled();
     expect(tryAcquireGenerationLease).not.toHaveBeenCalled();
+  });
+
+  it('resumes a refresh even when a stale lease for this tab survives in localStorage', async () => {
+    recordJob();
+    // A refresh keeps the sessionStorage TAB_ID and the localStorage lease, but
+    // the in-memory job map is empty — the guard must NOT treat that as a live
+    // send and must not block refresh-resume.
+    (isGenerationLeaseHeldByTab as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    vi.mocked(hasActiveGenerationJobForSession).mockReturnValue(false);
+    const { result } = renderResume();
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    // Resume proceeds: the stream reattaches and the lease is reacquired.
+    expect(mockSendStatelessMessageStreamApi).toHaveBeenCalled();
+    expect(tryAcquireGenerationLease).toHaveBeenCalled();
+  });
+
+  it('sets the session loading state when a resume starts', async () => {
+    recordJob();
+    const { result, setSessionLoading } = renderResume();
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    expect(setSessionLoading).toHaveBeenCalledWith(SESSION_ID, true);
   });
 
   it('resumes with the server-managed sentinel when no key is cached and the proxy is server-managed', async () => {

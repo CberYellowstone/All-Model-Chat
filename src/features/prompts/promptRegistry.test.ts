@@ -457,6 +457,32 @@ describe('promptRegistry', () => {
     expect(enPrompt).toContain('## Pre-output checklist');
   });
 
+  it('teaches the declarative chart DSL in Live Artifacts prompts', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    expect(zhPrompt).toContain('data-amc-chart');
+    expect(zhPrompt).toContain('禁止手写 SVG 图表');
+    expect(zhPrompt).toContain('grouped-bar');
+    expect(zhPrompt).toContain('stacked-bar');
+    expect(zhPrompt).toContain('slices');
+    expect(zhPrompt).toContain('x 与 y 长度必须一致');
+    expect(enPrompt).toContain('data-amc-chart');
+    expect(enPrompt).toContain('never hand-write SVG charts');
+    expect(enPrompt).toContain('grouped-bar');
+    expect(enPrompt).toContain('stacked-bar');
+    expect(enPrompt).toContain('slices');
+    expect(enPrompt).toContain('x and y lengths must match');
+  });
+
+  it('includes chart DSL coverage in the pre-output checklist', async () => {
+    const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
+    const enPrompt = await loadLiveArtifactsSystemPrompt('en');
+
+    expect(zhPrompt).toContain('数值图表用了 data-amc-chart 而非手写 SVG');
+    expect(enPrompt).toContain('Numeric charts use data-amc-chart instead of hand-written SVG');
+  });
+
   it('teaches semantic colors with border exceptions for tags cards and callouts (option B)', async () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');

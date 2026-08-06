@@ -238,11 +238,17 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     // the chunk is available so embedded formulas appear. The promise resolves
     // immediately after the first load, so this is a no-op on later frames.
     let cancelled = false;
-    void whenKatexReady().then(() => {
-      if (!cancelled) {
-        setKatexReadyTick((tick) => tick + 1);
-      }
-    });
+    void whenKatexReady()
+      .then(() => {
+        if (!cancelled) {
+          setKatexReadyTick((tick) => tick + 1);
+        }
+      })
+      .catch(() => {
+        // The lazy KaTeX load failed (offline / chunk error). Nothing to tick:
+        // the next render that sees a math delimiter will attempt the load
+        // again, so the failure is not permanent.
+      });
     return () => {
       cancelled = true;
     };
@@ -318,7 +324,11 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
       if (typeof data.height === 'number' && Number.isFinite(data.height)) {
         const nextHeight = normalizeFrameHeight(data.height);
         cacheFrameHeight(heightCacheKey, nextHeight);
-        if (heightCacheKey !== contentHeightCacheKey) {
+        // While streaming, only the streaming key is written so the content
+        // (final-html) cache is not polluted with intermediate frame heights.
+        // The streaming key is not derived from the message content, so each
+        // write replaces the same entry instead of churning the LRU.
+        if (!isLoading && heightCacheKey !== contentHeightCacheKey) {
           cacheFrameHeight(contentHeightCacheKey, nextHeight);
         }
         if (streamingHeightCacheKey && heightCacheKey !== streamingHeightCacheKey) {
@@ -334,7 +344,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
     targetWindow.addEventListener('message', handleMessage);
     return () => targetWindow.removeEventListener('message', handleMessage);
-  }, [contentHeightCacheKey, flushStreamingHtmlNow, heightCacheKey, onFollowUp, streamingHeightCacheKey, targetWindow]);
+  }, [contentHeightCacheKey, flushStreamingHtmlNow, heightCacheKey, isLoading, onFollowUp, streamingHeightCacheKey, targetWindow]);
 
   useEffect(() => {
     const handleClearSelection = () => {

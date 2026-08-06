@@ -118,12 +118,14 @@ export const loadInitialSessionData = async ({
   updateAndPersistSessions,
   startNewChat,
 }: LoadInitialSessionDataOptions) => {
+  let initialActiveId: string | null = null;
+
   try {
     logService.info('Attempting to load chat history metadata from IndexedDB.');
 
     const [metadataList, groups] = await Promise.all([dbService.getAllSessionMetadata(), dbService.getAllGroups()]);
 
-    let initialActiveId = resolveInitialActiveSessionId(metadataList);
+    initialActiveId = resolveInitialActiveSessionId(metadataList);
 
     if (initialActiveId) {
       const fullActiveSession = await dbService.getSession(initialActiveId);
@@ -201,7 +203,14 @@ export const loadInitialSessionData = async ({
       }
     }
   } catch (error) {
+    // A transient DB read failure (e.g. an IndexedDB transaction hiccup while
+    // loading the active session) must not nuke the user's current conversation:
+    // startNewChat clears activeMessages. Only fall back to a fresh chat when no
+    // active session was being restored in the first place.
     logService.error('Error loading chat history:', error);
-    startNewChat(undefined, { history: 'replace' });
+
+    if (!initialActiveId) {
+      startNewChat(undefined, { history: 'replace' });
+    }
   }
 };

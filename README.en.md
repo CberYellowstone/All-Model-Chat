@@ -48,7 +48,7 @@
 The project currently focuses on one main application shape: a **Vite + React SPA**.
 
 - **Standard mode**: local Vite development and static builds for day-to-day development or static hosting.
-- **Docker mode**: a `web + api` deployment where regular Gemini requests call `/api/gemini/*`, while Live API connects directly from the browser with the local key.
+- **Docker mode**: a `web + api` deployment where regular Gemini requests call `/api/gemini/*`, third-party compatible requests go through `/api/openai/*`, and Live API uses the `/api/live` WebSocket full proxy.
 - **Static frontend + standalone API mode**: deploy the frontend to Pages/CDN and run the Node API service separately.
 
 > 📢 **Gemini Robotics-ER model migration notice (2026-08-01)**
@@ -161,7 +161,7 @@ The project currently focuses on one main application shape: a **Vite + React SP
 
 ### Theme System
 
-- Built-in Onyx (dark) and Pearl (light) themes.
+- Built-in Onyx (dark), Graphite (gray), and Pearl (light) themes.
 - Supports automatic switching to follow the system theme.
 
 ### Data Management
@@ -177,7 +177,7 @@ The project currently focuses on one main application shape: a **Vite + React SP
 
 ### Option 1: Standard Development
 
-Node.js 26 is recommended for local development. The repository includes `.nvmrc`, and the main CI flow plus Docker images use the same major version. Node.js 24 is the minimum supported version. The repository enables `engine-strict`, so `npm install` fails on Node 27+ or Node 23 and older; run `nvm use` first when you want the recommended version.
+Node.js 26 is recommended for local development. The repository includes `.nvmrc`, and the main CI flow uses the same major version. Node.js 24 is the minimum supported version, and the Docker images are built on `node:24-slim`. The repository enables `engine-strict`, so `npm install` fails on Node 27+ or Node 23 and older; run `nvm use` first when you want the recommended version.
 
 ```bash
 git clone https://github.com/yeahhe365/AMC-WebUI.git
@@ -249,29 +249,35 @@ Notes:
 
 | Variable                        | Purpose                                                                                          | Public                | Docker default                              |
 | :------------------------------ | :----------------------------------------------------------------------------------------------- | :-------------------- | :------------------------------------------ |
-| `GEMINI_API_KEY`                | Optional server-managed Gemini API key; when set, it takes precedence over browser settings keys | Server only           | Empty                                       |
+| `GEMINI_API_KEY`                | Optional server-managed Gemini API key; the browser BYOK key wins, and this key is used as a fallback | Server only           | Empty                                       |
 | `PORT`                          | Port used by the API service                                                                     | Server only           | `3001`                                      |
 | `GEMINI_API_BASE`               | Upstream Gemini API base URL                                                                     | Server only           | `https://generativelanguage.googleapis.com` |
 | `ALLOWED_ORIGINS`               | Comma-separated CORS allowlist for cross-origin deployments                                      | Server only           | Empty                                       |
 | `ENABLE_MCP_STDIO`              | Enables `stdio` MCP server calls                                                                 | Server only           | `false`                                     |
 | `ENABLE_MCP_PRIVATE_HTTP`       | Allows the API service to call private or local HTTP MCP URLs                                    | Server only           | `false`                                     |
-| `RUNTIME_SERVER_MANAGED_API`    | Enables server-managed API mode by default in the frontend                                       | Public runtime config | `false`                                     |
+| `ENABLE_LIVE_WS_PROXY`          | Enables the `/api/live` WebSocket full proxy (on by default in Docker)                           | Server only           | `true`                                      |
+| `LIVE_WS_IDLE_TIMEOUT_MS`       | Live WS idle reclamation timeout (milliseconds)                                                  | Server only           | `300000`                                    |
+| `SERVER_KEY_PRIORITY`           | Key priority: `false` = browser BYOK key wins with server fallback; `true` = server key wins      | Server only           | `false`                                     |
+| `THIRD_PARTY_ROUTES`            | JSON map of provider → { baseUrl, apiKey } for third-party routing (https, non-private hosts only) | Server only           | Empty                                       |
+| `RUNTIME_SERVER_MANAGED_API`    | Enables server-managed API mode by default in the frontend                                       | Public runtime config | `true`                                      |
 | `RUNTIME_USE_CUSTOM_API_CONFIG` | Enables custom API configuration by default                                                      | Public runtime config | `true`                                      |
 | `RUNTIME_USE_API_PROXY`         | Enables API proxy mode by default                                                                | Public runtime config | `true`                                      |
 | `RUNTIME_API_PROXY_URL`         | Default Gemini proxy URL for the frontend                                                        | Public runtime config | `/api/gemini`                               |
+| `RUNTIME_LIVE_API_BASE_URL`     | Frontend Live API proxy base URL (blank = browser connects directly to the official WS)          | Public runtime config | `/api/live`                                 |
+| `RUNTIME_THIRD_PARTY_PROXY_URL` | Frontend third-party compatible proxy base URL (blank = browser connects directly to the provider) | Public runtime config | `/api/openai`                               |
 | `RUNTIME_PYODIDE_BASE_URL`      | Optional Pyodide runtime asset URL; when blank, same-origin `/pyodide/` is used                  | Public runtime config | Empty                                       |
 
 The `RUNTIME_*` values are written into `runtime-config.js` at container startup and are readable by the browser. Only put public configuration there. The public/runtime-config.js template is used for static builds and keeps custom API configuration and proxy mode disabled by default; Docker overwrites it through `docker/web-server.js` at container startup using the defaults above.
 
 MCP `stdio` and private/local HTTP access are disabled by default. Enable `ENABLE_MCP_STDIO=true` or `ENABLE_MCP_PRIVATE_HTTP=true` only for trusted self-hosted deployments.
 
-Pyodide assets are copied to `dist/pyodide/` during production builds and load from same-origin `/pyodide/` by default. To use a CDN or a separate static host, set `RUNTIME_PYODIDE_BASE_URL` to a full directory URL such as `https://cdn.jsdelivr.net/pyodide/v0.25.1/full/`. The PWA precache excludes large `pyodide/` assets by default, so local Python loads them on demand the first time it runs.
+Pyodide assets are copied to `dist/pyodide/` during production builds and load from same-origin `/pyodide/` by default. To use a CDN or a separate static host, set `RUNTIME_PYODIDE_BASE_URL` to a full directory URL such as `https://cdn.jsdelivr.net/pyodide/v0.27.7/full/`. The PWA precache excludes large `pyodide/` assets by default, so local Python loads them on demand the first time it runs.
 
-Docker defaults to BYOK: after you enter an API key in Settings, regular Gemini proxy requests use the browser-provided key, and Live API uses the browser-local key directly to open the official Live WebSocket connection. AMC no longer mints a backend Live token.
+Docker defaults to BYOK: after you enter an API key in Settings, regular Gemini proxy requests use the browser-provided key, and Live API goes through the `/api/live` WebSocket full proxy, which the `api` container bridges to the official `wss://generativelanguage…/BidiGenerateContent` endpoint. A browser key is forwarded when present (BYOK fallback); otherwise the server-managed `GEMINI_API_KEY` is used.
 
-If you want server-managed credentials for regular Gemini requests, set `GEMINI_API_KEY` and `RUNTIME_SERVER_MANAGED_API=true`. Live API still requires an API key available in the browser. A browser-local key is suitable for personal or trusted deployments, but it is not a server secret: scripts running in the same browser context, extensions, XSS, or device compromise may still read it.
+If you want server-managed credentials for regular Gemini requests, set `GEMINI_API_KEY` and `RUNTIME_SERVER_MANAGED_API=true`. Live API and third-party requests follow the same rule: the browser key wins, falling back to the server key (unless `SERVER_KEY_PRIORITY=true`). A browser-local key is suitable for personal or trusted deployments, but it is not a server secret: scripts running in the same browser context, extensions, XSS, or device compromise may still read it.
 
-OpenAI Compatible mode currently does not read `RUNTIME_API_PROXY_URL`, `RUNTIME_USE_API_PROXY`, or `RUNTIME_SERVER_MANAGED_API`. It sends `chat/completions` requests directly to the OpenAI-compatible Base URL configured in Settings, using its separate key set. If you want that mode to pass through your own gateway, point the Base URL at that gateway directly.
+OpenAI Compatible and third-party requests route through `/api/openai/*` in Docker mode, using `RUNTIME_THIRD_PARTY_PROXY_URL` to select the proxy. The API container looks up the upstream from the `THIRD_PARTY_ROUTES` routing table using the `x-third-party-provider` header (https, non-private hosts only); a browser key wins, falling back to the route's server-side key. In static deployments (Pages) `RUNTIME_THIRD_PARTY_PROXY_URL` is not injected, so the browser connects to the provider directly. To pass OpenAI Compatible traffic through your own gateway, point the compatible Base URL at that gateway directly.
 
 ### Option 3: Cloudflare Pages + Standalone API
 
@@ -382,7 +388,7 @@ When using server-managed mode for regular Gemini API requests in production, th
 
 - `/api/gemini/*`
 
-Live API uses the browser-local API key to connect directly to the official Live service.
+In static deployments Live API uses the browser-local API key to connect directly to the official Live service; in Docker deployments it defaults to the `/api/live` WebSocket full proxy.
 
 ---
 
@@ -460,7 +466,7 @@ OpenAI Compatible mode uses a separate model list that you can manage manually o
 | Gemini 3.x       | `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.1-pro-preview`                  |
 | Robotics         | `gemini-robotics-er-2-preview`                                                                                          |
 | Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                                  |
-| Image generation | `gemini-2.5-flash-image`, `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image` |
+| Image generation | `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image` |
 | TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                                           |
 
 ---

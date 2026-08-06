@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { Message } from '@/components/message/Message';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -73,6 +73,15 @@ const MessageListComponent: React.FC = () => {
   );
   const visibleMessages = useMemo(() => getVisibleChatMessages(messages), [messages]);
   const userMessageCollapse = useExpandedUserMessages(activeSessionId);
+
+  // Warm the lazily-loaded renderer/diagram chunks at mount so a message's
+  // first render doesn't have to wait on a chunk download (fallback→real DOM
+  // swaps and their height changes are what makes Virtuoso jump).
+  useEffect(() => {
+    void import('@/components/message/MathMarkdownRenderer').catch(() => {});
+    void import('@/components/message/blocks/MermaidBlock').catch(() => {});
+    void import('@/components/message/blocks/GraphvizBlock').catch(() => {});
+  }, []);
 
   const {
     previewFile,
@@ -183,11 +192,11 @@ const MessageListComponent: React.FC = () => {
             data={visibleMessages}
             scrollerRef={handleScrollerRef}
             atBottomStateChange={setAtBottom}
-            atBottomThreshold={150}
+            atBottomThreshold={40}
             followOutput={followOutput}
             computeItemKey={(_, message) => message.id}
             rangeChanged={onRangeChanged}
-            increaseViewportBy={{ top: 800, bottom: 800 }}
+            increaseViewportBy={{ top: 1200, bottom: 800 }}
             className="custom-scrollbar chat-message-list-scroller"
             onScroll={handleScroll}
             components={virtuosoComponents}

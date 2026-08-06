@@ -28,4 +28,7 @@ export const historyTranslations = {
   historyYesterday: { en: 'Yesterday', zh: '昨天' },
   history7Days: { en: 'Previous 7 Days', zh: '最近 7 天' },
   history30Days: { en: 'Previous 30 Days', zh: '最近 30 天' },
+  sessionCompleted: { en: 'Completed', zh: '已完成' },
+  sessionCompletedWithError: { en: 'Generation failed', zh: '生成失败' },
+  sessionCompletedCountTitle: { en: '{count} completed tasks', zh: '{count} 个任务已完成' },
 };

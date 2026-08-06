@@ -21,6 +21,8 @@ import { finishActiveGenerationJob } from './activeGenerationJobs';
 import { clearOwnedPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { buildCompletionNotificationBody, emitCompletionFeedback } from './completionFeedback';
 import { getTranslator } from '@/i18n/translations';
+import { useChatStore } from '@/stores/chatStore';
+import type { StreamHandlerOptions } from './messageSenderTypes';
 
 type SessionsUpdater = (
   updater: (prev: SavedChatSession[]) => SavedChatSession[],
@@ -33,6 +35,8 @@ interface ChatStreamHandlerProps {
   setSessionLoading: (sessionId: string, isLoading: boolean) => void;
   activeJobs: MutableRefObject<Map<string, AbortController>>;
 }
+
+export { type StreamHandlerOptions };
 
 export const useChatStreamHandler = ({
   appSettings,
@@ -55,6 +59,7 @@ export const useChatStreamHandler = ({
     ) => {
       const newModelMessageIds = new Set<string>([generationId]);
       let streamState = createMessageStreamState({ generationId, generationStartTime });
+      let hasCommittedThinkingTime = false;
 
       // Reset store for this new generation
       streamingStore.clear(generationId);
@@ -71,9 +76,54 @@ export const useChatStreamHandler = ({
         }
       };
 
+      // Thinking ends when the model visibly switches to answering. The
+      // reducer marks that switch on the first text/inline-data part and keeps
+      // interleaved code-execution and resumed thinking active. We commit
+      // thinkingTimeMs exactly once per switch so ThinkingHeader settles while
+      // the rest of the reply streams, then re-open thinking when the model
+      // thinks again.
+      const syncThinkingEnd = (previousFirstContentPartTime: Date | null, previousThoughts: string) => {
+        if (
+          hasCommittedThinkingTime ||
+          previousFirstContentPartTime !== null ||
+          streamState.lastContentPartTime === undefined ||
+          !previousThoughts
+        ) {
+          return;
+        }
+        hasCommittedThinkingTime = true;
+        const thinkingTimeMs = streamState.lastContentPartTime.getTime() - streamState.generationStartTime.getTime();
+        updateAndPersistSessions(
+          (prev) =>
+            updateMessageInSession(prev, currentSessionId, generationId, {
+              thinkingTimeMs,
+              thinkingActive: false,
+            }),
+          { persist: false },
+        );
+      };
+
+      // Re-entered thinking after a content switch (interleaved thought /
+      // content streams, code-execution round trips): clear the settled value
+      // so the strip and the live timer come back.
+      const syncThinkingResume = (previousFirstContentPartTime: Date | null) => {
+        if (previousFirstContentPartTime === null || streamState.firstContentPartTime === null) {
+          return;
+        }
+        hasCommittedThinkingTime = false;
+        updateAndPersistSessions(
+          (prev) =>
+            updateMessageInSession(prev, currentSessionId, generationId, {
+              thinkingTimeMs: undefined,
+              thinkingActive: true,
+            }),
+          { persist: false },
+        );
+      };
+
       const streamOnError = (error: Error) => {
         // Pass accumulated content so it can be saved even on error/abort
-        handleApiError(error, currentSessionId, generationId, 'Error', streamState.content, streamState.thoughts);
+        handleApiError(error, currentSessionId, generationId, 'Error', streamState.content, streamState.thoughts, true);
         finishActiveGenerationJob({
           activeJobs,
           setSessionLoading,
@@ -125,10 +175,10 @@ export const useChatStreamHandler = ({
             };
             return Boolean(
               (anyPart.text && anyPart.text.trim().length > 0) ||
-                anyPart.executableCode ||
-                anyPart.codeExecutionResult ||
-                anyPart.inlineData ||
-                anyPart.functionCall,
+              anyPart.executableCode ||
+              anyPart.codeExecutionResult ||
+              anyPart.inlineData ||
+              anyPart.functionCall,
             );
           });
           if (!hasMeaningfulApiPart) {
@@ -146,6 +196,7 @@ export const useChatStreamHandler = ({
               'Error',
               streamState.content,
               streamState.thoughts,
+              true,
             );
             finishActiveGenerationJob({
               activeJobs,
@@ -157,13 +208,6 @@ export const useChatStreamHandler = ({
             streamingStore.clear(generationId);
             return;
           }
-        }
-
-        if (appSettings.isStreamingEnabled && !streamState.firstContentPartTime) {
-          streamState = {
-            ...streamState,
-            firstContentPartTime: new Date(),
-          };
         }
 
         if (transformFinalContent) {
@@ -230,6 +274,7 @@ export const useChatStreamHandler = ({
                 currentChatSettings,
                 language: lang,
                 firstContentPartTime: streamState.firstContentPartTime,
+                lastThoughtChunkTimeMs: streamState.lastThoughtChunkTimeMs,
                 usageMetadata: streamState.usage,
                 groundingMetadata: streamState.grounding,
                 urlContextMetadata: streamState.urlContext,
@@ -264,6 +309,12 @@ export const useChatStreamHandler = ({
           { persist: true },
         );
 
+        // 流式、非流式、tool loop、stream resume 都汇聚到此处;仅未中止的成功
+        // 路径写入完成标记。markSessionCompleted 内部会跳过当前活跃会话。
+        if (!abortController.signal.aborted) {
+          useChatStore.getState().markSessionCompleted(currentSessionId, 'success');
+        }
+
         finishActiveGenerationJob({
           activeJobs,
           setSessionLoading,
@@ -277,17 +328,21 @@ export const useChatStreamHandler = ({
         }
       };
 
-      const streamOnPart = (part: Part) => {
+      const streamOnPart = (part: Part, options?: StreamHandlerOptions) => {
         const previousFirstTokenTimeMs = streamState.firstTokenTimeMs;
+        const previousFirstContentPartTime = streamState.firstContentPartTime;
         const previousFiles = streamState.files;
+        const previousThoughts = streamState.thoughts;
         const contentDelta = getContentDeltaFromPart(part);
 
         streamState = reduceMessageStreamEvent(streamState, {
           type: 'part',
           part,
           receivedAt: new Date(),
+          recordFirstToken: options?.recordFirstToken,
         });
         syncFirstTokenTime(previousFirstTokenTimeMs);
+        syncThinkingEnd(previousFirstContentPartTime, previousThoughts);
 
         if (contentDelta) {
           streamingStore.updateContent(generationId, contentDelta);
@@ -306,21 +361,23 @@ export const useChatStreamHandler = ({
         }
       };
 
-      const onThoughtChunk = (thoughtChunk: string) => {
+      const onThoughtChunk = (thoughtChunk: string, options?: StreamHandlerOptions) => {
         const previousFirstTokenTimeMs = streamState.firstTokenTimeMs;
+        const previousFirstContentPartTime = streamState.firstContentPartTime;
         streamState = reduceMessageStreamEvent(streamState, {
           type: 'thought',
           text: thoughtChunk,
           receivedAt: new Date(),
+          recordFirstToken: options?.recordFirstToken,
         });
         syncFirstTokenTime(previousFirstTokenTimeMs);
+        syncThinkingResume(previousFirstContentPartTime);
         streamingStore.updateThoughts(generationId, thoughtChunk);
       };
 
       return { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk };
     },
     [
-      appSettings.isStreamingEnabled,
       appSettings.isCompletionNotificationEnabled,
       appSettings.isCompletionSoundEnabled,
       appSettings.language,

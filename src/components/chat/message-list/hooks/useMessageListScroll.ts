@@ -102,7 +102,14 @@ export const useMessageListScroll = ({
   activeSessionId,
 }: UseMessageListScrollProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const [atBottom, setAtBottom] = useState(true);
+  const [atBottom, setAtBottomState] = useState(true);
+  // Mirrors `atBottom` for reads inside effects/timers without a render round-trip.
+  // Only the anchor effect consumes it, so a ref avoids re-running on every toggle.
+  const atBottomRef = useRef(true);
+  const setAtBottom = useCallback((value: boolean) => {
+    atBottomRef.current = value;
+    setAtBottomState(value);
+  }, []);
   const [visibleStartIndex, setVisibleStartIndex] = useState(0);
   const [scrollerRef, setInternalScrollerRef] = useState<HTMLElement | null>(null);
   const visibleRangeRef = useRef({ startIndex: 0, endIndex: 0 });
@@ -171,18 +178,26 @@ export const useMessageListScroll = ({
       }
 
       if (targetIndex !== -1) {
-        const sessionIdForScroll = activeSessionId;
-        clearAnchorTimeout();
-        anchorTimeoutRef.current = window.setTimeout(() => {
-          anchorTimeoutRef.current = null;
-          if (activeSessionIdRef.current !== sessionIdForScroll) return;
-          virtuosoRef.current?.scrollToIndex({
-            index: targetIndex,
-            align: 'start',
-            behavior: 'smooth',
-          });
-          lastScrollTarget.current = targetIndex;
-        }, ANCHOR_SCROLL_DELAY_MS);
+        // Anchor newly appended model turns only when the user is already at
+        // the bottom. Reading history, a queued auto-resend, or cross-tab
+        // session sync appending mid-list must not yank the view to the latest
+        // message. The ref is re-checked inside the timer so scrolling away
+        // during the debounce window cancels the pending anchor.
+        if (atBottomRef.current) {
+          const sessionIdForScroll = activeSessionId;
+          clearAnchorTimeout();
+          anchorTimeoutRef.current = window.setTimeout(() => {
+            anchorTimeoutRef.current = null;
+            if (activeSessionIdRef.current !== sessionIdForScroll) return;
+            if (!atBottomRef.current) return;
+            virtuosoRef.current?.scrollToIndex({
+              index: targetIndex,
+              align: 'start',
+              behavior: 'smooth',
+            });
+            lastScrollTarget.current = targetIndex;
+          }, ANCHOR_SCROLL_DELAY_MS);
+        }
       }
     }
     prevMsgCount.current = messages.length;

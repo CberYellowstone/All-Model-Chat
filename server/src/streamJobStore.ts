@@ -205,11 +205,17 @@ export async function runDetachedUpstream(
  */
 function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Response): Promise<void> {
   return (async () => {
+    // Stream-safe decoding: a multi-byte UTF-8 sequence (e.g. a CJK character)
+    // can be split across two network chunks. Decoding each chunk independently
+    // would turn each half into a U+FFFD replacement char inside the journal.
+    // The streaming decoder holds incomplete sequences back until the next chunk
+    // completes them, and the final flush emits any tail.
+    const decoder = new TextDecoder('utf-8');
     let buffer = '';
     for await (const bytes of Readable.fromWeb(upstreamResponse.body as unknown as NodeReadableStream)) {
       // Normalize CRLF/CR line endings to LF FIRST so \n\n splitting works
       // for upstreams that send \r\n\r\n events (e.g. aistudio-to-api).
-      buffer += bytes.toString('utf8').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      buffer += decoder.decode(bytes, { stream: true }).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       let idx: number;
       while ((idx = buffer.indexOf('\n\n')) !== -1) {
         const rawEvent = buffer.slice(0, idx + 2);
@@ -219,6 +225,7 @@ function pumpUpstreamBodyIntoJob(job: StreamJob, upstreamResponse: Response): Pr
         }
       }
     }
+    buffer += decoder.decode();
     if (buffer.trim()) {
       appendChunk(job, buffer);
     }
@@ -237,12 +244,16 @@ function flushToResponse(job: StreamJob, response: ServerResponse, cursor: numbe
   let nextCursor = cursor;
   for (const chunk of job.chunks) {
     if (chunk.seq > nextCursor && chunk.seq >= job.firstSeq) {
+      // write() returns false when the socket's internal write buffer is full.
+      // The chunk is still accepted (queued for flush) — the return value only
+      // says "wait before writing MORE". So the cursor must advance past this
+      // chunk either way: re-writing it on the next flush would duplicate the
+      // event in the browser, and skipping past it would lose the tail. We stop
+      // here and let the caller register a 'drain' retry for the rest.
+      nextCursor = chunk.seq;
       if (!response.write(chunk.data)) {
-        // Backpressure: Node will emit 'drain'; we just stop here and let the
-        // next listener tick push more. Avoid advancing past an unwritten seq.
         break;
       }
-      nextCursor = chunk.seq;
     }
   }
   return nextCursor;
@@ -326,12 +337,28 @@ async function attachJobStream(
   });
 
   let cursor = lastSeq;
+  let drainScheduled = false;
 
   const flush = () => {
     if (response.writableEnded || response.destroyed) {
       return;
     }
+    drainScheduled = false;
     cursor = flushToResponse(job, response, cursor);
+
+    // Some buffered chunks were not written because the socket's write buffer
+    // was full (write() returned false). Do NOT end the response even if the
+    // job is done — that would permanently drop the tail. Register a drain
+    // retry so the remaining chunks are delivered once the socket drains.
+    const hasPendingChunks = job.chunks.some((chunk) => chunk.seq > cursor && chunk.seq >= job.firstSeq);
+    if (hasPendingChunks) {
+      if (!drainScheduled) {
+        drainScheduled = true;
+        response.once('drain', flush);
+      }
+      return;
+    }
+
     if (job?.done) {
       job.listeners.delete(flush);
       // If the upstream finished with an error after we already started

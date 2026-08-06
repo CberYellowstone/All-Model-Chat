@@ -161,7 +161,7 @@
 
 ### 主题系统
 
-- 内置 Onyx（暗色）、Pearl（亮色）主题
+- 内置 Onyx（暗色）、Graphite（灰色）、Pearl（亮色）主题
 - 支持跟随系统主题自动切换
 
 ### 数据管理
@@ -177,7 +177,7 @@
 
 ### 方式一：标准开发模式
 
-本地开发推荐使用 Node.js 26（仓库提供 `.nvmrc`，CI 主流程与 Docker 镜像也使用同一主版本），最低支持 Node.js 24。仓库启用了 `engine-strict`，如果你使用 Node 27+ 或 23 及以下版本，`npm install` 会直接失败；建议先执行 `nvm use` 使用推荐版本。
+本地开发推荐使用 Node.js 26（仓库提供 `.nvmrc`，CI 主流程使用同一主版本），最低支持 Node.js 24。Docker 镜像基于 `node:24-slim` 构建。仓库启用了 `engine-strict`，如果你使用 Node 27+ 或 23 及以下版本，`npm install` 会直接失败；建议先执行 `nvm use` 使用推荐版本。
 
 ```bash
 # 克隆仓库
@@ -279,7 +279,7 @@ docker compose up -d --build
 
 - 上述 `RUNTIME_*` 会在容器启动时写入 `runtime-config.js`，可被浏览器读取，因此只能放“可公开”信息。
 - public/runtime-config.js 模板用于纯静态构建，默认不启用自定义 API 配置或代理；Docker 部署会由 `docker/web-server.js` 在容器启动时按上表默认值覆盖该文件。
-- Pyodide 产物会在生产构建时复制到 `dist/pyodide/`，运行时默认从同源 `/pyodide/` 加载；如需改用 CDN 或独立静态域，可将 `RUNTIME_PYODIDE_BASE_URL` 设置为完整目录 URL，例如 `https://cdn.jsdelivr.net/pyodide/v0.25.1/full/`。
+- Pyodide 产物会在生产构建时复制到 `dist/pyodide/`，运行时默认从同源 `/pyodide/` 加载；如需改用 CDN 或独立静态域，可将 `RUNTIME_PYODIDE_BASE_URL` 设置为完整目录 URL，例如 `https://cdn.jsdelivr.net/pyodide/v0.27.7/full/`。
 - PWA 预缓存默认排除 `pyodide/` 大体积产物，首次执行本地 Python 时仍会按上述地址按需加载。
 - 默认 BYOK 模式只需要在设置界面填写 API Key：普通 Gemini 代理会使用浏览器请求携带的 key；Live API 走 `/api/live` 的 WebSocket 全代理，由 `api` 容器桥接到官方 `wss://generativelanguage…/BidiGenerateContent`，浏览器 Key 存在时优先透传（BYOK 兜底），否则回落服务端 `GEMINI_API_KEY`。
 - 如需服务端统一托管普通 Gemini 请求的 key，可配置 `GEMINI_API_KEY` 并将 `RUNTIME_SERVER_MANAGED_API=true`；Live API 与第三方接口同样遵循「浏览器 Key 优先·服务端兜底」（除非显式设 `SERVER_KEY_PRIORITY=true`）。
@@ -405,7 +405,7 @@ GEMINI_API_KEY=your_key_here npm run verify:code-execution:api
 
 - `/api/gemini/*`
 
-Live API 默认由浏览器使用本地 API Key 直连官方 Live 服务。
+Live API 在静态部署下由浏览器使用本地 API Key 直连官方 Live 服务；Docker 部署默认走 `/api/live` 的 WebSocket 全代理。
 
 ---
 
@@ -483,7 +483,7 @@ OpenAI 兼容模式使用独立模型列表，可在设置中手动维护或从�
 | **Gemini 3.x** | gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.1-pro-preview                  |
 | **Robotics**   | gemini-robotics-er-2-preview                                                                                    |
 | **Gemma 4**    | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                              |
-| **图片生成**   | gemini-2.5-flash-image, gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image |
+| **图片生成**   | gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image |
 | **TTS**        | gemini-3.1-flash-tts-preview (30 种语音)                                                                        |
 
 ---

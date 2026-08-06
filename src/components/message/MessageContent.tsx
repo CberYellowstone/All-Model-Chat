@@ -25,6 +25,7 @@ interface MessageContentProps {
   onConfigureFile?: (file: UploadedFile, messageId: string) => void;
   isGemini3?: boolean;
   userMessageCollapse?: UserMessageCollapseController;
+  diagramLoadMode?: 'deferred' | 'eager';
 }
 
 export const MessageContent: React.FC<MessageContentProps> = React.memo((props) => {

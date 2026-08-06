@@ -4,6 +4,7 @@ import { logService } from '@/services/logService';
 import { executeConfiguredApiRequest } from './apiExecutor';
 import { adaptGenAiResponse, mergeGroundingMetadata, type MetadataWithCitations } from './chatResponseAdapter';
 import { getHttpOptionsForContents, withHttpOptionHeaders } from './geminiApiVersion';
+import { createStreamIdleTimeoutError, hasStreamIdleTimeoutElapsed } from './streamIdleTimeout';
 
 const withAbortSignal = <T extends object>(
   config: T | undefined,
@@ -12,33 +13,6 @@ const withAbortSignal = <T extends object>(
   ...(config || ({} as T)),
   abortSignal,
 });
-
-// Idle watchdog for the streaming loop. Deep search runs Google Search on the
-// Gemini server, so the SSE can legitimately sit silent for 10-60s between
-// chunks. Middleboxes (NAT idle timers, proxies, the default api-proxy.de) can
-// silently reap such connections, and a half-open TCP socket does not surface
-// as an error event — the `for await` just waits forever. This timeout converts
-// that silent stall into a surfaced stream error instead of an infinite spinner.
-// Default 60s (matches the genai SDK's connection timeout); override via
-// VITE_STREAM_IDLE_TIMEOUT_MS when a deployment needs a longer budget.
-const STREAM_IDLE_TIMEOUT_MS = readStreamIdleTimeoutMs();
-
-function readStreamIdleTimeoutMs(): number {
-  const raw = import.meta.env?.VITE_STREAM_IDLE_TIMEOUT_MS;
-  if (typeof raw === 'string' && raw.trim()) {
-    const parsed = Number(raw.trim());
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-  return 60_000;
-}
-
-const createStreamIdleTimeoutError = (): Error => {
-  const error = new Error('Stream timed out waiting for data.');
-  error.name = 'StreamIdleTimeoutError';
-  return error;
-};
 
 export const generateContentTurnApi = async (
   apiKey: string,
@@ -160,7 +134,7 @@ export const sendStatelessMessageStreamApi: StreamMessageSender = async (
           abortSignal.addEventListener('abort', onUserAbort, { once: true });
         }
         const idleWatchdog = setInterval(() => {
-          if (Date.now() - lastActivityAt > STREAM_IDLE_TIMEOUT_MS) {
+          if (hasStreamIdleTimeoutElapsed(lastActivityAt)) {
             timedOut = true;
             watchdogController.abort();
           }

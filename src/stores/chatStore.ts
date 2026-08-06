@@ -90,6 +90,8 @@ interface ChatActions extends ChatUiSliceActions {
   refreshSessions: () => Promise<void>;
   refreshGroups: () => Promise<void>;
   setSessionLoading: (sessionId: string, isLoading: boolean) => void;
+  markSessionCompleted: (sessionId: string, outcome: 'success' | 'error') => void;
+  markSessionViewed: (sessionId: string) => void;
   getFileOperationGeneration: () => number;
   invalidateFileOperations: () => void;
 
@@ -181,9 +183,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             )
           : state.savedSessions;
 
+      // 新一轮生成使旧的完成标记失效:本地清除即可(不广播,新一轮完成时会
+      // 重新广播新的完成状态)。若该会话正好没有旧标记则保持原对象避免重渲染。
+      const completedSessions =
+        isLoading && sessionId in state.completedSessions
+          ? Object.fromEntries(Object.entries(state.completedSessions).filter(([key]) => key !== sessionId))
+          : state.completedSessions;
+
       return {
         loadingSessionIds: next,
         savedSessions: nextSavedSessions,
+        completedSessions,
       };
     });
 
@@ -193,6 +203,30 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       isLoading,
       originId: TAB_ID,
       ts: Date.now(),
+    });
+  },
+
+  markSessionCompleted: (sessionId, outcome) => {
+    // 广播总是发送,让其他标签页各自判断是否需要显示(他们可能不在该会话页)。
+    broadcastSyncMessage({ type: 'SESSION_COMPLETED', sessionId, outcome });
+    // 本标签页正在实时观看该会话的生成完成,不需要提醒,跳过本地写入。
+    if (get().activeSessionId === sessionId) {
+      return;
+    }
+    set((state) => ({
+      completedSessions: { ...state.completedSessions, [sessionId]: outcome },
+    }));
+  },
+
+  markSessionViewed: (sessionId) => {
+    broadcastSyncMessage({ type: 'SESSION_VIEWED', sessionId });
+    set((state) => {
+      if (!(sessionId in state.completedSessions)) {
+        return state;
+      }
+      const next = { ...state.completedSessions };
+      delete next[sessionId];
+      return { completedSessions: next };
     });
   },
 
@@ -243,7 +277,20 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const metadataOnly = stripStoredSessionMessages(newFullSessions, activeSessionId, loadingSessionIds);
 
-    set({ savedSessions: metadataOnly });
+    // 会话被删除后不应残留完成标记(删除通过 updater 里的 filter 完成)。
+    // 常见路径(无删除)保持原对象引用,避免无谓重渲染。
+    const completedSessionIds = new Set(
+      virtualFullSessions
+        .map((session) => session.id)
+        .filter((sessionId) => !newFullSessions.some((session) => session.id === sessionId)),
+    );
+    set((state) => ({
+      savedSessions: metadataOnly,
+      completedSessions:
+        completedSessionIds.size > 0
+          ? Object.fromEntries(Object.entries(state.completedSessions).filter(([key]) => !completedSessionIds.has(key)))
+          : state.completedSessions,
+    }));
   },
 
   updateSessionById: (sessionId, updater, options) => {

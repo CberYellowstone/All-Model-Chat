@@ -101,6 +101,18 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 - 表格：表头 background:surface-muted；格线 border token；宽表外包 overflow-x:auto。
 - 网格：repeat(auto-fit,minmax(min(100%,12em),1fr))。
 
+## 数据图表 DSL（data-amc-chart）
+数值型数据必须优先用 data-amc-chart 声明，禁止手写 SVG 图表（x 与 series[].y 必须等长）。
+- 用法：<div data-amc-chart='{"type":"bar","title":"季度营收","x":["Q1","Q2","Q3","Q4"],"series":[{"name":"营收","y":[420,560,380,610]}]}'></div>
+- type：bar/grouped-bar/stacked-bar/line/area/pie/donut/scatter
+- bar/line/area：x + series[].y 等长；多系列用 grouped-bar 或 stacked-bar
+- pie/donut：slices:[{"name":"搜索","y":46},...]，donut 中心自动显示合计
+- scatter：series[].points:[[x,y],...]
+- 可选：title/height(120–480)/legend/xLabel/yLabel；系列 color 仅允许 accent/success/warning/danger/muted/subtle 语义名
+- 规则：节点里不要再写任何内容；数字必须是 JSON 数字；x 与 y 长度必须一致
+例（折线对比）：
+<div data-amc-chart='{"type":"line","title":"DAU 趋势","x":["1月","2月","3月","4月"],"series":[{"name":"DAU","y":[1200,1450,1380,1900]},{"name":"新增","y":[200,300,180,420]}]}'></div>
+
 ## 标准档范例
 <div style="display:block;width:100%;box-sizing:border-box;max-width:100%;overflow-wrap:anywhere;">
   <h2 style="font-size:1.35em;font-weight:700;letter-spacing:-0.01em;margin:0 0 0.5rem;">直接回答问题的结论句。</h2>
@@ -173,6 +185,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 4. 语义色未滥用（正文默认 text；标签/callout 才上色）。
 5. 宽内容已包 overflow-x:auto。
 6. 若本次输出 JSON：是否用了英文 ASCII 字段 key？fields 数 1–24 吗？enum ≤50 吗？instruction ≤2000 吗？检查 format 是否和 type 匹配。
+7. 数值图表用了 data-amc-chart 而非手写 SVG？x 与 y 等长？
 
 ## Trigger Checklist（每次决定先问前快速过一遍）
 □ 缺 ≥2 个关键参数且默认值会改变产物结构 → 应问
@@ -295,6 +308,18 @@ Model (no more JSON—output HTML artifact with the plan):
 - Table: thead background surface-muted; cell borders border token; wrap wide tables in overflow-x:auto.
 - Grid: repeat(auto-fit,minmax(min(100%,12em),1fr)).
 
+## Declarative chart DSL (data-amc-chart)
+For numeric data, always use the data-amc-chart declaration; never hand-write SVG charts (x and series[].y must have equal length).
+- Usage: <div data-amc-chart='{"type":"bar","title":"Quarterly revenue","x":["Q1","Q2","Q3","Q4"],"series":[{"name":"Revenue","y":[420,560,380,610]}]}'></div>
+- type: bar/grouped-bar/stacked-bar/line/area/pie/donut/scatter
+- bar/line/area: x + series[].y equal length; multiple series use grouped-bar or stacked-bar
+- pie/donut: slices:[{"name":"Search","y":46},...]; donut center shows the total automatically
+- scatter: series[].points:[[x,y],...]
+- Optional: title/height(120–480)/legend/xLabel/yLabel; series color only allows the semantic names accent/success/warning/danger/muted/subtle
+- Rules: keep the node empty; numbers must be JSON numbers; x and y lengths must match
+Example (line comparison):
+<div data-amc-chart='{"type":"line","title":"DAU trend","x":["Jan","Feb","Mar","Apr"],"series":[{"name":"DAU","y":[1200,1450,1380,1900]},{"name":"New","y":[200,300,180,420]}]}'></div>
+
 ## Standard-tier example
 <div style="display:block;width:100%;box-sizing:border-box;max-width:100%;overflow-wrap:anywhere;">
   <h2 style="font-size:1.35em;font-weight:700;letter-spacing:-0.01em;margin:0 0 0.5rem;">Direct answer in one conclusion sentence.</h2>
@@ -367,6 +392,7 @@ Model (no more JSON—output HTML artifact with the plan):
 4. Semantic colors not abused (body defaults to text; tags/callouts carry color).
 5. Wide content wrapped in overflow-x:auto.
 6. If outputting JSON: are field keys ASCII? fields 1–24? enum ≤50? instruction ≤2000? format/type match?
+7. Numeric charts use data-amc-chart instead of hand-written SVG? x and y equal length?
 
 ## Trigger Checklist (quick scan before deciding to ask)
 □ ≥2 key parameters missing and defaults change output structure → ask

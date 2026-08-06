@@ -589,6 +589,197 @@ describe('useMessageListScroll', () => {
     unmount();
   });
 
+  it('does not anchor newly appended turns while the user is reading history', () => {
+    let messages = createMessages().slice(0, 2);
+    const { result, rerender, unmount } = renderHook(() =>
+      useMessageListScroll({
+        messages,
+        setScrollContainerRef: vi.fn(),
+        activeSessionId: 'session-reading-history',
+      }),
+    );
+
+    const scrollToIndex = vi.fn();
+    const virtuosoRef = result.current.virtuosoRef as unknown as { current: VirtuosoHandle | null };
+    virtuosoRef.current = {
+      scrollTo: vi.fn(),
+      scrollToIndex,
+    } as unknown as VirtuosoHandle;
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    scrollToIndex.mockClear();
+
+    // User scrolled away from the bottom to read history.
+    act(() => {
+      result.current.setAtBottom(false);
+    });
+
+    messages = [
+      ...messages,
+      {
+        id: 'message-3',
+        role: 'user',
+        content: 'Second turn',
+        timestamp: new Date('2026-04-15T00:00:02.000Z'),
+      },
+      {
+        id: 'message-4',
+        role: 'model',
+        content: '',
+        timestamp: new Date('2026-04-15T00:00:03.000Z'),
+      },
+    ];
+
+    act(() => {
+      rerender();
+    });
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(scrollToIndex).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  it('re-anchors newly appended turns once the user returns to the bottom', () => {
+    let messages = createMessages().slice(0, 2);
+    const { result, rerender, unmount } = renderHook(() =>
+      useMessageListScroll({
+        messages,
+        setScrollContainerRef: vi.fn(),
+        activeSessionId: 'session-back-to-bottom',
+      }),
+    );
+
+    const scrollToIndex = vi.fn();
+    const virtuosoRef = result.current.virtuosoRef as unknown as { current: VirtuosoHandle | null };
+    virtuosoRef.current = {
+      scrollTo: vi.fn(),
+      scrollToIndex,
+    } as unknown as VirtuosoHandle;
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    scrollToIndex.mockClear();
+
+    // New turn arrives while reading history: not anchored.
+    act(() => {
+      result.current.setAtBottom(false);
+    });
+    messages = [
+      ...messages,
+      {
+        id: 'message-3',
+        role: 'user',
+        content: 'Second turn',
+        timestamp: new Date('2026-04-15T00:00:02.000Z'),
+      },
+      {
+        id: 'message-4',
+        role: 'model',
+        content: '',
+        timestamp: new Date('2026-04-15T00:00:03.000Z'),
+      },
+    ];
+    act(() => {
+      rerender();
+      vi.advanceTimersByTime(50);
+    });
+    expect(scrollToIndex).not.toHaveBeenCalled();
+
+    // User returns to the bottom; a later appended turn is anchored again.
+    scrollToIndex.mockClear();
+    act(() => {
+      result.current.setAtBottom(true);
+    });
+    messages = [
+      ...messages,
+      {
+        id: 'message-5',
+        role: 'user',
+        content: 'Third turn',
+        timestamp: new Date('2026-04-15T00:00:04.000Z'),
+      },
+      {
+        id: 'message-6',
+        role: 'model',
+        content: 'Third response',
+        timestamp: new Date('2026-04-15T00:00:05.000Z'),
+      },
+    ];
+    act(() => {
+      rerender();
+    });
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(scrollToIndex).toHaveBeenCalledWith({
+      index: 5,
+      align: 'start',
+      behavior: 'smooth',
+    });
+
+    unmount();
+  });
+
+  it('cancels a pending new-turn anchor when the user scrolls away during the debounce', () => {
+    let messages = createMessages().slice(0, 2);
+    const { result, rerender, unmount } = renderHook(() =>
+      useMessageListScroll({
+        messages,
+        setScrollContainerRef: vi.fn(),
+        activeSessionId: 'session-anchor-debounce-cancel',
+      }),
+    );
+
+    const scrollToIndex = vi.fn();
+    const virtuosoRef = result.current.virtuosoRef as unknown as { current: VirtuosoHandle | null };
+    virtuosoRef.current = {
+      scrollTo: vi.fn(),
+      scrollToIndex,
+    } as unknown as VirtuosoHandle;
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    scrollToIndex.mockClear();
+
+    // New turn arrives while at the bottom: the 50ms anchor is scheduled.
+    messages = [
+      ...messages,
+      {
+        id: 'message-3',
+        role: 'user',
+        content: 'Second turn',
+        timestamp: new Date('2026-04-15T00:00:02.000Z'),
+      },
+      {
+        id: 'message-4',
+        role: 'model',
+        content: '',
+        timestamp: new Date('2026-04-15T00:00:03.000Z'),
+      },
+    ];
+    act(() => {
+      rerender();
+    });
+
+    // User scrolls away before the timer fires.
+    act(() => {
+      result.current.setAtBottom(false);
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(scrollToIndex).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
   it('keeps the current streaming message in place when only its content changes', () => {
     let messages = createMessages();
     const { result, rerender, unmount } = renderHook(() =>

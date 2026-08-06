@@ -109,6 +109,7 @@ const BASE_DEFAULT_APP_SETTINGS: Omit<AppSettings, 'thirdPartyApi'> = {
   isAutoSendOnSuggestionClick: true,
   generateQuadImages: false,
   autoFullscreenHtml: true,
+  unwrapMislabeledHtmlBlocks: true,
   showWelcomeSuggestions: true,
   isAudioCompressionEnabled: DEFAULT_IS_AUDIO_COMPRESSION_ENABLED,
   liveArtifactsPromptMode: 'inline',

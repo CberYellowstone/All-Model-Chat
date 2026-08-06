@@ -95,19 +95,13 @@ describe('useChatStreamHandler empty-reply guard', () => {
 
   const getHandlers = () => {
     const { result } = renderHandler();
-    return result.current.getStreamHandlers(
-      'session-1',
-      'generation-1',
-      new AbortController(),
-      new Date(),
-      {
-        modelId: 'gemini-3.6-flash',
-        temperature: 1,
-        topP: 0.95,
-        thinkingLevel: 'HIGH',
-        thinkingBudget: -1,
-      } as never,
-    );
+    return result.current.getStreamHandlers('session-1', 'generation-1', new AbortController(), new Date(), {
+      modelId: 'gemini-3.6-flash',
+      temperature: 1,
+      topP: 0.95,
+      thinkingLevel: 'HIGH',
+      thinkingBudget: -1,
+    } as never);
   };
 
   it('routes an empty reply (only thoughts, no content) through the error path', () => {
@@ -121,9 +115,7 @@ describe('useChatStreamHandler empty-reply guard', () => {
     const [error] = handleApiErrorMock.mock.calls[0];
     expect(error.name).toBe('EmptyReplyError');
     expect(finishActiveGenerationJobMock).toHaveBeenCalled();
-    expect(logWarnMock).toHaveBeenCalledWith(
-      expect.stringContaining('Empty reply detected'),
-    );
+    expect(logWarnMock).toHaveBeenCalledWith(expect.stringContaining('Empty reply detected'));
   });
 
   it('does not treat an empty reply as an error when a meaningful part was received', () => {
@@ -138,17 +130,135 @@ describe('useChatStreamHandler empty-reply guard', () => {
   it('does not route aborted streams through the empty-reply error path', () => {
     const controller = new AbortController();
     const { result } = renderHandler();
-    const handlers = result.current.getStreamHandlers(
-      'session-1',
-      'generation-1',
-      controller,
-      new Date(),
-      { modelId: 'gemini-3.6-flash' } as never,
-    );
+    const handlers = result.current.getStreamHandlers('session-1', 'generation-1', controller, new Date(), {
+      modelId: 'gemini-3.6-flash',
+    } as never);
 
     controller.abort();
     handlers.streamOnComplete(undefined, undefined, undefined, undefined);
 
     expect(handleApiErrorMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('useChatStreamHandler thinking-end sync', () => {
+  let realUpdateMessageInSession: (typeof import('@/utils/chat/sessionMutations'))['updateMessageInSession'];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    finalizeMessagesMock.mockImplementation(({ messages }) => ({ updatedMessages: messages }));
+    realUpdateMessageInSession = (
+      await vi.importActual<typeof import('@/utils/chat/sessionMutations')>('@/utils/chat/sessionMutations')
+    ).updateMessageInSession;
+    // syncFirstTokenTime / syncThinkingEnd call the real updateMessageInSession
+    // shape; give the module alias a real implementation so patches actually
+    // reach the sessions array and can be asserted.
+    updateMessageInSessionMock.mockImplementation((sessions, sessionId, messageId, updater) =>
+      realUpdateMessageInSession(sessions, sessionId, messageId, updater),
+    );
+  });
+
+  const renderHandlers = (
+    start = new Date(Date.now() - 100),
+    onPersistFalse?: (messages: { thinkingTimeMs?: number }[]) => void,
+  ) => {
+    const updateAndPersistSessions = vi.fn(
+      (
+        updater: (prev: import('@/types').SavedChatSession[]) => import('@/types').SavedChatSession[],
+        options?: { persist?: boolean },
+      ) => {
+        // Real updaters here run updateMessageInSession over the sessions
+        // array; feed one session whose target message matches generation-1 so
+        // patches are applied and can be asserted.
+        const result = updater([
+          {
+            id: 'session-1',
+            messages: [
+              {
+                id: 'generation-1',
+                role: 'model',
+                content: '',
+                thoughts: '',
+                isLoading: true,
+                generationStartTime: start,
+              },
+            ],
+          },
+        ] as unknown as import('@/types').SavedChatSession[]);
+        if (options?.persist === false && Array.isArray(result)) {
+          onPersistFalse?.(result as { thinkingTimeMs?: number }[]);
+        }
+      },
+    );
+    const { result } = renderHookWithProviders(() =>
+      useChatStreamHandler({
+        appSettings: { ...DEFAULT_APP_SETTINGS, language: 'zh' },
+        updateAndPersistSessions,
+        setSessionLoading: vi.fn(),
+        activeJobs: { current: new Map() },
+      }),
+    );
+    const handlers = result.current.getStreamHandlers('session-1', 'generation-1', new AbortController(), start, {
+      modelId: 'gemini-3.6-flash',
+    } as never);
+    return { ...handlers, updateAndPersistSessions };
+  };
+
+  it('writes thinkingTimeMs mid-stream the moment the first meaningful content part arrives after thoughts', () => {
+    const writtenMessages: { thinkingTimeMs?: number }[] = [];
+    const { streamOnPart, onThoughtChunk } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    onThoughtChunk('Let me reason');
+    streamOnPart({ text: 'Here is the answer' });
+
+    const thinkingPatch = writtenMessages.find((message) => message.thinkingTimeMs !== undefined);
+    expect(thinkingPatch?.thinkingTimeMs).toBeDefined();
+    expect(thinkingPatch?.thinkingTimeMs).toBeGreaterThan(0);
+  });
+
+  it('does not mark thinking as ended for replies with no thoughts', () => {
+    const writtenMessages: { thinkingTimeMs?: number }[] = [];
+    const { streamOnPart } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    streamOnPart({ text: 'Direct answer' });
+
+    expect(writtenMessages.some((message) => message.thinkingTimeMs !== undefined)).toBe(false);
+  });
+
+  it('re-opens thinking when the model thinks again after a content switch', () => {
+    const writtenMessages: { thinkingTimeMs?: number; thinkingActive?: boolean }[] = [];
+    const { streamOnPart, onThoughtChunk } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number; thinkingActive?: boolean }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    onThoughtChunk('First reasoning pass');
+    streamOnPart({ text: 'Interleaved answer' });
+    onThoughtChunk('Re-entered reasoning after code execution');
+
+    const lastWrite = writtenMessages[writtenMessages.length - 1];
+    expect(lastWrite?.thinkingTimeMs).toBeUndefined();
+    expect(lastWrite?.thinkingActive).toBe(true);
+  });
+
+  it('does not advance the first-token timestamp or thinking timing when parts are replayed', () => {
+    const writtenMessages: { thinkingTimeMs?: number; firstTokenTimeMs?: number }[] = [];
+    const { streamOnPart, onThoughtChunk } = renderHandlers(undefined, (sessions) => {
+      const session = sessions[0] as { messages?: { thinkingTimeMs?: number; firstTokenTimeMs?: number }[] };
+      writtenMessages.push(...(session?.messages ?? []));
+    });
+
+    onThoughtChunk('Replayed reasoning', { recordFirstToken: false });
+    streamOnPart({ text: 'Replayed answer' }, { recordFirstToken: false });
+
+    // Replay must not stamp first-token or commit thinking at completion time.
+    expect(writtenMessages.some((message) => message.firstTokenTimeMs !== undefined)).toBe(false);
+    expect(writtenMessages.some((message) => message.thinkingTimeMs !== undefined)).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import { CHART_RENDERER_SCRIPT } from './chartRendererScript';
 import {
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -407,6 +408,13 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
   };
 
   document.addEventListener('click', (event) => {
+    // Only honor real user gestures. A preview's own script can dispatch a
+    // synthetic click (element.click()) — without this check it could trigger a
+    // followup/copy on the parent page without the user touching anything.
+    if (!event.isTrusted) {
+      return;
+    }
+
     const copyText = readCopyText(event.target);
     if (copyText) {
       event.preventDefault();
@@ -420,5 +428,6 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
     event.preventDefault();
     notify('followup', payload);
   });
+${CHART_RENDERER_SCRIPT}
 })();
 </script>`;

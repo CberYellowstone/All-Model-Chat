@@ -269,4 +269,96 @@ describe('stream journal (job-id gated)', () => {
     expect(body.error).toBeDefined();
     expect(String(body.error)).toContain('429');
   });
+
+  it('journals multi-byte UTF-8 characters split across TCP chunks without corruption', async () => {
+    // A CJK character is 3 bytes in UTF-8. Splitting its bytes across two
+    // network chunks and decoding each chunk independently would produce a
+    // U+FFFD replacement char. The journal must stream-decode and replay the
+    // original character intact (this is what refresh-resume replays).
+    const splitChar = '中'; // 3 bytes
+    const firstBytes = Buffer.from('data: 前缀');
+    const boundary = Math.floor(firstBytes.length / 2);
+    const events = [
+      // First event: emit a 2-byte + partial-multibyte split across chunks.
+      { chunk: firstBytes.subarray(0, boundary), delay: 5 },
+      { chunk: Buffer.concat([firstBytes.subarray(boundary), Buffer.from(splitChar), Buffer.from('\n\n')]), delay: 5 },
+      { chunk: Buffer.from(`data: ${splitChar}尾\n\n`), delay: 5 },
+    ];
+
+    const upstream = serverCleanup.track(
+      await startHttpServer(
+        http.createServer((_request, response) => {
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          let i = 0;
+          const tick = () => {
+            if (i >= events.length) {
+              response.end();
+              return;
+            }
+            response.write(events[i].chunk);
+            i += 1;
+            setTimeout(tick, events[i - 1].delay);
+          };
+          setTimeout(tick, 5);
+        }),
+      ),
+    );
+
+    const app = createServer({
+      geminiApiBase: upstream.baseUrl,
+      geminiApiKey: 'server-key',
+    });
+    const appStarted = serverCleanup.track(await startHttpServer(app));
+
+    const res = await fetch(`${appStarted.baseUrl}${STREAM_PATH}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        [JOB_ID_HEADER]: 'job-utf8',
+      },
+      body: JSON.stringify({ contents: [] }),
+    });
+
+    const body = await readStream(res);
+    // No replacement characters anywhere in the replayed stream.
+    expect(body).not.toContain('�');
+    expect(body).toContain('前缀');
+    expect(body).toContain('中尾');
+  });
+
+  it('delivers the full tail even when the socket write buffer backs up', async () => {
+    // A single large chunk (well over the default 16KB highWaterMark) forces
+    // response.write() to return false on a slow reader. The old code would
+    // stop and then end() the response when the job completed, dropping the
+    // tail permanently. The fix registers a 'drain' retry so every byte lands.
+    const bigPayload = `data: ${'x'.repeat(64 * 1024)}\n\n`;
+    const upstream = serverCleanup.track(
+      await startHttpServer(
+        http.createServer((_request, response) => {
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          response.write(bigPayload);
+          response.end();
+        }),
+      ),
+    );
+
+    const app = createServer({
+      geminiApiBase: upstream.baseUrl,
+      geminiApiKey: 'server-key',
+    });
+    const appStarted = serverCleanup.track(await startHttpServer(app));
+
+    const res = await fetch(`${appStarted.baseUrl}${STREAM_PATH}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        [JOB_ID_HEADER]: 'job-backpressure',
+      },
+      body: JSON.stringify({ contents: [] }),
+    });
+
+    const body = await readStream(res);
+    expect(body.length).toBe(bigPayload.length);
+    expect(body).toBe(bigPayload);
+  });
 });

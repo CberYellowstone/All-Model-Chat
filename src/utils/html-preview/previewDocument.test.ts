@@ -5,7 +5,6 @@ import {
   buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
   loadKatex,
-  HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
@@ -91,6 +90,30 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain('event.data.event !== streamRenderEvent');
     expect(srcDoc).toContain('replaceChildren');
     expect(srcDoc).not.toContain('<section>First chunk</section>');
+  });
+
+  it('still injects the CSP when the artifact merely mentions the policy string', () => {
+    // A tutorial artifact that documents `http-equiv="Content-Security-Policy"`
+    // must not suppress the real injected policy — otherwise the sandboxed
+    // preview runs without one.
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      '<section><p>Add &lt;meta http-equiv="Content-Security-Policy" content="default-src ...&gt;</p></section>',
+    );
+
+    expect(srcDoc).toContain('http-equiv="Content-Security-Policy"');
+    expect(srcDoc).toContain("default-src 'none'");
+  });
+
+  it('does not double-inject the theme or base font size when they are already present', () => {
+    const srcDoc = buildHtmlPreviewSrcDoc(
+      '<html><head><style data-amc-live-artifact-theme="true">:root{--x:1}</style><style data-amc-live-artifact-base-font-size="true">:root{font-size:10px}</style></head><body>x</body></html>',
+      { baseFontSize: 18, themeId: 'onyx' },
+    );
+
+    // Still no CSP meta (independent of theme/font-size), but the theme and
+    // font-size injections must be skipped — not duplicated.
+    expect(srcDoc.match(/data-amc-live-artifact-theme="true"/g)?.length).toBe(1);
+    expect(srcDoc.match(/data-amc-live-artifact-base-font-size="true"/g)?.length).toBe(1);
   });
 
   it('streaming preview runner keeps full document attributes in sync', () => {
@@ -180,7 +203,7 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain('csp-violation');
   });
 
-  it('treats a plain data-amc-followup value as the follow-up instruction', () => {
+  it('does not fire followup for synthetic (untrusted) clicks', () => {
     const messages: unknown[] = [];
     const srcDoc = buildHtmlPreviewSrcDoc(
       `<section><button data-amc-followup="生成参考文献">生成参考文献</button></section>`,
@@ -204,13 +227,14 @@ describe('htmlPreview utilities', () => {
     try {
       document.body.innerHTML = '<section><button data-amc-followup="生成参考文献">生成参考文献</button></section>';
       window.eval(scriptContent!);
+      // The bridge only honors real user gestures (event.isTrusted) so a
+      // script-injected synthetic click (element.click() or dispatchEvent of a
+      // fresh MouseEvent) cannot trigger a followup on the parent page. jsdom
+      // cannot synthesize a trusted event, so we assert the security property:
+      // an untrusted click produces no followup message.
       document.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-      expect(messages).toContainEqual({
-        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
-        event: 'followup',
-        payload: { instruction: '生成参考文献' },
-      });
+      expect(messages).toEqual([]);
     } finally {
       document.body.innerHTML = '';
       window.postMessage = originalPostMessage;
@@ -219,7 +243,7 @@ describe('htmlPreview utilities', () => {
     }
   });
 
-  it('relays data-amc-copy attribute text and falls back to button text', () => {
+  it('does not relay data-amc-copy for synthetic (untrusted) clicks', () => {
     const messages: unknown[] = [];
     const srcDoc = buildHtmlPreviewSrcDoc(`<section><button data-amc-copy="npm install katex">Copy</button></section>`);
     const scriptContent = srcDoc.match(/<script>([\s\S]*?)<\/script>/)?.[1];
@@ -241,25 +265,11 @@ describe('htmlPreview utilities', () => {
     try {
       document.body.innerHTML = '<section><button data-amc-copy="npm install katex">Copy</button></section>';
       window.eval(scriptContent!);
+      // Same security property as the followup test: a synthetic (untrusted)
+      // click must not fire a copy event to the parent page.
       document.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-      expect(messages).toContainEqual({
-        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
-        event: HTML_PREVIEW_COPY_EVENT,
-        payload: { text: 'npm install katex' },
-      });
-
-      // Empty attribute falls back to the button's own text content.
-      messages.length = 0;
-      document.body.innerHTML = '<section><button data-amc-copy>SELECT *</button>';
-      window.eval(scriptContent!);
-      document.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-      expect(messages).toContainEqual({
-        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
-        event: HTML_PREVIEW_COPY_EVENT,
-        payload: { text: 'SELECT *' },
-      });
+      expect(messages).toEqual([]);
     } finally {
       document.body.innerHTML = '';
       window.postMessage = originalPostMessage;

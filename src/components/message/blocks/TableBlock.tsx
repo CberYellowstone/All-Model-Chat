@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, Minimize2, Download, FileSpreadsheet, FileText, Copy, Check } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
@@ -7,6 +7,7 @@ import { useWindowContext } from '@/contexts/WindowContext';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
 import { Z_INDEX_TABLE_FULLSCREEN } from '@/constants/layout';
 import {
@@ -33,6 +34,9 @@ const hasRawHtmlInlineStyle = (node?: HastElementLike): boolean => {
 };
 
 const COPY_FEEDBACK_MS = 2000;
+// Fewer columns = even grid that fills the width; more = natural widths so the
+// wrapper's overflow-x scrolls instead of squeezing wide tables flat.
+const MAX_FIXED_COLUMNS = 5;
 
 const hasInlineStyle = (node: React.ReactNode): boolean => {
   return React.Children.toArray(node).some((child) => {
@@ -44,6 +48,41 @@ const hasInlineStyle = (node: React.ReactNode): boolean => {
   });
 };
 
+// react-markdown renders hast vdom elements with string tag names, and tests
+// render literal <thead>/<tr>/<td> elements — both surface as React elements,
+// so counting the first content row's cells needs no DOM measurement. A GFM
+// delimiter row, if it ever surfaces, has the same cell count as the header, so
+// counting the first <tr> is always correct.
+const countColumnsInSection = (children: React.ReactNode): number => {
+  for (const child of React.Children.toArray(children)) {
+    if (!React.isValidElement<TableChildProps>(child) || child.type !== 'tr') {
+      continue;
+    }
+    const cells = React.Children.toArray(child.props.children).filter(
+      (cell) => React.isValidElement(cell) && (cell.type === 'th' || cell.type === 'td'),
+    );
+    if (cells.length > 0) {
+      return cells.length;
+    }
+  }
+  return 0;
+};
+
+const getFirstRowCellCount = (children: React.ReactNode): number => {
+  for (const child of React.Children.toArray(children)) {
+    if (!React.isValidElement<TableChildProps>(child)) {
+      continue;
+    }
+    if (child.type === 'thead' || child.type === 'tbody') {
+      const count = countColumnsInSection(child.props.children);
+      if (count > 0) {
+        return count;
+      }
+    }
+  }
+  return 0;
+};
+
 export const TableBlock: React.FC<TableBlockProps> = ({ children, className, node, ...props }) => {
   const { t } = useI18n();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -52,8 +91,34 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
   const { document: targetDocument } = useWindowContext();
   const tableRef = useRef<HTMLTableElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+  const fullscreenTriggerRef = useRef<HTMLButtonElement>(null);
+  // Distinguishes "first mount" from "fullscreen just closed": on mount the
+  // inline trigger is already focused/focusable but the effect would steal
+  // focus from wherever the user is typing, so only refocus on the actual
+  // fullscreen → inline transition edge.
+  const wasFullscreenRef = useRef(false);
 
   useClickOutside(menuRef, () => setShowDownloadMenu(false));
+  useFocusTrap(fullscreenRef, isFullscreen, {
+    document: targetDocument,
+    restoreFocusTo: fullscreenTriggerRef.current,
+  });
+
+  // The inline trigger unmounts while the fullscreen portal is open, so the
+  // focus-trap's saved element reference goes stale. When fullscreen closes,
+  // refocus the freshly re-mounted trigger button.
+  useEffect(() => {
+    if (isFullscreen) {
+      wasFullscreenRef.current = true;
+      return undefined;
+    }
+    if (wasFullscreenRef.current) {
+      wasFullscreenRef.current = false;
+      fullscreenTriggerRef.current?.focus();
+    }
+    return undefined;
+  }, [isFullscreen]);
 
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
@@ -75,6 +140,15 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
   const handleCopyMarkdown = async () => {
     if (!tableRef.current) return;
     try {
+      // GFM has no syntax for merged cells; turndown expands them into empty
+      // placeholders and the structure is lost. Fall back to raw HTML so a copy
+      // always round-trips the actual table content.
+      if (tableRef.current.querySelector('[rowspan],[colspan]')) {
+        await navigator.clipboard.writeText(tableRef.current.outerHTML);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), COPY_FEEDBACK_MS);
+        return;
+      }
       const { convertHtmlToMarkdown } = await import('@/utils/htmlToMarkdown');
       const markdown = convertHtmlToMarkdown(tableRef.current.outerHTML);
       await navigator.clipboard.writeText(markdown);
@@ -101,7 +175,8 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       })
       .join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // UTF-8 BOM so Excel detects the encoding and does not garble CJK text.
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = createManagedObjectUrl(blob);
     triggerDownload(url, `table-export-${Date.now()}.csv`);
     setShowDownloadMenu(false);
@@ -122,23 +197,30 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
   };
 
   const isRichHtmlTable = hasRawHtmlInlineStyle(node) || hasInlineStyle(children);
-  const tableClassName = [className, isRichHtmlTable ? 'rich-html-table' : 'min-w-full w-max text-left']
-    .filter(Boolean)
-    .join(' ');
-  const inlineContainerClassName = isRichHtmlTable
-    ? 'relative group/table my-4 w-full max-w-full overflow-visible'
-    : 'relative group/table my-4 w-full max-w-full rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-primary)]/40 overflow-visible';
+  const columnCount = useMemo(() => getFirstRowCellCount(children), [children]);
+  const tableLayout = columnCount > MAX_FIXED_COLUMNS ? 'auto' : 'fixed';
+  const tableClassName = [className, isRichHtmlTable ? 'rich-html-table' : 'text-left'].filter(Boolean).join(' ');
+  // The wrapper handles the outer frame only for GFM tables; rich HTML tables
+  // bring their own borders via inline styles, so they get no frame at all.
+  // The frame lives on the inner scroll container rather than the outer wrapper
+  // so the absolutely-positioned download dropdown is not clipped by rounding.
+  const inlineContainerClassName = 'relative group/table my-4 w-full max-w-full overflow-visible';
+  const inlineScrollClassName = isRichHtmlTable
+    ? 'overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full'
+    : 'overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-primary)]/40';
   const fullscreenContainerClassName = isRichHtmlTable
-    ? 'w-full max-w-6xl mx-auto markdown-body p-0 my-0'
-    : 'w-full max-w-6xl mx-auto bg-[var(--theme-bg-primary)] rounded-lg shadow-xl overflow-hidden border border-[var(--theme-border-secondary)] markdown-body p-0 my-0';
+    ? 'w-full max-w-6xl mx-auto markdown-body p-0 my-0 overflow-x-auto max-h-full'
+    : 'w-full max-w-6xl mx-auto bg-[var(--theme-bg-primary)] rounded-lg shadow-xl border border-[var(--theme-border-secondary)] markdown-body p-0 my-0 overflow-auto max-h-full';
 
   // When fullscreen, we use a portal and a specific layout.
   if (isFullscreen) {
     return createPortal(
       <div
+        ref={fullscreenRef}
         data-table-fullscreen-overlay="true"
         role="dialog"
         aria-modal="true"
+        aria-label={t('tableFullscreenAria')}
         className={`fixed inset-0 ${Z_INDEX_TABLE_FULLSCREEN} bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-10 overflow-auto overscroll-contain flex flex-col items-center animate-in fade-in duration-200`}
       >
         <div className="fixed top-4 right-4 flex gap-2 z-50">
@@ -189,11 +271,9 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         </div>
 
         <div className={fullscreenContainerClassName} data-rich-html-table-container={isRichHtmlTable || undefined}>
-          <div className="overflow-x-auto">
-            <table ref={tableRef} className={tableClassName} {...props}>
-              {children}
-            </table>
-          </div>
+          <table ref={tableRef} className={tableClassName} data-layout={isRichHtmlTable ? undefined : tableLayout} {...props}>
+            {children}
+          </table>
         </div>
       </div>,
       targetDocument.body,
@@ -206,8 +286,8 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       data-rich-html-table-container={isRichHtmlTable || undefined}
       data-table-actions-scope="true"
     >
-      <div className="overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full">
-        <table ref={tableRef} className={tableClassName} {...props}>
+      <div className={inlineScrollClassName}>
+        <table ref={tableRef} className={tableClassName} data-layout={isRichHtmlTable ? undefined : tableLayout} {...props}>
           {children}
         </table>
       </div>
@@ -252,6 +332,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         </div>
 
         <button
+          ref={fullscreenTriggerRef}
           onClick={toggleFullscreen}
           aria-label={t('tableFullscreenAria')}
           className={`p-1.5 rounded-md text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}

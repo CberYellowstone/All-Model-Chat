@@ -29,9 +29,25 @@ ${STREAM_SANITIZER_SCRIPT}
     return true;
   };
 
+  const isChartNode = (n) => n && n.nodeType === Node.ELEMENT_NODE && n.hasAttribute('data-amc-chart');
+  const chartAttrEqual = (a, b) => a.getAttribute('data-amc-chart') === b.getAttribute('data-amc-chart');
+
   const patchNode = (currentNode, nextNode) => {
     if (!canPatchNode(currentNode, nextNode)) {
       currentNode.replaceWith(nextNode);
+      return;
+    }
+
+    // Rendered charts are patched in by the chart renderer, not by the stream:
+    // their SVG subtree must survive attribute-unchanged patches. When the
+    // chart payload changes, fall through so the old SVG is replaced and the
+    // renderer's attribute observer re-renders from the new spec.
+    if (
+      isChartNode(currentNode) &&
+      isChartNode(nextNode) &&
+      chartAttrEqual(currentNode, nextNode)
+    ) {
+      syncAttributes(currentNode, nextNode);
       return;
     }
 

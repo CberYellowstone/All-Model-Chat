@@ -171,6 +171,9 @@ export interface AppSettings extends ChatSettings {
   isAutoSendOnSuggestionClick?: boolean;
   generateQuadImages?: boolean;
   autoFullscreenHtml?: boolean;
+  /** 将语言误标为 css/text/txt/markdown/md、内容却像完整 HTML 文档或含 LA
+   *  标记的代码块自动解包为实时预览。关闭后此类代码块一律按源码显示。 */
+  unwrapMislabeledHtmlBlocks?: boolean;
   showWelcomeSuggestions?: boolean;
   isAudioCompressionEnabled: boolean;
   liveArtifactsPromptMode?: LiveArtifactsPromptMode;

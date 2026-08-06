@@ -61,6 +61,10 @@ export const messagesTranslations = {
     zh: '请输入允许范围内的值。',
   },
   liveArtifactInteractionEnum: { en: 'Choose an allowed option.', zh: '请选择允许的选项。' },
+  liveArtifactInteractionInvalidDate: {
+    en: 'Enter a date in YYYY-MM-DD format.',
+    zh: '请输入 YYYY-MM-DD 格式的日期。',
+  },
   liveArtifactInteractionStateTooLarge: {
     en: 'The submitted interaction state is too large.',
     zh: '提交的交互状态过大。',
@@ -229,7 +233,6 @@ export const messagesTranslations = {
   exportNotApplicable: { en: 'N/A', zh: '不适用' },
   tokensUnit: { en: 'tokens', zh: 'Token' },
   thinkingText: { en: 'Thinking...', zh: '思考中…' },
-  thinkingLatestStep: { en: 'Latest thought', zh: '最新思考' },
   thinkingTookTime: { en: 'Thought for {duration}', zh: '已思考 {duration}' },
   thinkingProcess: { en: 'Thought Process', zh: '推理过程' },
   thinkingShowOriginal: { en: 'Show Original', zh: '显示原文' },

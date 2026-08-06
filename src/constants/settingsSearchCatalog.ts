@@ -144,6 +144,13 @@ const interfaceEntries: SettingsSearchEntry[] = [
     groupKey: 'settingsRenderingPreview',
   },
   {
+    id: 'interface-unwrap-html',
+    tab: 'interface',
+    labelKey: 'settingsUnwrapMislabeledHtmlLabel',
+    descriptionKey: 'settingsUnwrapMislabeledHtmlTooltip',
+    groupKey: 'settingsRenderingPreview',
+  },
+  {
     id: 'interface-notifications',
     tab: 'interface',
     labelKey: 'settingsNotificationsFeedback',

@@ -33,6 +33,7 @@ export const useChatSessionExport = ({ activeChat, currentTheme, language, t }: 
         const chatClone = await prepareElementForExport(exportElement, {
           expandDetails: format === 'png',
           forPng: format === 'png',
+          themeId: currentTheme.id,
         });
 
         try {

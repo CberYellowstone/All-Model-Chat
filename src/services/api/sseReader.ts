@@ -1,4 +1,5 @@
 import { appendSseChunk } from './sseBuffer';
+import { createStreamIdleTimeoutError, hasStreamIdleTimeoutElapsed } from './streamIdleTimeout';
 
 type SseStreamParser<T> = (buffer: string) => { events: T[]; rest: string };
 
@@ -8,6 +9,12 @@ type SseStreamParser<T> = (buffer: string) => { events: T[]; rest: string };
  * event (used for terminal markers like Anthropic's `message_stop` or OpenAI's
  * `[DONE]`). The reader is always released (cancel) so the connection returns
  * to the pool.
+ *
+ * An idle watchdog mirrors the Gemini-native stream (chatApi.ts): a half-open
+ * TCP socket or an idle-reaping proxy stalls `reader.read()` without erroring,
+ * so without a timeout the UI would spin forever. A stall longer than the
+ * shared VITE_STREAM_IDLE_TIMEOUT_MS budget rejects with a surfaced
+ * StreamIdleTimeoutError instead.
  */
 export const readSseStream = async <T>(
   response: Response,
@@ -23,11 +30,22 @@ export const readSseStream = async <T>(
   const decoder = new TextDecoder();
   let buffer = '';
 
+  let lastActivityAt = Date.now();
+  let timedOut = false;
+  const idleWatchdog = setInterval(() => {
+    if (hasStreamIdleTimeoutElapsed(lastActivityAt)) {
+      timedOut = true;
+      void reader.cancel().catch(() => undefined);
+    }
+  }, 5_000);
+  idleWatchdog.unref?.();
+
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done || abortSignal.aborted) break;
 
+      lastActivityAt = Date.now();
       buffer = appendSseChunk(buffer, decoder.decode(value, { stream: true }));
       const parsed = parse(buffer);
       buffer = parsed.rest;
@@ -39,6 +57,10 @@ export const readSseStream = async <T>(
       }
     }
 
+    if (timedOut) {
+      throw createStreamIdleTimeoutError();
+    }
+
     const tail = decoder.decode();
     if (tail) {
       buffer = appendSseChunk(buffer, tail);
@@ -48,6 +70,7 @@ export const readSseStream = async <T>(
       onEvent(event);
     }
   } finally {
+    clearInterval(idleWatchdog);
     // Release the reader so the underlying HTTP/TLS connection is returned to the pool.
     await reader.cancel().catch(() => undefined);
   }

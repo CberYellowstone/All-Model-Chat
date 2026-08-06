@@ -152,11 +152,16 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
   const showPreviewControls = isInteractive && showPreview;
   const isInteractionFence = isLiveArtifactInteractionLanguage(sourceLanguage);
   const isLikelyJsonShape = isInteractionFence || hasLiveArtifactInteractionShape(resolvedCodeText);
+  // The diagnostic/repair pass is only consumed for interaction fences or
+  // ```json blocks while Live Artifacts mode is on. Skip it otherwise so a
+  // session with LA disabled does not pay a full spec parse on every ```json
+  // code block (the bare-JSON wrapping already gated this the same way).
+  const shouldDiagnoseInteraction = isLikelyJsonShape && (isInteractionFence || props.liveArtifactsMode);
 
   const diagnosis = useMemo(() => {
-    if (!isLikelyJsonShape || !resolvedCodeText) return null;
+    if (!shouldDiagnoseInteraction || !resolvedCodeText) return null;
     return diagnoseLiveArtifactInteraction(resolvedCodeText);
-  }, [resolvedCodeText, isLikelyJsonShape]);
+  }, [resolvedCodeText, shouldDiagnoseInteraction]);
 
   const interactionSpec = diagnosis?.spec ?? null;
 

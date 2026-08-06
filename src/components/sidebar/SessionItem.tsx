@@ -4,6 +4,7 @@ import { Pin, MoreHorizontal } from 'lucide-react';
 import { type ChatGroup, type SavedChatSession } from '@/types';
 import { SessionItemMenu } from './SessionItemMenu';
 import { LoadingDots } from '@/components/shared/LoadingDots';
+import { useChatStore } from '@/stores/chatStore';
 import { SESSION_DRAG_TYPE } from './sidebarDragTypes';
 
 interface SessionItemProps {
@@ -72,6 +73,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
   const isActive = activeMenu === session.id;
   const displayTitle = session.title === 'New Chat' ? t('newChat') : session.title;
   const isBeingDragged = draggingSessionId === session.id;
+  const completedOutcome = useChatStore((state) => state.completedSessions[session.id]);
 
   // A slight pointer move (< 10px) while pressing is a jittery click, not a
   // drag. Native HTML5 drag has a ~5px threshold, so a 6px wiggle triggers
@@ -190,14 +192,25 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
             <LoadingDots />
           </span>
         ) : (
-          !generatingTitleSessionIds.has(session.id) && (
-            <button
-              onClick={(e) => toggleMenu(e, session.id)}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-full text-[var(--theme-text-tertiary)] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-border-focus)]"
-            >
-              <MoreHorizontal size={16} strokeWidth={2} />
-            </button>
-          )
+          <>
+            {completedOutcome && (
+              <span
+                className={`absolute right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full ${
+                  completedOutcome === 'error' ? 'bg-[#ef4444]' : 'bg-[#22c55e]'
+                }`}
+                title={t(completedOutcome === 'error' ? 'sessionCompletedWithError' : 'sessionCompleted')}
+                aria-label={t(completedOutcome === 'error' ? 'sessionCompletedWithError' : 'sessionCompleted')}
+              />
+            )}
+            {!generatingTitleSessionIds.has(session.id) && (
+              <button
+                onClick={(e) => toggleMenu(e, session.id)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-[var(--theme-bg-secondary)] p-1 text-[var(--theme-text-tertiary)] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-border-focus)]"
+              >
+                <MoreHorizontal size={16} strokeWidth={2} />
+              </button>
+            )}
+          </>
         )}
       </div>
       {activeMenu === session.id && (

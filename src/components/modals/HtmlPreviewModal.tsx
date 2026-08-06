@@ -38,6 +38,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
     handleDownload,
     handleScreenshot,
     handleRefresh,
+    iframeRefreshKey,
     enterTrueFullscreen,
     exitTrueFullscreen,
     getPreviewTitle,
@@ -99,6 +100,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
         />
 
         <HtmlPreviewContent
+          key={iframeRefreshKey}
           iframeRef={iframeRef}
           htmlContent={htmlContent}
           scale={scale}

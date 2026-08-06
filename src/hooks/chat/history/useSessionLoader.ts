@@ -139,6 +139,9 @@ export const useSessionLoader = ({
       setEditingMessageId(null);
       focusChatInput(0);
 
+      // 用户打开该会话 = 已查看,清除侧边栏完成标记(并广播让其他标签页同步清除)。
+      useChatStore.getState().markSessionViewed(rehydrated.id);
+
       return rehydrated;
     },
     [

@@ -20,6 +20,19 @@ const hasStreamingSensitiveMarkdownTable = (text: string) => {
   return text.split(FENCED_CODE_BLOCK_REGEX).some((segment, index) => index % 2 === 0 && GFM_TABLE_REGEX.test(segment));
 };
 
+// When the bypass is active (streaming a table / artifact), grow the displayed
+// text to the next whole line instead of the whole received text at once. A
+// whole-text swap turns plain-text table lines into a rendered <table> in a
+// single frame — an abrupt height jump that makes Virtuoso reposition the
+// viewport. Line-by-line growth keeps the message height smooth while the
+// table streams in.
+const getBypassNextText = (current: string, target: string): string => {
+  if (current.length >= target.length) return target;
+  const nextNewline = target.indexOf('\n', current.length);
+  if (nextNewline === -1) return target;
+  return target.slice(0, nextNewline + 1);
+};
+
 const getCharsToAdd = (lag: number): number =>
   CATCH_UP_SPEEDS.find(({ lagThreshold }) => lag > lagThreshold)?.charsPerFrame ?? DEFAULT_CHARS_PER_FRAME;
 
@@ -32,10 +45,14 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
   const isDocumentHidden = typeof document !== 'undefined' && document.hidden;
   const shouldBypassAnimation =
     isStreaming &&
-    (isDocumentHidden ||
-      hasStreamingSensitiveMarkdownTable(safeText) ||
+    (hasStreamingSensitiveMarkdownTable(safeText) ||
       isLikelyStreamingHtmlArtifact(safeText) ||
       isLikelyStreamingLiveArtifactInteractionJson(safeText));
+  // Tables grow line-by-line (smooth height) even in bypass mode, because an
+  // artifact must appear atomically (a partial JSON/HTML cannot render) while a
+  // table only needs its rows to keep arriving. Artifact candidates and a
+  // hidden document must still swap to the full text at once.
+  const shouldGrowLineByLine = isStreaming && hasStreamingSensitiveMarkdownTable(safeText);
   const [displayedText, setDisplayedText] = useState(isStreaming ? '' : safeText);
 
   const displayedTextRef = useRef(isStreaming ? '' : safeText);
@@ -46,10 +63,15 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
   useEffect(() => {
     targetTextRef.current = safeText;
 
-    // Skip character-level animation when the tab is hidden or the content contains
-    // markdown tables, because repeatedly reparsing partial table states creates
-    // visible structural jank in the chat bubble.
-    if (shouldBypassAnimation) {
+    // Skip character-by-character animation when the content contains markdown
+    // tables or artifact candidates, because repeatedly reparsing partial
+    // table/artifact states creates visible structural jank in the chat bubble.
+    // Markdown tables still grow displayedText line-by-line (see the animate
+    // loop below) instead of swapping the whole received text at once, so a
+    // mid-stream table never changes the message height abruptly. Artifact
+    // candidates need the full text at once (a partial JSON/HTML cannot render
+    // meaningfully), so they swap immediately.
+    if (shouldBypassAnimation && !shouldGrowLineByLine) {
       displayedTextRef.current = safeText;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -67,10 +89,10 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
         animationFrameRef.current = null;
       }
     }
-  }, [safeText, isStreaming, shouldBypassAnimation]);
+  }, [safeText, isStreaming, shouldBypassAnimation, shouldGrowLineByLine]);
 
   useEffect(() => {
-    if (!isStreaming || shouldBypassAnimation) return;
+    if (!isStreaming) return;
 
     const animate = (time: DOMHighResTimeStamp) => {
       if (typeof document !== 'undefined' && document.hidden) {
@@ -83,9 +105,12 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
 
       if (currentLen < targetLen) {
         const lag = targetLen - currentLen;
-        const charsToAdd = getCharsToAdd(lag);
 
-        const nextText = targetTextRef.current.slice(0, currentLen + charsToAdd);
+        // Bypass mode for tables advances to the next whole line so the message
+        // height grows smoothly instead of jumping to the full text.
+        const nextText = shouldGrowLineByLine
+          ? getBypassNextText(displayedTextRef.current, targetTextRef.current)
+          : targetTextRef.current.slice(0, currentLen + getCharsToAdd(lag));
         displayedTextRef.current = nextText;
 
         const isFinishedCatchingUp = nextText.length >= targetLen;
@@ -120,7 +145,21 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
         animationFrameRef.current = null;
       }
     };
-  }, [isStreaming, safeText, shouldBypassAnimation]);
+  }, [isStreaming, safeText, shouldGrowLineByLine]);
 
-  return shouldBypassAnimation ? safeText : isStreaming ? displayedText : safeText;
+  // While the tab is hidden there are no animation frames to drive the typing
+  // effect, so surface the full text immediately. Non-table bypass modes
+  // (artifact candidates) also swap to the full text at once because a partial
+  // JSON/HTML cannot render meaningfully. Markdown tables return the
+  // incrementally-grown displayedText so the height changes smoothly instead of
+  // jumping.
+  if (isDocumentHidden && isStreaming) {
+    return safeText;
+  }
+
+  if (shouldBypassAnimation && !shouldGrowLineByLine) {
+    return safeText;
+  }
+
+  return isStreaming ? displayedText : safeText;
 };

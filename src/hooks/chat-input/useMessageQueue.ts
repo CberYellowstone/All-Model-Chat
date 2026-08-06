@@ -186,21 +186,30 @@ export const useMessageQueue = ({
     [flushPendingSubmission, setWaitingForUpload],
   );
 
-  useEffect(() => {
-    const unsubscribe = useChatStore.subscribe((state, previousState) => {
-      if (
-        shouldFlushPendingSubmission({
-          pendingSubmission: pendingSubmissionRef.current,
-          previousFiles: previousState.selectedFiles,
-          currentFiles: state.selectedFiles,
-        })
-      ) {
-        flushPendingSubmission();
-      }
-    });
+  // Flush pending submissions after the commit, not from the store subscription
+  // callback. The zustand subscriber fires synchronously on setState, before
+  // React re-renders, so a flush triggered there would run on the previous
+  // render's closure chain — handleSendMessage would still see the files as
+  // isProcessing and block the send, silently dropping the text. Running from
+  // this effect means the closures (incl. handleSendMessage's selectedFiles)
+  // are all from the current render, where the files have finished processing.
+  const previousSelectedFilesRef = useRef<UploadedFile[]>(selectedFiles);
 
-    return unsubscribe;
-  }, [flushPendingSubmission]);
+  useEffect(() => {
+    const previousFiles = previousSelectedFilesRef.current;
+
+    if (
+      shouldFlushPendingSubmission({
+        pendingSubmission: pendingSubmissionRef.current,
+        previousFiles,
+        currentFiles: selectedFiles,
+      })
+    ) {
+      flushPendingSubmission();
+    }
+
+    previousSelectedFilesRef.current = selectedFiles;
+  }, [selectedFiles, flushPendingSubmission]);
 
   useEffect(() => {
     if (activeQueuedSubmission && !isLoading && flushingQueuedSubmissionRef.current !== activeQueuedSubmission) {

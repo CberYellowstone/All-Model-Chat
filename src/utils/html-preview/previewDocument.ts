@@ -1,5 +1,6 @@
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { PREVIEW_BRIDGE_SCRIPT } from './previewBridgeScript';
+import { hydrateChartsIntoDocument } from './chartRendererScript';
 import { sanitizeElementTree } from './previewSanitizer';
 import { STREAMING_PREVIEW_RUNNER_SCRIPT } from './streamingPreviewRunnerScript';
 
@@ -24,10 +25,8 @@ let katexInstance: typeof import('katex').default | null = null;
 let katexCss: string | null = null;
 let katexLoadingPromise: Promise<void> | null = null;
 let katexReadyResolve: (() => void) | null = null;
-
-const katexReadyPromise = new Promise<void>((resolve) => {
-  katexReadyResolve = resolve;
-});
+let katexReadyReject: ((error: unknown) => void) | null = null;
+let katexReadyPromise: Promise<void> | null = null;
 
 export const loadKatex = (): Promise<void> => {
   if (!katexLoadingPromise) {
@@ -42,16 +41,44 @@ export const loadKatex = (): Promise<void> => {
       .then(() => {
         katexReadyResolve?.();
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        // A failed load must reject anyone waiting on whenKatexReady() so the
+        // waiting frame does not hang "pending" forever. Reset all state so the
+        // next render that sees math can attempt the load again (retry).
+        katexReadyReject?.(error);
+        katexReadyPromise = null;
+        katexReadyResolve = null;
+        katexReadyReject = null;
         katexLoadingPromise = null;
-        throw new Error('Failed to load KaTeX');
+        throw error;
       });
   }
 
   return katexLoadingPromise;
 };
 
-export const whenKatexReady = (): Promise<void> => katexReadyPromise;
+export const whenKatexReady = (): Promise<void> => {
+  if (katexInstance) {
+    return Promise.resolve();
+  }
+  if (!katexReadyPromise) {
+    katexReadyPromise = new Promise<void>((resolve, reject) => {
+      katexReadyResolve = resolve;
+      katexReadyReject = reject;
+    });
+  }
+  return katexReadyPromise;
+};
+// SECURITY NOTE (intentional): `script-src 'unsafe-inline' https: blob:` is
+// deliberately permissive. Live Artifacts are model-authored HTML/JS demos; the
+// sanitizer strips declarative <script> tags and event-handler attributes, but
+// the demo's own JS is allowed to create <script> elements at runtime (CDN
+// loaders, blob: bundles). Tightening this to 'none' would break every demo
+// that boots its JS dynamically, so the sanitizer is the first line of defense
+// and CSP only blocks cross-origin/network surprises (default-src 'none',
+// frame-src/object-src/form-action 'none'). The iframe sandbox omits
+// allow-same-origin for message-bubble artifacts, keeping them on an opaque
+// origin so scripted content cannot reach the parent page's origin.
 const PREVIEW_CONTENT_SECURITY_POLICY =
   "default-src 'none'; img-src https: data: blob:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' https: blob:; font-src https: data:; media-src https: data: blob:; connect-src https: data: blob:; worker-src blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const PREVIEW_CONTENT_SECURITY_POLICY_META = `<meta http-equiv="Content-Security-Policy" content="${PREVIEW_CONTENT_SECURITY_POLICY}">`;
@@ -239,7 +266,11 @@ const renderPreviewMath = (srcDoc: string): string => {
 };
 
 const injectPreviewSecurityPolicy = (srcDoc: string): string => {
-  if (srcDoc.includes(PREVIEW_CONTENT_SECURITY_POLICY)) {
+  // Guard on the injected <meta> element itself, not the raw policy string:
+  // model prose that merely mentions "Content-Security-Policy" (e.g. a tutorial
+  // showing the attribute) must not suppress the restrictive preview CSP —
+  // that would leave the artifact running without one.
+  if (/<meta\b[^>]*http-equiv=["']Content-Security-Policy["']/i.test(srcDoc)) {
     return srcDoc;
   }
 
@@ -281,20 +312,45 @@ const resolvePreviewTheme = (themeId?: string) => {
   );
 };
 
-const buildPreviewThemeStyle = (themeId?: string): string => {
+const buildPreviewThemeStyle = (themeId?: string, options: { varsOnly?: boolean } = {}): string => {
   const theme = resolvePreviewTheme(themeId);
   const colors = theme.colors;
   const colorScheme = DARK_LIVE_ARTIFACT_THEME_IDS.has(theme.id) ? 'dark' : 'light';
+
+  const cssVars = [
+    `--amc-live-artifact-text:${colors.textPrimary}`,
+    `--amc-live-artifact-muted:${colors.textSecondary}`,
+    `--amc-live-artifact-subtle:${colors.textTertiary}`,
+    `--amc-live-artifact-surface:${colors.bgTertiary}`,
+    `--amc-live-artifact-surface-muted:${colors.bgInput}`,
+    `--amc-live-artifact-border:${colors.borderSecondary}`,
+    `--amc-live-artifact-accent:${colors.textLink}`,
+    `--amc-live-artifact-accent-surface:${colors.bgInfo}`,
+    `--amc-live-artifact-success:${colors.textSuccess}`,
+    `--amc-live-artifact-success-surface:${colors.bgSuccess}`,
+    `--amc-live-artifact-danger:${colors.textDanger}`,
+    `--amc-live-artifact-danger-surface:${colors.bgErrorMessage}`,
+    `--amc-live-artifact-warning:${colors.textWarning}`,
+    `--amc-live-artifact-warning-surface:${colors.bgWarning}`,
+  ].join(';');
+
+  if (options.varsOnly) {
+    return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};${cssVars};}</style>`;
+  }
 
   // height/min-height auto: model CSS often uses min-height:100vh / height:100%, which
   // expands to the iframe viewport and reports a locked tall height (blank under content).
   // Surface tokens must be soft fills (bgInfo/bgSuccess/…), never solid interactive fills like bgAccent.
   // bgAccent equals textLink on pearl (#2563eb); pairing accent text on accent-surface would be invisible.
-  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};--amc-live-artifact-text:${colors.textPrimary};--amc-live-artifact-muted:${colors.textSecondary};--amc-live-artifact-subtle:${colors.textTertiary};--amc-live-artifact-surface:${colors.bgTertiary};--amc-live-artifact-surface-muted:${colors.bgInput};--amc-live-artifact-border:${colors.borderSecondary};--amc-live-artifact-accent:${colors.textLink};--amc-live-artifact-accent-surface:${colors.bgInfo};--amc-live-artifact-success:${colors.textSuccess};--amc-live-artifact-success-surface:${colors.bgSuccess};--amc-live-artifact-danger:${colors.textDanger};--amc-live-artifact-danger-surface:${colors.bgErrorMessage};--amc-live-artifact-warning:${colors.textWarning};--amc-live-artifact-warning-surface:${colors.bgWarning};}html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
+  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};${cssVars};}html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
 };
 
 const injectPreviewTheme = (srcDoc: string, themeId?: string): string => {
-  if (srcDoc.includes(PREVIEW_THEME_ATTRIBUTE)) {
+  // Guard on the <style> element carrying the theme marker, not the bare marker
+  // string. A model output that merely references the attribute (e.g. shows
+  // `data-amc-live-artifact-theme` in a demo) must not skip the injection and
+  // leave every --amc-live-artifact-* variable undefined.
+  if (new RegExp(`<style\\b[^>]*${PREVIEW_THEME_ATTRIBUTE}=`, 'i').test(srcDoc)) {
     return srcDoc;
   }
 
@@ -312,7 +368,13 @@ const buildPreviewBaseFontSizeStyle = (baseFontSize?: number): string => {
 
 const injectPreviewBaseFontSize = (srcDoc: string, baseFontSize?: number): string => {
   const style = buildPreviewBaseFontSizeStyle(baseFontSize);
-  if (!style || srcDoc.includes(PREVIEW_BASE_FONT_SIZE_ATTRIBUTE)) {
+  if (!style) {
+    return srcDoc;
+  }
+
+  // Guard on the injected <style> element, not the bare marker string, so model
+  // prose that mentions the attribute still gets the font-size injection.
+  if (new RegExp(`<style\\b[^>]*${PREVIEW_BASE_FONT_SIZE_ATTRIBUTE}=`, 'i').test(srcDoc)) {
     return srcDoc;
   }
 
@@ -399,11 +461,18 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
 export const createStaticPreviewSnapshotContainer = (
   htmlContent: string,
   targetDocument: Document,
+  options: { themeId?: string } = {},
 ): { container: HTMLElement; cleanup: () => void } => {
   const parser = new DOMParser();
   const parsedDocument = parser.parseFromString(htmlContent, 'text/html');
 
   sanitizeElementTree(parsedDocument);
+  // Hydrate declarative charts as static SVG so the PNG export matches the
+  // on-screen artifact. The theme style (varsOnly) is injected so chart SVG
+  // colors resolve on the parent page, which never defines --amc-live-artifact-*.
+  hydrateChartsIntoDocument(parsedDocument, {
+    themeStyle: buildPreviewThemeStyle(options.themeId, { varsOnly: true }),
+  });
 
   const container = targetDocument.createElement('div');
   container.className = 'is-exporting-png html-preview-snapshot';

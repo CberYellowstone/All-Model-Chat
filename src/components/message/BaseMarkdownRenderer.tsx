@@ -39,6 +39,7 @@ export interface MarkdownRendererProps {
   contentPreNormalized?: boolean;
   liveArtifactFontSize?: number;
   liveArtifactsMode?: boolean;
+  unwrapMislabeledHtmlBlocks?: boolean;
 }
 
 type MarkdownCodeProps = React.ComponentPropsWithoutRef<'code'> & {
@@ -136,6 +137,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
     contentPreNormalized = false,
     liveArtifactFontSize,
     liveArtifactsMode,
+    unwrapMislabeledHtmlBlocks = true,
     remarkPlugins,
     rehypePlugins,
   }) => {
@@ -327,7 +329,10 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
 
       const normalizedContent = contentPreNormalized
         ? content
-        : normalizePreviewableMarkdownContent(content, { isStreaming: isLoading });
+        : normalizePreviewableMarkdownContent(content, {
+            isStreaming: isLoading,
+            unwrapMislabeledHtmlBlocks,
+          });
       const contentWithNormalizedMath = transformMarkdownTextSegments(
         normalizedContent,
         normalizeEscapedMathDelimiters,
@@ -338,7 +343,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
       }
 
       return stripGemmaThoughtMarkup(contentWithNormalizedMath);
-    }, [content, contentPreNormalized, hideThinkingInContext, isLoading, t]);
+    }, [content, contentPreNormalized, hideThinkingInContext, isLoading, t, unwrapMislabeledHtmlBlocks]);
     const singleLiveArtifact = useMemo(() => extractSingleLiveArtifactFence(processedContent), [processedContent]);
 
     if (isInteractive && singleLiveArtifact) {

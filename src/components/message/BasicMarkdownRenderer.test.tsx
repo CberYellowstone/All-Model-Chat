@@ -200,7 +200,7 @@ describe('BasicMarkdownRenderer', () => {
 
     expect(table).not.toBeNull();
     expect(table?.className).not.toContain('rich-html-table');
-    expect(table?.className).toContain('w-max');
+    expect(table?.getAttribute('data-layout')).toBe('fixed');
   });
 
   it('strips raw html positioning attributes that can escape the markdown surface', () => {

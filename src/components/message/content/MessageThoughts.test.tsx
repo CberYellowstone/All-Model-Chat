@@ -213,6 +213,41 @@ describe('MessageThoughts', () => {
     expect(renderer.container.querySelector('[data-thinking-strip="true"]')).toBeNull();
   });
 
+  it('re-shows the strip when the model re-enters thinking after a content switch', () => {
+    mockUseMessageStream.mockReturnValue({
+      streamContent: '',
+      streamThoughts: '',
+    });
+
+    act(() => {
+      renderer.render(
+        <MessageThoughts
+          message={{
+            id: 'message-strip-rethink',
+            role: 'model',
+            content: 'Interleaved answer',
+            thoughts: '## Step one\nRe-entered reasoning',
+            isLoading: true,
+            thinkingActive: true,
+            timestamp: new Date('2026-04-21T00:00:00.000Z'),
+          }}
+          showThoughts={true}
+          appSettings={createAppSettings()}
+          themeId="pearl"
+          onImageClick={vi.fn()}
+          onOpenHtmlPreview={vi.fn()}
+          expandCodeBlocksByDefault={false}
+          isMermaidRenderingEnabled={true}
+          isGraphvizRenderingEnabled={true}
+          onOpenSidePanel={vi.fn()}
+        />,
+      );
+    });
+
+    // thinkingActive flips back on → strip comes back even though the message is still loading
+    expect(renderer.container.querySelector('[data-thinking-strip="true"]')).not.toBeNull();
+  });
+
   it('renders raw thinking blocks using the normal thought panel', () => {
     act(() => {
       renderer.render(

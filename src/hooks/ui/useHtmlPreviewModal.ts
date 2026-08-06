@@ -5,7 +5,6 @@ import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { sanitizeFilename, triggerDownload } from '@/utils/export/core';
 import { useFullscreen } from './useFullscreen';
 import {
-  buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -66,6 +65,9 @@ export const useHtmlPreviewModal = ({
 
   const [isDirectFullscreenLaunch, setIsDirectFullscreenLaunch] = useState(initialTrueFullscreenRequest);
   const [contentHeight, setContentHeight] = useState(0);
+  // Bumped by handleRefresh to remount the iframe (via a key), re-running the
+  // preview script from scratch without the hook fighting React's srcDoc prop.
+  const [iframeRefreshKey, setIframeRefreshKey] = useState(0);
 
   const { document: targetDocument, window: targetWindow } = useWindowContext();
   const { enterFullscreen, exitFullscreen } = useFullscreen();
@@ -318,12 +320,10 @@ export const useHtmlPreviewModal = ({
   const handleRefresh = useCallback(() => {
     if (iframeRef.current && htmlContent) {
       setIsPreviewReady(false);
-      iframeRef.current.srcdoc = ' ';
-      requestAnimationFrame(() => {
-        if (iframeRef.current) {
-          iframeRef.current.srcdoc = buildUnrestrictedHtmlPreviewSrcDoc(htmlContent);
-        }
-      });
+      // Remount the iframe by bumping the key. The old imperative srcdoc write
+      // desynced from React's srcDoc prop (the refresh relied on the prop being
+      // unchanged). A remount restarts the preview script cleanly.
+      setIframeRefreshKey((key) => key + 1);
     }
   }, [htmlContent, iframeRef]);
 
@@ -340,6 +340,7 @@ export const useHtmlPreviewModal = ({
     handleDownload,
     handleScreenshot,
     handleRefresh,
+    iframeRefreshKey,
     enterTrueFullscreen,
     exitTrueFullscreen,
     getPreviewTitle,

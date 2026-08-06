@@ -10,6 +10,7 @@ import {
 import { useI18n } from '@/contexts/I18nContext';
 import { logService } from '@/services/logService';
 import { formatApiKeyErrorMessage } from '@/utils/apiKeySelection';
+import { useChatStore } from '@/stores/chatStore';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 import { resolveChatApiRoute } from '@/utils/chatApiRoute';
@@ -82,6 +83,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
     getStreamHandlers,
     activeJobs,
     sessionKeyMapRef,
+    setSessionLoading,
   });
 
   const { runMessageLifecycle } = useMessageLifecycle({
@@ -108,7 +110,15 @@ export const useMessageSender = (props: MessageSenderProps) => {
       settingsOverride?: IndividualChatSettings;
     }) => {
       const textToUse = overrideOptions?.text ?? '';
-      const filesToUse = overrideOptions?.files ?? selectedFiles;
+      // Prefer explicitly-passed files, then the live store value when the
+      // closure's selectedFiles has gone stale. In the pending-submission flush
+      // path handleSendMessage can run before React commits the new files, so
+      // the closed-over selectedFiles may still show isProcessing: true; reading
+      // the store here lets a send that would otherwise be blocked (and its text
+      // silently dropped) proceed with the real current files.
+      const storeSelectedFiles = useChatStore.getState().selectedFiles;
+      const filesToUse =
+        overrideOptions?.files ?? (selectedFiles === storeSelectedFiles ? selectedFiles : storeSelectedFiles);
       const effectiveEditingId = overrideOptions?.editingId ?? editingMessageId;
       const isContinueMode = overrideOptions?.isContinueMode ?? false;
       const isFastMode = overrideOptions?.isFastMode ?? false;
@@ -163,7 +173,11 @@ export const useMessageSender = (props: MessageSenderProps) => {
         files: filesToUse,
         keySettings: sessionToUpdate,
         generationId: continueTargetMessage ? (effectiveEditingId ?? undefined) : undefined,
-        generationStartTime: continueTargetMessage?.generationStartTime,
+        // Continue reuses the target's generation id so stream state stays
+        // aligned, but the turn starts fresh: a new generationStartTime keeps
+        // timing metrics (TTFT, thinking time, elapsed time) measured from this
+        // run, not from when the target message was originally generated.
+        generationStartTime: undefined,
         messages: {
           noModelSelected: t('messageSenderNoModelSelected'),
           noModelTitle: t('messageSenderErrorSessionTitle'),

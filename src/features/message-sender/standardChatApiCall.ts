@@ -93,10 +93,10 @@ const createNonStreamCompleteHandler =
   >): NonStreamMessageCompleteHandler =>
   (parts, thoughts, usage, grounding, urlContext) => {
     for (const part of parts) {
-      streamOnPart(part);
+      streamOnPart(part, { recordFirstToken: false });
     }
     if (thoughts) {
-      onThoughtChunk(thoughts);
+      onThoughtChunk(thoughts, { recordFirstToken: false });
     }
     streamOnComplete(usage, grounding, urlContext);
   };
@@ -382,10 +382,10 @@ export const performStandardChatApiCall = async ({
       }
 
       for (const part of toolLoopResult.finalTurn.parts) {
-        streamOnPart(part);
+        streamOnPart(part, { recordFirstToken: false });
       }
       if (toolLoopResult.finalTurn.thoughts) {
-        onThoughtChunk(toolLoopResult.finalTurn.thoughts);
+        onThoughtChunk(toolLoopResult.finalTurn.thoughts, { recordFirstToken: false });
       }
       streamOnComplete(
         toolLoopResult.finalTurn.usage,

@@ -286,6 +286,7 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   isAutoSendOnSuggestionClick: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.isAutoSendOnSuggestionClick),
   generateQuadImages: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.generateQuadImages),
   autoFullscreenHtml: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.autoFullscreenHtml),
+  unwrapMislabeledHtmlBlocks: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.unwrapMislabeledHtmlBlocks),
   showWelcomeSuggestions: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.showWelcomeSuggestions),
   isAudioCompressionEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isAudioCompressionEnabled),
   liveArtifactsPromptMode: optionalWithDefault(

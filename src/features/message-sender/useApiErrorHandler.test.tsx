@@ -75,4 +75,48 @@ describe('useApiErrorHandler', () => {
     const finalState = updater([createSession()]);
     expect(finalState[0].messages[0].content).toBe('\n\n[错误：boom]');
   });
+
+  it('fills in a thinking time fallback when a thought-carrying message errors out', () => {
+    const updateAndPersistSessions = vi.fn();
+    const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
+    const session = createSession();
+    const generationStartTime = new Date('2026-04-21T00:00:00.000Z');
+    session.messages = [
+      {
+        ...session.messages[0],
+        thoughts: 'Only reasoning happened before the failure.',
+        generationStartTime,
+      },
+    ];
+
+    act(() => {
+      result.current.handleApiError(
+        new Error('network down'),
+        'session-1',
+        'generation-1',
+        'Error',
+        '',
+        session.messages[0].thoughts,
+      );
+    });
+
+    const updater = updateAndPersistSessions.mock.calls[0]?.[0];
+    const finalState = updater([session]);
+    expect(finalState[0].messages[0].thinkingTimeMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not stamp a thinking time fallback on an aborted reply without thoughts', () => {
+    const updateAndPersistSessions = vi.fn();
+    const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
+
+    act(() => {
+      const abortError = new Error('aborted');
+      abortError.name = 'AbortError';
+      result.current.handleApiError(abortError, 'session-1', 'generation-1', 'Error', 'partial', undefined);
+    });
+
+    const updater = updateAndPersistSessions.mock.calls[0]?.[0];
+    const finalState = updater([createSession()]);
+    expect(finalState[0].messages[0].thinkingTimeMs).toBeUndefined();
+  });
 });

@@ -72,6 +72,10 @@ export interface ChatMessage {
   generationEndTime?: Date;
   thinkingTimeMs?: number;
   firstTokenTimeMs?: number;
+  // True while the model is actively reasoning (interleaved code-execution
+  // round trips and resumed thinking keep it true); the thinking strip keys
+  // off this so re-entered thinking re-shows instead of staying collapsed.
+  thinkingActive?: boolean;
   promptTokens?: number;
   cachedPromptTokens?: number;
   completionTokens?: number;

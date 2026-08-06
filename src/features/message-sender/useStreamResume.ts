@@ -18,7 +18,11 @@ import {
   stopGenerationLeaseHeartbeat,
   tryAcquireGenerationLease,
 } from './generationLease';
-import { startActiveGenerationJob, unregisterActiveGenerationJob } from './activeGenerationJobs';
+import {
+  startActiveGenerationJob,
+  unregisterActiveGenerationJob,
+  hasActiveGenerationJobForSession,
+} from './activeGenerationJobs';
 import {
   readPendingStreamJob,
   clearPendingStreamJob,
@@ -31,6 +35,7 @@ interface UseStreamResumeProps {
   getStreamHandlers: GetStreamHandlers;
   activeJobs: MutableRefObject<Map<string, AbortController>>;
   sessionKeyMapRef: MutableRefObject<Map<string, string>>;
+  setSessionLoading: (sessionId: string, isLoading: boolean) => void;
 }
 
 interface ResumeTarget {
@@ -59,6 +64,7 @@ export const useStreamResume = ({
   getStreamHandlers,
   activeJobs,
   sessionKeyMapRef,
+  setSessionLoading,
 }: UseStreamResumeProps): StreamResumeApi => {
   // Resolve an API key for the resumed stream. After a full page refresh the
   // in-memory `sessionKeyMapRef` is empty, so fall back to server-managed
@@ -94,13 +100,18 @@ export const useStreamResume = ({
         return;
       }
 
-      // If THIS tab already holds the generation lease for the session, the
-      // original send is still running in this tab (runMessageLifecycle holds
-      // the lease for the whole turn). Attaching a second stream handler would
-      // deliver every buffered event twice. After a page refresh the lease
-      // belongs to the old page and is stale, so this check does not block
-      // genuine refresh-resume.
-      if (isGenerationLeaseHeldByTab(target.sessionId)) {
+      // If THIS tab still holds the generation lease AND has a live in-memory
+      // generation job, the original send is still running in this tab
+      // (runMessageLifecycle holds the lease for the whole turn). Attaching a
+      // second stream handler would deliver every buffered event twice. The
+      // in-memory check is what distinguishes that from a page refresh: after a
+      // refresh the lease is stale (belongs to the old page, survives in
+      // localStorage up to its TTL) but the memory Map is empty, so resume
+      // proceeds and reacquires the lease.
+      if (
+        isGenerationLeaseHeldByTab(target.sessionId) &&
+        hasActiveGenerationJobForSession(activeJobs, target.sessionId)
+      ) {
         logService.info('Stream resume skipped: generation still in flight in this tab.', {
           sessionId: target.sessionId,
           generationId: pending.generationId,
@@ -142,6 +153,10 @@ export const useStreamResume = ({
       const controller = new AbortController();
       startGenerationLeaseHeartbeat(target.sessionId, target.generationId);
       startActiveGenerationJob(activeJobs, target.sessionId, target.generationId, controller);
+      // Mirror startMessageLifecycle so the UI shows the resumed stream as
+      // generating (stop button, favicon, cross-tab SESSION_LOADING sync).
+      // finishActiveGenerationJob clears it on completion/error/abort.
+      setSessionLoading(target.sessionId, true);
 
       const generationStartTime = new Date(target.startedAt);
       const handlers = getStreamHandlers(
@@ -183,7 +198,7 @@ export const useStreamResume = ({
         unregisterActiveGenerationJob(activeJobs, target.generationId);
       }
     },
-    [appSettings, getStreamHandlers, activeJobs, resolveResumeKey],
+    [appSettings, getStreamHandlers, activeJobs, resolveResumeKey, setSessionLoading],
   );
 
   return { resumePendingStream };

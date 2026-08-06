@@ -21,6 +21,7 @@ interface ChatSyncStore {
     setActiveMessages: (messages: SavedChatSession['messages']) => void;
     setSavedSessions: (updater: UpdaterOrValue<SavedChatSession[]>) => void;
     setLoadingSessionIds: (updater: UpdaterOrValue<Set<string>>) => void;
+    setCompletedSessions: (updater: UpdaterOrValue<Record<string, 'success' | 'error'>>) => void;
   };
 }
 
@@ -169,6 +170,30 @@ export function setupChatStoreSync({
             `[Sync] Aborted ${aborted} local generation job(s) for session ${syncMessage.sessionId} (remote request)`,
           );
         }
+        break;
+      }
+      // 完成标记:只直接改本地 state,绝不调用 markSessionCompleted /
+      // markSessionViewed(那会再次广播,形成广播循环)。
+      case 'SESSION_COMPLETED': {
+        const { activeSessionId, setCompletedSessions } = store.getState();
+        if (syncMessage.sessionId === activeSessionId) {
+          break; // 本标签页正在观看该会话,不显示。
+        }
+        setCompletedSessions((previous) => ({
+          ...previous,
+          [syncMessage.sessionId]: syncMessage.outcome,
+        }));
+        break;
+      }
+      case 'SESSION_VIEWED': {
+        store.getState().setCompletedSessions((previous) => {
+          if (!(syncMessage.sessionId in previous)) {
+            return previous;
+          }
+          const next = { ...previous };
+          delete next[syncMessage.sessionId];
+          return next;
+        });
         break;
       }
     }

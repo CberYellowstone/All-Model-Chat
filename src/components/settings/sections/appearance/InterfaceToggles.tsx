@@ -162,6 +162,13 @@ export const InterfaceToggles: React.FC<InterfaceTogglesProps> = ({ settings, on
           onChange={(enabled) => onUpdate('isGraphvizRenderingEnabled', enabled)}
           tooltip={t('settingsEnableGraphvizRenderingTooltip')}
         />
+        <SearchableToggle
+          itemId="interface-unwrap-html"
+          label={t('settingsUnwrapMislabeledHtmlLabel')}
+          checked={settings.unwrapMislabeledHtmlBlocks ?? true}
+          onChange={(enabled) => onUpdate('unwrapMislabeledHtmlBlocks', enabled)}
+          tooltip={t('settingsUnwrapMislabeledHtmlTooltip')}
+        />
       </ToggleGroup>
 
       <ToggleGroup title={t('settingsNotificationsFeedback')} groupId="interface-notifications">

@@ -143,4 +143,54 @@ describe('messageStreamReducer', () => {
       urlMetadata: [{ retrievedUrl: 'https://example.com/doc', urlRetrievalStatus: 'SUCCESS' }],
     });
   });
+
+  it('tracks thinking as active until the first content part, keeps it active through code-execution round trips, and resumes on re-entered thought', () => {
+    const start = new Date('2026-05-05T10:00:00.000Z');
+    const thoughtAt = new Date('2026-05-05T10:00:00.100Z');
+    const textAt = new Date('2026-05-05T10:00:00.300Z');
+    const codeAt = new Date('2026-05-05T10:00:00.400Z');
+    const reThoughtAt = new Date('2026-05-05T10:00:00.500Z');
+
+    const state = ([
+      { type: 'thought', text: 'First pass', receivedAt: thoughtAt },
+      { type: 'part', part: { text: 'Run this' } as Part, receivedAt: textAt },
+      // Code execution is a tooling round trip: it must not end thinking.
+      { type: 'part', part: { executableCode: { language: 'PYTHON', code: 'print(1)' } } as Part, receivedAt: codeAt },
+      {
+        type: 'part',
+        part: { codeExecutionResult: { outcome: 'OUTCOME_OK', output: '1' } } as Part,
+        receivedAt: codeAt,
+      },
+      { type: 'thought', text: 'Re-entered thinking', receivedAt: reThoughtAt },
+    ] satisfies MessageStreamEvent[]).reduce(
+      reduceMessageStreamEvent,
+      createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
+    );
+
+    expect(state.firstTokenTimeMs).toBe(100);
+    expect(state.firstContentPartTime).toEqual(textAt);
+    expect(state.lastContentPartTime).toEqual(textAt);
+    expect(state.thinkingActive).toBe(true);
+    expect(state.lastThoughtChunkTimeMs).toBe(500);
+  });
+
+  it('does not advance timing fields for replayed parts (non-streaming reply / tool-loop final turn)', () => {
+    const start = new Date('2026-05-05T10:00:00.000Z');
+    const replayAt = new Date('2026-05-05T10:00:08.200Z');
+
+    const state = ([
+      { type: 'thought', text: 'Replayed reasoning', receivedAt: replayAt, recordFirstToken: false },
+      { type: 'part', part: { text: 'Replayed answer' } as Part, receivedAt: replayAt, recordFirstToken: false },
+    ] satisfies MessageStreamEvent[]).reduce(
+      reduceMessageStreamEvent,
+      createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
+    );
+
+    // No first-token stamp, no per-chunk thought timing, no content switch: the
+    // whole replay is measured once at finalize (firstContentPartTime - start).
+    expect(state.firstTokenTimeMs).toBeUndefined();
+    expect(state.lastThoughtChunkTimeMs).toBeUndefined();
+    expect(state.thinkingActive).toBe(false);
+    expect(state.firstContentPartTime).toEqual(replayAt);
+  });
 });

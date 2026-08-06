@@ -47,34 +47,6 @@
   border: 1px solid var(--theme-border-secondary) !important;
 }
 
-.markdown-body table {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid var(--theme-border-secondary) !important;
-  border-radius: 0.75rem !important;
-  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 18%, transparent);
-  margin: 0.85rem 0 !important;
-}
-
-.markdown-body th,
-.markdown-body td {
-  border-bottom: 1px solid var(--theme-border-secondary) !important;
-  padding: 0.55rem 0.85rem !important;
-}
-
-.markdown-body th {
-  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 45%, transparent);
-  font-weight: 600 !important;
-}
-
-.markdown-body tr:last-child td {
-  border-bottom: none !important;
-}
-
 .markdown-body strong {
   color: var(--theme-text-primary) !important;
   font-weight: 700 !important;
@@ -344,15 +316,30 @@ code.hljs {
   line-height: 1.4; /* Slightly tighter for inline code tags */
 }
 
-/* Table Styles - Clean Minimalist Style (No Grid Borders) */
+/* Table Styles — Clean Minimalist Style (No Grid Borders)
+   Single source of truth. The outer frame (border, radius, background) lives on
+   the TableBlock wrapper; the table body carries only the internal structure.
+   No !important: the LA inline-style protocol says model inline styles must be
+   able to win, and source-order cascade already beats tailwind utility classes. */
 .markdown-body table:not(.rich-html-table) {
   border-collapse: collapse;
+  border: none;
   width: 100%;
-  min-width: 100%;
   margin: 0; /* Handled by TableBlock wrapper */
-  background-color: transparent !important;
-  border: none !important;
+  background-color: transparent;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ≤5 columns: even full-width grid; >5: natural width so the wrapper scrolls. */
+.markdown-body table:not(.rich-html-table)[data-layout='fixed'] {
   table-layout: fixed;
+  width: 100%;
+}
+
+.markdown-body table:not(.rich-html-table)[data-layout='auto'] {
+  table-layout: auto;
+  min-width: 100%;
 }
 
 .markdown-body table:not(.rich-html-table) caption {
@@ -363,67 +350,74 @@ code.hljs {
   padding: 0.875rem 1rem 0.25rem;
 }
 
-.markdown-body table:not(.rich-html-table) thead {
-  background-color: transparent !important;
-  border-bottom: 1px solid var(--theme-border-secondary) !important;
-}
-
-.markdown-body table:not(.rich-html-table) thead tr {
-  background-color: transparent !important;
-  border: none !important;
-}
-
 .markdown-body table:not(.rich-html-table) thead th {
-  background-color: transparent !important;
-  color: inherit !important;
-  font-weight: 700;
-  padding: 0.875rem 1rem;
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 35%, transparent);
+  color: var(--theme-text-secondary);
+  font-weight: 600;
+  padding: 0.625rem 0.875rem;
   text-align: left;
-  border: none !important;
+  border: none;
+  border-bottom: 2px solid var(--theme-border-secondary);
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
   vertical-align: top;
-  font-size: 0.95em;
-  opacity: 0.9;
-}
-
-.markdown-body table:not(.rich-html-table) tbody {
-  background-color: transparent !important;
+  font-size: 0.875em;
 }
 
 /* Horizontal lines between rows */
-.markdown-body table:not(.rich-html-table) tbody tr {
-  background-color: transparent !important;
-  border-bottom: 1px solid var(--theme-border-secondary) !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-}
-
-/* Remove border from last row to avoid double border with container bottom if present, or just clean look */
-.markdown-body table:not(.rich-html-table) tbody tr:last-child {
-  border-bottom: none !important;
-}
-
-.markdown-body table:not(.rich-html-table) tbody tr:hover {
-  background-color: transparent !important; /* No hover effect for cleaner look, or maybe subtle */
-}
-
 .markdown-body table:not(.rich-html-table) tbody td {
-  padding: 1rem;
-  border: none !important;
-  color: inherit !important;
+  padding: 0.5rem 0.875rem;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-secondary) 60%, transparent);
+  color: inherit;
   vertical-align: top;
-  background-color: transparent !important;
+  background-color: transparent;
   line-height: 1.6;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Remove border from last row to avoid double border with container bottom if present, or just clean look */
+.markdown-body table:not(.rich-html-table) tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-body table:not(.rich-html-table) tbody tr:hover {
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 30%, transparent);
+}
+
+/* GFM column alignment — :---: / ---: in the delimiter row emits align attrs */
+.markdown-body :where(th, td)[align='center'] {
+  text-align: center;
+}
+
+.markdown-body :where(th, td)[align='right'] {
+  text-align: right;
 }
 
 .markdown-body table.rich-html-table {
   max-width: 100%;
+}
+
+/* Fullscreen tables scroll the whole sheet; keep the header pinned above the fold */
+[data-table-fullscreen-overlay='true'] thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--theme-bg-secondary);
+  box-shadow: 0 1px 0 var(--theme-border-secondary); /* collapse drops th borders, shadow fills in */
+}
+
+/* Touch devices have no hover, so the table actions would otherwise be unreachable.
+   Keep the bar visible and interactive wherever hover is not supported. */
+@media (hover: none) {
+  .markdown-body [data-table-actions-scope='true'] > div:last-child {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* Citation Styles */
