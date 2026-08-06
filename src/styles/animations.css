@@ -19,6 +19,20 @@
   }
 }
 
+@keyframes thinkingTitleIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.thinking-title-in {
+  animation: thinkingTitleIn 0.3s var(--ease-out-expo) both;
+}
+
 @keyframes uiEnter {
   from {
     opacity: var(--enter-opacity-from, 1);

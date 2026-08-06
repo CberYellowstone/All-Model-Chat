@@ -94,3 +94,43 @@ export const getThinkingStreamTail = (thoughts: string | undefined, maxLines: nu
     .slice(-maxLines)
     .join('\n');
 };
+
+export interface ThinkingSection {
+  /** Section title; the loose preamble before the first title is null. */
+  title: string | null;
+  body: string;
+}
+
+// A section title is a full line of the form `**Title**` (optionally with
+// trailing spaces). Inline bold like `some **bold** text` must not count, and an
+// unclosed trailing `**Partial` must not either — the `$` anchor requires the
+// closing `**` at the end of the line, so a stream mid-title keeps showing the
+// previous section until the opener completes.
+const THINKING_SECTION_TITLE_REGEX = /^\*\*([^*\n]+)\*\*[ \t]*$/gm;
+
+/** Returns null when the stream is flat (or empty) — callers fall back to the
+ *  existing tail-window rendering, so third-party paths stay byte-identical. */
+export const parseThinkingSections = (thoughts: string | undefined): ThinkingSection[] | null => {
+  if (!thoughts) {
+    return null;
+  }
+
+  const matches = Array.from(thoughts.matchAll(THINKING_SECTION_TITLE_REGEX));
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const sections: ThinkingSection[] = [];
+  const preamble = thoughts.slice(0, matches[0].index).trim();
+  if (preamble) {
+    sections.push({ title: null, body: preamble });
+  }
+
+  matches.forEach((match, i) => {
+    const bodyStart = match.index! + match[0].length;
+    const bodyEnd = i + 1 < matches.length ? matches[i + 1].index! : thoughts.length;
+    sections.push({ title: match[1].trim(), body: thoughts.slice(bodyStart, bodyEnd).trim() });
+  });
+
+  return sections;
+};

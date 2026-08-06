@@ -238,6 +238,8 @@ export const messagesTranslations = {
   thinkingShowOriginal: { en: 'Show Original', zh: '显示原文' },
   thinkingTranslateToChinese: { en: 'Translate to Chinese', zh: '翻译为中文' },
   thinkingRawProcess: { en: 'Raw Thinking Process', zh: '原始推理过程' },
+  thinkingSectionCounter: { en: 'Section {index}', zh: '第 {index} 段' },
+  thinkingBackToLatest: { en: 'Back to latest', zh: '回到最新' },
   metricsTtft: { en: 'TTFT', zh: '首字延迟' },
   metricsTokenUsage: { en: 'Token Usage', zh: 'Token 用量' },
   metricsGenerationSpeed: { en: 'Generation Speed (excluding TTFT)', zh: '生成速度（不含首字延迟）' },

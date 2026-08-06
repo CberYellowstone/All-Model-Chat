@@ -15,7 +15,7 @@ describe('ThinkingStrip', () => {
     expect(renderer.container.querySelector('[data-thinking-strip="true"]')).toBeNull();
   });
 
-  it('renders a fixed 5-line viewport containing the tail text', () => {
+  it('renders a 5-line-capped viewport containing the tail text', () => {
     act(() => {
       renderer.render(<ThinkingStrip thoughtsTail={'Line one\nLine two\nLine three\nLine four\nLine five'} />);
     });
@@ -25,9 +25,9 @@ describe('ThinkingStrip', () => {
 
     expect(strip).not.toBeNull();
     expect(viewport).not.toBeNull();
-    // Fixed pixel height — line-clamp would only cap the maximum and let short
-    // content shrink; the strip must always be exactly 5 text lines tall.
-    expect((viewport as HTMLElement).style.height).toBe(`${THINKING_STRIP_CONTENT_HEIGHT_REM}rem`);
+    // Max height — short content shrinks to its natural height while longer
+    // content locks to the cap and scrolls.
+    expect((viewport as HTMLElement).style.maxHeight).toBe(`${THINKING_STRIP_CONTENT_HEIGHT_REM}rem`);
     expect(strip?.textContent).toContain('Line five');
     // Bottom-anchored scroll window: flex-col-reverse + overflow-y-auto.
     expect(viewport?.getAttribute('class')).toContain('flex-col-reverse');
@@ -44,5 +44,53 @@ describe('ThinkingStrip', () => {
     // The previous title span (truncate font-semibold) is gone.
     expect(strip?.querySelector('.truncate.font-semibold')).toBeNull();
     expect(strip?.querySelector('.font-semibold')).toBeNull();
+  });
+
+  it('marks flat tails with data-thinking-mode="flat"', () => {
+    act(() => {
+      renderer.render(<ThinkingStrip thoughtsTail="Plan details" />);
+    });
+
+    expect(renderer.container.querySelector('[data-thinking-strip="true"]')?.getAttribute('data-thinking-mode')).toBe(
+      'flat',
+    );
+  });
+
+  it('routes sectioned input to the sectioned strip', () => {
+    act(() => {
+      renderer.render(
+        <ThinkingStrip
+          thoughtsTail=""
+          sections={[
+            { title: 'Interpreting the Query', body: 'The user asks about X.' },
+            { title: 'Final Answer', body: 'Done.' },
+          ]}
+        />,
+      );
+    });
+
+    const strip = renderer.container.querySelector('[data-thinking-strip="true"]');
+    expect(strip).not.toBeNull();
+    expect(strip?.getAttribute('data-thinking-mode')).toBe('sections');
+    // Current (last) title is shown.
+    expect(strip?.textContent).toContain('Final Answer');
+    // Previous title provides context above the fold.
+    expect(strip?.textContent).toContain('Interpreting the Query');
+    // Section counter renders.
+    expect(strip?.textContent).toContain('Section 2');
+    // The body window caps at the 5-line height.
+    const body = renderer.container.querySelector('[data-thinking-section-body="true"]') as HTMLElement | null;
+    expect(body?.style.maxHeight).toBe(`${THINKING_STRIP_CONTENT_HEIGHT_REM}rem`);
+    expect(body?.textContent).toContain('Done.');
+  });
+
+  it('falls back to the flat tail when sections is null or empty', () => {
+    act(() => {
+      renderer.render(<ThinkingStrip thoughtsTail="Flat text" sections={null} />);
+    });
+
+    expect(
+      renderer.container.querySelector('[data-thinking-strip="true"]')?.getAttribute('data-thinking-mode'),
+    ).toBe('flat');
   });
 });

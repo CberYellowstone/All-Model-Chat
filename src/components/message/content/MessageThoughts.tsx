@@ -2,7 +2,7 @@ import { logService } from '@/services/logService';
 import React, { useMemo, useState } from 'react';
 import { type ChatMessage, type AppSettings, type SideViewContent, type UploadedFile } from '@/types';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
-import { getThinkingStreamTail } from '@/utils/chat/parsing';
+import { getThinkingStreamTail, parseThinkingSections } from '@/utils/chat/parsing';
 import { THINKING_STRIP_MAX_SOURCE_LINES } from './thoughts/thinkingStripMetrics';
 import { translateTextApi } from '@/services/api/generation/textApi';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
@@ -62,6 +62,11 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
     () => getThinkingStreamTail(effectiveThoughts, THINKING_STRIP_MAX_SOURCE_LINES),
     [effectiveThoughts],
   );
+
+  // Sectioned Gemini-style streams (each section opens with a `**Title**`
+  // line) drive the sectioned strip; flat/third-party streams fall back to the
+  // tail window via the null return.
+  const thinkingSections = useMemo(() => parseThinkingSections(effectiveThoughts), [effectiveThoughts]);
 
   // Preview strip is a "thinking in progress" indicator: visible while thoughts
   // are still streaming, regardless of whether the full message has finished
@@ -178,7 +183,7 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
           </div>
         </div>
 
-        {showThinkingStrip && <ThinkingStrip thoughtsTail={thoughtsTail} />}
+        {showThinkingStrip && <ThinkingStrip thoughtsTail={thoughtsTail} sections={thinkingSections} />}
 
         <div className={`thought-process-accordion ${isExpanded ? 'expanded' : ''}`}>
           <div className="thought-process-inner">
