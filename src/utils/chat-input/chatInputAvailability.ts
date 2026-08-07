@@ -48,7 +48,7 @@ interface ChatInputModeOptions {
     isReconnecting: boolean;
     error: string | null;
   };
-  activeQueuedSubmission: unknown;
+  activeQueuedSubmissions: unknown[];
   canQueueMessage: boolean;
   isEditing: boolean;
   isProcessingFile: boolean;
@@ -107,7 +107,7 @@ export const getCurrentChatInputMode = ({
   localFileState,
   capabilities,
   liveApi,
-  activeQueuedSubmission,
+  activeQueuedSubmissions,
   canQueueMessage,
   isEditing,
   isProcessingFile,
@@ -115,7 +115,7 @@ export const getCurrentChatInputMode = ({
   getChatInputMode({
     state: inputState.machineState,
     isEditing,
-    hasActiveQueuedSubmission: !!activeQueuedSubmission,
+    hasActiveQueuedSubmission: activeQueuedSubmissions.length > 0,
     canQueueMessage,
     isNativeAudioModel: capabilities.permissions?.canUseLiveControls || capabilities.isNativeAudioModel || false,
     liveStatus: {

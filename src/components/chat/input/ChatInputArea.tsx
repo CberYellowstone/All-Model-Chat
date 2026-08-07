@@ -7,7 +7,7 @@ import { ChatQuoteDisplay } from './area/ChatQuoteDisplay';
 import { ChatFilePreviewList } from './area/ChatFilePreviewList';
 import { ChatTextArea } from './area/ChatTextArea';
 import { LiveStatusBanner } from './LiveStatusBanner';
-import { QueuedSubmissionCard } from './QueuedSubmissionCard';
+import { QueuedSubmissionList } from './QueuedSubmissionList';
 import { HiddenFileInputs } from './files/HiddenFileInputs';
 import { getChatInputAreaLayout } from './chatInputAreaLayout';
 import { CHAT_INPUT_MAX_WIDTH_CLASS, FOCUS_BLOCKING_SELECTOR } from '@/constants/layout';
@@ -28,7 +28,7 @@ export const ChatInputArea: React.FC = () => {
     handlers,
     inputDisabled,
     initialTextareaHeight,
-    queuedSubmissionView,
+    queuedSubmissionsView,
   } = useChatInputContext();
 
   const isFullscreen = inputState.isFullscreen;
@@ -131,15 +131,9 @@ export const ChatInputArea: React.FC = () => {
               isFullscreen ? 'absolute bottom-[60px] left-0 right-0 mb-2 w-full max-w-6xl mx-auto z-20' : undefined
             }
           />
-          {queuedSubmissionView && (
+          {queuedSubmissionsView && (
             <div className={queuedSubmissionContainerClass}>
-              <QueuedSubmissionCard
-                title={queuedSubmissionView.title}
-                previewText={queuedSubmissionView.previewText}
-                fileCount={queuedSubmissionView.fileCount}
-                onEdit={queuedSubmissionView.onEdit}
-                onRemove={queuedSubmissionView.onRemove}
-              />
+              <QueuedSubmissionList view={queuedSubmissionsView} />
             </div>
           )}
           <div className={inputContainerClass} onClick={handleInputShellClick}>

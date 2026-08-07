@@ -422,6 +422,10 @@ export const chatInputTranslations = {
   queuedSubmissionAttachments: { en: 'attachments', zh: '个附件' },
   queuedSubmissionEdit: { en: 'Edit queued message', zh: '编辑排队消息' },
   queuedSubmissionRemove: { en: 'Remove queued message', zh: '移除排队消息' },
+  queuedSubmissionClearAll: { en: 'Clear all', zh: '清空全部' },
+  queuedSubmissionDragAria: { en: 'Drag to reorder', zh: '拖拽排序' },
+  queuedSubmissionCountTitle: { en: '{count} queued', zh: '{count} 条排队' },
+  queuedSubmissionLimitReached: { en: 'Queue is full', zh: '队列已满' },
 
   // Live Translate target language selector
   liveTranslateTargetLanguageLabel: { en: 'Target language', zh: '目标语言' },

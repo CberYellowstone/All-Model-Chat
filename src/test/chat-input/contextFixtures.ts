@@ -52,6 +52,7 @@ export const createChatInputComposerStatusContextValue = (
   hasTrimmedInput: false,
   canSend: true,
   canQueueMessage: false,
+  queuedCount: 0,
   onTranslate: vi.fn(),
   onPasteFromClipboard: vi.fn(),
   onClearInput: vi.fn(),

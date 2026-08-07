@@ -242,8 +242,10 @@ export interface ChatInputHandlers {
   ) => void;
   queueCurrentSubmission: () => void;
   cancelPendingUploadSend: () => void;
-  restoreQueuedSubmission: () => void;
-  removeQueuedSubmission: () => void;
+  restoreQueuedSubmission: (id: string) => void;
+  removeQueuedSubmission: (id: string) => void;
+  removeAllQueuedSubmissions: () => void;
+  reorderQueuedSubmissions: (activeId: string, targetIndex: number) => void;
 }
 
 export interface ChatInputContextValue {
@@ -259,7 +261,8 @@ export interface ChatInputContextValue {
   targetDocument: Document;
   canSend: boolean;
   canQueueMessage: boolean;
-  queuedSubmission: QueuedChatInputSubmission | null;
+  queuedCount: number;
+  queuedSubmissions: QueuedChatInputSubmission[];
   chatInputMode: ChatInputMode;
   isAnyModalOpen: boolean;
   handleSmartSendMessage: (text: string, options?: { isFastMode?: boolean; files?: UploadedFile[] }) => Promise<void>;
@@ -267,12 +270,17 @@ export interface ChatInputContextValue {
   initialTextareaHeight: number;
   handleStartLiveCamera: () => Promise<void>;
   handleStartLiveScreenShare: () => Promise<void>;
-  queuedSubmissionView?: {
+  queuedSubmissionsView?: {
     title: string;
-    previewText: string;
-    fileCount: number;
-    onEdit: () => void;
-    onRemove: () => void;
+    items: Array<{
+      id: string;
+      previewText: string;
+      fileCount: number;
+    }>;
+    onEditItem: (id: string) => void;
+    onRemoveItem: (id: string) => void;
+    onReorderItem: (activeId: string, targetIndex: number) => void;
+    onClearAll: () => void;
   };
 }
 
@@ -338,6 +346,7 @@ export interface ChatInputComposerStatusContextValue {
   hasTrimmedInput: boolean;
   canSend: boolean;
   canQueueMessage: boolean;
+  queuedCount: number;
   onTranslate: () => void;
   onPasteFromClipboard: () => void;
   onClearInput: () => void;

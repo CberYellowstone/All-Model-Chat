@@ -172,12 +172,14 @@ export const useChatInputSubmission = ({
 
   const {
     canQueueMessage,
-    activeQueuedSubmission,
+    activeQueuedSubmissions,
     queueCurrentSubmission,
     queuePendingSubmission,
     cancelPendingSubmission,
     restoreQueuedSubmission,
     removeQueuedSubmission,
+    removeAllQueuedSubmissions,
+    reorderQueuedSubmissions,
   } = useMessageQueue({
     activeSessionId,
     modelId: currentChatSettings.modelId,
@@ -254,11 +256,13 @@ export const useChatInputSubmission = ({
 
   return {
     canQueueMessage,
-    activeQueuedSubmission,
+    activeQueuedSubmissions,
     queueCurrentSubmission,
     cancelPendingUploadSend: cancelPendingSubmission,
     restoreQueuedSubmission,
     removeQueuedSubmission,
+    removeAllQueuedSubmissions,
+    reorderQueuedSubmissions,
     handleSubmit,
     handleFastSubmit,
     performSubmit,

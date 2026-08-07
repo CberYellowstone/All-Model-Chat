@@ -23,9 +23,11 @@ const QUEUE_BUTTON_ICON_SIZE = SEND_BUTTON_ICON_SIZE - 1;
 const STOP_ICON_SIZE = 10;
 const SEND_BUTTON_SIZE_CLASS = '!h-10 !w-10';
 
+const formatQueuedCount = (template: string, count: number) => template.replace('{count}', String(count));
+
 export const SendControls: React.FC = () => {
   const { isLoading, isWaitingForUpload } = useChatInputActionsContext();
-  const { canSend, canQueueMessage, onFastSendMessage, onQueueMessage, onCancelPendingUploadSend } =
+  const { canSend, canQueueMessage, queuedCount, onFastSendMessage, onQueueMessage, onCancelPendingUploadSend } =
     useChatInputComposerStatusContext();
   const isEditing = !!useChatStore((state) => state.editingMessageId);
   const editMode = useChatStore((state) => state.editMode);
@@ -144,13 +146,22 @@ export const SendControls: React.FC = () => {
             e.stopPropagation();
             onQueueMessage?.();
           }}
-          className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-icon-settings)]`}
+          className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-icon-settings)] relative`}
           aria-label={t('queueMessageAria')}
-          title={t('queueMessageTitle')}
+          title={queuedCount >= 20 ? t('queuedSubmissionLimitReached') : t('queueMessageTitle')}
           disabled={!canQueueMessage}
           tabIndex={canQueueMessage ? 0 : -1}
         >
           <CornerDownLeft size={QUEUE_BUTTON_ICON_SIZE} strokeWidth={2} />
+          {queuedCount > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-bg-accent)] px-1 text-[10px] font-semibold text-[var(--theme-text-accent)]"
+              title={formatQueuedCount(t('queuedSubmissionCountTitle'), queuedCount)}
+              aria-label={formatQueuedCount(t('queuedSubmissionCountTitle'), queuedCount)}
+            >
+              {queuedCount}
+            </span>
+          )}
         </button>
       </div>
 
