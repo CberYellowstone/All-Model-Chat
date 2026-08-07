@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
-import { getErrorMessage } from '@/utils/errorMessage';
 import { useI18n } from '@/contexts/I18nContext';
 import { ChevronDown, Shield } from 'lucide-react';
 import { type ApiMode, type AppSettings, type ModelOption } from '@/types';
 import { ModelSelector } from '@/components/settings/controls/ModelSelector';
-import { fetchOpenAICompatibleModels } from '@/services/api/openaiCompatibleApi';
-import { fetchAnthropicModels } from '@/services/api/anthropicApi';
-import { parseApiKeys } from '@/utils/apiKeySelection';
-import { getThirdPartyProviderConfig, updateThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
 import { SETTINGS_SECTION_CARD_CLASS } from '@/constants/designTokens';
 import { LiveArtifactsSection } from './LiveArtifactsSection';
 import { GenerationSection } from './GenerationSection';
 import { LanguageVoiceSection } from './LanguageVoiceSection';
 import { SafetySection } from './SafetySection';
 import type { SettingsUpdateHandler } from '@/components/settings/settingsTypes';
-import { OpenAICompatibleModelListEditor } from './api-config/OpenAICompatibleModelListEditor';
 
 interface ModelsSectionProps {
   modelId: string;
@@ -23,7 +17,7 @@ interface ModelsSectionProps {
   setAvailableModels: (models: ModelOption[]) => void;
   defaultModels?: ModelOption[];
   defaultApiMode?: ApiMode;
-  isOpenAICompatibleMode?: boolean;
+  isThirdPartyMode?: boolean;
   currentSettings: AppSettings;
   currentThemeId: string;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
@@ -36,20 +30,13 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
   setAvailableModels,
   defaultModels,
   defaultApiMode,
-  isOpenAICompatibleMode = false,
+  isThirdPartyMode = false,
   currentSettings,
   currentThemeId,
   onUpdateSettings,
 }) => {
   const { t } = useI18n();
   const [isSafetyExpanded, setIsSafetyExpanded] = useState(false);
-  const [modelFetchStatus, setModelFetchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [modelFetchMessage, setModelFetchMessage] = useState<string | null>(null);
-  const viteEnv = (import.meta as ImportMeta & { env?: { VITE_OPENAI_API_KEY?: string } }).env;
-  const hasOpenAIEnvKey = !!viteEnv?.VITE_OPENAI_API_KEY;
-  const isThirdPartyApiEnabled = currentSettings.isThirdPartyApiEnabled === true;
-  const activeProvider = getThirdPartyProviderConfig(currentSettings);
-  const activeProviderId = currentSettings.thirdPartyApi?.activeProvider ?? null;
 
   const updateSetting: SettingsUpdateHandler = (key, value) => {
     onUpdateSettings({ [key]: value } as Partial<AppSettings>);
@@ -62,119 +49,27 @@ export const ModelsSection: React.FC<ModelsSectionProps> = ({
       return nextModel;
     });
 
-  const resetOpenAICompatibleModelFetch = () => {
-    setModelFetchStatus('idle');
-    setModelFetchMessage(null);
-  };
-
-  const resolveProviderKey = (): string | null => activeProvider.apiKey || viteEnv?.VITE_OPENAI_API_KEY || null;
-
-  const updateActiveProviderField = (partial: Partial<typeof activeProvider>) => {
-    const activeProviderId = currentSettings.thirdPartyApi.activeProvider;
-    onUpdateSettings({
-      // Reuse updateThirdPartyProviderConfig so provider edits go through the
-      // same sanitize path as the API settings panel (dedupe, protocol check).
-      thirdPartyApi: updateThirdPartyProviderConfig(
-        currentSettings.thirdPartyApi,
-        activeProviderId,
-        partial as Partial<typeof activeProvider>,
-      ),
-    });
-  };
-
-  const handleFetchOpenAICompatibleModels = async (): Promise<ModelOption[]> => {
-    const keyToFetch = resolveProviderKey();
-
-    if (!keyToFetch) {
-      setModelFetchStatus('error');
-      setModelFetchMessage(t('apiConfigNoKeyAvailable'));
-      return [];
-    }
-
-    const keys = parseApiKeys(keyToFetch);
-    const firstKey = keys[0];
-
-    if (!firstKey) {
-      setModelFetchStatus('error');
-      setModelFetchMessage(t('apiConfigInvalidKeyFormat'));
-      return [];
-    }
-
-    setModelFetchStatus('loading');
-    setModelFetchMessage(null);
-
-    try {
-      const fetchedModels =
-        activeProvider.protocol === 'anthropic'
-          ? await fetchAnthropicModels(firstKey, activeProvider.baseUrl, new AbortController().signal, activeProviderId)
-          : await fetchOpenAICompatibleModels(
-              firstKey,
-              activeProvider.baseUrl,
-              new AbortController().signal,
-              activeProviderId,
-            );
-
-      if (fetchedModels.length === 0) {
-        setModelFetchStatus('error');
-        setModelFetchMessage(t('settingsOpenAICompatibleModelFetchEmpty'));
-        return [];
-      }
-
-      setModelFetchStatus('success');
-      setModelFetchMessage(
-        t('settingsOpenAICompatibleModelFetchSuccess').replace('{count}', String(fetchedModels.length)),
-      );
-      return fetchedModels;
-    } catch (error) {
-      setModelFetchStatus('error');
-      setModelFetchMessage(getErrorMessage(error));
-      return [];
-    }
-  };
-
-  const openaiCompatibleModelListEditor = isThirdPartyApiEnabled ? (
-    <OpenAICompatibleModelListEditor
-      models={activeProvider.models}
-      selectedModelId={activeProvider.modelId}
-      onModelsChange={(models) => {
-        updateActiveProviderField({ models });
-        resetOpenAICompatibleModelFetch();
-      }}
-      onSelectedModelChange={(modelId) => {
-        updateActiveProviderField({ modelId });
-        resetOpenAICompatibleModelFetch();
-      }}
-      onFetchModelsForImportPreview={handleFetchOpenAICompatibleModels}
-      isFetchingModels={modelFetchStatus === 'loading'}
-      isFetchModelsDisabled={modelFetchStatus === 'loading' || (!activeProvider.apiKey && !hasOpenAIEnvKey)}
-      fetchModelsStatus={modelFetchStatus === 'loading' ? 'idle' : modelFetchStatus}
-      fetchModelsMessage={modelFetchMessage}
-    />
-  ) : null;
-
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div data-settings-item="models-primary">
         <ModelSelector
           availableModels={availableModels}
           selectedModelId={modelId}
-          selectedApiMode={isOpenAICompatibleMode ? 'gemini-native' : currentSettings.apiMode}
           onSelectModel={setModelId}
           setAvailableModels={setAvailableModels}
           defaultModels={defaultModels}
           defaultApiMode={defaultApiMode}
-          extraModelListContent={openaiCompatibleModelListEditor}
         />
       </div>
 
       <GenerationSection
-        isOpenAICompatibleMode={isOpenAICompatibleMode}
+        isThirdPartyMode={isThirdPartyMode}
         modelId={modelId}
         currentSettings={currentSettings}
         onUpdateSetting={updateSetting}
       />
 
-      {!isOpenAICompatibleMode && (
+      {!isThirdPartyMode && (
         <>
           <div data-settings-item="models-live-artifacts">
             <LiveArtifactsSection

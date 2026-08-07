@@ -74,7 +74,7 @@ describe('buildModelCatalogSections', () => {
   it('groups mixed provider catalogs by provider instead of duplicating section assembly in pickers', () => {
     const entries = buildModelCatalog([
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', apiMode: 'gemini-native' },
-      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'openai-compatible' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'third-party' },
     ]);
 
     expect(buildModelCatalogSections(entries)).toMatchObject([
@@ -84,8 +84,8 @@ describe('buildModelCatalogSections', () => {
         entries: [{ id: 'gemini-3.1-pro-preview' }],
       },
       {
-        key: 'openai-compatible',
-        providerKey: 'openai-compatible',
+        key: 'third-party',
+        providerKey: 'third-party',
         entries: [{ id: 'gpt-5.6-sol' }],
       },
     ]);

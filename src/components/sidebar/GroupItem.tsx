@@ -160,6 +160,7 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
                 type="text"
                 value={editingItem.title}
                 onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                onFocus={(e) => e.currentTarget.select()}
                 onBlur={handleRenameConfirm}
                 onKeyDown={handleRenameKeyDown}
                 onClick={(e) => e.stopPropagation()}

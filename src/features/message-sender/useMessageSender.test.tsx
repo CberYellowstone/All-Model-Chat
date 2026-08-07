@@ -326,9 +326,7 @@ describe('useMessageSender', () => {
     const { result, unmount } = renderMessageSender({
       currentChatSettings: {
         modelId: 'gpt-5.6-sol',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-5.6-sol',
+        providerId: 'openai',
       },
       selectedFiles: [
         createUploadedFile({
@@ -445,8 +443,6 @@ describe('useMessageSender', () => {
 
     const { result, unmount } = renderMessageSender({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         thirdPartyApi: {
           activeProvider: 'openai',
           providers: {
@@ -457,9 +453,7 @@ describe('useMessageSender', () => {
       },
       currentChatSettings: {
         modelId: 'gpt-5.6-sol',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-5.6-sol',
+        providerId: 'openai',
       },
       selectedFiles,
       setAppFileError,
@@ -521,8 +515,6 @@ describe('useMessageSender', () => {
 
     const { result, unmount } = renderMessageSender({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         thirdPartyApi: {
           activeProvider: 'openai',
           providers: {
@@ -533,9 +525,7 @@ describe('useMessageSender', () => {
       },
       currentChatSettings: {
         modelId: 'gpt-5.6-sol',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-5.6-sol',
+        providerId: 'openai',
       },
       selectedFiles,
       setAppFileError,

@@ -366,6 +366,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   results={searchResults}
                   onSelect={handleSelectSearchResult}
                   selectedIndex={searchSelectedIndex}
+                  query={searchQuery}
                 />
               </div>
             ) : (

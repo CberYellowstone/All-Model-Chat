@@ -365,12 +365,10 @@ describe('useApp', () => {
     unmount();
   });
 
-  it('displays the independent OpenAI-compatible model name in OpenAI-compatible mode', () => {
+  it('displays the independent OpenAI-compatible model name in a third-party session', () => {
     const thirdPartyDefaults = createDefaultThirdPartyApiSettings();
     currentAppSettings = {
       ...currentAppSettings,
-      isThirdPartyApiEnabled: true,
-      apiMode: 'third-party',
       modelId: 'gemini-3-flash-preview',
       thirdPartyApi: {
         activeProvider: 'openai',
@@ -395,9 +393,7 @@ describe('useApp', () => {
       settings: {
         ...hydratedSession.settings,
         modelId: 'gpt-5.6-sol',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-5.6-sol',
+        providerId: 'openai',
       },
     };
     currentChatState.apiModels = [{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }];

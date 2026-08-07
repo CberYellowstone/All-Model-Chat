@@ -1,15 +1,16 @@
 import { create } from 'zustand';
-import { type AppSettings } from '@/types';
+import { type AppSettings, normalizeProviderId } from '@/types';
 import type { SyncMessage } from '@/types/sync';
 import { type Theme } from '@/types/theme';
 import { DEFAULT_FILES_API_CONFIG, getDefaultAppSettings } from '@/constants/settingsDefaults';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { logService } from '@/services/logService';
 import { migrateRemovedModelId } from '@/constants/modelConfiguration';
-import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/model/modelSorting';
+import { resolveSupportedModelId } from '@/utils/model/modelSorting';
 import { dbService } from '@/services/db/dbService';
 import { normalizeLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { sanitizeThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
+import { migrateLegacyOpenAICompatibleInput } from '@/schemas/appSettingsSchema';
 import { type ConcreteThemeId } from '@/utils/themeMode';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 import { CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';
@@ -56,35 +57,11 @@ function computeTheme(themeId: string): Theme {
 
 function sanitizeAppSettings(settings: AppSettings): AppSettings {
   const defaultSettings = getDefaultAppSettings();
-  const isOpenAICompatibleApiEnabled =
-    settings.isOpenAICompatibleApiEnabled ?? defaultSettings.isOpenAICompatibleApiEnabled;
-  const isThirdPartyApiEnabled = settings.isThirdPartyApiEnabled === true;
-  const sanitizedOpenAICompatibleModels = sanitizeModelOptions(
-    settings.openaiCompatibleModels ?? defaultSettings.openaiCompatibleModels,
-  );
-  const openaiCompatibleModels =
-    sanitizedOpenAICompatibleModels.length > 0
-      ? sanitizedOpenAICompatibleModels
-      : defaultSettings.openaiCompatibleModels;
 
   return {
     ...settings,
-    apiMode: (() => {
-      // Trust the explicitly-written apiMode; only normalize the legacy
-      // 'openai-compatible' value. The per-mode enabling toggles
-      // (isThirdPartyApiEnabled / isOpenAICompatibleApiEnabled) are validated at
-      // read-time by isThirdPartyApiActive, so coupling them here breaks the
-      // two-step writes that handleApiProviderChange performs.
-      return settings.apiMode === 'openai-compatible' ? 'gemini-native' : settings.apiMode;
-    })(),
-    isOpenAICompatibleApiEnabled,
-    isThirdPartyApiEnabled,
+    providerId: normalizeProviderId(settings.providerId),
     modelId: resolveSupportedModelId(settings.modelId, defaultSettings.modelId),
-    openaiCompatibleModelId: resolveSupportedModelId(
-      settings.openaiCompatibleModelId,
-      defaultSettings.openaiCompatibleModelId,
-    ),
-    openaiCompatibleModels,
     transcriptionModelId: resolveSupportedModelId(settings.transcriptionModelId, defaultSettings.transcriptionModelId),
     inputTranslationModelId: resolveSupportedModelId(
       settings.inputTranslationModelId,
@@ -120,14 +97,8 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
     // (or carrying a non-boolean enabled / wrong protocol) would silently fall
     // back to defaults and then be permanently overwritten on the next panel
     // edit. sanitizeThirdPartyApiSettings backfills missing providers, coerces
-    // enabled to a strict boolean, validates protocol, dedupes models, and
-    // folds legacy openaiCompatible* fields into providers.openai.
-    thirdPartyApi: sanitizeThirdPartyApiSettings(settings.thirdPartyApi, {
-      apiKey: settings.openaiCompatibleApiKey,
-      baseUrl: settings.openaiCompatibleBaseUrl,
-      modelId: settings.openaiCompatibleModelId,
-      models: openaiCompatibleModels,
-    }),
+    // enabled to a strict boolean, validates protocol, and dedupes models.
+    thirdPartyApi: sanitizeThirdPartyApiSettings(settings.thirdPartyApi),
   };
 }
 
@@ -170,9 +141,13 @@ function buildLoadedAppSettings(
   const shouldMigrateLegacyTranscriptionDefault =
     storedSettings?.transcriptionModelId === LEGACY_DEFAULT_TRANSCRIPTION_MODEL_ID &&
     preloadOverrides?.transcriptionModelId === undefined;
+  // Fold legacy top-level openaiCompatible* fields (pre-thirdPartyApi layout)
+  // into thirdPartyApi.providers.openai before sanitizing. Idempotent: explicit
+  // provider values win, so already-migrated data is untouched.
+  const migratedStoredSettings = migrateLegacyOpenAICompatibleInput(storedSettings ?? {});
   const appSettings = sanitizeAppSettings({
     ...defaultSettings,
-    ...(storedSettings ?? {}),
+    ...migratedStoredSettings,
     ...(shouldMigrateLegacyTranscriptionDefault ? { transcriptionModelId: defaultSettings.transcriptionModelId } : {}),
     ...(preloadOverrides ?? {}),
   });

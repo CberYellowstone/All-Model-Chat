@@ -396,13 +396,11 @@ describe('useSessionLoader', () => {
     currentSession.settings = {
       ...currentSession.settings,
       modelId: 'kimi-k3-turbo',
-      apiMode: 'third-party',
-      thirdPartyProviderId: 'kimi',
-      thirdPartyModelId: 'kimi-k3-turbo',
+      providerId: 'kimi',
     };
 
     const { result, unmount } = renderSessionLoader({
-      appSettings: { apiMode: 'third-party', isThirdPartyApiEnabled: true },
+      appSettings: { providerId: 'kimi' },
       activeChat: currentSession,
       activeSessionId: 'session-current',
       savedSessions: [currentSession],
@@ -415,9 +413,7 @@ describe('useSessionLoader', () => {
     expect(mockCreateNewSession).toHaveBeenCalledWith(
       expect.objectContaining({
         modelId: 'kimi-k3-turbo',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'kimi',
-        thirdPartyModelId: 'kimi-k3-turbo',
+        providerId: 'kimi',
       }),
     );
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type { ChatSettings } from '@/types';
+import { type ChatSettings, GEMINI_PROVIDER_ID } from '@/types';
 import type { ChatToolSettingKey, ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { useChatStore } from '@/stores/chatStore';
 
@@ -80,9 +80,10 @@ export const useChatInputToolStates = ({
   const activeSessionId = useChatStore((state) => state.activeSessionId);
   const setCurrentChatSettings = useChatStore((state) => state.setCurrentChatSettings);
   // The Gemini tools below only work on the Gemini-native API, so the gate must mirror
-  // the active session's routing decision (resolveChatApiRoute) — not the global
-  // appSettings mode, which stays stale after switching to a differently-routed chat.
-  const isThirdPartyChat = currentChatSettings.apiMode === 'third-party';
+  // the active session's routing decision — the session's own providerId, which can
+  // never drift stale the way a global appSettings mode could.
+  const isThirdPartyChat =
+    currentChatSettings.providerId !== undefined && currentChatSettings.providerId !== GEMINI_PROVIDER_ID;
 
   const createToggle = useCallback(
     (toolId: ToggleableChatToolId) => () => {

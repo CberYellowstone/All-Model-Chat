@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sendJson } from './cors.js';
 import { JOB_ID_HEADER, runDetachedUpstream, maybeStreamWithSharedJob, type StreamJob } from './streamJobStore.js';
-import { copyProxyRequestHeaders } from './proxyHeaders.js';
+import { buildGeminiProxyHeaders, resolveGeminiRequestApiKey } from './proxyHeaders.js';
 
 // Re-export the shared job-store primitives so existing callers
 // (createServer, geminiProxy, tests) keep importing from a single module.
@@ -20,62 +20,15 @@ interface GeminiStreamProxyConfig {
   fetchImpl: typeof fetch;
 }
 
-interface RequestLike {
-  method?: string;
-  headers: IncomingMessage['headers'];
-  url?: string;
-}
-
-// Resolve the upstream API key with the same BYOK 兜底 semantics as the regular
-// proxy: a real browser key wins; the server key is the fallback.
-function resolveRequestApiKey(request: RequestLike, serverApiKey?: string, serverKeyPriority = false): string {
-  const trimmedServerApiKey = serverApiKey?.trim();
-  const browserApiKeyHeader = request.headers['x-goog-api-key'];
-  const browserApiKey = Array.isArray(browserApiKeyHeader)
-    ? (browserApiKeyHeader[0]?.trim() ?? '')
-    : (browserApiKeyHeader?.trim() ?? '');
-
-  if (serverKeyPriority && trimmedServerApiKey) {
-    return trimmedServerApiKey;
-  }
-  if (browserApiKey) {
-    return browserApiKey;
-  }
-  return trimmedServerApiKey ?? '';
-}
-
-// Mirrors buildProxyHeaders in geminiProxy.ts, but standalone so this module
-// stays self-contained. Strips hop-by-hop + connection-managed + sensitive
-// headers, then stamps the resolved key.
-const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  'accept-encoding',
-  'authorization',
-  'content-length',
-  'cookie',
-  'host',
-  'x-gemini-upstream-base-url',
-]);
-
-function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
-  const headers = copyProxyRequestHeaders(request, STRIPPED_PROXY_REQUEST_HEADERS);
-
-  headers.set('x-goog-api-key', apiKey);
-  return headers;
-}
-
-// ── Gemini-specific upstream runner ─────────────────────────────────────────
-
-/**
- * Detached upstream fetch for the Gemini journal path. The actual fetch/pump
- * logic is shared (runDetachedUpstream); only the header construction differs.
- */
+// Header construction (BYOK 兜底 key resolution + header stamping) is shared
+// with geminiProxy via proxyHeaders; only the upstream runner differs here.
 const runUpstream = (
   job: StreamJob,
   request: IncomingMessage,
   upstreamUrl: string,
   apiKey: string,
   fetchImpl: typeof fetch,
-) => runDetachedUpstream(job, request, upstreamUrl, () => buildProxyHeaders(request, apiKey), fetchImpl);
+) => runDetachedUpstream(job, request, upstreamUrl, () => buildGeminiProxyHeaders(request, apiKey), fetchImpl);
 
 /**
  * Handles a streaming Gemini request with job journaling. If no `x-amc-job-id`
@@ -101,7 +54,7 @@ export async function maybeStreamWithJob(
     return false;
   }
 
-  const apiKey = resolveRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
+  const apiKey = resolveGeminiRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
   if (!apiKey) {
     sendJson(request, response, 500, { error: 'GEMINI_API_KEY is not configured.' }, config.allowedOrigins);
     return true;

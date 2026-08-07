@@ -174,19 +174,16 @@ export const resolveProviderForModelId = (
 };
 
 export const buildProviderAwareModelList = (
-  appSettings: Pick<AppSettings, 'isThirdPartyApiEnabled' | 'thirdPartyApi'>,
+  appSettings: Pick<AppSettings, 'thirdPartyApi'>,
   baseModels: ModelOption[],
 ): ModelOption[] => {
-  const thirdPartyModels =
-    appSettings.isThirdPartyApiEnabled === true
-      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
-          config.models.map((model) => ({
-            ...model,
-            apiMode: 'third-party' as const,
-            providerId: id,
-          })),
-        )
-      : [];
+  const thirdPartyModels = getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+    config.models.map((model) => ({
+      ...model,
+      apiMode: 'third-party' as const,
+      providerId: id,
+    })),
+  );
 
   return deduplicateModelsById([...baseModels, ...thirdPartyModels]);
 };
@@ -214,12 +211,6 @@ const sanitizeThirdPartyProviderConfig = (
 
 export const sanitizeThirdPartyApiSettings = (
   value: Partial<ThirdPartyApiSettings> | undefined,
-  legacyOpenAICompatible?: {
-    apiKey?: string | null;
-    baseUrl?: string | null;
-    modelId?: string;
-    models?: ModelOption[];
-  },
 ): ThirdPartyApiSettings => {
   const activeProvider = isThirdPartyProviderId(value?.activeProvider) ? value.activeProvider : 'openai';
   const valueProviders: Partial<Record<ThirdPartyProviderId, Partial<ThirdPartyProviderConfig>>> =
@@ -230,17 +221,6 @@ export const sanitizeThirdPartyApiSettings = (
       sanitizeThirdPartyProviderConfig(providerId, valueProviders[providerId]),
     ]),
   ) as Record<ThirdPartyProviderId, ThirdPartyProviderConfig>;
-
-  if (legacyOpenAICompatible) {
-    providers.openai = sanitizeThirdPartyProviderConfig('openai', {
-      ...providers.openai,
-      apiKey: legacyOpenAICompatible.apiKey ?? providers.openai.apiKey,
-      baseUrl: legacyOpenAICompatible.baseUrl ?? providers.openai.baseUrl,
-      modelId: legacyOpenAICompatible.modelId ?? providers.openai.modelId,
-      models: legacyOpenAICompatible.models ?? providers.openai.models,
-      protocol: 'openai-compatible',
-    });
-  }
 
   return {
     activeProvider,

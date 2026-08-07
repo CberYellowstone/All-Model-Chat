@@ -83,9 +83,10 @@ describe('inlineThinkingParser', () => {
   it('processes several blocks in a single chunk', () => {
     const state = createInlineThinkingParserState();
 
-    expect(
-      pushInlineThinkingChunk(state, '<thinking>A</thinking>Mid<think>B</think>Tail'),
-    ).toEqual({ content: 'MidTail', thought: 'AB' });
+    expect(pushInlineThinkingChunk(state, '<thinking>A</thinking>Mid<think>B</think>Tail')).toEqual({
+      content: 'MidTail',
+      thought: 'AB',
+    });
   });
 
   it('alternates across chunks and coalesces adjacent blocks', () => {
@@ -103,7 +104,10 @@ describe('inlineThinkingParser', () => {
   it('emits unclosed thinking content as thought', () => {
     const state = createInlineThinkingParserState();
 
-    expect(pushInlineThinkingChunk(state, 'Start. <think>No closer')).toEqual({ content: 'Start. ', thought: 'No closer' });
+    expect(pushInlineThinkingChunk(state, 'Start. <think>No closer')).toEqual({
+      content: 'Start. ',
+      thought: 'No closer',
+    });
     expect(state.mode).toBe('thinking');
 
     // In thinking mode there is no close tag yet, so each chunk's text streams

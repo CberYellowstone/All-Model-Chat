@@ -5,10 +5,9 @@ import {
   type FilesApiConfig,
   type LiveArtifactsSystemPrompts,
   type McpServerConfig,
-  type ModelOption,
   type SafetySetting,
-  API_MODES,
   APP_LANGUAGE_IDS,
+  CHAT_PROVIDER_IDS,
   HarmBlockThreshold,
   HarmCategory,
   LIVE_ARTIFACTS_PROMPT_MODES,
@@ -55,26 +54,6 @@ const optionalBooleanWithDefault = (fallback: boolean | undefined) => optionalWi
 const numberWithDefault = (fallback: number) => withDefault(z.number().finite(), fallback);
 const stringWithDefault = (fallback: string) => withDefault(z.string(), fallback);
 const optionalStringWithDefault = (fallback: string | undefined) => optionalWithDefault(z.string(), fallback);
-
-const modelOptionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  isPinned: z.boolean().optional(),
-  apiMode: z.enum(API_MODES).optional(),
-});
-
-const sanitizeModelOptions = (value: unknown, fallback: ModelOption[]): ModelOption[] => {
-  if (!Array.isArray(value)) {
-    return fallback;
-  }
-
-  const modelOptions = value.flatMap((item) => {
-    const parsed = modelOptionSchema.safeParse(item);
-    return parsed.success ? [parsed.data as ModelOption] : [];
-  });
-
-  return modelOptions.length > 0 ? modelOptions : fallback;
-};
 
 const filesApiConfigSchema: z.ZodType<FilesApiConfig> = z
   .object({
@@ -211,14 +190,49 @@ const sanitizeMcpServers = (value: unknown, fallback: McpServerConfig[]): McpSer
   return servers;
 };
 
-const normalizeLegacyAppSettingsInput = (value: unknown): Record<string, unknown> => {
-  const settings = isRecord(value) ? { ...value } : {};
+/**
+ * Fold legacy top-level `openaiCompatible*` fields (pre-thirdPartyApi layout)
+ * into `thirdPartyApi.providers.openai`. Runs on the raw input before parsing
+ * so both the import path and the local store load path migrate persisted old
+ * settings into the current provider-map shape. Explicit provider values win
+ * over legacy ones, so repeated migration is idempotent.
+ */
+export const migrateLegacyOpenAICompatibleInput = (value: unknown): Partial<AppSettings> => {
+  if (!isRecord(value)) {
+    return {};
+  }
 
-  return settings;
+  const settings: Record<string, unknown> = { ...value };
+  const hasLegacyOpenAIFields =
+    'openaiCompatibleApiKey' in settings ||
+    'openaiCompatibleBaseUrl' in settings ||
+    'openaiCompatibleModelId' in settings ||
+    'openaiCompatibleModels' in settings;
+
+  if (!hasLegacyOpenAIFields) {
+    return settings as Partial<AppSettings>;
+  }
+
+  const thirdPartyApi = isRecord(settings.thirdPartyApi) ? { ...settings.thirdPartyApi } : {};
+  const providers = isRecord(thirdPartyApi.providers) ? { ...thirdPartyApi.providers } : {};
+  const openaiProvider = isRecord(providers.openai) ? { ...providers.openai } : {};
+
+  providers.openai = {
+    ...openaiProvider,
+    apiKey: settings.openaiCompatibleApiKey ?? openaiProvider.apiKey,
+    baseUrl: settings.openaiCompatibleBaseUrl ?? openaiProvider.baseUrl,
+    modelId: settings.openaiCompatibleModelId ?? openaiProvider.modelId,
+    models: settings.openaiCompatibleModels ?? openaiProvider.models,
+  };
+
+  thirdPartyApi.providers = providers;
+  settings.thirdPartyApi = thirdPartyApi;
+  return settings as Partial<AppSettings>;
 };
 
 const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   modelId: stringWithDefault(DEFAULT_APP_SETTINGS.modelId),
+  providerId: optionalWithDefault(z.enum(CHAT_PROVIDER_IDS), DEFAULT_APP_SETTINGS.providerId),
   temperature: numberWithDefault(DEFAULT_APP_SETTINGS.temperature),
   topP: numberWithDefault(DEFAULT_APP_SETTINGS.topP),
   topK: numberWithDefault(DEFAULT_APP_SETTINGS.topK),
@@ -244,21 +258,10 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   mediaResolution: optionalWithDefault(z.nativeEnum(MediaResolution), DEFAULT_APP_SETTINGS.mediaResolution),
   themeId: withDefault(z.enum(THEME_IDS), DEFAULT_APP_SETTINGS.themeId),
   baseFontSize: numberWithDefault(DEFAULT_APP_SETTINGS.baseFontSize),
-  apiMode: withDefault(z.enum(API_MODES), DEFAULT_APP_SETTINGS.apiMode),
-  isOpenAICompatibleApiEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isOpenAICompatibleApiEnabled ?? false),
-  isThirdPartyApiEnabled: booleanWithDefault(DEFAULT_APP_SETTINGS.isThirdPartyApiEnabled ?? false),
   useCustomApiConfig: booleanWithDefault(DEFAULT_APP_SETTINGS.useCustomApiConfig),
   serverManagedApi: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.serverManagedApi),
   apiKey: nullableStringWithDefault(DEFAULT_APP_SETTINGS.apiKey),
   apiProxyUrl: nullableStringWithDefault(DEFAULT_APP_SETTINGS.apiProxyUrl),
-  openaiCompatibleApiKey: nullableStringWithDefault(DEFAULT_APP_SETTINGS.openaiCompatibleApiKey),
-  openaiCompatibleBaseUrl: nullableStringWithDefault(DEFAULT_APP_SETTINGS.openaiCompatibleBaseUrl),
-  openaiCompatibleModelId: stringWithDefault(DEFAULT_APP_SETTINGS.openaiCompatibleModelId),
-  openaiCompatibleModels: z
-    .unknown()
-    .optional()
-    .transform((value) => sanitizeModelOptions(value, DEFAULT_APP_SETTINGS.openaiCompatibleModels))
-    .default(DEFAULT_APP_SETTINGS.openaiCompatibleModels),
   useApiProxy: optionalBooleanWithDefault(DEFAULT_APP_SETTINGS.useApiProxy),
   language: withDefault(z.enum(APP_LANGUAGE_IDS), DEFAULT_APP_SETTINGS.language),
   translationTargetLanguage: withDefault(
@@ -324,12 +327,5 @@ const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   thirdPartyApi: thirdPartyApiSchema,
 });
 
-const coerceDisabledOpenAICompatibleMode = (settings: AppSettings): AppSettings => ({
-  ...settings,
-  // Only normalize the legacy 'openai-compatible' value on import; trust the
-  // stored apiMode otherwise so third-party mode survives import.
-  apiMode: settings.apiMode === 'openai-compatible' ? 'gemini-native' : settings.apiMode,
-});
-
 export const sanitizeImportedAppSettings = (value: unknown): AppSettings =>
-  coerceDisabledOpenAICompatibleMode(appSettingsSchema.parse(normalizeLegacyAppSettingsInput(value)));
+  appSettingsSchema.parse(migrateLegacyOpenAICompatibleInput(value));

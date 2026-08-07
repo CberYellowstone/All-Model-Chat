@@ -271,7 +271,12 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         </div>
 
         <div className={fullscreenContainerClassName} data-rich-html-table-container={isRichHtmlTable || undefined}>
-          <table ref={tableRef} className={tableClassName} data-layout={isRichHtmlTable ? undefined : tableLayout} {...props}>
+          <table
+            ref={tableRef}
+            className={tableClassName}
+            data-layout={isRichHtmlTable ? undefined : tableLayout}
+            {...props}
+          >
             {children}
           </table>
         </div>
@@ -287,7 +292,12 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       data-table-actions-scope="true"
     >
       <div className={inlineScrollClassName}>
-        <table ref={tableRef} className={tableClassName} data-layout={isRichHtmlTable ? undefined : tableLayout} {...props}>
+        <table
+          ref={tableRef}
+          className={tableClassName}
+          data-layout={isRichHtmlTable ? undefined : tableLayout}
+          {...props}
+        >
           {children}
         </table>
       </div>

@@ -389,7 +389,8 @@ export const useChatStreamHandler = ({
         // never be timed. Plain text passes through untouched, so Gemini and
         // Raw Mode paths are unaffected. Non-text parts keep the raw delta.
         const anyPart = part as Part & { text?: string };
-        const split = typeof anyPart.text === 'string' ? pushInlineThinkingChunk(inlineThinkingParser, anyPart.text) : undefined;
+        const split =
+          typeof anyPart.text === 'string' ? pushInlineThinkingChunk(inlineThinkingParser, anyPart.text) : undefined;
         const contentDelta = split ? split.content : getContentDeltaFromPart(part);
         const thoughtDelta = split ? split.thought : '';
 

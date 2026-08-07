@@ -121,9 +121,9 @@ describe('loadInitialSessionData', () => {
     mockGetAllGroups.mockResolvedValue([]);
     mockGetSession.mockResolvedValue(fullSession);
 
-    const getItemSpy = vi.spyOn(sessionStorage, 'getItem').mockImplementation((key) =>
-      key === ACTIVE_CHAT_SESSION_ID_KEY ? 'session-stored' : null,
-    );
+    const getItemSpy = vi
+      .spyOn(sessionStorage, 'getItem')
+      .mockImplementation((key) => (key === ACTIVE_CHAT_SESSION_ID_KEY ? 'session-stored' : null));
 
     const setActiveMessages = vi.fn();
 

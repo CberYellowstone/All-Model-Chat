@@ -75,3 +75,55 @@ export function copyProxyRequestHeaders(
 
   return headers;
 }
+
+// ── Gemini proxy key/header helpers ─────────────────────────────────────────
+
+const STRIPPED_GEMINI_REQUEST_HEADERS = new Set([
+  'accept-encoding',
+  'authorization',
+  'content-length',
+  'cookie',
+  'host',
+  'x-gemini-upstream-base-url',
+]);
+
+/**
+ * Resolve the upstream API key for a Gemini proxy request with BYOK 兜底
+ * semantics: a real browser-supplied x-goog-api-key wins; otherwise fall back
+ * to the server key. When serverKeyPriority is set and a server key exists,
+ * the server key wins. Used by geminiProxy and the streamJobs journal path.
+ */
+export function resolveGeminiRequestApiKey(
+  request: { headers: IncomingMessage['headers'] },
+  serverApiKey?: string,
+  serverKeyPriority = false,
+): string {
+  const trimmedServerApiKey = serverApiKey?.trim();
+  const browserApiKeyHeader = request.headers['x-goog-api-key'];
+  const browserApiKey = Array.isArray(browserApiKeyHeader)
+    ? (browserApiKeyHeader[0]?.trim() ?? '')
+    : (browserApiKeyHeader?.trim() ?? '');
+
+  if (serverKeyPriority && trimmedServerApiKey) {
+    return trimmedServerApiKey;
+  }
+
+  if (browserApiKey) {
+    return browserApiKey;
+  }
+
+  return trimmedServerApiKey ?? '';
+}
+
+/**
+ * Build the outgoing header set for a Gemini upstream request: copy the
+ * incoming request's headers minus hop-by-hop / connection-managed / sensitive
+ * headers, then stamp the resolved API key. Shared by geminiProxy and the
+ * streamJobs journal path so the two stay in sync.
+ */
+export function buildGeminiProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
+  const headers = copyProxyRequestHeaders(request, STRIPPED_GEMINI_REQUEST_HEADERS);
+
+  headers.set('x-goog-api-key', apiKey);
+  return headers;
+}

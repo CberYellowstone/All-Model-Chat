@@ -59,8 +59,6 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
   const { chatState: chatStateOverrides, ...appOverrides } = overrides;
   const baseDefaults = createDefaultThirdPartyApiSettings();
   const appSettings = createAppSettings({
-    isThirdPartyApiEnabled: true,
-    apiMode: 'third-party',
     modelId: 'gemini-3-flash-preview',
     thirdPartyApi: {
       activeProvider: 'openai',
@@ -113,7 +111,6 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
 
 const buildOpenaiProviderAppSettings = (overrides: {
   enabled?: boolean;
-  apiMode?: 'third-party' | 'gemini-native';
   modelId?: string;
   models?: Array<{ id: string; name: string; isPinned?: boolean }>;
 }) => {
@@ -121,9 +118,6 @@ const buildOpenaiProviderAppSettings = (overrides: {
   const enabled = overrides.enabled ?? true;
   return {
     ...createAppSettings(),
-    isThirdPartyApiEnabled: enabled,
-    apiMode: (overrides.apiMode ??
-      (enabled ? 'third-party' : 'gemini-native')) as AppViewModel['appSettings']['apiMode'],
     modelId: 'gemini-3-flash-preview',
     thirdPartyApi: {
       activeProvider: 'openai' as const,
@@ -148,15 +142,13 @@ describe('chat runtime values', () => {
     document.body.innerHTML = '';
   });
 
-  it('shows API-configured OpenAI-compatible models in the header while OpenAI mode is active', () => {
+  it('shows enabled OpenAI-compatible models in the header', () => {
     const app = buildApp({
       chatState: {
         currentChatSettings: {
           ...createChatSettings(),
           modelId: 'gpt-5.6-sol',
-          apiMode: 'third-party',
-          thirdPartyProviderId: 'openai',
-          thirdPartyModelId: 'gpt-5.6-sol',
+          providerId: 'openai',
         },
       },
     });
@@ -175,25 +167,18 @@ describe('chat runtime values', () => {
       header.onSelectModel('gpt-4.1');
     });
 
+    // Selecting a model only delegates to the session handler — it never
+    // touches global settings (no apiMode/isThirdPartyApiEnabled/activeProvider).
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-4.1');
-    expect(app.setAppSettings).toHaveBeenCalledOnce();
-    const updater = vi.mocked(app.setAppSettings).mock.calls[0][0];
-    expect(typeof updater).toBe('function');
-    if (typeof updater !== 'function') {
-      throw new Error('Expected setAppSettings to receive an updater function');
-    }
-    const updatedSettings = updater(app.appSettings);
-    expect(updatedSettings.apiMode).toBe('third-party');
-    expect((updatedSettings as AppViewModel['appSettings']).thirdPartyApi.providers.openai.modelId).toBe('gpt-5.6-sol');
+    expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
   });
 
-  it('shows third-party provider models in the header while Gemini-native mode is active', () => {
+  it('shows third-party provider models in the header alongside Gemini models', () => {
     const app = buildApp({
       appSettings: buildOpenaiProviderAppSettings({
         enabled: true,
-        apiMode: 'gemini-native',
         modelId: 'gpt-5.6-sol',
         models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
@@ -220,24 +205,15 @@ describe('chat runtime values', () => {
     });
 
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
-    expect(app.setAppSettings).toHaveBeenCalledOnce();
-    const switchToOpenAI = vi.mocked(app.setAppSettings).mock.calls[0][0];
-    expect(typeof switchToOpenAI).toBe('function');
-    if (typeof switchToOpenAI !== 'function') {
-      throw new Error('Expected setAppSettings to receive an updater function');
-    }
-    const switchedSettings = switchToOpenAI(app.appSettings);
-    expect(switchedSettings.apiMode).toBe('third-party');
-    expect((switchedSettings as AppViewModel['appSettings']).thirdPartyApi.activeProvider).toBe('openai');
+    expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
   });
 
-  it('delegates third-party model selection from Gemini-native mode to the session handler', () => {
+  it('delegates third-party model selection to the session handler', () => {
     const app = buildApp({
       appSettings: buildOpenaiProviderAppSettings({
         enabled: true,
-        apiMode: 'gemini-native',
         modelId: 'gpt-5.6-sol',
         models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
@@ -250,17 +226,16 @@ describe('chat runtime values', () => {
     });
 
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+    expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
   });
 
-  it('shows enabled third-party models in the header even when the top-level mode is Gemini-native', () => {
+  it('shows enabled third-party models in the header', () => {
     const defaults = createDefaultThirdPartyApiSettings();
     const app = buildApp({
       appSettings: {
         ...createAppSettings(),
-        isThirdPartyApiEnabled: false,
-        apiMode: 'gemini-native',
         modelId: 'gemini-3-flash-preview',
         thirdPartyApi: {
           activeProvider: 'openai',
@@ -293,25 +268,15 @@ describe('chat runtime values', () => {
     });
 
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
-    expect(app.setAppSettings).toHaveBeenCalledOnce();
-    const updater = vi.mocked(app.setAppSettings).mock.calls[0][0];
-    expect(typeof updater).toBe('function');
-    if (typeof updater !== 'function') {
-      throw new Error('Expected setAppSettings updater');
-    }
-    const updated = updater(app.appSettings);
-    expect(updated.apiMode).toBe('third-party');
-    expect((updated as AppViewModel['appSettings']).isThirdPartyApiEnabled).toBe(true);
-    expect((updated as AppViewModel['appSettings']).thirdPartyApi.activeProvider).toBe('openai');
+    expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
   });
 
-  it('keeps third-party provider models hidden while the provider switch is off', () => {
+  it('keeps third-party provider models hidden while the provider is disabled', () => {
     const app = buildApp({
       appSettings: buildOpenaiProviderAppSettings({
         enabled: false,
-        apiMode: 'gemini-native',
         modelId: 'gpt-5.6-sol',
         models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
       }),
@@ -329,6 +294,8 @@ describe('chat runtime values', () => {
       header.onSelectModel('gpt-5.6-sol');
     });
 
+    // Disabled providers' models aren't in the list, but selecting one still
+    // delegates (the session handler resolves the provider from the modelId).
     expect(app.setAppSettings).not.toHaveBeenCalled();
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
 
@@ -340,8 +307,8 @@ describe('chat runtime values', () => {
       chatState: {
         currentChatSettings: {
           ...createChatSettings(),
-          apiMode: 'third-party',
-          thirdPartyModelId: 'gpt-4.1',
+          modelId: 'gpt-4.1',
+          providerId: 'openai',
         },
       },
     });
@@ -352,7 +319,7 @@ describe('chat runtime values', () => {
     unmount();
   });
 
-  it('switches back to Gemini-native mode when selecting a Gemini model from OpenAI mode', () => {
+  it('selecting a Gemini model from a third-party session only delegates', () => {
     const app = buildApp();
     const { result, unmount } = renderChatHeaderRuntime(app);
     const header = result.current;
@@ -362,18 +329,7 @@ describe('chat runtime values', () => {
     });
 
     expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3-flash-preview');
-    expect(app.setAppSettings).toHaveBeenCalledOnce();
-    const switchToGemini = vi.mocked(app.setAppSettings).mock.calls[0][0];
-    expect(typeof switchToGemini).toBe('function');
-    if (typeof switchToGemini !== 'function') {
-      throw new Error('Expected setAppSettings to receive an updater function');
-    }
-    expect(switchToGemini(app.appSettings)).toEqual(
-      expect.objectContaining({
-        apiMode: 'gemini-native',
-        modelId: 'gemini-3-flash-preview',
-      }),
-    );
+    expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
   });

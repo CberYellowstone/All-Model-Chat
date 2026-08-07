@@ -7,21 +7,13 @@ import { maybeStreamWithJob } from './streamJobs.js';
 import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
 import {
   STRIPPED_PROXY_RESPONSE_HEADERS,
-  copyProxyRequestHeaders,
+  buildGeminiProxyHeaders,
   getConnectionManagedHeaders,
+  resolveGeminiRequestApiKey,
 } from './proxyHeaders.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
 const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
-
-const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  'accept-encoding',
-  'authorization',
-  'content-length',
-  'cookie',
-  'host',
-  'x-gemini-upstream-base-url',
-]);
 
 export interface GeminiProxyConfig {
   geminiApiBase: string;
@@ -30,25 +22,6 @@ export interface GeminiProxyConfig {
   // When false (default): a browser-supplied x-goog-api-key wins, the server
   // key is the fallback (BYOK 兜底). When true: the server key wins.
   serverKeyPriority?: boolean;
-}
-
-function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string, serverKeyPriority = false): string {
-  const trimmedServerApiKey = serverApiKey?.trim();
-  const browserApiKeyHeader = request.headers['x-goog-api-key'];
-  const browserApiKey = Array.isArray(browserApiKeyHeader)
-    ? (browserApiKeyHeader[0]?.trim() ?? '')
-    : (browserApiKeyHeader?.trim() ?? '');
-
-  if (serverKeyPriority && trimmedServerApiKey) {
-    return trimmedServerApiKey;
-  }
-
-  // BYOK 兜底: a real browser key wins; otherwise fall back to the server key.
-  if (browserApiKey) {
-    return browserApiKey;
-  }
-
-  return trimmedServerApiKey ?? '';
 }
 
 /**
@@ -81,13 +54,6 @@ function resolveUpstreamBaseOverride(request: IncomingMessage): string | null {
   }
 }
 
-function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
-  const headers = copyProxyRequestHeaders(request, STRIPPED_PROXY_REQUEST_HEADERS);
-
-  headers.set('x-goog-api-key', apiKey);
-  return headers;
-}
-
 function buildProxyResponseHeaders(
   request: IncomingMessage,
   upstreamResponse: Response,
@@ -115,7 +81,7 @@ export async function proxyGeminiRequest(
   config: GeminiProxyConfig,
   fetchImpl: typeof fetch,
 ): Promise<void> {
-  const apiKeyForProxy = resolveRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
+  const apiKeyForProxy = resolveGeminiRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
 
   if (!apiKeyForProxy) {
     sendJson(request, response, 500, { error: 'GEMINI_API_KEY is not configured.' }, config.allowedOrigins);
@@ -159,7 +125,7 @@ export async function proxyGeminiRequest(
 
   const requestInit: RequestInit & { duplex?: 'half' } = {
     method,
-    headers: buildProxyHeaders(request, apiKeyForProxy),
+    headers: buildGeminiProxyHeaders(request, apiKeyForProxy),
     signal: abortController.signal,
     // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a private network host
     // after the input URL passed validation.

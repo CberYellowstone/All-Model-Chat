@@ -4,6 +4,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
 import { Toggle } from '@/components/shared/Toggle';
 import { getOpenAICompatibleBaseUrlWarning } from '@/services/api/openaiCompatibleUrls';
+import { getErrorMessage } from '@/utils/errorMessage';
 import type { AppSettings, ThirdPartyApiSettings, ThirdPartyProviderId } from '@/types';
 import {
   THIRD_PARTY_PROVIDER_IDS,
@@ -12,6 +13,9 @@ import {
   updateThirdPartyProviderConfig,
 } from '@/utils/thirdPartyApiProviders';
 import { THIRD_PARTY_PROVIDER_LOGO } from '@/components/shared/ModelIcon';
+import { sendAnthropicMessageNonStream } from '@/services/api/anthropicApi';
+import { sendOpenAICompatibleMessageNonStream } from '@/services/api/openaiCompatibleApi';
+import { parseApiKeys } from '@/utils/apiKeySelection';
 import { ApiKeyInput } from './ApiKeyInput';
 import { ApiConnectionTester } from './ApiConnectionTester';
 import { OpenAICompatibleModelListEditor } from './OpenAICompatibleModelListEditor';
@@ -19,25 +23,18 @@ import { OpenAICompatibleModelListEditor } from './OpenAICompatibleModelListEdit
 interface ThirdPartyApiSettingsPanelProps {
   settings: AppSettings;
   onUpdateSettings: (partial: Partial<AppSettings>) => void;
-  onResetConnectionTest: () => void;
-  onTestConnection: () => void;
-  testStatus: 'idle' | 'testing' | 'success' | 'error';
-  testMessage: string | null;
-  hasEnvKey: boolean;
 }
 
 export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProps> = ({
   settings,
   onUpdateSettings,
-  onResetConnectionTest,
-  onTestConnection,
-  testStatus,
-  testMessage,
 }) => {
   const { t } = useI18n();
   const [expandedProvider, setExpandedProvider] = useState<ThirdPartyProviderId | null>(
     settings.thirdPartyApi?.activeProvider ?? null,
   );
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testMessage, setTestMessage] = useState<string | null>(null);
 
   const thirdPartyApi = settings.thirdPartyApi;
   const activeConfig = getThirdPartyProviderConfig(settings);
@@ -56,7 +53,76 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
 
   const updateField = <K extends keyof typeof expandedConfig>(key: K, value: (typeof expandedConfig)[K]) => {
     updateThirdPartyApi(updateThirdPartyProviderConfig(thirdPartyApi, expandedId, { [key]: value }));
-    onResetConnectionTest();
+    setTestStatus('idle');
+    setTestMessage(null);
+  };
+
+  // Connection test targets the currently-expanded provider card — its own key,
+  // baseUrl and modelId — so the button's semantics never drift with a global
+  // mode.
+  const handleTestConnection = async () => {
+    const keyToTest = expandedConfig.apiKey;
+    if (!keyToTest) {
+      setTestStatus('error');
+      setTestMessage(t('apiConfigNoKeyAvailable'));
+      return;
+    }
+
+    const keys = parseApiKeys(keyToTest);
+    const firstKey = keys[0];
+
+    if (!firstKey) {
+      setTestStatus('error');
+      setTestMessage(t('apiConfigInvalidKeyFormat'));
+      return;
+    }
+
+    setTestStatus('testing');
+    setTestMessage(null);
+
+    try {
+      const providerConfig = {
+        baseUrl: expandedConfig.baseUrl,
+        temperature: 0,
+      };
+      let providerError: Error | null = null;
+      const onError = (error: Error) => {
+        providerError = error;
+      };
+
+      if (expandedConfig.protocol === 'anthropic') {
+        await sendAnthropicMessageNonStream(
+          firstKey,
+          expandedConfig.modelId,
+          [],
+          [{ text: 'Hello' }],
+          providerConfig,
+          new AbortController().signal,
+          onError,
+          () => undefined,
+        );
+      } else {
+        await sendOpenAICompatibleMessageNonStream(
+          firstKey,
+          expandedConfig.modelId,
+          [],
+          [{ text: 'Hello' }],
+          providerConfig,
+          new AbortController().signal,
+          onError,
+          () => undefined,
+        );
+      }
+
+      if (providerError) {
+        throw providerError;
+      }
+
+      setTestStatus('success');
+    } catch (error) {
+      setTestStatus('error');
+      setTestMessage(getErrorMessage(error));
+    }
   };
 
   return (
@@ -91,7 +157,9 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                   onClick={() => {
                     const nextExpanded = isExpanded ? null : providerId;
                     setExpandedProvider(nextExpanded);
-                    // Sync activeProvider so test-connection targets this provider.
+                    // Track which card is expanded as activeProvider (UI memory
+                    // only — routing derives from enabled providers + session
+                    // providerId, not this).
                     if (nextExpanded) {
                       updateThirdPartyApi({ ...thirdPartyApi, activeProvider: nextExpanded });
                     }
@@ -182,7 +250,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                   />
 
                   <ApiConnectionTester
-                    onTest={onTestConnection}
+                    onTest={handleTestConnection}
                     testStatus={testStatus}
                     testMessage={testMessage}
                     isTestDisabled={testStatus === 'testing' || !expandedConfig.apiKey}

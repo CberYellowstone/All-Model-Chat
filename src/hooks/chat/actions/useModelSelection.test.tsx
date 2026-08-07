@@ -13,20 +13,19 @@ vi.mock('@/utils/model/modelSwitchSettings', () => ({
 import { useModelSelection } from './useModelSelection';
 import { createAppSettings, createChatSettings, createSavedChatSession } from '@/test/data/factories';
 import { renderHook } from '@/test/render/renderer';
+import { GEMINI_PROVIDER_ID } from '@/types';
 
 describe('useModelSelection', () => {
   it('clears third-party session routing when selecting a Gemini model', () => {
     const thirdPartySettings = createChatSettings({
       modelId: 'kimi-k3',
-      apiMode: 'third-party',
-      thirdPartyProviderId: 'kimi',
-      thirdPartyModelId: 'kimi-k3',
+      providerId: 'kimi',
     });
     const updateAndPersistSessions = vi.fn();
 
     const { result, unmount } = renderHook(() =>
       useModelSelection({
-        appSettings: createAppSettings({ isThirdPartyApiEnabled: true }),
+        appSettings: createAppSettings(),
         activeSessionId: 'session-1',
         currentChatSettings: thirdPartySettings,
         isLoading: false,
@@ -48,9 +47,7 @@ describe('useModelSelection', () => {
 
     expect(updatedSession.settings).toMatchObject({
       modelId: 'gemini-3-flash-preview',
-      apiMode: 'gemini-native',
-      thirdPartyProviderId: undefined,
-      thirdPartyModelId: undefined,
+      providerId: GEMINI_PROVIDER_ID,
     });
 
     unmount();

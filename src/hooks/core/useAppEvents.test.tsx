@@ -209,13 +209,15 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const openaiProviderSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'third-party',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
         activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
-          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.5' },
+          openai: {
+            ...createDefaultThirdPartyApiSettings().providers.openai,
+            modelId: 'gpt-5.5',
+            enabled: true,
+          },
         },
       },
     });
@@ -265,13 +267,11 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'gemini-native',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
         activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
-          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1' },
+          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1', enabled: true },
         },
       },
       tabModelCycleIds: ['gpt-5.5'],
@@ -321,8 +321,6 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'gemini-native',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
         activeProvider: 'openai',
         providers: {

@@ -49,7 +49,9 @@ export const useSessionActions = ({ updateAndPersistSessions, activeJobs }: UseS
       if (!newTitle.trim()) return;
       logService.info(`Renaming session ${sessionId} to "${newTitle}"`);
       updateAndPersistSessions((prev) =>
-        prev.map((session) => (session.id === sessionId ? { ...session, title: newTitle.trim() } : session)),
+        prev.map((session) =>
+          session.id === sessionId ? { ...session, title: newTitle.trim(), titleSource: 'manual' } : session,
+        ),
       );
     },
     [updateAndPersistSessions],
@@ -84,6 +86,8 @@ export const useSessionActions = ({ updateAndPersistSessions, activeJobs }: UseS
           fullSessionToDuplicate.settings,
           duplicatedMessages,
           t('historyCopyTitle').replace('{title}', duplicateTitle),
+          null,
+          'manual',
         );
         return [newSession, ...prev];
       });

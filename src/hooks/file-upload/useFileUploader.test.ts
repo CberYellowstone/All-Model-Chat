@@ -66,11 +66,11 @@ describe('useFileUploader — third-party sessions never hit the Gemini Files AP
     return { result, unmount, getSelectedFiles: () => selectedFiles, setAppFileError };
   };
 
-  // Regression: the uploader must follow the SESSION apiMode. The global
-  // appSettings stays 'gemini-native' after switching chats, so a global-mode
+  // Regression: the uploader must follow the SESSION providerId. The global
+  // appSettings stays gemini-native after switching chats, so a global-mode
   // gate would still upload the TXT to Gemini here.
   it('inlines a dropped TXT without uploading or asking for a Gemini key in a third-party session', async () => {
-    const sessionChatSettings: ChatSettings = { ...DEFAULT_APP_SETTINGS, apiMode: 'third-party' };
+    const sessionChatSettings: ChatSettings = { ...DEFAULT_APP_SETTINGS, providerId: 'openai' };
     const { result, unmount, getSelectedFiles } = renderUploader({ currentChatSettings: sessionChatSettings });
 
     await act(async () => {

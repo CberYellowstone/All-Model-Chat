@@ -14,7 +14,10 @@ const { generateTitleApiMock, getGeminiKeyForRequestMock, mockDbGetSession } = v
 vi.mock('@/services/db/dbService', async () => {
   const { createDbServiceMockModule } = await import('@/test/doubles/moduleMocks');
 
-  return createDbServiceMockModule({ getSession: mockDbGetSession });
+  return createDbServiceMockModule({
+    getSession: mockDbGetSession,
+    getSessionMetadataOnly: mockDbGetSession,
+  });
 });
 
 vi.mock('@/services/api/generation/textApi', () => ({
@@ -76,8 +79,6 @@ describe('useAutoTitling', () => {
       useAutoTitling({
         appSettings: {
           ...DEFAULT_APP_SETTINGS,
-          isThirdPartyApiEnabled: true,
-          apiMode: 'third-party',
           apiKey: 'gemini-key',
           thirdPartyApi: {
             activeProvider: 'openai',
@@ -87,7 +88,13 @@ describe('useAutoTitling', () => {
             },
           },
         },
-        activeChat: createSession(),
+        activeChat: createSession({
+          settings: {
+            ...DEFAULT_APP_SETTINGS,
+            modelId: 'gpt-5.6-sol',
+            providerId: 'openai',
+          },
+        }),
         updateAndPersistSessions,
         language: 'en',
         generatingTitleSessionIds: new Set(),

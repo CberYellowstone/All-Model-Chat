@@ -12,7 +12,7 @@ interface SlashCommandMenuProps {
   className?: string;
 }
 
-export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
+const SlashCommandMenuComponent: React.FC<SlashCommandMenuProps> = ({
   isOpen,
   commands,
   onSelect,
@@ -128,3 +128,5 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
     </div>
   );
 };
+
+export const SlashCommandMenu = React.memo(SlashCommandMenuComponent);

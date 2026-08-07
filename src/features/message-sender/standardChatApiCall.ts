@@ -88,10 +88,9 @@ const createNonStreamCompleteHandler =
     onThoughtChunk,
     streamOnComplete,
     source,
-  }: Pick<
-    StreamHandlerFunctions,
-    'streamOnPart' | 'onThoughtChunk' | 'streamOnComplete'
-  > & { source?: 'gemini' | 'third-party' }): NonStreamMessageCompleteHandler =>
+  }: Pick<StreamHandlerFunctions, 'streamOnPart' | 'onThoughtChunk' | 'streamOnComplete'> & {
+    source?: 'gemini' | 'third-party';
+  }): NonStreamMessageCompleteHandler =>
   (parts, thoughts, usage, grounding, urlContext) => {
     for (const part of parts) {
       streamOnPart(part, { recordFirstToken: false, source });

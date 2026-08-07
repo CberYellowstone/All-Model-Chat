@@ -16,7 +16,7 @@ import {
 import { uploadFileItem } from '@/utils/file-upload/uploadFileItem';
 import { runWithConcurrencyLimit } from '@/utils/file-upload/uploadQueue';
 import { useI18n } from '@/contexts/I18nContext';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { isThirdPartyApiRoute } from '@/utils/chatApiRoute';
 
 const MAX_CONCURRENT_FILE_UPLOADS = 3;
 
@@ -57,12 +57,12 @@ export const useFileUploader = ({
       const needsApiKeyForUpload = checkBatchNeedsApiKey(
         preflight.filesToUpload,
         appSettings,
-        currentChatSettings.apiMode,
+        currentChatSettings.providerId,
       );
       const filesRequiringApi = getFilesRequiringFileApi(
         preflight.filesToUpload,
         appSettings,
-        currentChatSettings.apiMode,
+        currentChatSettings.providerId,
       );
 
       let keyToUse: string | null = null;
@@ -74,7 +74,7 @@ export const useFileUploader = ({
           return;
         }
         keyToUse = keyResult.key;
-        if (keyResult.isNewKey && !isThirdPartyApiActive(appSettings)) {
+        if (keyResult.isNewKey && !isThirdPartyApiRoute(appSettings, currentChatSettings)) {
           logService.info('New API key selected for this session due to file upload.');
           setCurrentChatSettings((previousSettings) => ({ ...previousSettings, lockedApiKey: keyToUse! }));
         }
@@ -93,7 +93,7 @@ export const useFileUploader = ({
             forceFileApi: filesRequiringApi.has(file),
             defaultResolution,
             appSettings,
-            apiMode: currentChatSettings.apiMode,
+            providerId: currentChatSettings.providerId,
             setSelectedFiles: writeSelectedFiles,
             uploadStatsRef,
             t,

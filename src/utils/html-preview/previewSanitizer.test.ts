@@ -41,7 +41,9 @@ describe('previewSanitizer', () => {
   });
 
   it('strips dangerous attributes from elements inside code blocks too', () => {
-    const document = parseHtml('<body><pre><code><button onclick="alert(1)" href="javascript:alert(2)">Run</button></code></pre></body>');
+    const document = parseHtml(
+      '<body><pre><code><button onclick="alert(1)" href="javascript:alert(2)">Run</button></code></pre></body>',
+    );
 
     sanitizeElementTree(document);
 
@@ -55,7 +57,11 @@ describe('previewSanitizer', () => {
     // The runner embeds its own copy of sanitizeElementTree. It must perform the
     // same pre/code textification so streaming artifacts do not regress.
     expect(STREAM_SANITIZER_SCRIPT).toContain('codeBlockSelector');
-    expect(STREAM_SANITIZER_SCRIPT).toContain("element.replaceWith(document.createTextNode(element.textContent || ''))");
-    expect(STREAM_SANITIZER_SCRIPT).toContain('parent.querySelectorAll(dangerousSelector).forEach((element) => element.remove())');
+    expect(STREAM_SANITIZER_SCRIPT).toContain(
+      "element.replaceWith(document.createTextNode(element.textContent || ''))",
+    );
+    expect(STREAM_SANITIZER_SCRIPT).toContain(
+      'parent.querySelectorAll(dangerousSelector).forEach((element) => element.remove())',
+    );
   });
 });

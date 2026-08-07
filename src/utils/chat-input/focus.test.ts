@@ -48,4 +48,42 @@ describe('focusChatInput', () => {
     expect(() => vi.runOnlyPendingTimers()).not.toThrow();
     vi.stubGlobal('document', originalDocument);
   });
+
+  it('does not steal focus while the user is editing inside the history sidebar', () => {
+    const textarea = document.createElement('textarea');
+    textarea.setAttribute('data-chat-input-textarea', 'true');
+    document.body.appendChild(textarea);
+
+    const sidebar = document.createElement('div');
+    sidebar.setAttribute('data-history-sidebar-root', 'true');
+    const renameInput = document.createElement('input');
+    sidebar.appendChild(renameInput);
+    document.body.appendChild(sidebar);
+    renameInput.focus();
+
+    const focusSpy = vi.spyOn(textarea, 'focus');
+
+    focusChatInput(0);
+    vi.runOnlyPendingTimers();
+
+    expect(focusSpy).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(renameInput);
+  });
+
+  it('still focuses the chat input when focus is outside the sidebar', () => {
+    const textarea = document.createElement('textarea');
+    textarea.setAttribute('data-chat-input-textarea', 'true');
+    document.body.appendChild(textarea);
+
+    const outsideInput = document.createElement('input');
+    document.body.appendChild(outsideInput);
+    outsideInput.focus();
+
+    const focusSpy = vi.spyOn(textarea, 'focus');
+
+    focusChatInput(0);
+    vi.runOnlyPendingTimers();
+
+    expect(focusSpy).toHaveBeenCalledTimes(1);
+  });
 });

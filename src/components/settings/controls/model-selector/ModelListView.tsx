@@ -15,7 +15,6 @@ interface ModelListViewProps {
   selectedModelId: string;
   selectedApiMode?: ApiMode;
   onSelectModel: (id: string, apiMode?: ApiMode) => void;
-  extraContent?: React.ReactNode;
 }
 
 export const ModelListView: React.FC<ModelListViewProps> = ({
@@ -23,7 +22,6 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
   selectedModelId,
   selectedApiMode,
   onSelectModel,
-  extraContent,
 }) => {
   const { t } = useI18n();
 
@@ -106,7 +104,6 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
           </div>
         )}
       </div>
-      {extraContent && <div className="border-t border-[var(--theme-border-secondary)] p-3">{extraContent}</div>}
     </div>
   );
 };

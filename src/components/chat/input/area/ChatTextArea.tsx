@@ -19,7 +19,7 @@ interface ChatTextAreaProps {
   isConverting: boolean;
 }
 
-export const ChatTextArea: React.FC<ChatTextAreaProps> = ({
+const ChatTextAreaComponent: React.FC<ChatTextAreaProps> = ({
   textareaRef,
   value,
   onChange,
@@ -130,3 +130,5 @@ export const ChatTextArea: React.FC<ChatTextAreaProps> = ({
     </div>
   );
 };
+
+export const ChatTextArea = React.memo(ChatTextAreaComponent);

@@ -247,25 +247,25 @@ Notes:
 
 ### Runtime Configuration and Environment Variables
 
-| Variable                        | Purpose                                                                                          | Public                | Docker default                              |
-| :------------------------------ | :----------------------------------------------------------------------------------------------- | :-------------------- | :------------------------------------------ |
+| Variable                        | Purpose                                                                                               | Public                | Docker default                              |
+| :------------------------------ | :---------------------------------------------------------------------------------------------------- | :-------------------- | :------------------------------------------ |
 | `GEMINI_API_KEY`                | Optional server-managed Gemini API key; the browser BYOK key wins, and this key is used as a fallback | Server only           | Empty                                       |
-| `PORT`                          | Port used by the API service                                                                     | Server only           | `3001`                                      |
-| `GEMINI_API_BASE`               | Upstream Gemini API base URL                                                                     | Server only           | `https://generativelanguage.googleapis.com` |
-| `ALLOWED_ORIGINS`               | Comma-separated CORS allowlist for cross-origin deployments                                      | Server only           | Empty                                       |
-| `ENABLE_MCP_STDIO`              | Enables `stdio` MCP server calls                                                                 | Server only           | `false`                                     |
-| `ENABLE_MCP_PRIVATE_HTTP`       | Allows the API service to call private or local HTTP MCP URLs                                    | Server only           | `false`                                     |
-| `ENABLE_LIVE_WS_PROXY`          | Enables the `/api/live` WebSocket full proxy (on by default in Docker)                           | Server only           | `true`                                      |
-| `LIVE_WS_IDLE_TIMEOUT_MS`       | Live WS idle reclamation timeout (milliseconds)                                                  | Server only           | `300000`                                    |
-| `SERVER_KEY_PRIORITY`           | Key priority: `false` = browser BYOK key wins with server fallback; `true` = server key wins      | Server only           | `false`                                     |
-| `THIRD_PARTY_ROUTES`            | JSON map of provider → { baseUrl, apiKey } for third-party routing (https, non-private hosts only) | Server only           | Empty                                       |
-| `RUNTIME_SERVER_MANAGED_API`    | Enables server-managed API mode by default in the frontend                                       | Public runtime config | `true`                                      |
-| `RUNTIME_USE_CUSTOM_API_CONFIG` | Enables custom API configuration by default                                                      | Public runtime config | `true`                                      |
-| `RUNTIME_USE_API_PROXY`         | Enables API proxy mode by default                                                                | Public runtime config | `true`                                      |
-| `RUNTIME_API_PROXY_URL`         | Default Gemini proxy URL for the frontend                                                        | Public runtime config | `/api/gemini`                               |
-| `RUNTIME_LIVE_API_BASE_URL`     | Frontend Live API proxy base URL (blank = browser connects directly to the official WS)          | Public runtime config | `/api/live`                                 |
-| `RUNTIME_THIRD_PARTY_PROXY_URL` | Frontend third-party compatible proxy base URL (blank = browser connects directly to the provider) | Public runtime config | `/api/openai`                               |
-| `RUNTIME_PYODIDE_BASE_URL`      | Optional Pyodide runtime asset URL; when blank, same-origin `/pyodide/` is used                  | Public runtime config | Empty                                       |
+| `PORT`                          | Port used by the API service                                                                          | Server only           | `3001`                                      |
+| `GEMINI_API_BASE`               | Upstream Gemini API base URL                                                                          | Server only           | `https://generativelanguage.googleapis.com` |
+| `ALLOWED_ORIGINS`               | Comma-separated CORS allowlist for cross-origin deployments                                           | Server only           | Empty                                       |
+| `ENABLE_MCP_STDIO`              | Enables `stdio` MCP server calls                                                                      | Server only           | `false`                                     |
+| `ENABLE_MCP_PRIVATE_HTTP`       | Allows the API service to call private or local HTTP MCP URLs                                         | Server only           | `false`                                     |
+| `ENABLE_LIVE_WS_PROXY`          | Enables the `/api/live` WebSocket full proxy (on by default in Docker)                                | Server only           | `true`                                      |
+| `LIVE_WS_IDLE_TIMEOUT_MS`       | Live WS idle reclamation timeout (milliseconds)                                                       | Server only           | `300000`                                    |
+| `SERVER_KEY_PRIORITY`           | Key priority: `false` = browser BYOK key wins with server fallback; `true` = server key wins          | Server only           | `false`                                     |
+| `THIRD_PARTY_ROUTES`            | JSON map of provider → { baseUrl, apiKey } for third-party routing (https, non-private hosts only)    | Server only           | Empty                                       |
+| `RUNTIME_SERVER_MANAGED_API`    | Enables server-managed API mode by default in the frontend                                            | Public runtime config | `true`                                      |
+| `RUNTIME_USE_CUSTOM_API_CONFIG` | Enables custom API configuration by default                                                           | Public runtime config | `true`                                      |
+| `RUNTIME_USE_API_PROXY`         | Enables API proxy mode by default                                                                     | Public runtime config | `true`                                      |
+| `RUNTIME_API_PROXY_URL`         | Default Gemini proxy URL for the frontend                                                             | Public runtime config | `/api/gemini`                               |
+| `RUNTIME_LIVE_API_BASE_URL`     | Frontend Live API proxy base URL (blank = browser connects directly to the official WS)               | Public runtime config | `/api/live`                                 |
+| `RUNTIME_THIRD_PARTY_PROXY_URL` | Frontend third-party compatible proxy base URL (blank = browser connects directly to the provider)    | Public runtime config | `/api/openai`                               |
+| `RUNTIME_PYODIDE_BASE_URL`      | Optional Pyodide runtime asset URL; when blank, same-origin `/pyodide/` is used                       | Public runtime config | Empty                                       |
 
 The `RUNTIME_*` values are written into `runtime-config.js` at container startup and are readable by the browser. Only put public configuration there. The public/runtime-config.js template is used for static builds and keeps custom API configuration and proxy mode disabled by default; Docker overwrites it through `docker/web-server.js` at container startup using the defaults above.
 
@@ -365,7 +365,7 @@ GEMINI_API_KEY=your_key_here npm run verify:code-execution:api
 
 Optional variable:
 
-- `CODE_EXECUTION_MODEL`: override the default model, which is `gemini-2.5-flash`.
+- `CODE_EXECUTION_MODEL`: override the default model, which is `gemini-3.6-flash`.
 
 ---
 
@@ -461,13 +461,13 @@ AMC-WebUI/
 
 OpenAI Compatible mode uses a separate model list that you can manage manually or fetch from a compatible endpoint. The table below lists the built-in Gemini Native defaults.
 
-| Type             | Models                                                                                                                  |
-| :--------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| Gemini 3.x       | `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.1-pro-preview`                  |
-| Robotics         | `gemini-robotics-er-2-preview`                                                                                          |
-| Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                                  |
-| Image generation | `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image` |
-| TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                                           |
+| Type             | Models                                                                                                 |
+| :--------------- | :----------------------------------------------------------------------------------------------------- |
+| Gemini 3.x       | `gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.1-pro-preview` |
+| Robotics         | `gemini-robotics-er-2-preview`                                                                         |
+| Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                 |
+| Image generation | `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image`          |
+| TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                          |
 
 ---
 

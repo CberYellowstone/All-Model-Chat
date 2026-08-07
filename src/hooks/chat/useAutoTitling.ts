@@ -2,7 +2,7 @@ import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback,
 import { type AppSettings, type SavedChatSession } from '@/types';
 import { autoTitleSession, isSessionAutoTitleEligible } from '@/features/auto-titling/autoTitleSession';
 import { getVisibleChatMessages } from '@/utils/chat/visibility';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { isThirdPartyApiRoute } from '@/utils/chatApiRoute';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
@@ -36,6 +36,12 @@ const buildAutoTitleAttemptKey = (
   const messages = getVisibleChatMessages(session.messages);
   const firstMessage = messages[0];
   const secondMessage = messages[1];
+  // When the first model reply is still streaming, its content keeps growing
+  // every frame. Including that in the attempt key would make the key change
+  // per chunk, re-firing auto-titling for the same in-flight reply. Exclude it
+  // so an early (content≥2000) attempt is recorded exactly once; once the
+  // stream finishes, isLoading flips and a fresh key retries with full content.
+  const secondMessageContentKey = secondMessage?.isLoading ? 'streaming' : hashAttemptValue(secondMessage?.content);
   const messageKey = (message: (typeof messages)[number] | undefined) =>
     message
       ? [
@@ -43,7 +49,7 @@ const buildAutoTitleAttemptKey = (
           message.role,
           message.isLoading ? 'loading' : 'idle',
           message.stoppedByUser ? 'stopped' : 'active',
-          hashAttemptValue(message.content),
+          message === secondMessage ? secondMessageContentKey : hashAttemptValue(message.content),
         ].join(':')
       : 'none';
 
@@ -54,7 +60,7 @@ const buildAutoTitleAttemptKey = (
     messageKey(secondMessage),
     hashAttemptValue(session.settings.lockedApiKey),
     language,
-    appSettings.apiMode,
+    session.settings.providerId ?? 'gemini-native',
     appSettings.useCustomApiConfig ? 'custom-api' : 'env-api',
     appSettings.serverManagedApi ? 'server-managed' : 'browser-managed',
     appSettings.useApiProxy ? 'proxy' : 'direct',
@@ -82,7 +88,9 @@ export const useAutoTitling = ({
           session,
           appSettings,
           language,
-          stickyKey: isThirdPartyApiActive(appSettings) ? undefined : sessionKeyMapRef?.current?.get(session.id),
+          stickyKey: isThirdPartyApiRoute(appSettings, session.settings)
+            ? undefined
+            : sessionKeyMapRef?.current?.get(session.id),
           updateAndPersistSessions,
         });
       } finally {

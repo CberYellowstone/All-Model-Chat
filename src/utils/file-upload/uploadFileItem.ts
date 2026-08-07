@@ -1,6 +1,6 @@
 import type { MutableRefObject } from 'react';
 import { getErrorMessage } from '@/utils/errorMessage';
-import { type ApiMode, type AppSettings, type UploadedFile, type MediaResolution } from '@/types';
+import { type AppSettings, type ChatProviderId, type UploadedFile, type MediaResolution } from '@/types';
 import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
 import { logService } from '@/services/logService';
 import { releaseManagedObjectUrl } from '@/services/objectUrlManager';
@@ -27,8 +27,8 @@ interface UploadFileItemParams {
   forceFileApi?: boolean;
   defaultResolution: MediaResolution | undefined;
   appSettings: AppSettings;
-  /** Session API mode — when 'third-party' the Gemini Files API is never used. */
-  apiMode?: ApiMode;
+  /** Session provider — when third-party the Gemini Files API is never used. */
+  providerId?: ChatProviderId;
   setSelectedFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
   uploadStatsRef: MutableRefObject<Map<string, { lastLoaded: number; lastTime: number }>>;
   t?: Translator;
@@ -40,7 +40,7 @@ export const uploadFileItem = async ({
   forceFileApi = false,
   defaultResolution,
   appSettings,
-  apiMode,
+  providerId,
   setSelectedFiles,
   uploadStatsRef,
   t = getTranslator('en'),
@@ -69,7 +69,7 @@ export const uploadFileItem = async ({
     return;
   }
 
-  const shouldUploadFile = forceFileApi || shouldUseFileApi(file, appSettings, apiMode);
+  const shouldUploadFile = forceFileApi || shouldUseFileApi(file, appSettings, providerId);
 
   const dataUrl = fileToBlobUrl(file);
 

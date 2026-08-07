@@ -65,8 +65,8 @@ const modelSettings = {
     zh: '控制 Live API 的视频/音频分辨率。',
   },
   chatBehaviorEnableThoughtsTooltip: {
-    en: "Controls the model's thinking process. 'Off' prioritizes speed. 'Auto' lets the model decide for best quality. 'Manual' allows setting a specific token budget for thinking. Affects models like Gemini 2.5 Flash and Gemini 3.",
-    zh: '控制模型的思考过程。“关闭”优先考虑速度。“自动”让模型自行决定以获得最佳质量。“手动”允许为思考设置特定的 Token 预算。影响 Gemini 2.5 Flash 和 Gemini 3 等模型。',
+    en: "Controls the model's thinking process. 'Off' prioritizes speed. 'Auto' lets the model decide for best quality. 'Manual' allows setting a specific token budget for thinking. Affects models like Gemini 3 and Gemini 3.1.",
+    zh: '控制模型的思考过程。“关闭”优先考虑速度。“自动”让模型自行决定以获得最佳质量。“手动”允许为思考设置特定的 Token 预算。影响 Gemini 3 和 Gemini 3.1 等模型。',
   },
   chatBehaviorSystemPromptPlaceholder: {
     en: 'e.g., You are a precise, concise assistant who proactively clarifies requirements.',

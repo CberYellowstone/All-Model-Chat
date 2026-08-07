@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  getThinkingStreamTail,
-  createUploadedFileFromBytes,
-  parseThinkingSections,
-} from './parsing';
+import { getThinkingStreamTail, createUploadedFileFromBytes, parseThinkingSections } from './parsing';
 
 describe('createUploadedFileFromBytes', () => {
   it('builds an UploadedFile directly from an ArrayBuffer without base64 decoding', () => {

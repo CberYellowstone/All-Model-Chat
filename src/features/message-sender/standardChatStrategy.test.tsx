@@ -4,6 +4,7 @@ import { sendStandardMessage } from './standardChatStrategy';
 import { createStandardChatProps, type StandardChatPropsOverrides } from '@/test/hooks/factories';
 import { MediaResolution } from '@/types';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import type { PreparedModelRequest } from './useModelRequestRunner';
 
 const {
@@ -377,8 +378,6 @@ describe('standardChatStrategy', () => {
 
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         apiKey: 'gemini-key',
         thirdPartyApi: {
           activeProvider: 'openai',
@@ -395,9 +394,8 @@ describe('standardChatStrategy', () => {
         },
       },
       currentChatSettings: {
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-5.6-sol',
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
         isGoogleSearchEnabled: true,
         isCodeExecutionEnabled: true,
         isLocalPythonEnabled: true,
@@ -412,7 +410,7 @@ describe('standardChatStrategy', () => {
         text: 'hello through compat',
         files: [],
         editingMessageId: null,
-        activeModelId: 'gemini-3-flash-preview',
+        activeModelId: 'gpt-5.6-sol',
         request: createPreparedRequest(),
       });
     });
@@ -466,8 +464,6 @@ describe('standardChatStrategy', () => {
     }));
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        apiMode: 'gemini-native',
-        isThirdPartyApiEnabled: true,
         thirdPartyApi: {
           activeProvider: 'openai',
           providers: {
@@ -485,9 +481,7 @@ describe('standardChatStrategy', () => {
       },
       currentChatSettings: {
         modelId: 'kimi-k3-turbo',
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'kimi',
-        thirdPartyModelId: 'kimi-k3-turbo',
+        providerId: 'kimi',
       },
       getStreamHandlers,
     });
@@ -535,8 +529,6 @@ describe('standardChatStrategy', () => {
 
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         apiKey: 'gemini-key',
         isStreamingEnabled: false,
         thirdPartyApi: {
@@ -554,9 +546,8 @@ describe('standardChatStrategy', () => {
         },
       },
       currentChatSettings: {
-        apiMode: 'third-party',
-        thirdPartyProviderId: 'openai',
-        thirdPartyModelId: 'gpt-4.1-custom',
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
         isGoogleSearchEnabled: true,
         isCodeExecutionEnabled: true,
         isLocalPythonEnabled: true,
@@ -571,7 +562,7 @@ describe('standardChatStrategy', () => {
         text: 'hello through compat',
         files: [],
         editingMessageId: null,
-        activeModelId: 'gemini-3-flash-preview',
+        activeModelId: 'gpt-5.6-sol',
         request: createPreparedRequest(),
       });
     });
@@ -580,7 +571,7 @@ describe('standardChatStrategy', () => {
     expect(mockSendMessageNonStream).not.toHaveBeenCalled();
     expect(mockSendOpenAICompatibleMessageNonStream).toHaveBeenCalledWith(
       'api-key',
-      'gpt-4.1-custom',
+      'gpt-5.6-sol',
       [],
       [{ text: 'analyze the csv' }],
       expect.objectContaining({
@@ -603,11 +594,21 @@ describe('standardChatStrategy', () => {
   it('uses Gemini chat routing when OpenAI-compatible mode is stored but the provider switch is off', async () => {
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isOpenAICompatibleApiEnabled: false,
-        apiMode: 'openai-compatible',
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: 'openai-key',
-        openaiCompatibleModelId: 'gpt-5.6-sol',
+        thirdPartyApi: {
+          activeProvider: 'openai',
+          providers: {
+            ...createDefaultThirdPartyApiSettings().providers,
+            openai: {
+              apiKey: 'openai-key',
+              baseUrl: 'https://api.openai.com/v1',
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' }],
+              protocol: 'openai-compatible',
+              enabled: false,
+            },
+          },
+        },
       },
     });
 

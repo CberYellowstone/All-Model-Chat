@@ -15,7 +15,7 @@ interface ModelListEditorRowProps {
 
 const providerOptions: Array<{ apiMode: ApiMode; labelKey: string; shortLabel: string }> = [
   { apiMode: 'gemini-native', labelKey: 'modelPickerProviderGemini', shortLabel: 'Gemini' },
-  { apiMode: 'openai-compatible', labelKey: 'modelPickerProviderOpenAICompatible', shortLabel: 'OpenAI' },
+  { apiMode: 'third-party', labelKey: 'modelPickerProviderThirdParty', shortLabel: 'Third-party' },
 ];
 
 export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({

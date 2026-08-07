@@ -38,4 +38,19 @@ describe('SessionItem spacing', () => {
     expect(source).toContain('onDragEnd');
     expect(source).not.toContain('draggable={false}');
   });
+
+  it('does not activate the session for the second click of a double-click so renaming can take over', () => {
+    const source = normalizeSource(fs.readFileSync(sessionItemPath, 'utf8'));
+
+    expect(source).toContain('if (e.detail > 1)');
+    expect(source).toContain('isDoubleClickDrag(e as React.DragEvent<HTMLAnchorElement>)');
+  });
+
+  it('skips activating the session when the second press of a double-click is swallowed as a micro-drag', () => {
+    const source = normalizeSource(fs.readFileSync(sessionItemPath, 'utf8'));
+
+    expect(source).toContain('if (isDoubleClickDrag(e)) {');
+    expect(source).toContain('onSelectSession(session.id);');
+    expect(source.indexOf('isDoubleClickDrag')).toBeLessThan(source.indexOf('handleDragEnd'));
+  });
 });

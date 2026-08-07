@@ -33,7 +33,11 @@ export const LiveArtifactsSection: React.FC<LiveArtifactsSectionProps> = ({ curr
   const hasCustomLiveArtifactsSystemPrompt = !!customLiveArtifactsSystemPrompt.trim();
   const builtInPrompt = builtInPromptState.key === builtInPromptKey ? builtInPromptState.value : '';
   const displayedLiveArtifactsSystemPrompt =
-    draftPrompt !== null ? draftPrompt : hasCustomLiveArtifactsSystemPrompt ? customLiveArtifactsSystemPrompt : builtInPrompt;
+    draftPrompt !== null
+      ? draftPrompt
+      : hasCustomLiveArtifactsSystemPrompt
+        ? customLiveArtifactsSystemPrompt
+        : builtInPrompt;
 
   useEffect(() => {
     let isStale = false;

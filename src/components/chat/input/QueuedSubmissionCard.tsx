@@ -12,7 +12,7 @@ interface QueuedSubmissionCardProps {
   onRemove: () => void;
 }
 
-export const QueuedSubmissionCard: React.FC<QueuedSubmissionCardProps> = ({
+const QueuedSubmissionCardComponent: React.FC<QueuedSubmissionCardProps> = ({
   title,
   previewText,
   fileCount,
@@ -72,3 +72,5 @@ export const QueuedSubmissionCard: React.FC<QueuedSubmissionCardProps> = ({
     </div>
   );
 };
+
+export const QueuedSubmissionCard = React.memo(QueuedSubmissionCardComponent);

@@ -234,10 +234,7 @@ export const useChatEffects = ({
     // A lease alone must NOT block resume — it survives a refresh (sessionStorage
     // TAB_ID is stable, localStorage is not cleared) for up to the TTL.
     const activeJobs = useChatStore.getState()._activeJobs;
-    if (
-      isGenerationLeaseHeldByTab(activeSessionId) &&
-      hasActiveGenerationJobForSession(activeJobs, activeSessionId)
-    ) {
+    if (isGenerationLeaseHeldByTab(activeSessionId) && hasActiveGenerationJobForSession(activeJobs, activeSessionId)) {
       return;
     }
 
@@ -250,9 +247,7 @@ export const useChatEffects = ({
     // toSessionMetadata both strip messages to []), so the isLoading lookup
     // would never match and resume would be permanently skipped.
     const activeMessages = useChatStore.getState().activeMessages;
-    const loadingMessage = activeMessages.find(
-      (message) => message.id === pending.generationId && message.isLoading,
-    );
+    const loadingMessage = activeMessages.find((message) => message.id === pending.generationId && message.isLoading);
     if (!loadingMessage) {
       resumedSessionsRef.current.add(activeSessionId);
       return;

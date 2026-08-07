@@ -17,14 +17,14 @@ const RANGE_SLIDER_CLASS =
   'w-full h-1.5 bg-[var(--theme-border-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-bg-accent)] hover:accent-[var(--theme-bg-accent-hover)]';
 
 interface GenerationSectionProps {
-  isOpenAICompatibleMode?: boolean;
+  isThirdPartyMode?: boolean;
   modelId: string;
   currentSettings: AppSettings;
   onUpdateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 }
 
 export const GenerationSection: React.FC<GenerationSectionProps> = ({
-  isOpenAICompatibleMode = false,
+  isThirdPartyMode = false,
   modelId,
   currentSettings,
   onUpdateSetting,
@@ -80,7 +80,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      {!isOpenAICompatibleMode && (
+      {!isThirdPartyMode && (
         <div data-settings-item="models-thinking">
           <ThinkingControl
             modelId={modelId}
@@ -239,7 +239,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
 
         {(isAdvancedModeEnabled || isAdvancedExpanded) && (
           <div className="mt-4 space-y-5 rounded-lg border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-tertiary)]/20 p-4 transition-all">
-            {!isOpenAICompatibleMode && (
+            {!isThirdPartyMode && (
               <div>
                 <div className="flex justify-between mb-2">
                   <label
@@ -270,7 +270,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
               </div>
             )}
 
-            {!isOpenAICompatibleMode && mediaResolution && (
+            {!isThirdPartyMode && mediaResolution && (
               <Select
                 id="media-resolution-select"
                 label=""
@@ -306,7 +306,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
               </Select>
             )}
 
-            {!isOpenAICompatibleMode && (
+            {!isThirdPartyMode && (
               <div className="pt-2 border-t border-[var(--theme-border-secondary)]/40 space-y-1">
                 <ToggleItem
                   label={t('settingsRawModeLabel')}
@@ -338,7 +338,7 @@ export const GenerationSection: React.FC<GenerationSectionProps> = ({
         )}
       </div>
 
-      {!isOpenAICompatibleMode && (
+      {!isThirdPartyMode && (
         <div className="pt-4 border-t border-[var(--theme-border-secondary)] space-y-1">
           <Select
             id="tts-voice-select"

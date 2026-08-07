@@ -1,6 +1,5 @@
 import { logService } from '@/services/logService';
 import React, { useEffect, useRef, useState, type RefObject } from 'react';
-import { type translations } from '@/i18n/translations';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 import { useSelectionPosition } from '@/hooks/text-selection/useSelectionPosition';
@@ -17,7 +16,6 @@ interface TextSelectionToolbarProps {
   onInsert?: (text: string) => void;
   onTTS?: (text: string) => Promise<string | null>;
   containerRef: RefObject<HTMLElement> | HTMLElement | null;
-  t?: (key: keyof typeof translations) => string;
 }
 
 export const TextSelectionToolbar: React.FC<TextSelectionToolbarProps> = ({

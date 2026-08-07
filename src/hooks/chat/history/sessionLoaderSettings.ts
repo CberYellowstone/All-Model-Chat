@@ -42,7 +42,7 @@ export const createSettingsForNewChat = ({
 
   return {
     ...baseSettings,
-    // 全量继承模板会话的设置：modelId、apiMode、thirdParty*、temperature/topP/topK、
+    // 全量继承模板会话的设置：modelId、providerId、temperature/topP/topK、
     // thinkingBudget/thinkingLevel、ttsVoice、mediaResolution，以及所有工具开关
     // （Google Search / Maps / Code Execution / Pyodide / URL Context / Deep Search / Keep Thinking）。
     ...sanitizedTemplateSettings,

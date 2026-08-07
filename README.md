@@ -375,7 +375,7 @@ GEMINI_API_KEY=your_key_here npm run verify:code-execution:api
 
 可选环境变量：
 
-- `CODE_EXECUTION_MODEL`：覆盖默认模型（默认 `gemini-2.5-flash`）
+- `CODE_EXECUTION_MODEL`：覆盖默认模型（默认 `gemini-3.6-flash`）
 
 这个脚本会：
 
@@ -478,13 +478,13 @@ AMC-WebUI/
 
 OpenAI 兼容模式使用独立模型列表，可在设置中手动维护或从兼容端点拉取；下表列出应用内置的 Gemini 原生默认模型。
 
-| 类型           | 模型                                                                                                            |
-| :------------- | :-------------------------------------------------------------------------------------------------------------- |
-| **Gemini 3.x** | gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.1-pro-preview                  |
-| **Robotics**   | gemini-robotics-er-2-preview                                                                                    |
-| **Gemma 4**    | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                              |
-| **图片生成**   | gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image |
-| **TTS**        | gemini-3.1-flash-tts-preview (30 种语音)                                                                        |
+| 类型           | 模型                                                                                           |
+| :------------- | :--------------------------------------------------------------------------------------------- |
+| **Gemini 3.x** | gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.1-pro-preview |
+| **Robotics**   | gemini-robotics-er-2-preview                                                                   |
+| **Gemma 4**    | gemma-4-31b-it, gemma-4-26b-a4b-it                                                             |
+| **图片生成**   | gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image        |
+| **TTS**        | gemini-3.1-flash-tts-preview (30 种语音)                                                       |
 
 ---
 

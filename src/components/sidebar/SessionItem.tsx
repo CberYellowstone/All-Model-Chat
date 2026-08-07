@@ -85,6 +85,16 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     return Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10 && e.timeStamp - start.t < 500;
   };
 
+  // During a double-click the second press-and-release is also a micro-drag
+  // (same spot, < 500ms). Recognising it by timestamp lets the dblclick reach
+  // the title (browser skips dblclick once a drag fires) and keeps the second
+  // release from activating the session on top of the rename.
+  const isDoubleClickDrag = (e: React.DragEvent<HTMLAnchorElement>) => {
+    const start = dragStartRef.current;
+    if (!start) return false;
+    return e.timeStamp - start.t < 500 && start.x === e.clientX && start.y === e.clientY;
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsRightClickAnimating(true);
@@ -123,7 +133,11 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
   };
 
   const handleDragEnd = (e: React.DragEvent<HTMLAnchorElement>) => {
-    if (isMicroDrag(e)) {
+    if (isDoubleClickDrag(e)) {
+      // 双击的第二下被浏览器当成拖拽，点击已被吞掉 —— 此处不放行选中，
+      // 让 dblclick 专心进入重命名。
+      dragStartRef.current = null;
+    } else if (isMicroDrag(e)) {
       dragStartRef.current = null;
       onSelectSession(session.id);
     }
@@ -148,6 +162,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
             type="text"
             value={editingItem.title}
             onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+            onFocus={(e) => e.currentTarget.select()}
             onBlur={handleRenameConfirm}
             onKeyDown={handleRenameKeyDown}
             className="flex-grow bg-transparent border border-[var(--theme-border-focus)] rounded-md px-1 py-0 text-sm w-full"
@@ -161,6 +176,16 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
             onClick={(e) => {
               if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
                 e.preventDefault();
+                if (e.detail > 1) {
+                  // 双击的第二下：只进 onDoubleClick（重命名），不再重复选中。
+                  return;
+                }
+                // 双击第一下会先触发一次 micro-drag，click 被吞掉；这里不能把它
+                // 当成普通单击放行，否则双击后会话仍被选中一次。跳过它，让第二下
+                // 的 dblclick 专心处理。
+                if (isDoubleClickDrag(e as React.DragEvent<HTMLAnchorElement>)) {
+                  return;
+                }
                 onSelectSession(session.id);
               }
             }}

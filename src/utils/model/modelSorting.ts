@@ -1,4 +1,4 @@
-import { type ModelOption } from '@/types';
+import { normalizeModelApiModeTag, type ModelOption } from '@/types';
 import { migrateRemovedModelId } from '@/constants/modelConfiguration';
 
 import { getModelCapabilities, isImageGenerationModel } from './modelCapabilities';
@@ -18,20 +18,28 @@ export const sanitizeModelOptions = (models: ModelOption[]): ModelOption[] => {
     }
 
     seenIds.add(normalizedId);
-    sanitized.push({
+    const normalized: ModelOption = {
       ...model,
       id: normalizedId,
       name: model.name.trim() || normalizedId,
-    });
+    };
+    // Normalize the persisted provider-family tag so the legacy
+    // 'openai-compatible' tag folds into 'third-party' (and bogus tags are
+    // dropped) instead of being spread through verbatim.
+    const apiModeTag = normalizeModelApiModeTag(model.apiMode);
+    if (apiModeTag) {
+      normalized.apiMode = apiModeTag;
+    } else {
+      delete normalized.apiMode;
+    }
+    sanitized.push(normalized);
 
     return sanitized;
   }, []);
 };
 
-export const resolveSupportedModelId = (modelId: string | null | undefined, fallback: string): string => {
-  const resolved = migrateRemovedModelId(modelId) || fallback;
-  return resolved;
-};
+export const resolveSupportedModelId = (modelId: string | null | undefined, fallback: string): string =>
+  migrateRemovedModelId(modelId) || fallback;
 
 /**
  * De-duplicate a model list by id, preserving the first occurrence of each id.

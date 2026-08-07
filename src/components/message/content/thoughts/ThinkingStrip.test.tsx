@@ -65,9 +65,7 @@ describe('ThinkingStrip', () => {
     expect(geminiViewport?.getAttribute('class')).not.toContain('overflow-hidden');
 
     act(() => {
-      renderer.render(
-        <ThinkingStrip thoughtsTail="Line one\nLine two\nLine three" thinkingSource="third-party" />,
-      );
+      renderer.render(<ThinkingStrip thoughtsTail="Line one\nLine two\nLine three" thinkingSource="third-party" />);
     });
     const thirdPartyViewport = renderer.container.querySelector('[data-thinking-strip-viewport="true"]');
     // Third-party thinking is locked to the latest lines — no manual scroll up.
@@ -130,8 +128,8 @@ describe('ThinkingStrip', () => {
       renderer.render(<ThinkingStrip thoughtsTail="Flat text" sections={null} />);
     });
 
-    expect(
-      renderer.container.querySelector('[data-thinking-strip="true"]')?.getAttribute('data-thinking-mode'),
-    ).toBe('flat');
+    expect(renderer.container.querySelector('[data-thinking-strip="true"]')?.getAttribute('data-thinking-mode')).toBe(
+      'flat',
+    );
   });
 });

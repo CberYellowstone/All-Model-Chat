@@ -11,8 +11,8 @@ import { ShortcutsSection } from './sections/ShortcutsSection';
 import { AboutSection } from './sections/AboutSection';
 import { type SettingsTransferProps } from './settingsTypes';
 import type { LogViewerProps } from '@/components/log-viewer/LogViewer';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
+import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
 interface SettingsContentProps extends SettingsTransferProps {
   activeTab: SettingsTab;
   currentSettings: AppSettings;
@@ -78,20 +78,14 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
   onExportScenarios,
 }) => {
   const animClass = 'animate-in fade-in duration-200 ease-out';
-  const isOpenAICompatibleMode = isThirdPartyApiActive(currentSettings);
+  const isThirdPartyMode = resolveChatApiRoute(currentSettings, currentSettings).apiMode === 'third-party';
   const effectiveModelId = currentSettings.modelId;
   const effectiveAvailableModels = React.useMemo(() => buildGeminiModelList(availableModels), [availableModels]);
   const effectiveDefaultModels = React.useMemo(() => buildGeminiModelList(getDefaultModelOptions()), []);
-  const shortcutAvailableModels = React.useMemo(() => {
-    if (currentSettings.isThirdPartyApiEnabled !== true) {
-      return effectiveAvailableModels;
-    }
-
-    return [
-      ...effectiveAvailableModels,
-      ...tagModelsWithApiMode(getThirdPartyProviderConfig(currentSettings).models, 'third-party'),
-    ];
-  }, [currentSettings, effectiveAvailableModels]);
+  const shortcutAvailableModels = React.useMemo(
+    () => buildProviderAwareModelList(currentSettings, effectiveAvailableModels),
+    [currentSettings, effectiveAvailableModels],
+  );
 
   const handleBatchUpdate = (updates: Partial<AppSettings>) => {
     (Object.entries(updates) as Array<[keyof AppSettings, AppSettings[keyof AppSettings]]>).forEach(([key, value]) => {
@@ -99,14 +93,10 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
     });
   };
 
-  const handleEffectiveModelChange = (modelId: string, apiMode?: ApiMode) => {
-    if (apiMode === 'third-party') {
-      return;
-    }
-
-    if (isOpenAICompatibleMode) {
-      updateSetting('apiMode', 'gemini-native');
-    }
+  const handleEffectiveModelChange = (modelId: string) => {
+    // The Models tab only manages the Gemini list, so picking a model here is a
+    // Gemini choice — the scoped providerId follows, never a global mode flip.
+    updateSetting('providerId', 'gemini-native');
     handleModelChange(modelId);
   };
 
@@ -133,7 +123,7 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             setAvailableModels={handleAvailableModelsChange}
             defaultModels={effectiveDefaultModels}
             defaultApiMode="gemini-native"
-            isOpenAICompatibleMode={isOpenAICompatibleMode}
+            isThirdPartyMode={isThirdPartyMode}
             currentSettings={currentSettings}
             currentThemeId={currentThemeId}
             onUpdateSettings={handleBatchUpdate}

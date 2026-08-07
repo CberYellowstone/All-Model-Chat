@@ -121,6 +121,14 @@ export interface SavedChatSession {
   isPinned?: boolean;
   groupId?: string | null;
   createdTabId?: string; // for tab-isolated empty session reuse
+  /**
+   * Title origin:
+   * - 'default': heuristic title or 'New Chat' (may be overwritten by auto-titling)
+   * - 'auto': AI-generated title (never auto-titled again)
+   * - 'manual': user-renamed / scenario / fork / copy title (never auto-titled again)
+   * - undefined: legacy session — eligibility inferred from the heuristic (see isSessionAutoTitleEligible)
+   */
+  titleSource?: 'default' | 'auto' | 'manual';
 }
 
 export interface PreloadedMessage {

@@ -115,6 +115,7 @@ export const useMessageListScroll = ({
   const visibleRangeRef = useRef({ startIndex: 0, endIndex: 0 });
 
   const scrollSaveTimeoutRef = useRef<number | null>(null);
+  const lastPersistedSnapshotJsonRef = useRef<string | null>(null);
   const anchorTimeoutRef = useRef<number | null>(null);
   const restoreTimeoutRef = useRef<number | null>(null);
   const lastRestoredSessionIdRef = useRef<string | null>(null);
@@ -126,6 +127,9 @@ export const useMessageListScroll = ({
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
+    // The persisted-snapshot dedup is per-session; a session switch must not
+    // suppress the first save of the new session's position.
+    lastPersistedSnapshotJsonRef.current = null;
   }, [activeSessionId]);
 
   const clearAnchorTimeout = useCallback(() => {
@@ -313,19 +317,28 @@ export const useMessageListScroll = ({
     if (document.hidden) return;
 
     const container = scrollerRef;
-    if (container) {
-      const { scrollTop } = container;
+    if (!container) return;
+    if (!activeSessionId || lastRestoredSessionIdRef.current !== activeSessionId || messages.length === 0) return;
 
-      if (activeSessionId && lastRestoredSessionIdRef.current === activeSessionId && messages.length > 0) {
-        const snapshot = createScrollSnapshot(container) ?? { scrollTop: Math.max(0, Math.round(scrollTop)) };
-        if (scrollSaveTimeoutRef.current) {
-          clearTimeout(scrollSaveTimeoutRef.current);
-        }
-        scrollSaveTimeoutRef.current = window.setTimeout(() => {
-          localStorage.setItem(getScrollStorageKey(activeSessionId), JSON.stringify(snapshot));
-        }, 300);
-      }
+    const { scrollTop } = container;
+    const snapshot = createScrollSnapshot(container) ?? { scrollTop: Math.max(0, Math.round(scrollTop)) };
+
+    // Skip scheduling when the snapshot is byte-identical to the last one
+    // persisted (a repeated scroll event over the same content), so a burst of
+    // same-position scrolls does not restart the debounce timer pointlessly.
+    const serialized = JSON.stringify(snapshot);
+    if (lastPersistedSnapshotJsonRef.current === serialized) {
+      return;
     }
+
+    if (scrollSaveTimeoutRef.current) {
+      clearTimeout(scrollSaveTimeoutRef.current);
+    }
+    scrollSaveTimeoutRef.current = window.setTimeout(() => {
+      scrollSaveTimeoutRef.current = null;
+      lastPersistedSnapshotJsonRef.current = serialized;
+      localStorage.setItem(getScrollStorageKey(activeSessionId), serialized);
+    }, 300);
   }, [scrollerRef, activeSessionId, messages.length]);
 
   useEffect(() => {

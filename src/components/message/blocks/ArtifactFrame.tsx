@@ -119,12 +119,20 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   // rendered math) is recomputed after the first render skipped the formulas.
   const [katexReadyTick, setKatexReadyTick] = useState(0);
   const finalSrcDoc = useMemo(() => {
+    // Guard: while streaming, the iframe renders `streamingSrcDoc` (live,
+    // chunk-by-chunk via postMessage) and `finalSrcDoc` is unused. Building it
+    // every chunk would re-run the full DOMParser + sanitize + inject pipeline
+    // for content the iframe cannot see yet. Deferring the build to the end of
+    // the stream keeps the heavy final pass off the hot path.
+    if (isLoading) {
+      return '';
+    }
     // katexReadyTick is an intentional invalidation token: reading it ties the
     // memo to the lazy KaTeX load so the first render (which skips formulas)
     // is recomputed once the chunk has arrived.
     void katexReadyTick;
     return buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId });
-  }, [baseFontSize, html, katexReadyTick, themeId]);
+  }, [baseFontSize, html, isLoading, katexReadyTick, themeId]);
   const frameHeight =
     frameHeightState.heightCacheKey === heightCacheKey
       ? frameHeightState.height
@@ -344,7 +352,15 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
     targetWindow.addEventListener('message', handleMessage);
     return () => targetWindow.removeEventListener('message', handleMessage);
-  }, [contentHeightCacheKey, flushStreamingHtmlNow, heightCacheKey, isLoading, onFollowUp, streamingHeightCacheKey, targetWindow]);
+  }, [
+    contentHeightCacheKey,
+    flushStreamingHtmlNow,
+    heightCacheKey,
+    isLoading,
+    onFollowUp,
+    streamingHeightCacheKey,
+    targetWindow,
+  ]);
 
   useEffect(() => {
     const handleClearSelection = () => {

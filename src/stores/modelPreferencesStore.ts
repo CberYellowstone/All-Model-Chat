@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { type ApiMode, type MediaResolution, type ModelOption, type ThinkingLevel, THINKING_LEVELS } from '@/types';
+import {
+  type MediaResolution,
+  type ModelOption,
+  type ThinkingLevel,
+  normalizeModelApiModeTag,
+  THINKING_LEVELS,
+} from '@/types';
 import {
   createPersistedStateStorage,
   readPersistentStorageItem,
@@ -34,8 +40,6 @@ interface ModelPreferencesActions {
 
 const parseJson = (rawValue: string | null): unknown => (rawValue ? safeJsonParse(rawValue, undefined) : undefined);
 
-const isApiMode = (value: unknown): value is ApiMode => value === 'gemini-native' || value === 'openai-compatible';
-
 const normalizeModelOptions = (value: unknown): ModelOption[] | null => {
   if (!Array.isArray(value)) {
     return null;
@@ -54,12 +58,14 @@ const normalizeModelOptions = (value: unknown): ModelOption[] | null => {
       return;
     }
 
+    const apiModeTag = normalizeModelApiModeTag(model.apiMode);
+
     seenIds.add(model.id);
     models.push({
       id: model.id,
       name: typeof model.name === 'string' && model.name ? model.name : model.id,
       ...(typeof model.isPinned === 'boolean' ? { isPinned: model.isPinned } : {}),
-      ...(isApiMode(model.apiMode) ? { apiMode: model.apiMode } : {}),
+      ...(apiModeTag ? { apiMode: apiModeTag } : {}),
     });
   });
 

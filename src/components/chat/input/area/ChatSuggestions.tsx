@@ -17,7 +17,7 @@ interface ChatSuggestionsProps {
   isFullscreen: boolean;
 }
 
-export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
+const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
   show,
   onSuggestionClick,
   onOrganizeInfoClick,
@@ -145,3 +145,5 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
     </div>
   );
 };
+
+export const ChatSuggestions = React.memo(ChatSuggestionsComponent);

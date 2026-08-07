@@ -381,6 +381,7 @@ export const useMessageActions = ({
           normalizedMessages,
           `${sourceSession.title} (Fork)`,
           sourceSession.groupId ?? null,
+          'manual',
         );
         forkedSessionId = forkedSession.id;
         return [forkedSession, ...prev];

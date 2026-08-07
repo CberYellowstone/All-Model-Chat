@@ -4,8 +4,8 @@ import { useFullscreen } from '@/hooks/ui/useFullscreen';
 import type { AppSettings, ChatSettings, ModelOption } from '@/types';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
 import { getTabCycleModelIds } from '@/utils/model/modelCatalog';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { buildProviderAwareModelList, getThirdPartyProviderConfig } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
+import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
 
 interface UseGlobalShortcutsProps {
   appSettings: AppSettings;
@@ -100,11 +100,10 @@ export const useGlobalShortcuts = ({
           activeElement instanceof Element && activeElement.matches(CHAT_INPUT_TEXTAREA_SELECTOR);
         if (isChatTextareaFocused || !isGenerallyInputFocused) {
           event.preventDefault();
-          const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-          const activeThirdPartyProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
-          const currentModelId = isThirdPartyMode
-            ? (activeThirdPartyProvider?.modelId ?? currentChatSettings.modelId)
-            : currentChatSettings.modelId;
+          // Follow the active session's routing decision — the modelId we cycle
+          // is whatever the session is currently routed to, not a global mode.
+          const currentRoute = resolveChatApiRoute(appSettings, currentChatSettings);
+          const currentModelId = currentRoute.modelId || currentChatSettings.modelId;
           const tabCycleModels = buildTabCycleAvailableModels(appSettings, availableModels);
           const cycleModels = getTabCycleModelIds(tabCycleModels, appSettings.tabModelCycleIds);
           if (cycleModels.length === 0) {
@@ -135,7 +134,7 @@ export const useGlobalShortcuts = ({
     appSettings,
     setAppSettings,
     startNewChat,
-    currentChatSettings.modelId,
+    currentChatSettings,
     availableModels,
     handleSelectModelInHeader,
     setIsLogViewerOpen,

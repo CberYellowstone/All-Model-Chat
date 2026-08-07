@@ -49,11 +49,11 @@ describe('getNextSettingsForToolToggle — keep thinking', () => {
   });
 });
 
-// Regression: the tool gates must mirror the ACTIVE SESSION's routing mode
-// (resolveChatApiRoute), not the global appSettings mode. When a chat switch
-// leaves global mode stale, a global-based gate would hide badges on sessions
-// that actually route Gemini-native — or show them on third-party sessions.
-describe('useChatInputToolStates — Gemini tool gates follow session apiMode', () => {
+// Regression: the tool gates must mirror the ACTIVE SESSION's routing key
+// (providerId), not a global appSettings mode. When a chat switch leaves a
+// global mode stale, a global-based gate would hide badges on sessions that
+// actually route Gemini-native — or show them on third-party sessions.
+describe('useChatInputToolStates — Gemini tool gates follow session providerId', () => {
   beforeEach(() => {
     useChatStore.setState({
       activeSessionId: 'session-1',
@@ -71,9 +71,9 @@ describe('useChatInputToolStates — Gemini tool gates follow session apiMode', 
       }),
     );
 
-  it('hides Gemini tools on a third-party session even when the global mode is Gemini-native', () => {
+  it('hides Gemini tools on a third-party session', () => {
     const { result } = renderToolStates({
-      apiMode: 'third-party',
+      providerId: 'openai',
       isDeepSearchEnabled: true,
       isGoogleSearchEnabled: true,
       isCodeExecutionEnabled: true,
@@ -84,15 +84,15 @@ describe('useChatInputToolStates — Gemini tool gates follow session apiMode', 
     expect(result.current.codeExecution!.isEnabled).toBe(false);
   });
 
-  it('shows Gemini tools on a Gemini-native session even when the global mode is third-party', () => {
+  it('shows Gemini tools on a Gemini-native session even when a global mode points third-party', () => {
     // Set the global appSettings to the OPPOSITE of the session: if the gate were
     // ever reverted to read the global store, this assertion would fail.
     useSettingsStore.setState({
-      appSettings: createAppSettings({ apiMode: 'third-party', isThirdPartyApiEnabled: true }),
+      appSettings: createAppSettings({ providerId: 'openai' }),
     });
 
     const { result } = renderToolStates({
-      apiMode: 'gemini-native',
+      providerId: 'gemini-native',
       isDeepSearchEnabled: true,
       isUrlContextEnabled: true,
     });

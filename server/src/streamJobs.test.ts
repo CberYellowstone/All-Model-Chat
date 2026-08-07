@@ -270,6 +270,172 @@ describe('stream journal (job-id gated)', () => {
     expect(String(body.error)).toContain('429');
   });
 
+  it('preserves the real upstream error body (code/message/status) in the 502', async () => {
+    // Upstream rejects with a Gemini-shaped error that carries the actual
+    // reason. The old code only kept the status code; we now surface the body.
+    const upstream = serverCleanup.track(
+      await startHttpServer(
+        http.createServer((_request, response) => {
+          response.writeHead(403, { 'content-type': 'application/json' });
+          response.end(
+            JSON.stringify({
+              error: {
+                code: 403,
+                message: 'The caller does not have permission',
+                status: 'PERMISSION_DENIED',
+              },
+            }),
+          );
+        }),
+      ),
+    );
+
+    const app = createServer({
+      geminiApiBase: upstream.baseUrl,
+      geminiApiKey: 'server-key',
+    });
+    const appStarted = serverCleanup.track(await startHttpServer(app));
+
+    try {
+      const initial = await fetch(`${appStarted.baseUrl}${STREAM_PATH}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          [JOB_ID_HEADER]: 'job-err-body',
+        },
+        body: JSON.stringify({ contents: [] }),
+      });
+      await readStream(initial).catch(() => undefined);
+    } catch {
+      // expected: socket destroyed once the upstream error is recorded
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const resume = await fetch(`${appStarted.baseUrl}${STREAM_PATH}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        [JOB_ID_HEADER]: 'job-err-body',
+        [LAST_SEQ_HEADER]: '0',
+      },
+      body: JSON.stringify({ contents: [] }),
+    });
+
+    expect(resume.status).toBe(502);
+    const body = (await resume.json()) as Record<string, unknown>;
+    const errorString = String(body.error);
+    expect(errorString).toContain('403');
+    expect(errorString).toContain('PERMISSION_DENIED');
+    expect(errorString).toContain('The caller does not have permission');
+  });
+
+  it('emits a raw-JSON Gemini error chunk when the upstream fails mid-stream', async () => {
+    // The upstream starts a 200 SSE stream, then its socket dies (a real
+    // mid-stream failure). The browser already got 200 + SSE headers, so the
+    // terminal error must be delivered as a raw JSON {"error":{...}} chunk
+    // (which the genai SDK turns into an ApiError) instead of a socket destroy
+    // (which becomes "socket hang up" through the web proxy). Note: `data:`-
+    // prefixed error events are silently swallowed by the SDK as empty chunks,
+    // so the chunk must NOT be SSE-formatted.
+    const upstream = serverCleanup.track(
+      await startHttpServer(
+        http.createServer((_request, response) => {
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          response.write('data: {"text":"partial"}\n\n');
+          setTimeout(() => {
+            response.socket?.destroy();
+          }, 15);
+        }),
+      ),
+    );
+
+    const app = createServer({
+      geminiApiBase: upstream.baseUrl,
+      geminiApiKey: 'server-key',
+    });
+    const appStarted = serverCleanup.track(await startHttpServer(app));
+
+    const res = await fetch(`${appStarted.baseUrl}${STREAM_PATH}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        [JOB_ID_HEADER]: 'job-midstream-err',
+      },
+      body: JSON.stringify({ contents: [] }),
+    });
+
+    expect(res.status).toBe(200);
+    const body = await readStream(res);
+
+    // Partial content first, then a standalone JSON error chunk with a real
+    // cause (the upstream's read failure, e.g. "terminated"). The error chunk
+    // is raw JSON (not `data:`-prefixed), so it parses as a standalone object.
+    expect(body).toContain('partial');
+    const blocks = body.split('\n\n').filter((b) => b.trim().length > 0);
+    const lastBlock = blocks[blocks.length - 1];
+    expect(lastBlock.startsWith('{')).toBe(true);
+    const parsed = JSON.parse(lastBlock) as { error: { code?: number; status?: string; message?: string } };
+    expect(parsed.error.code).toBeGreaterThanOrEqual(400);
+    expect(parsed.error.code).toBeLessThan(600);
+    expect(parsed.error.message?.length).toBeGreaterThan(0);
+  });
+
+  it('does not emit an SSE error event for a client abort', async () => {
+    // Aborting via the stream-abort endpoint finishes the job with
+    // 'aborted by client'; the browser handles that stop locally, so no error
+    // event should be appended (which would render a spurious error bubble).
+    const upstream = serverCleanup.track(
+      await startHttpServer(
+        http.createServer((_request, response) => {
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          let n = 0;
+          const interval = setInterval(() => {
+            response.write(`data: ${n++}\n\n`);
+          }, 5);
+          response.on('close', () => clearInterval(interval));
+        }),
+      ),
+    );
+
+    const app = createServer({
+      geminiApiBase: upstream.baseUrl,
+      geminiApiKey: 'server-key',
+    });
+    const appStarted = serverCleanup.track(await startHttpServer(app));
+
+    const streamReq = http.request(`${appStarted.baseUrl}${STREAM_PATH}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        [JOB_ID_HEADER]: 'job-client-abort',
+      },
+    });
+    streamReq.write(JSON.stringify({ contents: [] }));
+    streamReq.end();
+
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    await fetch(`${appStarted.baseUrl}/api/gemini/stream-abort/job-client-abort`, {
+      method: 'POST',
+    });
+
+    // Allow the abort to land and the flush to run.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    let sawErrorEvent = false;
+    streamReq.on('data', (chunk: Buffer) => {
+      if (chunk.toString('utf8').includes('"error"')) {
+        sawErrorEvent = true;
+      }
+    });
+    // Give any (erroneous) error event a chance to arrive.
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    streamReq.destroy();
+
+    expect(sawErrorEvent).toBe(false);
+  });
+
   it('journals multi-byte UTF-8 characters split across TCP chunks without corruption', async () => {
     // A CJK character is 3 bytes in UTF-8. Splitting its bytes across two
     // network chunks and decoding each chunk independently would produce a

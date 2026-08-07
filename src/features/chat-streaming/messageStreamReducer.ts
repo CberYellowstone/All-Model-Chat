@@ -159,9 +159,10 @@ export const reduceMessageStreamEvent = (state: MessageStreamState, event: Messa
       // text — executableCode/codeExecutionResult derive markdown from
       // getContentDeltaFromPart but are tooling round-trips, not the model
       // switching to answering. inlineData (images) still ends thinking.
-      const hasVisibleText = event.contentDelta !== undefined
-        ? contentDelta.trim().length > 0
-        : Boolean((event.part as Part & { text?: string }).text?.trim());
+      const hasVisibleText =
+        event.contentDelta !== undefined
+          ? contentDelta.trim().length > 0
+          : Boolean((event.part as Part & { text?: string }).text?.trim());
       const hasContentEnd = hasVisibleText || hasInlineData(event.part);
 
       if (hasContentEnd) {
@@ -175,14 +176,12 @@ export const reduceMessageStreamEvent = (state: MessageStreamState, event: Messa
       // thought text (non-streaming third-party replies must render it) but
       // must not advance the live timing state machine.
       const thoughts = thoughtDelta ? nextState.thoughts + thoughtDelta : nextState.thoughts;
-      const lastThoughtChunkTimeMs = !isReplay && thoughtDelta
-        ? receivedAt.getTime() - state.generationStartTime.getTime()
-        : nextState.lastThoughtChunkTimeMs;
-      const thinkingActive = !isReplay && hasContentEnd
-        ? false
-        : !isReplay && thoughtDelta
-          ? true
-          : nextState.thinkingActive;
+      const lastThoughtChunkTimeMs =
+        !isReplay && thoughtDelta
+          ? receivedAt.getTime() - state.generationStartTime.getTime()
+          : nextState.lastThoughtChunkTimeMs;
+      const thinkingActive =
+        !isReplay && hasContentEnd ? false : !isReplay && thoughtDelta ? true : nextState.thinkingActive;
 
       return {
         ...nextState,

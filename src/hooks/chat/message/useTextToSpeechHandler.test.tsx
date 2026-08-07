@@ -95,7 +95,7 @@ describe('useTextToSpeechHandler', () => {
     unmount();
   });
 
-  it('uses the Gemini API key path for quick TTS while OpenAI-compatible mode is active', async () => {
+  it('uses the Gemini API key path for quick TTS while the session routes Gemini', async () => {
     getKeyForRequestMock.mockReturnValue({ key: 'openai-key', isNewKey: true });
     getGeminiKeyForRequestMock.mockReturnValue({ key: 'gemini-key', isNewKey: true });
 
@@ -103,10 +103,7 @@ describe('useTextToSpeechHandler', () => {
       useTextToSpeechHandler({
         appSettings: {
           ...DEFAULT_APP_SETTINGS,
-          isOpenAICompatibleApiEnabled: true,
-          apiMode: 'openai-compatible',
           apiKey: 'gemini-key',
-          openaiCompatibleApiKey: 'openai-key',
         },
         currentChatSettings: createChatSettings('gemini-3-flash-preview'),
       }),

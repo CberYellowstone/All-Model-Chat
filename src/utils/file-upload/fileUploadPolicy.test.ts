@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
-import type { AppSettings } from '@/types';
+import type { AppSettings, ChatProviderId } from '@/types';
 import {
   buildFileUploadPreflight,
   checkBatchNeedsApiKey,
@@ -27,13 +27,15 @@ const makeSettings = (overrides?: Partial<AppSettings>): AppSettings => ({
   ...overrides,
 });
 
+const THIRD_PARTY_PROVIDER: ChatProviderId = 'openai';
+
 describe('third-party sessions never use the Gemini Files API', () => {
   it('inlines text even when the text-upload preference is on', () => {
     const settings = makeSettings({
       filesApiConfig: { images: false, pdfs: false, audio: false, video: false, text: true },
     });
 
-    expect(shouldUseFileApi(createFile('notes.txt', 'text/plain', 1024), settings, 'third-party')).toBe(false);
+    expect(shouldUseFileApi(createFile('notes.txt', 'text/plain', 1024), settings, THIRD_PARTY_PROVIDER)).toBe(false);
   });
 
   it('inlines oversized text with code execution on', () => {
@@ -42,17 +44,23 @@ describe('third-party sessions never use the Gemini Files API', () => {
       isLocalPythonEnabled: false,
     });
 
-    expect(shouldUseFileApi(createFile('big.txt', 'text/plain', 3 * 1024 * 1024), settings, 'third-party')).toBe(false);
+    expect(shouldUseFileApi(createFile('big.txt', 'text/plain', 3 * 1024 * 1024), settings, THIRD_PARTY_PROVIDER)).toBe(
+      false,
+    );
   });
 
   it('inlines files that would otherwise exceed the inline payload cap', () => {
     const settings = makeSettings();
 
-    expect(shouldUseFileApi(createFile('huge.mp4', 'video/mp4', 101 * 1024 * 1024), settings, 'third-party')).toBe(
-      false,
-    );
     expect(
-      getFilesRequiringFileApi([createFile('huge.txt', 'text/plain', 101 * 1024 * 1024)], settings, 'third-party').size,
+      shouldUseFileApi(createFile('huge.mp4', 'video/mp4', 101 * 1024 * 1024), settings, THIRD_PARTY_PROVIDER),
+    ).toBe(false);
+    expect(
+      getFilesRequiringFileApi(
+        [createFile('huge.txt', 'text/plain', 101 * 1024 * 1024)],
+        settings,
+        THIRD_PARTY_PROVIDER,
+      ).size,
     ).toBe(0);
   });
 
@@ -60,21 +68,19 @@ describe('third-party sessions never use the Gemini Files API', () => {
     const settings = makeSettings();
     const files = [createFile('huge.txt', 'text/plain', 101 * 1024 * 1024)];
 
-    expect(checkBatchNeedsApiKey(files, settings, 'third-party')).toBe(false);
+    expect(checkBatchNeedsApiKey(files, settings, THIRD_PARTY_PROVIDER)).toBe(false);
   });
 
-  // Regression: the decision must follow the SESSION apiMode, not the global
-  // appSettings, which stays stale after switching between differently-routed
-  // chats. A global-mode gate (isThirdPartyApiActive(appSettings)) would upload
-  // a TXT here even though the active chat routes third-party.
-  it('regression: inlines when the session is third-party even though the global mode is gemini-native', () => {
-    const settings = makeSettings(); // DEFAULT_APP_SETTINGS keeps apiMode 'gemini-native'
-    expect(settings.apiMode).toBe('gemini-native');
+  // Regression: the decision must follow the SESSION providerId, not a global
+  // appSettings mode. The new policy reads only the providerId argument, so
+  // this is structurally guaranteed; the test locks the contract.
+  it('regression: inlines when the session routes third-party', () => {
+    const settings = makeSettings();
 
-    expect(shouldUseFileApi(createFile('notes.txt', 'text/plain', 1024), settings, 'third-party')).toBe(false);
+    expect(shouldUseFileApi(createFile('notes.txt', 'text/plain', 1024), settings, THIRD_PARTY_PROVIDER)).toBe(false);
   });
 
-  it('leaves the Gemini-native path unchanged when no session apiMode is given', () => {
+  it('leaves the Gemini-native path unchanged when no session providerId is given', () => {
     const settings = makeSettings({
       filesApiConfig: { images: false, pdfs: false, audio: false, video: false, text: true },
     });

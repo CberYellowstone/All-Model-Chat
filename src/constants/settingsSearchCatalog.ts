@@ -263,7 +263,7 @@ const apiEntries: SettingsSearchEntry[] = [
   {
     id: 'api-third-party',
     tab: 'api',
-    labelKey: 'settingsApiModeOpenAICompatible',
+    labelKey: 'settingsApiModeThirdParty',
     descriptionKey: 'settingsOpenAICompatibleToggleHelp',
     groupKey: 'settingsTabApi',
   },

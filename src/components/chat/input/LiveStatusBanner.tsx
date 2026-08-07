@@ -11,7 +11,7 @@ interface LiveStatusBannerProps {
   error: string | null;
 }
 
-export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
+const LiveStatusBannerComponent: React.FC<LiveStatusBannerProps> = ({
   isConnected,
   isSpeaking,
   isReconnecting,
@@ -99,3 +99,5 @@ export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
     </div>
   );
 };
+
+export const LiveStatusBanner = React.memo(LiveStatusBannerComponent);

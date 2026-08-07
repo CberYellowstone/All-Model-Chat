@@ -173,10 +173,7 @@ async function buildGenerationConfigFromOptions({
   const normalizedImageSize = normalizeImageSizeForModel(modelId, imageSize);
   const googleSearchTool = buildGoogleSearchToolForModel(modelId);
 
-  if (
-    normalizeModelId(modelId) === 'gemini-2.5-flash-image-preview' ||
-    normalizeModelId(modelId) === 'gemini-2.5-flash-image'
-  ) {
+  if (normalizeModelId(modelId) === 'gemini-2.5-flash-image') {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {};
     if (normalizedAspectRatio && normalizedAspectRatio !== 'Auto') {
       imageConfig.aspectRatio = normalizedAspectRatio;

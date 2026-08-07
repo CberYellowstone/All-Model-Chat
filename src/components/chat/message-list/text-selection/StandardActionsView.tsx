@@ -2,7 +2,6 @@ import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Quote, Copy, Check, CornerRightDown, Volume2 } from 'lucide-react';
 import { IconGoogle } from '@/components/icons';
-import { type translations } from '@/i18n/translations';
 
 interface StandardActionsViewProps {
   onQuote: (e: React.MouseEvent) => void;
@@ -11,7 +10,6 @@ interface StandardActionsViewProps {
   onSearch: (e: React.MouseEvent) => void;
   onTTS?: (e: React.MouseEvent) => void;
   isCopied: boolean;
-  t?: (key: keyof typeof translations) => string;
 }
 
 export const StandardActionsView: React.FC<StandardActionsViewProps> = ({
@@ -23,10 +21,10 @@ export const StandardActionsView: React.FC<StandardActionsViewProps> = ({
   isCopied,
 }) => {
   const { t } = useI18n();
-  const quoteLabel = t ? t('quote') : 'Quote';
-  const insertLabel = t ? t('fillInput') : 'Insert';
-  const copyLabel = isCopied ? (t ? t('copied') : 'Copied') : t ? t('copy') : 'Copy';
-  const searchLabel = t ? t('search') : 'Search';
+  const quoteLabel = t('quote');
+  const insertLabel = t('fillInput');
+  const copyLabel = isCopied ? t('copied') : t('copy');
+  const searchLabel = t('search');
   const actionButtonClass =
     'flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-medium text-[var(--theme-text-primary)] transition-all hover:bg-[var(--theme-bg-tertiary)] sm:px-3';
 

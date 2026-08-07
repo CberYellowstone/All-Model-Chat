@@ -127,6 +127,14 @@ const finishJob = (job: StreamJob, error?: string): void => {
   }
 };
 
+// ── Generic SSE helpers (provider-agnostic) ─────────────────────────────────
+
+// The error message recorded when a client aborts a job via the abort endpoint.
+// Kept distinct from upstream failures so downstream code can tell a
+// client-initiated stop (already surfaced to the user by the frontend) from a
+// genuine upstream error (which deserves an SSE error event / 502).
+export const ABORTED_BY_CLIENT_MESSAGE = 'aborted by client';
+
 /**
  * Abort a job by id. Returns true if the job was aborted, false if not found
  * or already done. Works for any provider's job in the shared Map.
@@ -141,11 +149,68 @@ export const abortJob = (id: string): boolean => {
   } catch {
     /* ignore */
   }
-  finishJob(job, 'aborted by client');
+  finishJob(job, ABORTED_BY_CLIENT_MESSAGE);
   return true;
 };
 
-// ── Generic SSE helpers (provider-agnostic) ─────────────────────────────────
+// Read a bounded amount of an error response body. The body carries the real
+// upstream failure reason (e.g. Gemini's {"error":{"code":403,"message":...}});
+// we want that message in the job error so the browser and logs surface the
+// actual cause instead of a bare status code. Bounded to avoid buffering a
+// huge error page from a misbehaving upstream.
+const MAX_ERROR_BODY_BYTES = 64 * 1024;
+
+const readBoundedErrorBody = async (response: Response): Promise<string> => {
+  if (!response.body) {
+    return '';
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let out = '';
+  let received = 0;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (!value) {
+      continue;
+    }
+    received += value.byteLength;
+    out += decoder.decode(value, { stream: true });
+    if (received >= MAX_ERROR_BODY_BYTES) {
+      await reader.cancel();
+      break;
+    }
+  }
+  out += decoder.decode();
+  return out.trim();
+};
+
+// Normalize an upstream error body into a compact, human-readable reason.
+// Gemini-shaped JSON keeps its code/message/status; anything else falls back
+// to the raw body (bounded) so the status code alone is never all we have.
+const summarizeUpstreamError = (response: Response, body: string): string => {
+  if (!body) {
+    return `upstream ${response.status}`;
+  }
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { code?: unknown; message?: unknown; status?: unknown };
+    };
+    const error = parsed?.error;
+    if (error && (error.code !== undefined || error.message !== undefined || error.status !== undefined)) {
+      const parts: string[] = [];
+      if (error.code !== undefined) parts.push(String(error.code));
+      if (error.status !== undefined) parts.push(String(error.status));
+      if (error.message !== undefined) parts.push(String(error.message));
+      return `upstream ${response.status}: ${parts.join(' ')}`;
+    }
+  } catch {
+    // Not JSON; fall through to the raw body.
+  }
+  return `upstream ${response.status}: ${body}`;
+};
 
 /**
  * Fire a detached upstream fetch for a journaled stream job and pump its SSE
@@ -181,7 +246,8 @@ export async function runDetachedUpstream(
     const upstreamResponse = await fetchImpl(upstreamUrl, requestInit);
 
     if (!upstreamResponse.ok || !upstreamResponse.body) {
-      finishJob(job, `upstream ${upstreamResponse.status}`);
+      const errorBody = await readBoundedErrorBody(upstreamResponse);
+      finishJob(job, summarizeUpstreamError(upstreamResponse, errorBody));
       return;
     }
 
@@ -264,6 +330,31 @@ function flushToResponse(job: StreamJob, response: ServerResponse, cursor: numbe
 interface AttachJobStreamConfig {
   allowedOrigins: string[];
 }
+
+// ── Upstream error → SSE error event ────────────────────────────────────────
+
+// The browser's @google/genai SDK parses each raw network chunk as JSON before
+// splitting it into SSE events, and throws an ApiError for any chunk that is a
+// standalone {"error":{code,status,message}} object with a numeric code in
+// [400,600). We rely on that to surface an upstream failure to the browser once
+// the 200 SSE headers are already on the wire: emit the error as a raw JSON
+// chunk (NOT `data:`-prefixed — that form is treated as an ordinary event and
+// silently yields an empty chunk), then end the response cleanly. Ending clean
+// instead of destroying the socket also stops the web proxy from turning the
+// failure into a bare "socket hang up".
+const parseStreamErrorDetails = (raw: string): { code: number; status: string } => {
+  const codeMatch = /(?:upstream\s+)?(\d{3})/.exec(raw);
+  const statusMatch = /([A-Z][A-Z0-9_]{2,})/.exec(raw);
+  return {
+    code: codeMatch ? Number(codeMatch[1]) : 502,
+    status: statusMatch ? statusMatch[1] : 'INTERNAL',
+  };
+};
+
+const buildStreamErrorEvent = (raw: string): string => {
+  const { code, status } = parseStreamErrorDetails(raw);
+  return `${JSON.stringify({ error: { code, status, message: raw } })}\n\n`;
+};
 
 /**
  * Helper for a provider proxy that wants the full journal treatment: detect
@@ -350,6 +441,8 @@ async function attachJobStream(
     // was full (write() returned false). Do NOT end the response even if the
     // job is done — that would permanently drop the tail. Register a drain
     // retry so the remaining chunks are delivered once the socket drains.
+    // (A write() that returned false is still queued for flush; chunks *after*
+    // the break live only in job.chunks, so end() alone would drop them.)
     const hasPendingChunks = job.chunks.some((chunk) => chunk.seq > cursor && chunk.seq >= job.firstSeq);
     if (hasPendingChunks) {
       if (!drainScheduled) {
@@ -362,13 +455,24 @@ async function attachJobStream(
     if (job?.done) {
       job.listeners.delete(flush);
       // If the upstream finished with an error after we already started
-      // streaming, we can no longer change the 200 status; destroy the socket
-      // so the client detects the broken stream and routes to its error handler
-      // with the real cause rather than ending cleanly as if the model replied
-      // with nothing.
+      // streaming, we can no longer change the 200 status. Instead of
+      // destroying the socket (which loses the reason and surfaces upstream as
+      // a bare "socket hang up" through the web proxy), emit a raw-JSON Gemini
+      // error chunk and end cleanly: the SDK throws an ApiError on a standalone
+      // {"error":{...}} chunk and the frontend routes the real cause into the
+      // error bubble. A clean end also means the proxy never sees a broken
+      // connection, so "Bad Gateway: socket hang up" is gone entirely.
       if (job.error) {
         console.error('[stream-jobs] upstream finished with error after headers sent:', job.error);
-        response.destroy(new Error(job.error));
+        // A client-initiated abort is already surfaced to the user by the
+        // frontend's AbortError path; emitting an SSE error event for it would
+        // render a spurious error bubble. Only genuine upstream failures get
+        // the error event. And a write to an already-destroyed response throws
+        // (browser went away); there's nothing left to send then.
+        if (job.error !== ABORTED_BY_CLIENT_MESSAGE && !response.writableEnded && !response.destroyed) {
+          response.write(buildStreamErrorEvent(job.error));
+          response.end();
+        }
         return;
       }
       response.end();

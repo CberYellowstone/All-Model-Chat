@@ -9,7 +9,7 @@ interface ChatQuoteDisplayProps {
   themeId: string;
 }
 
-export const ChatQuoteDisplay: React.FC<ChatQuoteDisplayProps> = ({ quotes, onRemoveQuote, themeId }) => {
+const ChatQuoteDisplayComponent: React.FC<ChatQuoteDisplayProps> = ({ quotes, onRemoveQuote, themeId }) => {
   const { t } = useI18n();
 
   if (!quotes || quotes.length === 0) return null;
@@ -61,3 +61,5 @@ export const ChatQuoteDisplay: React.FC<ChatQuoteDisplayProps> = ({ quotes, onRe
     </div>
   );
 };
+
+export const ChatQuoteDisplay = React.memo(ChatQuoteDisplayComponent);

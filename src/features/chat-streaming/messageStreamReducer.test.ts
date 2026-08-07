@@ -151,18 +151,24 @@ describe('messageStreamReducer', () => {
     const codeAt = new Date('2026-05-05T10:00:00.400Z');
     const reThoughtAt = new Date('2026-05-05T10:00:00.500Z');
 
-    const state = ([
-      { type: 'thought', text: 'First pass', receivedAt: thoughtAt },
-      { type: 'part', part: { text: 'Run this' } as Part, receivedAt: textAt },
-      // Code execution is a tooling round trip: it must not end thinking.
-      { type: 'part', part: { executableCode: { language: 'PYTHON', code: 'print(1)' } } as Part, receivedAt: codeAt },
-      {
-        type: 'part',
-        part: { codeExecutionResult: { outcome: 'OUTCOME_OK', output: '1' } } as Part,
-        receivedAt: codeAt,
-      },
-      { type: 'thought', text: 'Re-entered thinking', receivedAt: reThoughtAt },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        { type: 'thought', text: 'First pass', receivedAt: thoughtAt },
+        { type: 'part', part: { text: 'Run this' } as Part, receivedAt: textAt },
+        // Code execution is a tooling round trip: it must not end thinking.
+        {
+          type: 'part',
+          part: { executableCode: { language: 'PYTHON', code: 'print(1)' } } as Part,
+          receivedAt: codeAt,
+        },
+        {
+          type: 'part',
+          part: { codeExecutionResult: { outcome: 'OUTCOME_OK', output: '1' } } as Part,
+          receivedAt: codeAt,
+        },
+        { type: 'thought', text: 'Re-entered thinking', receivedAt: reThoughtAt },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -178,10 +184,12 @@ describe('messageStreamReducer', () => {
     const start = new Date('2026-05-05T10:00:00.000Z');
     const replayAt = new Date('2026-05-05T10:00:08.200Z');
 
-    const state = ([
-      { type: 'thought', text: 'Replayed reasoning', receivedAt: replayAt, recordFirstToken: false },
-      { type: 'part', part: { text: 'Replayed answer' } as Part, receivedAt: replayAt, recordFirstToken: false },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        { type: 'thought', text: 'Replayed reasoning', receivedAt: replayAt, recordFirstToken: false },
+        { type: 'part', part: { text: 'Replayed answer' } as Part, receivedAt: replayAt, recordFirstToken: false },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -198,15 +206,17 @@ describe('messageStreamReducer', () => {
     const start = new Date('2026-05-05T10:00:00.000Z');
     const at = new Date('2026-05-05T10:00:00.100Z');
 
-    const state = ([
-      {
-        type: 'part',
-        part: { text: '<thinking>Plan.</thinking>Answer.' } as Part,
-        contentDelta: 'Answer.',
-        thoughtDelta: 'Plan.',
-        receivedAt: at,
-      },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        {
+          type: 'part',
+          part: { text: '<thinking>Plan.</thinking>Answer.' } as Part,
+          contentDelta: 'Answer.',
+          thoughtDelta: 'Plan.',
+          receivedAt: at,
+        },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -228,15 +238,17 @@ describe('messageStreamReducer', () => {
     const start = new Date('2026-05-05T10:00:00.000Z');
     const at = new Date('2026-05-05T10:00:00.100Z');
 
-    const state = ([
-      {
-        type: 'part',
-        part: { text: '<thinking>deep reasoning' } as Part,
-        contentDelta: '',
-        thoughtDelta: 'deep reasoning',
-        receivedAt: at,
-      },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        {
+          type: 'part',
+          part: { text: '<thinking>deep reasoning' } as Part,
+          contentDelta: '',
+          thoughtDelta: 'deep reasoning',
+          receivedAt: at,
+        },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -256,9 +268,9 @@ describe('messageStreamReducer', () => {
     const start = new Date('2026-05-05T10:00:00.000Z');
     const at = new Date('2026-05-05T10:00:00.100Z');
 
-    const state = ([
-      { type: 'part', part: { text: 'Hello' } as Part, receivedAt: at },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [{ type: 'part', part: { text: 'Hello' } as Part, receivedAt: at }] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -275,23 +287,25 @@ describe('messageStreamReducer', () => {
     const t2 = new Date('2026-05-05T10:00:00.300Z');
     const t3 = new Date('2026-05-05T10:00:00.500Z');
 
-    const state = ([
-      {
-        type: 'part',
-        part: { text: '<thinking>one</thinking>' } as Part,
-        contentDelta: '',
-        thoughtDelta: 'one',
-        receivedAt: t1,
-      },
-      { type: 'part', part: { text: 'Answer' } as Part, contentDelta: 'Answer', thoughtDelta: '', receivedAt: t2 },
-      {
-        type: 'part',
-        part: { text: '<thinking>two</thinking>' } as Part,
-        contentDelta: '',
-        thoughtDelta: 'two',
-        receivedAt: t3,
-      },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        {
+          type: 'part',
+          part: { text: '<thinking>one</thinking>' } as Part,
+          contentDelta: '',
+          thoughtDelta: 'one',
+          receivedAt: t1,
+        },
+        { type: 'part', part: { text: 'Answer' } as Part, contentDelta: 'Answer', thoughtDelta: '', receivedAt: t2 },
+        {
+          type: 'part',
+          part: { text: '<thinking>two</thinking>' } as Part,
+          contentDelta: '',
+          thoughtDelta: 'two',
+          receivedAt: t3,
+        },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );
@@ -309,16 +323,18 @@ describe('messageStreamReducer', () => {
     const start = new Date('2026-05-05T10:00:00.000Z');
     const replayAt = new Date('2026-05-05T10:00:08.200Z');
 
-    const state = ([
-      {
-        type: 'part',
-        part: { text: '<thinking>R</thinking>A' } as Part,
-        contentDelta: 'A',
-        thoughtDelta: 'R',
-        receivedAt: replayAt,
-        recordFirstToken: false,
-      },
-    ] satisfies MessageStreamEvent[]).reduce(
+    const state = (
+      [
+        {
+          type: 'part',
+          part: { text: '<thinking>R</thinking>A' } as Part,
+          contentDelta: 'A',
+          thoughtDelta: 'R',
+          receivedAt: replayAt,
+          recordFirstToken: false,
+        },
+      ] satisfies MessageStreamEvent[]
+    ).reduce(
       reduceMessageStreamEvent,
       createMessageStreamState({ generationId: 'model-message', generationStartTime: start }),
     );

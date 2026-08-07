@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   isLikelyStreamingHtmlArtifact,
   isLikelyStreamingLiveArtifactInteractionJson,
@@ -43,16 +43,27 @@ const getCharsToAdd = (lag: number): number =>
 export const useSmoothStreaming = (text: string | undefined | null, isStreaming: boolean) => {
   const safeText = text || '';
   const isDocumentHidden = typeof document !== 'undefined' && document.hidden;
+  // Classify the content once per text value. The table check in particular
+  // splits the whole string (array allocation); memoizing keeps that off the
+  // hot path and avoids running it twice per render (bypass + line-by-line).
+  const textClassification = useMemo(
+    () => ({
+      hasSensitiveTable: hasStreamingSensitiveMarkdownTable(safeText),
+      isHtmlArtifact: isLikelyStreamingHtmlArtifact(safeText),
+      isLiveArtifactJson: isLikelyStreamingLiveArtifactInteractionJson(safeText),
+    }),
+    [safeText],
+  );
   const shouldBypassAnimation =
     isStreaming &&
-    (hasStreamingSensitiveMarkdownTable(safeText) ||
-      isLikelyStreamingHtmlArtifact(safeText) ||
-      isLikelyStreamingLiveArtifactInteractionJson(safeText));
+    (textClassification.hasSensitiveTable ||
+      textClassification.isHtmlArtifact ||
+      textClassification.isLiveArtifactJson);
   // Tables grow line-by-line (smooth height) even in bypass mode, because an
   // artifact must appear atomically (a partial JSON/HTML cannot render) while a
   // table only needs its rows to keep arriving. Artifact candidates and a
   // hidden document must still swap to the full text at once.
-  const shouldGrowLineByLine = isStreaming && hasStreamingSensitiveMarkdownTable(safeText);
+  const shouldGrowLineByLine = isStreaming && textClassification.hasSensitiveTable;
   const [displayedText, setDisplayedText] = useState(isStreaming ? '' : safeText);
 
   const displayedTextRef = useRef(isStreaming ? '' : safeText);

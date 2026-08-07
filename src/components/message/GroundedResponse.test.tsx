@@ -64,7 +64,9 @@ describe('GroundedResponse', () => {
     expect(surface?.shadowRoot?.querySelector('[data-testid="search-entry-widget"]')?.textContent).toContain(
       'Suggested follow-up search',
     );
-    const logoWrapper = renderer.container.querySelector('[data-testid="search-entry-google-logo"]') as HTMLElement | null;
+    const logoWrapper = renderer.container.querySelector(
+      '[data-testid="search-entry-google-logo"]',
+    ) as HTMLElement | null;
     expect(logoWrapper).not.toBeNull();
     expect(logoWrapper?.className).toContain('items-center');
     expect(logoWrapper?.className).toContain('flex');

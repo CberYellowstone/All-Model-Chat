@@ -10,6 +10,7 @@ type MockDbService = MockRecord & {
   getAllSessions: MockFn;
   getAllSessionMetadata: MockFn;
   getSession: MockFn;
+  getSessionMetadataOnly: MockFn;
   searchSessions: MockFn;
   setAllSessions: MockFn;
   saveSession: MockFn;
@@ -58,6 +59,7 @@ export const createMockDbService = (overrides: Partial<MockDbService> = {}): Moc
   getAllSessions: asyncMockFn([]),
   getAllSessionMetadata: asyncMockFn([]),
   getSession: asyncMockFn(null),
+  getSessionMetadataOnly: asyncMockFn(null),
   searchSessions: asyncMockFn([]),
   setAllSessions: asyncMockFn(undefined),
   saveSession: asyncMockFn(undefined),

@@ -8,7 +8,7 @@ export type SettingsTabDescriptor = { id: SettingsTab; labelKey: string };
 const SETTINGS_UI_STORE_STORAGE_KEY = 'all_model_chat_settings_ui_v1';
 
 const LEGACY_SETTINGS_TAB_STORAGE_KEY = 'chatSettingsLastTab';
-const SETTINGS_TABS: SettingsTab[] = ['models', 'interface', 'api', 'mcp', 'data', 'shortcuts', 'about'];
+export const SETTINGS_TABS: SettingsTab[] = ['models', 'interface', 'api', 'mcp', 'data', 'shortcuts', 'about'];
 
 interface SettingsUiState {
   activeTab: SettingsTab;

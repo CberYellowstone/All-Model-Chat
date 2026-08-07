@@ -194,9 +194,9 @@ describe('buildGenerationConfig', () => {
     );
   });
 
-  it('returns image config for gemini-2.5-flash-image-preview', async () => {
+  it('returns image config for gemini-2.5-flash-image (retained GA image model)', async () => {
     const config = await buildGenerationConfig(
-      'gemini-2.5-flash-image-preview',
+      'gemini-2.5-flash-image',
       'sys',
       baseConfig,
       false,
