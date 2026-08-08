@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { DOT_MAX_CHARS, DOT_MAX_EDGES } from './graphvizLimits';
 import {
-  DOT_MAX_CHARS,
-  DOT_MAX_EDGES,
   getGraphvizCacheKey,
   renderDotToSvg,
   renderDotToSvgCached,
@@ -81,6 +80,11 @@ describe('renderDotToSvg', () => {
 
     const manyEdges = `digraph { ${'A->B; '.repeat(DOT_MAX_EDGES + 1)} }`;
     expect(await renderDotToSvg(manyEdges)).toMatchObject({ ok: false, error: 'too-large' });
+  });
+
+  it('returns too-large when the DOT exceeds the node limit', async () => {
+    const dot = `digraph { ${Array.from({ length: 41 }, (_, i) => `n${i}`).join('; ')}; }`;
+    expect(await renderDotToSvg(dot)).toMatchObject({ ok: false, error: 'too-large' });
   });
 
   it('returns render-failed when viz throws', async () => {

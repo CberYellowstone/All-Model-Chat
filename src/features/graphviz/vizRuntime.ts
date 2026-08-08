@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { logService } from '@/services/logService';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import type { Theme } from '@/types/theme';
+import { DOT_MAX_CHARS, DOT_MAX_EDGES, DOT_MAX_NODES, countDotEdges, countDotNodes } from './graphvizLimits';
 
 /**
  * Shared Graphviz (viz-js) runtime used by three render paths so they all lay
@@ -18,9 +19,6 @@ import type { Theme } from '@/types/theme';
  * `loadVizInstance` keeps the dynamic `@viz-js/viz` import (and its ~MB WASM
  * chunk) lazy: it is only fetched the first time a diagram actually renders.
  */
-
-export const DOT_MAX_CHARS = 16_000;
-export const DOT_MAX_EDGES = 200;
 
 export type DotRenderResult =
   | { ok: true; svg: string }
@@ -200,11 +198,6 @@ const sanitizeSvg = (svg: string): string => {
   }
 };
 
-const countEdges = (dot: string): number => {
-  const matches = dot.match(/->|--/g);
-  return matches ? matches.length : 0;
-};
-
 /**
  * Renders DOT to a sanitized SVG string. Never throws for invalid input — the
  * result carries a machine-readable error so the Live Artifacts bridge can show
@@ -215,7 +208,7 @@ export const renderDotToSvg = async (dot: string, options: DotRenderOptions = {}
   if (!code) {
     return { ok: false, error: 'empty' };
   }
-  if (code.length > DOT_MAX_CHARS || countEdges(code) > DOT_MAX_EDGES) {
+  if (code.length > DOT_MAX_CHARS || countDotNodes(code) > DOT_MAX_NODES || countDotEdges(code) > DOT_MAX_EDGES) {
     return { ok: false, error: 'too-large' };
   }
 

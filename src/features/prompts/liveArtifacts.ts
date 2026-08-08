@@ -1,3 +1,5 @@
+import { DOT_MAX_CHARS, DOT_MAX_EDGES, DOT_MAX_NODES } from '@/features/graphviz/graphvizLimits';
+
 export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Protocol - zh]
 
 你是 AMC-WebUI 的 Live Artifacts Designer。用内联 HTML 产物替代传统 Markdown 排版，优先保证速度、简体中文、高信息密度和紧凑行文；把用户信息转成在 Live Artifacts 中渲染的清晰内联 HTML 片段。
@@ -118,7 +120,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 - 用法：<div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="开始"]; parse[label="解析请求"]; start->parse; }'></div>
 - DOT 写在单引号属性内；DOT 内部字符串只用双引号，禁止单引号 \`'\`（label 含撇号时改写文案）
 - 禁止 HTML-like label（<...>，会被当作标签解析）；禁止任何 URL/href/image
-- 上限：DOT ≤ 16000 字符；节点 ≤ 40；边 ≤ 80
+- 上限：DOT ≤ ${DOT_MAX_CHARS} 字符；节点 ≤ ${DOT_MAX_NODES}；边 ≤ ${DOT_MAX_EDGES}
 - 节点 id 用 ASCII；label 可中文；默认布局 LR，层级/上下结构图必须显式写 rankdir=TB
 - 配色默认自动跟随主题；确需上色仅允许语义名 accent/success/warning/danger/muted/subtle（由渲染器映射为主题色值）
 - 规则：节点里不要再写任何内容
@@ -221,7 +223,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 ### B) follow-up 提交（HTML 按钮或 native 表单）
 - instruction ≤ 2000；title/source ≤ 500；state 序列化后 ≤ 6000 字符
 ### C) data-amc-graphviz
-- DOT ≤ 16000 字符；节点 ≤ 40；边 ≤ 80
+- DOT ≤ ${DOT_MAX_CHARS} 字符；节点 ≤ ${DOT_MAX_NODES}；边 ≤ ${DOT_MAX_EDGES}
 - DOT 属性值内禁止单引号 \`'\`；label 禁止 HTML-like（<...>）、URL/href/image
 `;
 
@@ -346,7 +348,7 @@ Use data-amc-graphviz for structure/dependency/flow/state-machine/organization; 
 - Usage: <div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="Start"]; parse[label="Parse request"]; start->parse; }'></div>
 - DOT lives in a single-quoted attribute; strings inside DOT use only double quotes; no single quotes \`'\` (rewrite labels containing apostrophes)
 - No HTML-like labels (<...>, parsed as tags); no URLs/href/images
-- Limits: DOT ≤ 16000 chars; nodes ≤ 40; edges ≤ 80
+- Limits: DOT ≤ ${DOT_MAX_CHARS} chars; nodes ≤ ${DOT_MAX_NODES}; edges ≤ ${DOT_MAX_EDGES}
 - Node ids ASCII; labels may be localized; default layout LR; hierarchical/top-down graphs must set rankdir=TB explicitly
 - Colors follow the theme by default; explicit colors use only semantic names accent/success/warning/danger/muted/subtle (the renderer maps them to theme values)
 - Rules: keep the node empty
@@ -449,6 +451,6 @@ Example (flow):
 ### B) follow-up submit (HTML button or native form)
 - instruction ≤ 2000; title/source ≤ 500; state serialized ≤ 6000 chars
 ### C) data-amc-graphviz
-- DOT ≤ 16000 chars; nodes ≤ 40; edges ≤ 80
+- DOT ≤ ${DOT_MAX_CHARS} chars; nodes ≤ ${DOT_MAX_NODES}; edges ≤ ${DOT_MAX_EDGES}
 - No single quotes \`'\` inside DOT attribute values; labels must not be HTML-like (<...>), URLs/hrefs/images
 `;
