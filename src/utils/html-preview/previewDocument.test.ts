@@ -342,8 +342,8 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).not.toContain('$O(1)$');
   });
 
-  it('creates a static screenshot container without scripts or inline event handlers', () => {
-    const { container, cleanup } = createStaticPreviewSnapshotContainer(
+  it('creates a static screenshot container without scripts or inline event handlers', async () => {
+    const { container, cleanup } = await createStaticPreviewSnapshotContainer(
       '<html><head><style>.demo { color: red; }</style><script>window.parent.alert("x")</script></head><body class="demo" onclick="alert(1)"><button onmouseover="alert(2)">Run</button></body></html>',
       document,
     );
@@ -357,8 +357,8 @@ describe('htmlPreview utilities', () => {
     cleanup();
   });
 
-  it('keeps the static screenshot container renderable for html2canvas', () => {
-    const { container, cleanup } = createStaticPreviewSnapshotContainer(
+  it('keeps the static screenshot container renderable for html2canvas', async () => {
+    const { container, cleanup } = await createStaticPreviewSnapshotContainer(
       '<html><body><div style="width:120px;height:40px;background:#000;color:#fff">Visible</div></body></html>',
       document,
     );

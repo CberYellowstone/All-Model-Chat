@@ -114,7 +114,11 @@ const embedImagesInClone = async (clone: HTMLElement): Promise<void> => {
  * container via `createStaticPreviewSnapshotContainer`, preserving the measured
  * viewport height so the exported layout matches the on-screen bubble.
  */
-const replaceLiveArtifactIframes = (clone: HTMLElement, targetDocument: Document, themeId?: string): void => {
+const replaceLiveArtifactIframes = async (
+  clone: HTMLElement,
+  targetDocument: Document,
+  themeId?: string,
+): Promise<void> => {
   const artifactFrames = Array.from(clone.querySelectorAll('[data-live-artifact-frame="true"]'));
   for (const frame of artifactFrames) {
     const html = frame.getAttribute('data-artifact-source') ?? '';
@@ -123,7 +127,7 @@ const replaceLiveArtifactIframes = (clone: HTMLElement, targetDocument: Document
     const viewport = frame.querySelector<HTMLElement>('[data-live-artifact-viewport="true"]');
     const measuredHeight = viewport?.style.height ?? null;
 
-    const { container } = createStaticPreviewSnapshotContainer(html, targetDocument, { themeId });
+    const { container } = await createStaticPreviewSnapshotContainer(html, targetDocument, { themeId });
 
     // The snapshot container is positioned off-screen by default; reset it so it
     // flows inline within the exported transcript instead of being hidden.
@@ -352,7 +356,7 @@ export const prepareElementForExport = async (
   // Replace sandboxed artifact iframes with same-origin static snapshots for PNG export.
   // HTML export preserves the iframe srcdoc so the artifact remains runnable when reopened.
   if (forPng) {
-    replaceLiveArtifactIframes(clone, sourceElement.ownerDocument, themeId);
+    await replaceLiveArtifactIframes(clone, sourceElement.ownerDocument, themeId);
   }
 
   // Embed blob and remote images before the clone leaves the live document.

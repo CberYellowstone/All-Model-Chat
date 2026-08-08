@@ -1,4 +1,5 @@
 import { CHART_RENDERER_SCRIPT } from './chartRendererScript';
+import { GRAPHVIZ_RENDERER_SCRIPT } from './graphvizRendererScript';
 import {
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
@@ -429,5 +430,6 @@ export const PREVIEW_BRIDGE_SCRIPT = `<script>
     notify('followup', payload);
   });
 ${CHART_RENDERER_SCRIPT}
+${GRAPHVIZ_RENDERER_SCRIPT}
 })();
 </script>`;

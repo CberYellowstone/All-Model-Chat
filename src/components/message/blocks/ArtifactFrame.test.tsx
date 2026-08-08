@@ -1,16 +1,23 @@
 import { act } from 'react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logService } from '@/services/logService';
 import { setupTestRenderer } from '@/test/render/renderer';
+import { renderDotToSvgCached } from '@/features/graphviz/vizRuntime';
 import {
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
   loadKatex,
 } from '@/utils/html-preview/previewDocument';
 import { ArtifactFrame } from './ArtifactFrame';
+
+vi.mock('@/features/graphviz/vizRuntime', () => ({
+  renderDotToSvgCached: vi.fn(),
+}));
 
 // KaTeX is loaded lazily so the math chunk is not pulled into every markdown
 // message. Tests that assert rendered `class="katex"` output need it in memory.
@@ -34,6 +41,10 @@ const createRect = (overrides: Partial<DOMRect> = {}): DOMRect =>
 
 describe('ArtifactFrame', () => {
   const renderer = setupTestRenderer();
+
+  beforeEach(() => {
+    vi.mocked(renderDotToSvgCached).mockReset();
+  });
 
   afterEach(() => {
     vi.useRealTimers();
@@ -449,5 +460,125 @@ describe('ArtifactFrame', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  it('renders graphviz on the parent page and posts the sanitized SVG reply to the iframe', async () => {
+    vi.mocked(renderDotToSvgCached).mockResolvedValueOnce({
+      ok: true,
+      svg: '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>',
+    });
+
+    const postMessage = vi.fn();
+    const iframeWindowStub = { postMessage } as unknown as Window;
+
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<div data-amc-graphviz='digraph { A -> B }'></div>" themeId="pearl" />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: iframeWindowStub,
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+            event: HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+            payload: { id: 'amc-gv-1', dot: 'digraph { A -> B }' },
+          },
+          source: iframeWindowStub,
+          origin: 'null',
+        }),
+      );
+    });
+
+    expect(renderDotToSvgCached).toHaveBeenCalledWith('digraph { A -> B }', { themeId: 'pearl' });
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+        payload: {
+          id: 'amc-gv-1',
+          ok: true,
+          svg: '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>',
+        },
+      },
+      '*',
+    );
+  });
+
+  it('reports a render error back to the iframe when graphviz fails', async () => {
+    vi.mocked(renderDotToSvgCached).mockResolvedValueOnce({ ok: false, error: 'too-large' });
+
+    const postMessage = vi.fn();
+    const iframeWindowStub = { postMessage } as unknown as Window;
+
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<div data-amc-graphviz='digraph { A -> B }'></div>" />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: iframeWindowStub,
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+            event: HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+            payload: { id: 'amc-gv-2', dot: 'digraph { A -> B }' },
+          },
+          source: iframeWindowStub,
+          origin: 'null',
+        }),
+      );
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+        event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+        payload: { id: 'amc-gv-2', ok: false, error: 'too-large' },
+      },
+      '*',
+    );
+  });
+
+  it('ignores graphviz requests with a malformed payload', async () => {
+    const postMessage = vi.fn();
+    const iframeWindowStub = { postMessage } as unknown as Window;
+
+    act(() => {
+      renderer.root.render(<ArtifactFrame html="<section>Text</section>" />);
+    });
+
+    const iframe = renderer.container.querySelector('iframe');
+    Object.defineProperty(iframe!, 'contentWindow', {
+      configurable: true,
+      value: iframeWindowStub,
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+            event: HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+            payload: { id: 42 }, // missing dot
+          },
+          source: iframeWindowStub,
+          origin: 'null',
+        }),
+      );
+    });
+
+    expect(renderDotToSvgCached).not.toHaveBeenCalled();
+    expect(postMessage).not.toHaveBeenCalled();
   });
 });

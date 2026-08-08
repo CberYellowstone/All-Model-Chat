@@ -8,8 +8,11 @@ import {
   createStaticPreviewSnapshotContainer,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
 } from '@/utils/html-preview/previewDocument';
+import { renderDotToSvgCached, type DotRenderResult } from '@/features/graphviz/vizRuntime';
 import { useI18n } from '@/contexts/I18nContext';
 import {
   normalizeLiveArtifactFollowupPayload,
@@ -41,7 +44,15 @@ type DocumentWithWebkitFullscreen = Document & {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'resize' | 'escape' | 'followup' | 'selection' | 'diagnostic';
+  event?:
+    | 'ready'
+    | 'resize'
+    | 'escape'
+    | 'followup'
+    | 'selection'
+    | 'diagnostic'
+    | 'graphviz-render-request'
+    | 'graphviz-render-response';
   payload?: unknown;
   height?: number;
 };
@@ -203,6 +214,34 @@ export const useHtmlPreviewModal = ({
 
       if (data.event === HTML_PREVIEW_DIAGNOSTIC_EVENT) {
         logService.warn('Live Artifact preview diagnostic:', data.payload);
+        return;
+      }
+
+      // The unrestricted code-block preview embeds the same bridge, so its
+      // graphviz nodes post render requests here. Without this branch they
+      // would hang "pending" forever.
+      if (data.event === HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT) {
+        const payload = data.payload;
+        if (
+          !payload ||
+          typeof payload !== 'object' ||
+          typeof (payload as { id?: unknown }).id !== 'string' ||
+          typeof (payload as { dot?: unknown }).dot !== 'string'
+        ) {
+          return;
+        }
+        const { id, dot } = payload as { id: string; dot: string };
+        void renderDotToSvgCached(dot).then((result: DotRenderResult) => {
+          iframeWindow?.postMessage(
+            {
+              channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+              event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+              payload: result.ok ? { id, ok: true, svg: result.svg } : { id, ok: false, error: result.error },
+            },
+            '*',
+          );
+        });
+        return;
       }
     };
 
@@ -278,21 +317,23 @@ export const useHtmlPreviewModal = ({
     if (!htmlContent || !isPreviewReady || isScreenshotting) return;
 
     setIsScreenshotting(true);
-    let cleanup = () => {};
+    let snapshotCleanup: (() => void) | null = null;
     try {
       const { exportElementAsPng } = await import('@/utils/export/image');
       const target = getCurrentPreviewScreenshotTarget();
-      const screenshotTarget =
-        target ??
-        (() => {
-          const snapshot = createStaticPreviewSnapshotContainer(htmlContent, targetDocument);
-          cleanup = snapshot.cleanup;
-          return snapshot.container;
-        })();
+      let exportTarget = target;
+      if (!exportTarget) {
+        // The iframe is not readable (sandboxed / not mounted): build a static
+        // snapshot from the source HTML instead. Async so graphviz nodes can be
+        // hydrated before the frame is exported.
+        const snapshot = await createStaticPreviewSnapshotContainer(htmlContent, targetDocument);
+        snapshotCleanup = snapshot.cleanup;
+        exportTarget = snapshot.container;
+      }
       const title = getPreviewTitle();
       const filename = `${sanitizeFilename(title)}-screenshot.png`;
 
-      await exportElementAsPng(screenshotTarget, filename, {
+      await exportElementAsPng(exportTarget, filename, {
         backgroundColor: null,
         scale: 2,
         messages: {
@@ -304,7 +345,7 @@ export const useHtmlPreviewModal = ({
       logService.error('Failed to take screenshot of iframe content:', screenshotError);
       alert(t('htmlPreviewScreenshotFailed'));
     } finally {
-      cleanup();
+      snapshotCleanup?.();
       setIsScreenshotting(false);
     }
   }, [

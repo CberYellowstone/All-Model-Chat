@@ -1,4 +1,5 @@
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
+import { hydrateGraphvizIntoDocument } from '@/features/graphviz/vizRuntime';
 import { PREVIEW_BRIDGE_SCRIPT } from './previewBridgeScript';
 import { hydrateChartsIntoDocument } from './chartRendererScript';
 import { sanitizeElementTree } from './previewSanitizer';
@@ -8,6 +9,8 @@ export {
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
 } from './previewMessageProtocol';
@@ -458,11 +461,11 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
   return srcDoc;
 };
 
-export const createStaticPreviewSnapshotContainer = (
+export const createStaticPreviewSnapshotContainer = async (
   htmlContent: string,
   targetDocument: Document,
   options: { themeId?: string } = {},
-): { container: HTMLElement; cleanup: () => void } => {
+): Promise<{ container: HTMLElement; cleanup: () => void }> => {
   const parser = new DOMParser();
   const parsedDocument = parser.parseFromString(htmlContent, 'text/html');
 
@@ -473,6 +476,9 @@ export const createStaticPreviewSnapshotContainer = (
   hydrateChartsIntoDocument(parsedDocument, {
     themeStyle: buildPreviewThemeStyle(options.themeId, { varsOnly: true }),
   });
+  // Graphviz hydration needs the lazy viz-js runtime, so the snapshot build is
+  // async. Both are awaited before the container is measured and exported.
+  await hydrateGraphvizIntoDocument(parsedDocument, { themeId: options.themeId });
 
   const container = targetDocument.createElement('div');
   container.className = 'is-exporting-png html-preview-snapshot';

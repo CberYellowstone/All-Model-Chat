@@ -5,42 +5,9 @@ import { type SideViewContent, type UploadedFile } from '@/types';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { DiagramWrapper } from './parts/DiagramWrapper';
 import { useI18n } from '@/contexts/I18nContext';
-import { isDarkThemeId } from '@/utils/themeMode';
+import { getVizInstance, renderDotToSvgCached } from '@/features/graphviz/vizRuntime';
 
 const GRAPHVIZ_EXPORT_SCALE = 5;
-
-const GRAPHVIZ_CACHE_LIMIT = 64;
-const graphvizCache = new Map<string, string>();
-
-// LRU eviction: Map preserves insertion order, so deleting the oldest entry
-// before re-inserting on access keeps the cache bounded. Mirrors the capped
-// caches used by pyodideService and ArtifactFrame.
-const touchGraphvizCache = (key: string, value: string) => {
-  graphvizCache.delete(key);
-  graphvizCache.set(key, value);
-  while (graphvizCache.size > GRAPHVIZ_CACHE_LIMIT) {
-    const oldestKey = graphvizCache.keys().next().value;
-    if (oldestKey === undefined) break;
-    graphvizCache.delete(oldestKey);
-  }
-};
-type VizInstance = {
-  renderSVGElement: (code: string) => SVGSVGElement | Promise<SVGSVGElement>;
-};
-
-let vizInstancePromise: Promise<VizInstance> | null = null;
-
-const loadVizInstance = async () => {
-  if (!vizInstancePromise) {
-    vizInstancePromise = import('@viz-js/viz')
-      .then(({ instance }) => instance())
-      .catch((error) => {
-        vizInstancePromise = null;
-        throw error;
-      });
-  }
-  return vizInstancePromise;
-};
 
 interface GraphvizBlockProps {
   code: string;
@@ -62,7 +29,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
   const { t } = useI18n();
   const [manualLayout, setManualLayout] = useState<'LR' | 'TB' | null>(null);
 
-  const effectiveLayout = useMemo(() => {
+  const effectiveLayout = useMemo<'LR' | 'TB'>(() => {
     if (manualLayout) return manualLayout;
     const match = code.match(/rankdir\s*=\s*(["']?)(LR|TB|RL|BT)\1/i);
     if (match) {
@@ -73,141 +40,71 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
     return 'LR';
   }, [code, manualLayout]);
 
-  const cacheKey = useMemo(() => `${themeId}::${effectiveLayout}::${code}`, [themeId, effectiveLayout, code]);
-
-  const [svgContent, setSvgContent] = useState(() => graphvizCache.get(cacheKey) || '');
+  const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState('');
-  const [isRendering, setIsRendering] = useState(() => !graphvizCache.has(cacheKey));
+  const [isRendering, setIsRendering] = useState(true);
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [diagramFile, setDiagramFile] = useState<UploadedFile | null>(null);
   const [showSource, setShowSource] = useState(false);
 
   const diagramContainerRef = useRef<HTMLDivElement>(null);
-  const vizInstanceRef = useRef<VizInstance | null>(null);
 
+  // Warm the viz-js runtime (WASM chunk) on mount so the first diagram render
+  // does not block on the network fetch.
   useEffect(() => {
-    let isActive = true;
+    getVizInstance().catch((error) => {
+      logService.error('Failed to initialize Viz', error);
+    });
+  }, []);
 
-    loadVizInstance()
-      .then((instance) => {
-        if (isActive) {
-          vizInstanceRef.current = instance;
-        }
-      })
-      .catch((error) => {
-        logService.error('Failed to initialize Viz', error);
-      });
-
-    return () => {
-      isActive = false;
-    };
+  const setDiagramFileFromSvg = useCallback((svgString: string) => {
+    const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;
+    const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+    setDiagramFile({
+      id,
+      name: 'graphviz-diagram.svg',
+      type: 'image/svg+xml',
+      size: svgString.length,
+      dataUrl: svgDataUrl,
+      uploadState: 'active',
+    });
   }, []);
 
   const renderGraph = useCallback(async () => {
-    if (graphvizCache.has(cacheKey)) {
-      const cachedSvg = graphvizCache.get(cacheKey)!;
-      // LRU refresh: move this entry to most-recently-used.
-      touchGraphvizCache(cacheKey, cachedSvg);
-      setSvgContent(cachedSvg);
-      setIsRendering(false);
+    if (!code) {
+      setSvgContent('');
       setError('');
-
-      const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;
-      const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(cachedSvg)))}`;
-      setDiagramFile({
-        id,
-        name: 'graphviz-diagram.svg',
-        type: 'image/svg+xml',
-        size: cachedSvg.length,
-        dataUrl: svgDataUrl,
-        uploadState: 'active',
-      });
+      setIsRendering(false);
       return;
     }
 
     setIsRendering(true);
 
-    try {
-      if (!code) {
-        setSvgContent('');
-        setError('');
-        setIsRendering(false);
-        return;
-      }
+    const result = await renderDotToSvgCached(code, { themeId, layout: effectiveLayout });
 
-      if (!vizInstanceRef.current) {
-        vizInstanceRef.current = await loadVizInstance();
-      }
-
-      let processedCode = code;
-
-      const rankdirRegex = /(rankdir\s*=\s*)(["']?)(LR|TB|RL|BT)\2/gi;
-
-      if (rankdirRegex.test(processedCode)) {
-        processedCode = processedCode.replace(rankdirRegex, `$1"${effectiveLayout}"`);
-      } else {
-        const digraphMatch = processedCode.match(/(\s*(?:di)?graph\s+[\w\d_"]*\s*\{)/i);
-        if (digraphMatch) {
-          processedCode = processedCode.replace(digraphMatch[0], `${digraphMatch[0]}\n  rankdir="${effectiveLayout}";`);
-        }
-      }
-
-      const isDark = isDarkThemeId(themeId);
-      const color = isDark ? '#e4e4e7' : '#374151';
-      const themeDefaults = `
-        graph [bgcolor="transparent" fontcolor="${color}" margin="0"];
-        node [color="${color}" fontcolor="${color}"];
-        edge [color="${color}" fontcolor="${color}"];
-      `;
-
-      const openBraceIndex = processedCode.indexOf('{');
-      if (openBraceIndex !== -1) {
-        processedCode =
-          processedCode.slice(0, openBraceIndex + 1) + themeDefaults + processedCode.slice(openBraceIndex + 1);
-      }
-
-      const vizInstance = vizInstanceRef.current;
-      if (!vizInstance) {
-        throw new Error('Graphviz renderer not initialized.');
-      }
-
-      const svgElement = await vizInstance.renderSVGElement(processedCode);
-
-      // Preserve intrinsic SVG dimensions so flex layouts do not collapse the diagram.
-      svgElement.style.maxWidth = '100%';
-      svgElement.style.height = 'auto';
-      svgElement.style.display = 'block';
-
-      const svgString = svgElement.outerHTML;
-      touchGraphvizCache(cacheKey, svgString);
-      setSvgContent(svgString);
-
-      const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;
-      const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
-
-      setDiagramFile({
-        id,
-        name: 'graphviz-diagram.svg',
-        type: 'image/svg+xml',
-        size: svgString.length,
-        dataUrl: svgDataUrl,
-        uploadState: 'active',
-      });
-
+    if (result.ok) {
+      setSvgContent(result.svg);
+      setDiagramFileFromSvg(result.svg);
       setError('');
       setIsRendering(false);
-    } catch (error) {
-      if (isMessageLoading) {
-        setIsRendering(true);
-      } else {
-        const errorMessage = error instanceof Error ? error.message : t('diagramRenderGraphvizFailed');
-        setError(errorMessage.replace(/.*error:\s*/, ''));
-        setSvgContent('');
-        setIsRendering(false);
-      }
+      return;
     }
-  }, [code, effectiveLayout, themeId, isMessageLoading, cacheKey, t]);
+
+    // Streaming messages keep the spinner up until the stream settles; final
+    // messages surface the error fallback.
+    if (isMessageLoading) {
+      setIsRendering(true);
+    } else {
+      const errorMessage =
+        result.error === 'render-failed'
+          ? result.message.replace(/.*error:\s*/i, '')
+          : t('diagramRenderGraphvizFailed');
+      setError(errorMessage);
+      setSvgContent('');
+      setIsRendering(false);
+    }
+  }, [code, effectiveLayout, isMessageLoading, setDiagramFileFromSvg, t, themeId]);
 
   useEffect(() => {
     let isMounted = true;

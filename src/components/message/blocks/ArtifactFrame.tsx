@@ -10,9 +10,12 @@ import {
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
 } from '@/utils/html-preview/previewDocument';
+import { renderDotToSvgCached, type DotRenderResult } from '@/features/graphviz/vizRuntime';
 import {
   normalizeLiveArtifactFollowupPayload,
   type LiveArtifactFollowupPayload,
@@ -34,7 +37,16 @@ interface ArtifactFrameProps {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'escape' | 'resize' | 'followup' | 'selection' | 'copy' | 'diagnostic';
+  event?:
+    | 'ready'
+    | 'escape'
+    | 'resize'
+    | 'followup'
+    | 'selection'
+    | 'copy'
+    | 'diagnostic'
+    | 'graphviz-render-request'
+    | 'graphviz-render-response';
   height?: number;
   payload?: unknown;
 };
@@ -325,6 +337,34 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
         return;
       }
 
+      // The sandboxed iframe cannot run viz.js (WASM + opaque origin), so it
+      // forwards `data-amc-graphviz` nodes here for layout on the parent page.
+      // Render results are cached by theme+dot, so repeated requests across
+      // remounts are cheap.
+      if (data.event === HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT) {
+        const payload = data.payload;
+        if (
+          !payload ||
+          typeof payload !== 'object' ||
+          typeof (payload as { id?: unknown }).id !== 'string' ||
+          typeof (payload as { dot?: unknown }).dot !== 'string'
+        ) {
+          return;
+        }
+        const { id, dot } = payload as { id: string; dot: string };
+        void renderDotToSvgCached(dot, { themeId }).then((result: DotRenderResult) => {
+          iframeWindow?.postMessage(
+            {
+              channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+              event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+              payload: result.ok ? { id, ok: true, svg: result.svg } : { id, ok: false, error: result.error },
+            },
+            '*',
+          );
+        });
+        return;
+      }
+
       if (data.event !== 'resize') {
         return;
       }
@@ -360,6 +400,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     onFollowUp,
     streamingHeightCacheKey,
     targetWindow,
+    themeId,
   ]);
 
   useEffect(() => {

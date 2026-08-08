@@ -93,9 +93,10 @@ describe('promptRegistry', () => {
     const zhPrompt = await loadLiveArtifactsSystemPrompt('zh');
     const enPrompt = await loadLiveArtifactsSystemPrompt('en');
 
-    // Protocol + aesthetics + golden examples + semantic colors; cap growth so it stays operational.
-    expect(zhPrompt.length).toBeLessThan(16000);
-    expect(enPrompt.length).toBeLessThan(24000);
+    // Protocol + aesthetics + golden examples + semantic colors + chart DSL +
+    // graphviz DSL; cap growth so it stays operational.
+    expect(zhPrompt.length).toBeLessThan(18000);
+    expect(enPrompt.length).toBeLessThan(26000);
     expect(zhPrompt).not.toContain('信息设计原则');
     expect(zhPrompt).not.toContain('完整 HTML 页面能力');
     expect(enPrompt).not.toContain('Information Design Principles');
