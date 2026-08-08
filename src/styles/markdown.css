@@ -174,8 +174,13 @@
 }
 
 /* Ensure first element doesn't push down the content, aligning text with avatar */
+/* BaseMarkdownRenderer 在 .markdown-body 与真实 markdown 节点之间多包了一层
+   wrapper div，需覆盖到第二层的第一个真实内容节点。Suspense/Fragment 不产生
+   DOM 节点，两级选择器即可，不要加更深层级或 :has()。 */
 .markdown-body > *:first-child,
-.is-loading > *:first-child {
+.markdown-body > *:first-child > *:first-child,
+.is-loading > *:first-child,
+.is-loading > *:first-child > *:first-child {
   margin-top: 0 !important;
 }
 
