@@ -2,10 +2,11 @@ import { HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT, HTML_PREVIEW_MESSAGE_CHANN
 
 /**
  * Lightweight completeness heuristic for streaming DOT: balanced parens /
- * brackets / braces and closed quotes. Incomplete mid-stream DOT stays
- * "pending" and is re-evaluated on the next mutation instead of posting a
- * request that is guaranteed to fail. Kept as a plain module-level function so
- * it can be unit-tested and embedded into the iframe script via .toString().
+ * brackets / braces and closed quotes, aware of DOT comments (`#`, `//`,
+ * `/* *`). Incomplete mid-stream DOT stays "pending" and is re-evaluated on
+ * the next mutation instead of posting a request that is guaranteed to fail.
+ * Kept as a plain module-level function so it can be unit-tested and embedded
+ * into the iframe script via .toString().
  */
 export const isProbablyCompleteDot = (dot: string): boolean => {
   if (!dot || !dot.trim()) return false;
@@ -13,17 +14,53 @@ export const isProbablyCompleteDot = (dot: string): boolean => {
   let brackets = 0;
   let braces = 0;
   let inDoubleQuote = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
   for (let i = 0; i < dot.length; i += 1) {
     const ch = dot[i];
+    const next = i + 1 < dot.length ? dot[i + 1] : '';
+
+    if (inLineComment) {
+      if (ch === '\n') inLineComment = false;
+      continue;
+    }
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i += 1;
+      }
+      continue;
+    }
     if (ch === '\\') {
+      // Skip the escaped character (`\"`, `\\`, ...) so it cannot close a
+      // quote or open a comment.
       i += 1;
       continue;
     }
-    if (ch === '"') {
-      inDoubleQuote = !inDoubleQuote;
+    if (inDoubleQuote) {
+      if (ch === '"') inDoubleQuote = false;
       continue;
     }
-    if (inDoubleQuote) continue;
+    if (ch === '"') {
+      inDoubleQuote = true;
+      continue;
+    }
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '#') {
+      inLineComment = true;
+      continue;
+    }
+
     if (ch === '(') parens += 1;
     else if (ch === ')') parens -= 1;
     else if (ch === '[') brackets += 1;
@@ -31,7 +68,31 @@ export const isProbablyCompleteDot = (dot: string): boolean => {
     else if (ch === '{') braces += 1;
     else if (ch === '}') braces -= 1;
   }
-  return parens === 0 && brackets === 0 && braces === 0 && !inDoubleQuote;
+
+  return parens === 0 && brackets === 0 && braces === 0 && !inDoubleQuote && !inBlockComment;
+};
+
+/**
+ * P0-1: LRU eviction from the in-flight request table must also clear the
+ * evicted node's sig/state, otherwise the next scan sees the sig already set
+ * and never re-requests the render while the (dropped) response is gone — the
+ * node stays "pending" forever. Kept as a plain module-level function so it can
+ * be unit-tested and embedded into the iframe script via .toString(); it only
+ * touches what it is handed (no closure references).
+ */
+export const evictOldestPendingRender = (
+  pendingById: Map<string, { node: Element; sig: string }>,
+  sigAttr: string,
+  stateAttr: string,
+): void => {
+  const oldestId = pendingById.keys().next().value;
+  if (oldestId === undefined) return;
+  const evicted = pendingById.get(oldestId);
+  pendingById.delete(oldestId);
+  if (evicted?.node && (evicted.node as Element).isConnected) {
+    evicted.node.removeAttribute(sigAttr);
+    evicted.node.removeAttribute(stateAttr);
+  }
 };
 
 /**
@@ -70,6 +131,7 @@ export const GRAPHVIZ_RENDERER_SCRIPT = `
   };
 
   const isProbablyCompleteDot = ${isProbablyCompleteDot.toString()};
+  const evictOldestPendingRender = ${evictOldestPendingRender.toString()};
 
   const setState = (node, state) => {
     if (state) node.setAttribute(STATE_ATTR, state);
@@ -149,8 +211,9 @@ export const GRAPHVIZ_RENDERER_SCRIPT = `
     const id = 'amc-gv-' + String(++requestSeq);
     pendingById.set(id, { node, sig });
     if (pendingById.size > MAX_PENDING) {
-      const oldestId = pendingById.keys().next().value;
-      if (oldestId !== undefined) pendingById.delete(oldestId);
+      // Eviction must also clear the evicted node's sig so the next scan can
+      // re-request it (otherwise it stays "pending" forever with a dropped reply).
+      evictOldestPendingRender(pendingById, SIG_ATTR, STATE_ATTR);
     }
 
     node.setAttribute(SIG_ATTR, sig);
@@ -194,13 +257,73 @@ export const GRAPHVIZ_RENDERER_SCRIPT = `
     document.querySelectorAll('[' + ATTR + ']').forEach(requestRender);
   }
 
-  let frame = 0;
+  // P1-1/P1-4: three-stage pipeline so a streaming burst does not re-scan the
+  // whole document and re-request every node on every mutation.
+  //   mutations → dirtyNodes (collect) → rAF string-compare → renderQueue
+  //   → 350ms quiet-time flush → requestRender (sig/complete check + post).
+  const RENDER_DEBOUNCE_MS = 350;
+  const dirtyNodes = new Set();
+  const renderQueue = new Set();
+  const lastDotByNode = new WeakMap();
+  let scanScheduled = false;
+  let debounceTimer = 0;
+
+  const scheduleFlush = () => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    debounceTimer = setTimeout(() => {
+      debounceTimer = 0;
+      renderQueue.forEach((node) => {
+        if (node.isConnected) {
+          requestRender(node);
+        }
+      });
+      renderQueue.clear();
+    }, RENDER_DEBOUNCE_MS);
+  };
+
   const scheduleScan = () => {
-    if (frame) return;
-    frame = (window.requestAnimationFrame || ((fn) => fn()))(() => {
-      frame = 0;
-      renderAll();
+    if (scanScheduled) return;
+    scanScheduled = true;
+    (window.requestAnimationFrame || ((fn) => fn()))(() => {
+      scanScheduled = false;
+      dirtyNodes.forEach((node) => {
+        const dot = node.getAttribute(ATTR) || '';
+        // Fast path: skip re-rendering nodes whose dot has not changed since the
+        // last time they were seen (cheaper than re-hashing every node).
+        if (lastDotByNode.get(node) !== dot) {
+          lastDotByNode.set(node, dot);
+          renderQueue.add(node);
+        }
+      });
+      dirtyNodes.clear();
+      if (renderQueue.size > 0) {
+        scheduleFlush();
+      }
     });
+  };
+
+  const collectDirty = (mutations) => {
+    for (let i = 0; i < mutations.length; i += 1) {
+      const mutation = mutations[i];
+      if (mutation.type === 'attributes' && mutation.attributeName === ATTR) {
+        dirtyNodes.add(mutation.target);
+      } else if (mutation.type === 'childList') {
+        const addedNodes = mutation.addedNodes;
+        for (let j = 0; j < addedNodes.length; j += 1) {
+          const node = addedNodes[j];
+          if (node.nodeType !== 1) continue;
+          if (node.hasAttribute && node.hasAttribute(ATTR)) {
+            dirtyNodes.add(node);
+          }
+          if (node.querySelectorAll) {
+            node.querySelectorAll('[' + ATTR + ']').forEach((x) => dirtyNodes.add(x));
+          }
+        }
+      }
+    }
+    scheduleScan();
   };
 
   window.addEventListener('message', (event) => {
@@ -215,7 +338,7 @@ export const GRAPHVIZ_RENDERER_SCRIPT = `
 
   renderAll();
   if (window.MutationObserver && parentWindow) {
-    new MutationObserver(scheduleScan).observe(document.documentElement || document, {
+    new MutationObserver(collectDirty).observe(document.documentElement || document, {
       childList: true,
       subtree: true,
       attributes: true,
