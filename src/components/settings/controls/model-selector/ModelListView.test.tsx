@@ -63,7 +63,7 @@ describe('ModelListView', () => {
 
     act(() => {
       renderer.container
-        .querySelector('[data-testid="settings-model-option-gpt-5.6-sol"]')
+        .querySelector('[data-testid="settings-model-option-gemini-native:gpt-5.6-sol"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 

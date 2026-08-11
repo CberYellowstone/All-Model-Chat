@@ -1,6 +1,6 @@
 import { useI18n } from '@/contexts/I18nContext';
 import React, { useId, useMemo, useRef, useState, type RefObject } from 'react';
-import { type ModelOption } from '@/types';
+import { type ModelOption, type ThirdPartyProviderId } from '@/types';
 import { Check } from 'lucide-react';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import {
@@ -8,13 +8,14 @@ import {
   buildModelCatalogSections,
   filterModelCatalog,
   getModelProviderSectionLabelKey,
+  type ModelCatalogEntry,
 } from '@/utils/model/modelCatalog';
 import { getModelIcon } from './ModelIcon';
 
 interface ModelPickerProps {
   models: ModelOption[];
   selectedId: string;
-  onSelect: (modelId: string) => void;
+  onSelect: (modelId: string, providerId?: ThirdPartyProviderId) => void;
 
   renderTrigger: (props: {
     isOpen: boolean;
@@ -70,10 +71,13 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({
   useClickOutside(containerRef, () => setPickerOpen(false), isOpen);
 
   const activeEntry = activeIndex >= 0 ? visibleEntries[activeIndex] : undefined;
-  const activeDescendantId = activeEntry ? `model-picker-option-${activeEntry.id}` : undefined;
+  // Same model id may exist on several providers — scope option ids by provider
+  // so DOM ids, aria-activedescendant, and React keys stay unique.
+  const activeOptionKey = activeEntry ? `${activeEntry.model.providerId ?? 'gemini'}:${activeEntry.id}` : undefined;
+  const activeDescendantId = activeOptionKey ? `model-picker-option-${activeOptionKey}` : undefined;
 
-  const handleSelectModel = (modelId: string) => {
-    onSelect(modelId);
+  const handleSelectModel = (entry: ModelCatalogEntry) => {
+    onSelect(entry.id, entry.model.providerId);
     setPickerOpen(false);
   };
 
@@ -132,7 +136,7 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({
 
       const entry = visibleEntries[activeIndexRef.current];
       if (entry) {
-        handleSelectModel(entry.id);
+        handleSelectModel(entry);
       }
       return;
     }
@@ -185,14 +189,15 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({
                       {section.entries.map((entry) => {
                         const isSelected = entry.id === selectedId;
                         const isActive = visibleEntries[activeIndex]?.id === entry.id;
+                        const optionKey = `${entry.model.providerId ?? 'gemini'}:${entry.id}`;
 
                         return (
                           <button
-                            key={entry.id}
-                            id={`model-picker-option-${entry.id}`}
+                            key={optionKey}
+                            id={`model-picker-option-${optionKey}`}
                             role="option"
                             aria-selected={isSelected}
-                            onClick={() => handleSelectModel(entry.id)}
+                            onClick={() => handleSelectModel(entry)}
                             className={`group w-full text-left px-3 py-2.5 text-sm rounded-xl flex items-start justify-between transition-colors cursor-pointer outline-none border ${
                               isSelected
                                 ? 'bg-[var(--theme-bg-tertiary)]/60 border-[var(--theme-border-secondary)]'

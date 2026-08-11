@@ -5,13 +5,20 @@ import type { ChatSettings } from '@/types';
  * 最后活跃会话快照。存于 localStorage（跨标签共享），
  * 让新开的标签页能以"源标签页正在查看的会话"为模板创建新聊天。
  */
-interface LastActiveSessionSnapshot {
+export interface LastActiveSessionSnapshot {
   sessionId: string;
   settings: ChatSettings;
   ts: number;
 }
 
 const getStorage = (): Storage | null => (typeof localStorage === 'undefined' ? null : localStorage);
+
+/**
+ * 新标签页链接：把来源会话编码进 URL（`?from=<sessionId>`），
+ * 避免新标签页只能依赖跨标签共享快照的竞态。无活跃会话时退回纯 `/`。
+ */
+export const buildNewTabHref = (activeSessionId: string | null): string =>
+  activeSessionId ? `/?from=${encodeURIComponent(activeSessionId)}` : '/';
 
 export const writeLastActiveSessionSnapshot = (snapshot: Omit<LastActiveSessionSnapshot, 'ts'> | null): void => {
   const storage = getStorage();

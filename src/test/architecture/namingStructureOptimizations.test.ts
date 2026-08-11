@@ -300,7 +300,6 @@ describe('naming and structure optimization guardrails', () => {
     expect(apiConfigSource).not.toContain('DEFAULT_OPENAI_COMPATIBLE_BASE_URL');
     expect(apiConfigSource).not.toContain('settingsOpenAICompatibleRequestUrlPreview');
     expect(thirdPartySettingsSource).toContain('THIRD_PARTY_PROVIDER_IDS');
-    expect(thirdPartySettingsSource).toContain('getThirdPartyProviderConfig');
     expect(thirdPartySettingsSource).toContain('updateThirdPartyProviderConfig');
   });
 

@@ -380,7 +380,6 @@ describe('standardChatStrategy', () => {
       appSettings: {
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: {
@@ -465,7 +464,6 @@ describe('standardChatStrategy', () => {
     const { result, unmount } = renderStandardChat({
       appSettings: {
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...providers,
             openai: { ...providers.openai, apiKey: 'openai-key', enabled: true },
@@ -532,7 +530,6 @@ describe('standardChatStrategy', () => {
         apiKey: 'gemini-key',
         isStreamingEnabled: false,
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: {
@@ -596,7 +593,6 @@ describe('standardChatStrategy', () => {
       appSettings: {
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...createDefaultThirdPartyApiSettings().providers,
             openai: {

@@ -3,7 +3,6 @@ import { X, Save, Edit2, ArrowUp, CornerDownLeft, Ban } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconStop } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
-import { useChatInputRuntime } from '@/components/layout/chat-runtime/ChatRuntimeContext';
 import { useChatStore } from '@/stores/chatStore';
 import {
   useChatInputActionsContext,
@@ -31,7 +30,8 @@ export const SendControls: React.FC = () => {
     useChatInputComposerStatusContext();
   const isEditing = !!useChatStore((state) => state.editingMessageId);
   const editMode = useChatStore((state) => state.editMode);
-  const { onStopGenerating, onCancelEdit } = useChatInputRuntime();
+  const onStopGenerating = useChatStore((state) => state.stopGenerating);
+  const onCancelEdit = useChatStore((state) => state.cancelEdit);
   const { t } = useI18n();
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const rippleIdRef = useRef(0);

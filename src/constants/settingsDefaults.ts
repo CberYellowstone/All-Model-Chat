@@ -93,7 +93,7 @@ const BASE_DEFAULT_APP_SETTINGS: Omit<AppSettings, 'thirdPartyApi'> = {
   isAutoScrollOnSendEnabled: true,
   isAutoSendOnSuggestionClick: true,
   generateQuadImages: false,
-  autoFullscreenHtml: true,
+  autoFullscreenHtml: false,
   unwrapMislabeledHtmlBlocks: true,
   showWelcomeSuggestions: true,
   isAudioCompressionEnabled: DEFAULT_IS_AUDIO_COMPRESSION_ENABLED,

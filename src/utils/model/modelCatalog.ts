@@ -15,7 +15,7 @@ interface ModelCatalogSection {
   label?: string;
 }
 
-interface ModelCatalogEntry {
+export interface ModelCatalogEntry {
   badgeKeys: ModelBadgeKey[];
   category: ModelCatalogCategory;
   group: ModelCatalogGroup;
@@ -184,8 +184,17 @@ export const getModelProviderSectionLabelKey = (providerKey: ModelCatalogProvide
   return 'modelPickerProviderGemini';
 };
 
-export const getQuickSwitchModelIds = (models: ModelOption[]): string[] =>
-  buildModelCatalog(models).map((entry) => entry.id);
+/**
+ * Model ids for the Tab-cycle quick switch. Deduplicated by bare id keeping the
+ * first occurrence (Gemini models come first in the merged list, then providers
+ * in fixed order), matching the route-inference order. Known limitation: two
+ * providers exposing the same model id cannot be told apart in the Tab cycle —
+ * the cycle only reaches the first one. Point-to-point picks in the header
+ * carry an explicit providerId and are not affected.
+ */
+export const getQuickSwitchModelIds = (models: ModelOption[]): string[] => [
+  ...new Set(buildModelCatalog(models).map((entry) => entry.id)),
+];
 
 const DEFAULT_TAB_CYCLE_MODEL_IDS = ['gemini-3.1-pro-preview', 'gemini-3.6-flash'] as const;
 

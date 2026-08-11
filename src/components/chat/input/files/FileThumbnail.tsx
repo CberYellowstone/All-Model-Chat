@@ -24,14 +24,6 @@ const getDisplayExtension = (file: UploadedFile) => {
   return (mimeSuffix || 'FILE').slice(0, 4).toUpperCase();
 };
 
-const buildTextLines = (text: string | null) =>
-  (text || '')
-    .replace(/\r/g, '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 5);
-
 const getWaveformBars = (file: UploadedFile) => {
   const seed = `${file.name}:${file.size}:${file.type}`;
   let hash = 0;
@@ -78,59 +70,48 @@ const useVisibleThumbnailGate = (enabled: boolean) => {
   return { containerRef, isVisible };
 };
 
+const TEXT_SKELETON_BAR_COUNT = 3;
+
+/**
+ * Deterministic skeleton bar widths for text-file thumbnails. Derived from the
+ * same name:size:type hash as `getWaveformBars`, so the same file always renders
+ * identically while different files vary. The bars only hint "this is a
+ * document" — they never pretend to be readable content.
+ */
+const getTextSkeletonBarWidths = (file: UploadedFile): number[] => {
+  const seed = `${file.name}:${file.size}:${file.type}`;
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % 9973;
+  }
+
+  return Array.from({ length: TEXT_SKELETON_BAR_COUNT }, (_, index) => {
+    const stepped = (hash + index * 37) % 41;
+    return 58 + stepped; // 58% – 98%
+  });
+};
+
 const TextThumbnail = ({ file }: { file: UploadedFile }) => {
-  const [previewText, setPreviewText] = useState(file.textContent ?? null);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const loadTextPreview = async () => {
-      if (typeof file.textContent === 'string') {
-        setPreviewText(file.textContent);
-        return;
-      }
-
-      try {
-        if (file.rawFile && 'text' in file.rawFile) {
-          const text = await file.rawFile.text();
-          if (!isCancelled) setPreviewText(text);
-          return;
-        }
-
-        if (file.dataUrl) {
-          const response = await fetch(file.dataUrl);
-          const text = await response.text();
-          if (!isCancelled) setPreviewText(text);
-        }
-      } catch {
-        if (!isCancelled) setPreviewText(null);
-      }
-    };
-
-    loadTextPreview();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [file.dataUrl, file.rawFile, file.textContent]);
-
-  const lines = buildTextLines(previewText);
-  const fallbackLines = ['{', '  ...', '}'];
-  const displayLines = lines.length > 0 ? lines : fallbackLines;
+  const barWidths = useMemo(() => getTextSkeletonBarWidths(file), [file]);
+  const titleWidth = 45 + (barWidths[0] % 16); // 45% – 60%
 
   return (
     <div
       data-thumbnail-kind="text"
-      className="h-full w-full overflow-hidden bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]"
+      aria-hidden="true"
+      className="flex h-full w-full flex-col justify-center gap-[3px] overflow-hidden bg-[var(--theme-bg-primary)] px-2 py-2"
     >
-      <div className="flex h-full flex-col gap-1 p-2 text-xs leading-tight">
-        {displayLines.map((line, index) => (
-          <div key={`${index}:${line}`} className="flex items-center gap-1">
-            <span className="w-2 flex-shrink-0 text-[var(--theme-text-tertiary)]">{index + 1}</span>
-            <span className="truncate font-mono">{line}</span>
-          </div>
-        ))}
-      </div>
+      <span
+        className="h-1.5 rounded-full bg-[var(--theme-text-tertiary)] opacity-60"
+        style={{ width: `${titleWidth}%` }}
+      />
+      {barWidths.map((width, index) => (
+        <span
+          key={index}
+          className="h-1 rounded-full bg-[var(--theme-text-tertiary)] opacity-35"
+          style={{ width: `${width}%` }}
+        />
+      ))}
     </div>
   );
 };

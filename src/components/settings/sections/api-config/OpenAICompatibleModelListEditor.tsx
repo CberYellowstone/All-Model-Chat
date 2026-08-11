@@ -61,7 +61,15 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
     const modelIds = modelOptions.map((model) => model.id);
     setEditorState({
       rows: nextRows,
-      sourceModelsKey: externalModelsKey,
+      // Use the key of the model list AFTER this commit, not the pre-commit
+      // externalModelsKey captured in the closure. Otherwise onModelsChange
+      // updates the parent, sourceModelsKey !== externalModelsKey on the next
+      // render, rows fall back to externalRows (rebuilt with fresh random
+      // rowIds each call), and every keystroke remounts the row inputs, losing
+      // focus. buildOpenAICompatibleModelOptions normalizes the committed
+      // values (trim id/name, empty name falls back to id, dedupe by id), so
+      // the parent round-trip produces an identical idname key.
+      sourceModelsKey: buildOpenAICompatibleModelsKey(modelOptions),
     });
     onModelsChange(modelOptions);
 

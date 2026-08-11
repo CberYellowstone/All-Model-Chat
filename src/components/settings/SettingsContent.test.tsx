@@ -28,7 +28,6 @@ const buildOpenaiProviderSettings = (
   const defaults = createDefaultThirdPartyApiSettings();
   return {
     thirdPartyApi: {
-      activeProvider: 'openai' as const,
       providers: {
         ...defaults.providers,
         openai: {
@@ -343,7 +342,6 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             thirdPartyApi: {
-              activeProvider: 'openai',
               providers: {
                 ...createDefaultThirdPartyApiSettings().providers,
                 openai: {

@@ -47,13 +47,15 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
               const isSelected =
                 entry.id === selectedModelId &&
                 (!selectedApiMode || !entry.model.apiMode || entry.model.apiMode === selectedApiMode);
-              const optionKey = entry.model.apiMode ? `${entry.model.apiMode}:${entry.id}` : entry.id;
+              // Two third-party providers may list the same model id — scope the
+              // key and testid by provider so they stay distinct.
+              const optionKey = `${entry.model.providerId ?? 'gemini-native'}:${entry.id}`;
 
               return (
                 <button
                   type="button"
                   key={optionKey}
-                  data-testid={`settings-model-option-${entry.id}`}
+                  data-testid={`settings-model-option-${optionKey}`}
                   onPointerDown={(event) => {
                     event.preventDefault();
                   }}

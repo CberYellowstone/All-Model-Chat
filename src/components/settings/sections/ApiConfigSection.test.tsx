@@ -86,7 +86,6 @@ describe('ApiConfigSection', () => {
     const defaults = createDefaultThirdPartyApiSettings();
     return {
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...defaults.providers,
           openai: {

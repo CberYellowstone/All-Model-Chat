@@ -134,7 +134,7 @@ const renderResume = (opts: RenderOpts = {}) => {
   return { result, sessionKeyMapRef, activeJobs, setSessionLoading };
 };
 
-const recordJob = (overrides: Partial<{ tabId: string; generationId: string }> = {}) => {
+const recordJob = (overrides: Partial<{ tabId: string; generationId: string; lastSeq: number }> = {}) => {
   // amcStreamJobs stamps TAB_ID itself; we want to control tabId, so write raw.
   const storage = window.localStorage;
   storage.setItem(
@@ -144,7 +144,7 @@ const recordJob = (overrides: Partial<{ tabId: string; generationId: string }> =
       generationId: overrides.generationId ?? GENERATION_ID,
       jobId: overrides.generationId ?? GENERATION_ID,
       startedAt: STARTED_AT,
-      lastSeq: 0,
+      lastSeq: overrides.lastSeq ?? 0,
       tabId: overrides.tabId ?? 'test-tab',
     }),
   );
@@ -399,6 +399,27 @@ describe('useStreamResume', () => {
     expect(window.localStorage.getItem(`amc_stream_job:${SESSION_ID}`)).toBeNull();
   });
 
+  it('clears the loading state when resume setup fails before the stream starts', async () => {
+    recordJob();
+    const { result, setSessionLoading } = renderResume();
+    // A setup step (buildGenerationConfig) throwing before the stream attaches
+    // never reaches streamOnError — the loading flag must still be released or
+    // the session is stuck permanently generating.
+    mockBuildGenerationConfig.mockRejectedValueOnce(new Error('config boom'));
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    expect(setSessionLoading).toHaveBeenCalledWith(SESSION_ID, false);
+    expect(window.localStorage.getItem(`amc_stream_job:${SESSION_ID}`)).toBeNull();
+  });
+
   it('is a no-op when the configured proxy is an absolute URL', async () => {
     recordJob();
     const { result } = renderResume({ proxyRelative: false });
@@ -435,5 +456,51 @@ describe('useStreamResume', () => {
     const handlerArgs = mockGetStreamHandlers.mock.calls[0] as unknown[];
     // 5th positional arg (index 4) is currentChatSettings.
     expect(handlerArgs[4]).toBe(fullSettings);
+  });
+
+  it('replays from seq 0 when resuming, discarding the stale pre-refresh cursor', async () => {
+    // A job whose cursor was advanced to 5 by the PREVIOUS page instance. After
+    // a refresh the browser has lost the prefix it consumed (streamingStore is
+    // gone, DB content is still empty), so resuming from 5 would truncate the
+    // message to the tail. The fix replays the full buffered stream from 0.
+    recordJob({ lastSeq: 5 });
+    const { result } = renderResume();
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    expect(mockSendStatelessMessageStreamApi).toHaveBeenCalledTimes(1);
+    const streamResume = mockSendStatelessMessageStreamApi.mock.calls[0][12] as {
+      jobId: string;
+      lastSeq: number;
+      onSeq: (seq: number) => void;
+    };
+    expect(streamResume.jobId).toBe(GENERATION_ID);
+    expect(streamResume.lastSeq).toBe(0);
+  });
+
+  it('clears the pending record after a successful resume', async () => {
+    recordJob();
+    const { result } = renderResume();
+    mockSendStatelessMessageStreamApi.mockResolvedValue(undefined);
+
+    await act(async () => {
+      await result.current.resumePendingStream({
+        sessionId: SESSION_ID,
+        generationId: GENERATION_ID,
+        modelId: MODEL_ID,
+        startedAt: STARTED_AT,
+      });
+    });
+
+    // The completed job must not linger in localStorage where a later refresh
+    // could re-attach it.
+    expect(window.localStorage.getItem(`amc_stream_job:${SESSION_ID}`)).toBeNull();
   });
 });

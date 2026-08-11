@@ -444,7 +444,6 @@ describe('useMessageSender', () => {
     const { result, unmount } = renderMessageSender({
       appSettings: {
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...createDefaultThirdPartyApiSettings().providers,
             openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.6-sol' },
@@ -516,7 +515,6 @@ describe('useMessageSender', () => {
     const { result, unmount } = renderMessageSender({
       appSettings: {
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...createDefaultThirdPartyApiSettings().providers,
             openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.6-sol' },

@@ -9,6 +9,7 @@ import type { AppSettings, ChatGroup, ChatMessage, ChatSettings, SavedChatSessio
 import { rehydrateSessionFiles } from '@/utils/chat/session';
 import {
   createSettingsForNewChat,
+  resolveNewTabTemplate,
   sanitizeSessionModel,
   sortSessionsByPinnedAndTimestamp,
 } from './sessionLoaderSettings';
@@ -74,6 +75,18 @@ const resolveInitialActiveSessionId = (metadataList: SavedChatSession[]) => {
   }
 
   return null;
+};
+
+/**
+ * 读取新标签页 URL 上的 ?from= 参数（来源标签页正在查看的会话 id）。
+ * 由 Logo/新聊天入口的 `buildNewTabHref` 写入；读取失败时安全返回 null。
+ */
+const readFromSessionParam = (): string | null => {
+  try {
+    return new URLSearchParams(window.location.search).get('from');
+  } catch {
+    return null;
+  }
 };
 
 const mergeLoadedSessionMetadata = (
@@ -146,10 +159,12 @@ export const loadInitialSessionData = async ({
     setSavedGroups(groups.map((group) => ({ ...group, isExpanded: group.isExpanded ?? true })));
 
     if (!initialActiveId) {
+      const fromSessionId = readFromSessionParam();
       const mostRecent = sortedList[0];
       let reused = false;
 
-      if (mostRecent) {
+      // 显式 ?from 时跳过空会话复用（用户意图明确：从来源会话开新会话）。
+      if (mostRecent && !fromSessionId) {
         const fullSession = await dbService.getSession(mostRecent.id);
         if (
           fullSession &&
@@ -182,24 +197,15 @@ export const loadInitialSessionData = async ({
       if (!reused) {
         logService.info('No active session found or empty session to reuse, starting fresh chat.');
 
-        // 优先以"最后活跃会话"（即点击 Logo 时所在页面）作为模板。
-        const lastActiveSnapshot = readLastActiveSessionSnapshot();
-        let templateSession: SavedChatSession | undefined;
-
-        if (lastActiveSnapshot) {
-          const existing = sortedList.find((session) => session.id === lastActiveSnapshot.sessionId);
-          templateSession = existing
-            ? { ...existing, settings: lastActiveSnapshot.settings } // 用最新快照设置覆盖（源页可能刚改过设置）
-            : {
-                id: lastActiveSnapshot.sessionId,
-                title: 'New Chat',
-                timestamp: Date.now(),
-                messages: [],
-                settings: lastActiveSnapshot.settings,
-              };
-        }
-
-        startNewChat(templateSession ?? sortedList[0], { history: 'replace' });
+        // 以 ?from 会话优先，其次"最后活跃会话"快照，最后最近会话作为模板。
+        startNewChat(
+          resolveNewTabTemplate({
+            fromSessionId,
+            snapshot: readLastActiveSessionSnapshot(),
+            sortedSessions: sortedList,
+          }),
+          { history: 'replace' },
+        );
       }
     }
   } catch (error) {

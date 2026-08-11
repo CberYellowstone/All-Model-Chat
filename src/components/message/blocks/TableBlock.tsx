@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, Minimize2, Download, FileSpreadsheet, FileText, Copy, Check } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
@@ -34,9 +34,6 @@ const hasRawHtmlInlineStyle = (node?: HastElementLike): boolean => {
 };
 
 const COPY_FEEDBACK_MS = 2000;
-// Fewer columns = even grid that fills the width; more = natural widths so the
-// wrapper's overflow-x scrolls instead of squeezing wide tables flat.
-const MAX_FIXED_COLUMNS = 5;
 
 const hasInlineStyle = (node: React.ReactNode): boolean => {
   return React.Children.toArray(node).some((child) => {
@@ -46,41 +43,6 @@ const hasInlineStyle = (node: React.ReactNode): boolean => {
 
     return hasRawHtmlInlineStyle(child.props.node) || hasInlineStyle(child.props.children);
   });
-};
-
-// react-markdown renders hast vdom elements with string tag names, and tests
-// render literal <thead>/<tr>/<td> elements — both surface as React elements,
-// so counting the first content row's cells needs no DOM measurement. A GFM
-// delimiter row, if it ever surfaces, has the same cell count as the header, so
-// counting the first <tr> is always correct.
-const countColumnsInSection = (children: React.ReactNode): number => {
-  for (const child of React.Children.toArray(children)) {
-    if (!React.isValidElement<TableChildProps>(child) || child.type !== 'tr') {
-      continue;
-    }
-    const cells = React.Children.toArray(child.props.children).filter(
-      (cell) => React.isValidElement(cell) && (cell.type === 'th' || cell.type === 'td'),
-    );
-    if (cells.length > 0) {
-      return cells.length;
-    }
-  }
-  return 0;
-};
-
-const getFirstRowCellCount = (children: React.ReactNode): number => {
-  for (const child of React.Children.toArray(children)) {
-    if (!React.isValidElement<TableChildProps>(child)) {
-      continue;
-    }
-    if (child.type === 'thead' || child.type === 'tbody') {
-      const count = countColumnsInSection(child.props.children);
-      if (count > 0) {
-        return count;
-      }
-    }
-  }
-  return 0;
 };
 
 export const TableBlock: React.FC<TableBlockProps> = ({ children, className, node, ...props }) => {
@@ -197,17 +159,11 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
   };
 
   const isRichHtmlTable = hasRawHtmlInlineStyle(node) || hasInlineStyle(children);
-  const columnCount = useMemo(() => getFirstRowCellCount(children), [children]);
-  const tableLayout = columnCount > MAX_FIXED_COLUMNS ? 'auto' : 'fixed';
   const tableClassName = [className, isRichHtmlTable ? 'rich-html-table' : 'text-left'].filter(Boolean).join(' ');
-  // The wrapper handles the outer frame only for GFM tables; rich HTML tables
-  // bring their own borders via inline styles, so they get no frame at all.
-  // The frame lives on the inner scroll container rather than the outer wrapper
-  // so the absolutely-positioned download dropdown is not clipped by rounding.
   const inlineContainerClassName = 'relative group/table my-4 w-full max-w-full overflow-visible';
-  const inlineScrollClassName = isRichHtmlTable
-    ? 'overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full'
-    : 'overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-primary)]/40';
+  // Linear style: frameless — the wrapper only provides horizontal scrolling.
+  const inlineScrollClassName =
+    'overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--theme-scrollbar-thumb)] scrollbar-track-transparent w-full';
   const fullscreenContainerClassName = isRichHtmlTable
     ? 'w-full max-w-6xl mx-auto markdown-body p-0 my-0 overflow-x-auto max-h-full'
     : 'w-full max-w-6xl mx-auto bg-[var(--theme-bg-primary)] rounded-lg shadow-xl border border-[var(--theme-border-secondary)] markdown-body p-0 my-0 overflow-auto max-h-full';
@@ -271,12 +227,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
         </div>
 
         <div className={fullscreenContainerClassName} data-rich-html-table-container={isRichHtmlTable || undefined}>
-          <table
-            ref={tableRef}
-            className={tableClassName}
-            data-layout={isRichHtmlTable ? undefined : tableLayout}
-            {...props}
-          >
+          <table ref={tableRef} className={tableClassName} {...props}>
             {children}
           </table>
         </div>
@@ -292,12 +243,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       data-table-actions-scope="true"
     >
       <div className={inlineScrollClassName}>
-        <table
-          ref={tableRef}
-          className={tableClassName}
-          data-layout={isRichHtmlTable ? undefined : tableLayout}
-          {...props}
-        >
+        <table ref={tableRef} className={tableClassName} {...props}>
           {children}
         </table>
       </div>

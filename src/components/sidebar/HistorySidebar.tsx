@@ -39,6 +39,8 @@ interface HistorySidebarProps {
   themeId: string;
   newChatShortcut: string;
   searchChatsShortcut: string;
+  brandHref?: string;
+  onBrandClick?: () => void;
 }
 
 const MiniSidebarButton = ({
@@ -135,6 +137,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onSelectSession,
     newChatShortcut,
     searchChatsShortcut,
+    brandHref = '/',
+    onBrandClick,
   } = props;
 
   const {
@@ -302,7 +306,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-100 pointer-events-none md:opacity-0'
         }`}
       >
-        <SidebarHeader isOpen={isOpen} onToggle={onToggle} themeId={themeId} />
+        <SidebarHeader
+          isOpen={isOpen}
+          onToggle={onToggle}
+          themeId={themeId}
+          brandHref={brandHref}
+          onBrandClick={onBrandClick}
+        />
         <SidebarActions
           onNewChat={onNewChat}
           onCloseSidebar={onAutoClose}
@@ -314,6 +324,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           searchInputRef={searchInputRef}
           newChatShortcut={newChatShortcut}
           searchChatsShortcut={searchChatsShortcut}
+          activeSessionId={activeSessionId}
         />
         <div
           ref={scrollContainerRef}
@@ -408,7 +419,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
         <div className="w-8 h-px bg-[var(--theme-border-primary)] my-1"></div>
 
         <MiniSidebarButton
-          href="/"
+          href={brandHref}
           onClick={onNewChat}
           icon={IconNewChat}
           title={t('newChat') + (newChatShortcut ? ` (${newChatShortcut})` : '')}

@@ -244,6 +244,10 @@ export const GRAPHVIZ_RENDERER_SCRIPT = `
         showFallback(node, currentDot, 'Invalid SVG response');
         return;
       }
+      // The sandbox iframe has no utility classes; use inline styles so wide LR
+      // diagrams scroll instead of being clipped or squashed.
+      node.style.overflowX = 'auto';
+      node.style.maxWidth = '100%';
       node.replaceChildren(svgRoot);
       setState(node, 'rendered');
       return;

@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { useSelectionPosition } from '@/hooks/text-selection/useSelectionPosition';
 import { useSelectionDrag } from '@/hooks/text-selection/useSelectionDrag';
 import { useSelectionAudio } from '@/hooks/text-selection/useSelectionAudio';
+import type { QuickTtsResult } from '@/hooks/chat/message/useTextToSpeechHandler';
 import { writeSelectionTextToClipboard } from '@/utils/text-selection/selectionClipboard';
 
 import { ToolbarContainer } from './text-selection/ToolbarContainer';
@@ -14,7 +15,7 @@ import { StandardActionsView } from './text-selection/StandardActionsView';
 interface TextSelectionToolbarProps {
   onQuote: (text: string) => void;
   onInsert?: (text: string) => void;
-  onTTS?: (text: string) => Promise<string | null>;
+  onTTS?: (text: string) => Promise<QuickTtsResult>;
   containerRef: RefObject<HTMLElement> | HTMLElement | null;
 }
 
@@ -108,12 +109,15 @@ export const TextSelectionToolbar: React.FC<TextSelectionToolbarProps> = ({
 
     audioState.setIsLoading(true);
     try {
-      const url = await onTTS(selectedText);
-      if (url) {
-        audioState.play(url);
+      const result = await onTTS(selectedText);
+      if ('url' in result) {
+        audioState.play(result.url);
+      } else {
+        audioState.fail(result.error);
       }
     } catch (ttsError) {
       logService.error('TTS Failed:', ttsError);
+      audioState.fail(ttsError instanceof Error ? ttsError.message : 'TTS generation failed.');
     } finally {
       audioState.setIsLoading(false);
     }
@@ -146,6 +150,7 @@ export const TextSelectionToolbar: React.FC<TextSelectionToolbarProps> = ({
           onSearch={handleSearchClick}
           onTTS={onTTS ? handleTTSClick : undefined}
           isCopied={isCopied}
+          ttsError={audioState.errorMessage}
         />
       )}
     </ToolbarContainer>

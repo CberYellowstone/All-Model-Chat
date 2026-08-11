@@ -371,7 +371,6 @@ describe('useApp', () => {
       ...currentAppSettings,
       modelId: 'gemini-3-flash-preview',
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...thirdPartyDefaults.providers,
           openai: {

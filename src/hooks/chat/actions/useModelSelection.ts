@@ -3,6 +3,7 @@ import {
   type AppSettings,
   type ChatSettings as IndividualChatSettings,
   type SavedChatSession,
+  type ThirdPartyProviderId,
   GEMINI_PROVIDER_ID,
 } from '@/types';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
@@ -47,10 +48,18 @@ export const useModelSelection = ({
   userScrolledUpRef,
 }: UseModelSelectionProps) => {
   const handleSelectModelInHeader = useCallback(
-    (modelId: string) => {
+    (modelId: string, explicitProviderId?: ThirdPartyProviderId) => {
       const thirdPartyModels = getEnabledThirdPartyProviders(appSettings);
       const isThirdPartyModel = thirdPartyModels.some(({ config }) => config.models.some((m) => m.id === modelId));
-      const provider = isThirdPartyModel ? resolveProviderForModelId(appSettings, modelId) : undefined;
+      // An explicit providerId (point-to-point pick from the header) wins. When
+      // absent (keyboard tab cycle, legacy callers), keep the old inference so
+      // the session still routes deterministically.
+      const provider =
+        explicitProviderId && appSettings.thirdPartyApi?.providers[explicitProviderId]
+          ? { id: explicitProviderId, config: appSettings.thirdPartyApi.providers[explicitProviderId] }
+          : isThirdPartyModel
+            ? resolveProviderForModelId(appSettings, modelId)
+            : undefined;
       const sourceSettings = activeSessionId ? currentChatSettings : appSettings;
       const resolvedModelSettings: Partial<IndividualChatSettings> = resolveModelSwitchSettings({
         currentSettings: currentChatSettings,
@@ -62,7 +71,7 @@ export const useModelSelection = ({
       // resolvedModelSettings — keeps the session self-consistent and never
       // touches a global mode.
       const routingSettings: Pick<IndividualChatSettings, 'providerId'> =
-        isThirdPartyModel && provider ? { providerId: provider.id } : { providerId: GEMINI_PROVIDER_ID };
+        provider && provider.config ? { providerId: provider.id } : { providerId: GEMINI_PROVIDER_ID };
       const nextModelSettings = { ...resolvedModelSettings, ...routingSettings };
 
       if (!activeSessionId) {

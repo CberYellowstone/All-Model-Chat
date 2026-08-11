@@ -321,77 +321,67 @@ code.hljs {
   line-height: 1.4; /* Slightly tighter for inline code tags */
 }
 
-/* Table Styles — Clean Minimalist Style (No Grid Borders)
-   Single source of truth. The outer frame (border, radius, background) lives on
-   the TableBlock wrapper; the table body carries only the internal structure.
-   No !important: the LA inline-style protocol says model inline styles must be
-   able to win, and source-order cascade already beats tailwind utility classes. */
+/* Table Styles — Linear Minimal
+   Frameless: no outer border/background. Structure = one strong uppercase
+   header rule + hairline row separators. Columns are content-sized
+   (table-layout: auto); the TableBlock wrapper handles horizontal scroll.
+   No !important: the LA inline-style protocol says model inline styles must
+   win, and source-order cascade already beats tailwind utility classes. */
 .markdown-body table:not(.rich-html-table) {
   border-collapse: collapse;
-  border: none;
-  width: 100%;
+  min-width: 100%;
   margin: 0; /* Handled by TableBlock wrapper */
   background-color: transparent;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* ≤5 columns: even full-width grid; >5: natural width so the wrapper scrolls. */
-.markdown-body table:not(.rich-html-table)[data-layout='fixed'] {
-  table-layout: fixed;
-  width: 100%;
-}
-
-.markdown-body table:not(.rich-html-table)[data-layout='auto'] {
   table-layout: auto;
-  min-width: 100%;
 }
 
 .markdown-body table:not(.rich-html-table) caption {
   caption-side: top;
-  color: inherit !important;
-  font-weight: 600;
+  color: var(--theme-text-tertiary);
+  font-weight: 500;
+  font-size: 0.75em;
   text-align: left;
-  padding: 0.875rem 1rem 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 1rem 0.5rem;
 }
 
+/* Header: single strong bottom rule; uppercase small caps feel. No fill. */
 .markdown-body table:not(.rich-html-table) thead th {
-  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 35%, transparent);
-  color: var(--theme-text-secondary);
-  font-weight: 600;
-  padding: 0.625rem 0.875rem;
+  background-color: transparent;
+  color: var(--theme-text-tertiary);
+  font-weight: 500;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   text-align: left;
+  padding: 0.5rem 1rem;
   border: none;
-  border-bottom: 2px solid var(--theme-border-secondary);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  border-bottom: 1px solid var(--theme-border-secondary);
+  white-space: nowrap;
   vertical-align: top;
-  font-size: 0.875em;
 }
 
-/* Horizontal lines between rows */
+/* Body rows: hairline separators, generous padding, no eager word-break. */
 .markdown-body table:not(.rich-html-table) tbody td {
-  padding: 0.5rem 0.875rem;
+  padding: 0.75rem 1rem;
   border: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-secondary) 60%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-secondary) 30%, transparent);
   color: inherit;
   vertical-align: top;
   background-color: transparent;
   line-height: 1.6;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
   font-variant-numeric: tabular-nums;
 }
 
-/* Remove border from last row to avoid double border with container bottom if present, or just clean look */
 .markdown-body table:not(.rich-html-table) tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Hover: soft lift only, no hard fill. */
 .markdown-body table:not(.rich-html-table) tbody tr:hover {
-  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 30%, transparent);
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 25%, transparent);
 }
 
 /* GFM column alignment — :---: / ---: in the delimiter row emits align attrs */
@@ -407,12 +397,15 @@ code.hljs {
   max-width: 100%;
 }
 
-/* Fullscreen tables scroll the whole sheet; keep the header pinned above the fold */
-[data-table-fullscreen-overlay='true'] thead th {
+/* Fullscreen tables scroll the whole sheet; keep the header pinned above the fold.
+   NOTE: base header background is transparent, so the sticky fullscreen header
+   needs an opaque background here. This selector is intentionally more specific
+   than the base `.markdown-body table:not(.rich-html-table) thead th` rule. */
+[data-table-fullscreen-overlay='true'] .markdown-body table:not(.rich-html-table) thead th {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: var(--theme-bg-secondary);
+  background-color: var(--theme-bg-primary);
   box-shadow: 0 1px 0 var(--theme-border-secondary); /* collapse drops th borders, shadow fills in */
 }
 

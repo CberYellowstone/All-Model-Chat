@@ -166,10 +166,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
       containerRef={diagramContainerRef}
       extraActions={layoutToggleBtn}
     >
-      <div
-        className="w-full flex justify-center overflow-x-auto custom-scrollbar"
-        dangerouslySetInnerHTML={{ __html: svgContent }}
-      />
+      <div className="w-full overflow-x-auto custom-scrollbar" dangerouslySetInnerHTML={{ __html: svgContent }} />
     </DiagramWrapper>
   );
 };

@@ -45,7 +45,7 @@ const appearanceSettings = {
   settingsUnwrapMislabeledHtmlLabel: { en: 'Render mislabeled HTML code blocks', zh: '渲染误标记的 HTML 代码块' },
   settingsUnwrapMislabeledHtmlTooltip: {
     en: 'When a code block labeled text/css/markdown contains a complete HTML document or Live Artifacts markup, render it as a live preview instead of plain source. Turn off to always show these blocks as code.',
-    zh: '当 text/css/markdown 等代码块中包含完整 HTML 文档或 Live Artifacts 标记时,自动渲染为实时预览而非源码。关闭后此类代码块始终按源码显示。',
+    zh: '当 text/css/markdown 等代码块中包含完整 HTML 文档或 Live Artifacts 标记时，自动渲染为实时预览而非源码。关闭后此类代码块始终按源码显示。',
   },
   isAutoTitleEnabled: { en: 'Auto-name New Chats', zh: '自动命名新对话' },
   isAutoTitleEnabledTooltip: {

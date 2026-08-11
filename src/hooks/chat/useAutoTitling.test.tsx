@@ -81,7 +81,6 @@ describe('useAutoTitling', () => {
           ...DEFAULT_APP_SETTINGS,
           apiKey: 'gemini-key',
           thirdPartyApi: {
-            activeProvider: 'openai',
             providers: {
               ...createDefaultThirdPartyApiSettings().providers,
               openai: { ...createDefaultThirdPartyApiSettings().providers.openai, apiKey: 'openai-key' },

@@ -192,7 +192,7 @@ describe('SelectedFileDisplay', () => {
     expect(moveButton).toBeUndefined();
   });
 
-  it('renders a text snippet thumbnail for text files', () => {
+  it('renders a skeleton-bar thumbnail for text files', () => {
     act(() => {
       renderer.root.render(
         <SelectedFileDisplay
@@ -205,8 +205,13 @@ describe('SelectedFileDisplay', () => {
       );
     });
 
-    expect(renderer.container.querySelector('[data-thumbnail-kind="text"]')).not.toBeNull();
-    expect(renderer.container.textContent).toContain('first line');
+    const thumbnail = renderer.container.querySelector('[data-thumbnail-kind="text"]');
+    expect(thumbnail).not.toBeNull();
+    // Skeleton bars are decorative and aria-hidden; no actual file text or line
+    // numbers are rendered (that would require reading the whole file).
+    expect(thumbnail?.getAttribute('aria-hidden')).toBe('true');
+    expect(thumbnail?.querySelectorAll('span')).toHaveLength(4); // 1 title bar + 3 body bars
+    expect(renderer.container.textContent).not.toContain('first line');
   });
 
   it('renders a first-page thumbnail for PDF files', async () => {

@@ -140,7 +140,7 @@ describe('SettingsModal', () => {
 
     await act(async () => {
       document
-        .querySelector('[data-testid="settings-model-option-next-chat-model"]')
+        .querySelector('[data-testid="settings-model-option-gemini-native:next-chat-model"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 

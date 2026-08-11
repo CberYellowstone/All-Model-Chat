@@ -420,4 +420,97 @@ describe('htmlPreview utilities', () => {
     expect(srcDoc).toContain('<html>');
     expect(srcDoc).toContain(HTML_PREVIEW_MESSAGE_CHANNEL);
   });
+
+  describe('DOM-layer injection (script/comment/pre containing </body>)', () => {
+    it('does not inject the bridge into a script string containing </body> (live artifacts)', () => {
+      // Live Artifacts sanitize <script> tags entirely, so the script containing
+      // the literal </body> is stripped. The bridge must still land in a real
+      // <script> at the END of the body — never spliced into a string (which
+      // would be a SyntaxError and white-screen the frame).
+      const srcDoc = buildHtmlPreviewSrcDoc(
+        `<html><head></head><body><script>const tpl = '<div></body></div>';</script><p>Hello</p></body></html>`,
+      );
+
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('Hello'));
+      // The script was sanitized out (its literal </body> string is gone).
+      expect(srcDoc.indexOf('<div></body></div>')).toBe(-1);
+    });
+
+    it('does not inject the bridge before <pre> text that displays </body> (live artifacts)', () => {
+      const srcDoc = buildHtmlPreviewSrcDoc(
+        '<html><head></head><body><p>Intro</p><pre>&lt;/body&gt;</pre></body></html>',
+      );
+
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('Intro'));
+      // The pre text must survive un-escaped.
+      expect(srcDoc).toContain('</body>');
+    });
+
+    it('does not inject the bridge into a script string containing </body> (unrestricted preview)', () => {
+      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc(
+        `<html><head></head><body><script>const tpl = '<div></body></div>';</script><p>Hello</p></body></html>`,
+      );
+
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('Hello'));
+      expect(srcDoc.indexOf('<div></body></div>')).toBeGreaterThan(-1);
+    });
+
+    it('does not inject the bridge before a comment containing </body> (unrestricted preview)', () => {
+      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc(
+        '<html><head></head><body><!-- literal </body> here --><p>Hello</p></body></html>',
+      );
+
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('Hello'));
+      expect(srcDoc).toContain('</body>');
+    });
+
+    it('wraps a fragment with no <html> root and appends the bridge last (unrestricted preview)', () => {
+      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc('<p>fragment</p>');
+
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('fragment'));
+      // Serialized as a full document.
+      expect(srcDoc).toMatch(/^<!DOCTYPE html><html>/);
+    });
+
+    it('still treats content whose string contains <html as a fragment needing a wrapper', () => {
+      // A fragment whose text merely mentions "<html" must not be mistaken for
+      // a complete document (the old sniffing regex matched the first "<html ").
+      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc('<p>show me &lt;html lang="en"&gt;</p>');
+
+      expect(srcDoc).toMatch(/^<!DOCTYPE html><html>/);
+      const bridgeIndex = srcDoc.indexOf(HTML_PREVIEW_MESSAGE_CHANNEL);
+      expect(bridgeIndex).toBeGreaterThan(srcDoc.indexOf('show me'));
+    });
+
+    it('still injects CSP when model prose mentions the meta tag (DOM guard, not regex)', () => {
+      const srcDoc = buildHtmlPreviewSrcDoc(
+        '<section><p>Add &lt;meta http-equiv="Content-Security-Policy" content="default-src ...&gt;</p></section>',
+      );
+
+      expect(srcDoc).toContain('http-equiv="Content-Security-Policy"');
+      expect(srcDoc).toContain("default-src 'none'");
+    });
+
+    it('does not double-inject the CSP meta when a real CSP element already exists', () => {
+      const srcDoc = buildHtmlPreviewSrcDoc(
+        '<html><head><meta http-equiv="Content-Security-Policy" content="default-src &apos;self&apos;"></head><body>x</body></html>',
+      );
+
+      expect(srcDoc.match(/http-equiv="Content-Security-Policy"/g)?.length).toBe(1);
+    });
+
+    it('injects the CSP meta into the head for fragment wrappers', () => {
+      const srcDoc = buildHtmlPreviewSrcDoc('<section><p>Fragment</p></section>');
+
+      const cspIndex = srcDoc.indexOf('Content-Security-Policy');
+      const bodyIndex = srcDoc.indexOf('<body>');
+      expect(cspIndex).toBeGreaterThan(-1);
+      expect(cspIndex).toBeLessThan(bodyIndex);
+    });
+  });
 });

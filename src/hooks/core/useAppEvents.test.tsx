@@ -210,7 +210,6 @@ describe('useAppEvents PWA lifecycle', () => {
     const openaiProviderSettings = createAppSettings({
       ...appSettings,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
           openai: {
@@ -268,7 +267,6 @@ describe('useAppEvents PWA lifecycle', () => {
     const geminiSettings = createAppSettings({
       ...appSettings,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
           openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1', enabled: true },
@@ -322,7 +320,6 @@ describe('useAppEvents PWA lifecycle', () => {
     const geminiSettings = createAppSettings({
       ...appSettings,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
           openai: {

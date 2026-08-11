@@ -117,15 +117,16 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 
 ## 结构图 DSL（data-amc-graphviz）
 结构/依赖/流程/状态机/组织关系优先用 data-amc-graphviz 声明，禁止手写 SVG 图（图布局由宿主渲染器完成）。
-- 用法：<div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="开始"]; parse[label="解析请求"]; start->parse; }'></div>
+- 用法：<div data-amc-graphviz='digraph { rankdir=LR; start[label="开始"]; parse[label="解析请求"]; start->parse; }'></div>
 - DOT 写在单引号属性内；DOT 内部字符串只用双引号，禁止单引号 \`'\`（label 含撇号时改写文案）
 - 禁止 HTML-like label（<...>，会被当作标签解析）；禁止任何 URL/href/image
 - 上限：DOT ≤ ${DOT_MAX_CHARS} 字符；节点 ≤ ${DOT_MAX_NODES}；边 ≤ ${DOT_MAX_EDGES}
 - 节点 id 用 ASCII；label 可中文；默认布局 LR，层级/上下结构图必须显式写 rankdir=TB
-- 配色默认自动跟随主题；确需上色仅允许语义名 accent/success/warning/danger/muted/subtle（由渲染器映射为主题色值）
+- 样式一律不写（shape/style/penwidth/arrowsize/fontname/margin 由宿主按主题注入默认值）；禁止任何具体颜色值（hex/rgb）
+- 确需语义着色：填充用 fillcolor=accent/success/warning/danger/muted/subtle（映射为柔和表面色）；描边/文字用 color=/fontcolor=<同一组语义名>（映射为对应正文色）
 - 规则：节点里不要再写任何内容
 例（流程）：
-<div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="开始"]; parse[label="解析请求"]; decide[label="校验通过?"]; start->parse->decide; decide->done[label="返回结果"]; decide->retry[label="重试"]; }'></div>
+<div data-amc-graphviz='digraph { rankdir=LR; start[label="开始"]; parse[label="解析请求"]; decide[label="校验通过?"]; done[label="返回结果" fillcolor=success]; retry[label="重试" fillcolor=warning]; start->parse->decide; decide->done[label="通过"]; decide->retry[label="不通过"]; retry->parse; }'></div>
 
 ## 图表选型决策
 - 数值序列/数值对比 → data-amc-chart
@@ -206,6 +207,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 5. 宽内容已包 overflow-x:auto。
 6. 若本次输出 JSON：是否用了英文 ASCII 字段 key？fields 数 1–24 吗？enum ≤50 吗？instruction ≤2000 吗？检查 format 是否和 type 匹配。
 7. 数值图表用了 data-amc-chart 而非手写 SVG？x 与 y 等长？结构图用了 data-amc-graphviz 而非手写 SVG？DOT 无单引号、无 HTML-like label、未超上限、层级图已显式 rankdir=TB？
+8. 结构图未手写样式/具体颜色？层级/上下结构图已显式 rankdir=TB？
 
 ## Trigger Checklist（每次决定先问前快速过一遍）
 □ 缺 ≥2 个关键参数且默认值会改变产物结构 → 应问
@@ -225,6 +227,7 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 ### C) data-amc-graphviz
 - DOT ≤ ${DOT_MAX_CHARS} 字符；节点 ≤ ${DOT_MAX_NODES}；边 ≤ ${DOT_MAX_EDGES}
 - DOT 属性值内禁止单引号 \`'\`；label 禁止 HTML-like（<...>）、URL/href/image
+- 禁止手写样式属性（shape/style/penwidth/arrowsize/fontname/margin）与具体颜色值（hex/rgb）；颜色仅允许上述语义名
 `;
 
 export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN = `[Live Artifacts Inline Protocol - en]
@@ -345,15 +348,16 @@ Example (line comparison):
 
 ## Declarative graph DSL (data-amc-graphviz)
 Use data-amc-graphviz for structure/dependency/flow/state-machine/organization; never hand-write SVG diagrams (layout is done by the host renderer).
-- Usage: <div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="Start"]; parse[label="Parse request"]; start->parse; }'></div>
+- Usage: <div data-amc-graphviz='digraph { rankdir=LR; start[label="Start"]; parse[label="Parse request"]; start->parse; }'></div>
 - DOT lives in a single-quoted attribute; strings inside DOT use only double quotes; no single quotes \`'\` (rewrite labels containing apostrophes)
 - No HTML-like labels (<...>, parsed as tags); no URLs/href/images
 - Limits: DOT ≤ ${DOT_MAX_CHARS} chars; nodes ≤ ${DOT_MAX_NODES}; edges ≤ ${DOT_MAX_EDGES}
 - Node ids ASCII; labels may be localized; default layout LR; hierarchical/top-down graphs must set rankdir=TB explicitly
-- Colors follow the theme by default; explicit colors use only semantic names accent/success/warning/danger/muted/subtle (the renderer maps them to theme values)
+- Never write style attributes (shape/style/penwidth/arrowsize/fontname/margin are injected by the host with theme-aware defaults); concrete color values (hex/rgb) are forbidden
+- Semantic coloring only: fills use fillcolor=accent/success/warning/danger/muted/subtle (mapped to soft surface colors); strokes/text use color=/fontcolor=<same semantic names> (mapped to matching text colors)
 - Rules: keep the node empty
 Example (flow):
-<div data-amc-graphviz='digraph { rankdir=LR; node[shape=box,style="rounded"]; start[label="Start"]; parse[label="Parse request"]; decide[label="Valid?"]; start->parse->decide; decide->done[label="Return result"]; decide->retry[label="Retry"]; }'></div>
+<div data-amc-graphviz='digraph { rankdir=LR; start[label="Start"]; parse[label="Parse request"]; decide[label="Valid?"]; done[label="Return result" fillcolor=success]; retry[label="Retry" fillcolor=warning]; start->parse->decide; decide->done[label="yes"]; decide->retry[label="no"]; retry->parse; }'></div>
 
 ## Chart selection rules
 - Numeric series / numeric comparison → data-amc-chart
@@ -434,6 +438,7 @@ Example (flow):
 5. Wide content wrapped in overflow-x:auto.
 6. If outputting JSON: are field keys ASCII? fields 1–24? enum ≤50? instruction ≤2000? format/type match?
 7. Numeric charts use data-amc-chart instead of hand-written SVG? x and y equal length? Graphs use data-amc-graphviz instead of hand-written SVG? DOT free of single quotes, HTML-like labels, and over-limit sizes? Hierarchical graphs set rankdir=TB explicitly?
+8. Graph without hand-written styles or concrete colors? Hierarchical/top-down graph set rankdir=TB explicitly?
 
 ## Trigger Checklist (quick scan before deciding to ask)
 □ ≥2 key parameters missing and defaults change output structure → ask
@@ -453,4 +458,5 @@ Example (flow):
 ### C) data-amc-graphviz
 - DOT ≤ ${DOT_MAX_CHARS} chars; nodes ≤ ${DOT_MAX_NODES}; edges ≤ ${DOT_MAX_EDGES}
 - No single quotes \`'\` inside DOT attribute values; labels must not be HTML-like (<...>), URLs/hrefs/images
+- No hand-written style attributes (shape/style/penwidth/arrowsize/fontname/margin) or concrete color values (hex/rgb); colors use only the semantic names above
 `;

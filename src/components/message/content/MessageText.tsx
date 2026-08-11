@@ -60,9 +60,15 @@ export const MessageText: React.FC<MessageTextProps> = ({
 
   const { streamContent, streamThoughts } = useMessageStream(message.id, isLoading && message.role === 'model');
 
-  const rawThinkingExtraction = extractRawThinkingBlocks(streamContent ? `${content || ''}${streamContent}` : content);
+  const fullStreamingText = streamContent ? `${content || ''}${streamContent}` : content;
+  // 流式期间本组件每帧重渲染，extraction 对全文跑正则，必须 memo；
+  // 字符串相等时 React 保留上一次结果，避免每帧重复解析。
+  const rawThinkingExtraction = useMemo(() => extractRawThinkingBlocks(fullStreamingText), [fullStreamingText]);
   const effectiveContent = rawThinkingExtraction.content;
-  const effectiveThoughts = [thoughts, streamThoughts, rawThinkingExtraction.thoughts].filter(Boolean).join('\n\n');
+  const effectiveThoughts = useMemo(
+    () => [thoughts, streamThoughts, rawThinkingExtraction.thoughts].filter(Boolean).join('\n\n'),
+    [thoughts, streamThoughts, rawThinkingExtraction.thoughts],
+  );
 
   const shouldSmooth = isLoading && message.role === 'model';
   const displayedContent = useSmoothStreaming(effectiveContent, shouldSmooth);

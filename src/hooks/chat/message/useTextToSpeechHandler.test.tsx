@@ -62,9 +62,9 @@ describe('useTextToSpeechHandler', () => {
       }),
     );
 
-    const url = await result.current.handleQuickTTS('hello world');
+    const ttsResult = await result.current.handleQuickTTS('hello world');
 
-    expect(url).toBe('blob:wav-url');
+    expect(ttsResult).toEqual({ url: 'blob:wav-url' });
     expect(generateSpeechMock).toHaveBeenCalledWith(
       'api-key',
       'gemini-3.1-flash-tts-preview',
@@ -122,6 +122,43 @@ describe('useTextToSpeechHandler', () => {
       DEFAULT_APP_SETTINGS.ttsVoice,
       expect.any(AbortSignal),
     );
+    unmount();
+  });
+
+  it('returns a user-facing error when the TTS generation fails', async () => {
+    generateSpeechMock.mockRejectedValue(
+      new Error('Speech generation timed out. Please check the TTS model/key and try again.'),
+    );
+
+    const { result, unmount } = renderHook(() =>
+      useTextToSpeechHandler({
+        appSettings: DEFAULT_APP_SETTINGS,
+        currentChatSettings: createChatSettings('gemini-3.1-flash-tts-preview'),
+      }),
+    );
+
+    const resultValue = await result.current.handleQuickTTS('hello world');
+
+    expect(resultValue).toEqual({
+      error: 'Speech generation timed out. Please check the TTS model/key and try again.',
+    });
+    unmount();
+  });
+
+  it('returns the key error when no Gemini key is configured', async () => {
+    getGeminiKeyForRequestMock.mockReturnValue({ error: 'No API key configured' });
+
+    const { result, unmount } = renderHook(() =>
+      useTextToSpeechHandler({
+        appSettings: DEFAULT_APP_SETTINGS,
+        currentChatSettings: createChatSettings('gemini-3.1-flash-tts-preview'),
+      }),
+    );
+
+    const resultValue = await result.current.handleQuickTTS('hello world');
+
+    expect(resultValue).toEqual({ error: 'No API key configured' });
+    expect(generateSpeechMock).not.toHaveBeenCalled();
     unmount();
   });
 });

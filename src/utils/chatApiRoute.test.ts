@@ -10,7 +10,6 @@ describe('resolveChatApiRoute', () => {
 
   const appSettings = createAppSettings({
     thirdPartyApi: {
-      activeProvider: 'openai',
       providers: {
         ...providers,
         openai: {
@@ -91,7 +90,6 @@ describe('resolveChatApiRoute', () => {
     // The gemini-native default must win when no explicit providerId is set.
     const collidingApp = createAppSettings({
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...providers,
           openai: {
@@ -139,7 +137,6 @@ describe('resolveChatApiRoute', () => {
     // selector. The explicit providerId is the source of truth for the route.
     const disabledApp = createAppSettings({
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...providers,
           kimi: {
@@ -163,5 +160,42 @@ describe('resolveChatApiRoute', () => {
       providerId: 'kimi',
       provider: expect.objectContaining({ apiKey: 'kimi-key' }),
     });
+  });
+
+  it('routes to the explicit provider when two providers share the same model id', () => {
+    // Same model id on two enabled providers. The session's explicit providerId
+    // must win — this is the regression guard for the header point-to-point pick.
+    const sharedModel = 'shared-model';
+    const dupApp = createAppSettings({
+      thirdPartyApi: {
+        providers: {
+          ...providers,
+          openai: {
+            ...providers.openai,
+            apiKey: 'openai-key',
+            enabled: true,
+            models: [{ id: sharedModel, name: 'Shared Model' }],
+          },
+          kimi: {
+            ...providers.kimi,
+            apiKey: 'kimi-key',
+            enabled: true,
+            models: [{ id: sharedModel, name: 'Shared Model (Kimi)' }],
+          },
+        },
+      },
+    });
+
+    expect(
+      resolveChatApiRoute(dupApp, createChatSettings({ modelId: sharedModel, providerId: 'openai' })),
+    ).toMatchObject({
+      apiMode: 'third-party',
+      providerId: 'openai',
+      provider: expect.objectContaining({ apiKey: 'openai-key' }),
+    });
+
+    expect(resolveChatApiRoute(dupApp, createChatSettings({ modelId: sharedModel, providerId: 'kimi' }))).toMatchObject(
+      { apiMode: 'third-party', providerId: 'kimi', provider: expect.objectContaining({ apiKey: 'kimi-key' }) },
+    );
   });
 });

@@ -17,7 +17,7 @@ describe('TableBlock', () => {
     triggerDownloadMock.mockReset();
   });
 
-  it('uses an even fixed grid for narrow tables (≤5 columns)', () => {
+  it('renders narrow tables without layout classes (CSS handles content-sized columns)', () => {
     act(() => {
       renderer.root.render(
         <WindowProvider window={window} document={document}>
@@ -42,16 +42,15 @@ describe('TableBlock', () => {
     const table = renderer.container.querySelector('table');
     const tableClasses = table?.className.split(/\s+/) ?? [];
 
-    // Column count comes from the React children, so no width classes are
-    // needed on the element itself; the layout strategy lives in CSS keyed on
-    // the data attribute.
-    expect(table?.getAttribute('data-layout')).toBe('fixed');
+    // Column sizing is table-layout: auto in CSS; the element carries no layout
+    // attribute or width utility classes.
+    expect(table?.getAttribute('data-layout')).toBeNull();
     expect(tableClasses).not.toContain('w-max');
     expect(tableClasses).not.toContain('min-w-full');
     expect(tableClasses).not.toContain('w-full');
   });
 
-  it('switches wide tables to natural widths so the wrapper can scroll', () => {
+  it('renders wide tables with natural widths so the wrapper can scroll', () => {
     act(() => {
       renderer.root.render(
         <WindowProvider window={window} document={document}>
@@ -84,7 +83,8 @@ describe('TableBlock', () => {
     });
 
     const table = renderer.container.querySelector('table');
-    expect(table?.getAttribute('data-layout')).toBe('auto');
+    // No data-layout attribute: all GFM tables rely on content-sized columns.
+    expect(table?.getAttribute('data-layout')).toBeNull();
   });
 
   it('scopes inline action controls to the table hover area instead of outer message groups', () => {

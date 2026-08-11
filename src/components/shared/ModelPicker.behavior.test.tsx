@@ -109,7 +109,7 @@ describe('ModelPicker behavior', () => {
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
 
-    expect(onSelect).toHaveBeenCalledWith('gemma-4-31b-it');
+    expect(onSelect).toHaveBeenCalledWith('gemma-4-31b-it', undefined);
     expect(renderer.container.querySelector('[role="listbox"]')).toBeNull();
   });
 

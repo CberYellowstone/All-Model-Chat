@@ -304,7 +304,6 @@ describe('settingsStore', () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(
         createStoredSettingsSnapshot({
           thirdPartyApi: {
-            activeProvider: 'deepseek',
             providers: {
               openai: {
                 apiKey: 'sk-openai',
@@ -326,8 +325,6 @@ describe('settingsStore', () => {
       expect(thirdPartyApi.providers.deepseek).toBeDefined();
       expect(thirdPartyApi.providers.deepseek.baseUrl).toBe('https://api.deepseek.com');
       expect(thirdPartyApi.providers.deepseek.protocol).toBe('openai-compatible');
-      // The active provider survives.
-      expect(thirdPartyApi.activeProvider).toBe('deepseek');
     });
 
     it('sanitizes thirdPartyApi: folds legacy openaiCompatible* fields into providers.openai', async () => {
@@ -354,7 +351,6 @@ describe('settingsStore', () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(
         createStoredSettingsSnapshot({
           thirdPartyApi: {
-            activeProvider: 'anthropic',
             providers: {
               anthropic: {
                 apiKey: 'sk-anthropic',

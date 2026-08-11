@@ -9,7 +9,8 @@ import type { AppSettings, ThirdPartyApiSettings, ThirdPartyProviderId } from '@
 import {
   THIRD_PARTY_PROVIDER_IDS,
   THIRD_PARTY_PROVIDER_LABELS,
-  getThirdPartyProviderConfig,
+  createDefaultThirdPartyApiSettings,
+  getEnabledThirdPartyProviders,
   updateThirdPartyProviderConfig,
 } from '@/utils/thirdPartyApiProviders';
 import { THIRD_PARTY_PROVIDER_LOGO } from '@/components/shared/ModelIcon';
@@ -30,16 +31,17 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
   onUpdateSettings,
 }) => {
   const { t } = useI18n();
+  // Expanded-card memory is local component state only — it must never be
+  // written into persisted settings (which would leak UI state into the domain
+  // model and trigger a settings write + cross-tab broadcast on every expand).
   const [expandedProvider, setExpandedProvider] = useState<ThirdPartyProviderId | null>(
-    settings.thirdPartyApi?.activeProvider ?? null,
+    () => getEnabledThirdPartyProviders(settings)[0]?.id ?? null,
   );
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState<string | null>(null);
 
   const thirdPartyApi = settings.thirdPartyApi;
-  const activeConfig = getThirdPartyProviderConfig(settings);
-  const expandedId = expandedProvider ?? settings.thirdPartyApi?.activeProvider ?? 'openai';
-  const expandedConfig = thirdPartyApi?.providers?.[expandedId] ?? activeConfig;
+  const expandedConfig = expandedProvider ? thirdPartyApi?.providers?.[expandedProvider] : undefined;
 
   const updateThirdPartyApi = (next: ThirdPartyApiSettings) => {
     onUpdateSettings({ thirdPartyApi: next });
@@ -48,19 +50,37 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
   const handleToggleEnabled = (providerId: ThirdPartyProviderId) => {
     const provider = thirdPartyApi?.providers?.[providerId];
     const nextEnabled = !provider?.enabled;
-    updateThirdPartyApi(updateThirdPartyProviderConfig(thirdPartyApi, providerId, { enabled: nextEnabled }));
+    updateThirdPartyApi(
+      updateThirdPartyProviderConfig(thirdPartyApi ?? createDefaultThirdPartyApiSettings(), providerId, {
+        enabled: nextEnabled,
+      }),
+    );
   };
 
-  const updateField = <K extends keyof typeof expandedConfig>(key: K, value: (typeof expandedConfig)[K]) => {
-    updateThirdPartyApi(updateThirdPartyProviderConfig(thirdPartyApi, expandedId, { [key]: value }));
+  const updateField = <K extends keyof NonNullable<typeof expandedConfig>>(
+    key: K,
+    value: NonNullable<typeof expandedConfig>[K],
+  ) => {
+    if (!expandedProvider) return;
+    updateThirdPartyApi(
+      updateThirdPartyProviderConfig(thirdPartyApi ?? createDefaultThirdPartyApiSettings(), expandedProvider, {
+        [key]: value,
+      }),
+    );
     setTestStatus('idle');
     setTestMessage(null);
   };
 
   // Connection test targets the currently-expanded provider card — its own key,
   // baseUrl and modelId — so the button's semantics never drift with a global
-  // mode.
+  // mode. Nothing is expanded when no provider is enabled, so there is nothing
+  // to test.
   const handleTestConnection = async () => {
+    if (!expandedProvider || !expandedConfig) {
+      setTestStatus('error');
+      setTestMessage(t('apiConfigNoKeyAvailable'));
+      return;
+    }
     const keyToTest = expandedConfig.apiKey;
     if (!keyToTest) {
       setTestStatus('error');
@@ -132,7 +152,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
           const config = thirdPartyApi?.providers?.[providerId];
           const isEnabled = config?.enabled === true;
           const hasKey = !!config?.apiKey;
-          const isExpanded = expandedId === providerId;
+          const isExpanded = expandedProvider === providerId;
 
           return (
             <div
@@ -154,16 +174,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const nextExpanded = isExpanded ? null : providerId;
-                    setExpandedProvider(nextExpanded);
-                    // Track which card is expanded as activeProvider (UI memory
-                    // only — routing derives from enabled providers + session
-                    // providerId, not this).
-                    if (nextExpanded) {
-                      updateThirdPartyApi({ ...thirdPartyApi, activeProvider: nextExpanded });
-                    }
-                  }}
+                  onClick={() => setExpandedProvider(isExpanded ? null : providerId)}
                   className="flex items-center gap-1.5 flex-1 min-w-0 cursor-pointer"
                 >
                   {isExpanded ? (
@@ -196,7 +207,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                 </button>
               </div>
 
-              {isExpanded && (
+              {isExpanded && expandedConfig && (
                 <div className="px-2.5 pb-2.5 space-y-3 border-t border-[var(--theme-border-secondary)]/30 pt-3">
                   <ApiKeyInput
                     apiKey={expandedConfig.apiKey}

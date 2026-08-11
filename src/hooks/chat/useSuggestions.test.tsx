@@ -65,7 +65,6 @@ describe('useSuggestions', () => {
       ...DEFAULT_APP_SETTINGS,
       apiKey: 'gemini-key',
       thirdPartyApi: {
-        activeProvider: 'openai' as const,
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
           openai: { ...createDefaultThirdPartyApiSettings().providers.openai, apiKey: 'openai-key', enabled: true },

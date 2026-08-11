@@ -96,7 +96,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: openaiProvider,
@@ -125,7 +124,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: { ...openaiProvider, enabled: true },
@@ -145,7 +143,7 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('uses the explicit session provider key even when the global activeProvider differs', () => {
+  it('uses the explicit session provider key over the default openai provider', () => {
     const kimiProvider = { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.kimi, apiKey: 'kimi-key' };
     const result = getKeyForRequest(
       {
@@ -153,7 +151,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: { ...openaiProvider, enabled: true },
@@ -178,7 +175,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: { ...openaiProvider, apiKey: null },
@@ -236,7 +232,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: openaiProvider,
@@ -265,7 +260,6 @@ describe('getKeyForRequest', () => {
         useCustomApiConfig: true,
         apiKey: null,
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: openaiProvider,
@@ -295,7 +289,6 @@ describe('getKeyForRequest', () => {
       {
         ...DEFAULT_APP_SETTINGS,
         thirdPartyApi: {
-          activeProvider: 'anthropic',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             anthropic: anthropicProvider,
@@ -318,7 +311,6 @@ describe('getKeyForRequest', () => {
       {
         ...DEFAULT_APP_SETTINGS,
         thirdPartyApi: {
-          activeProvider: 'anthropic',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             anthropic: { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.anthropic, apiKey: null },

@@ -1,12 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { AVAILABLE_THEMES } from '@/constants/themeRegistry';
 import { DOT_MAX_CHARS, DOT_MAX_EDGES } from './graphvizLimits';
 import {
+  applyThemeAndLayout,
+  buildThemeDefaults,
   getGraphvizCacheKey,
+  normalizeGraphvizColor,
   renderDotToSvg,
   renderDotToSvgCached,
   resolveDotLayout,
   hydrateGraphvizIntoDocument,
 } from './vizRuntime';
+
+// Real theme colors (pearl = light) so assertions track the actual registry.
+const PEARL = AVAILABLE_THEMES.find((theme) => theme.id === 'pearl')!.colors;
 
 // Provide a fake viz runtime so no WASM is fetched in tests. The returned SVG
 // records the processed DOT in a data-code attribute, letting tests assert on
@@ -61,10 +68,170 @@ describe('getGraphvizCacheKey', () => {
     expect(key).toContain('LR');
   });
 
+  it('prefixes the key with the render style version', () => {
+    expect(getGraphvizCacheKey('digraph { A -> B }')).toMatch(/^v4:/);
+  });
+
   it('differs when layout differs for the same dot', () => {
     const lr = getGraphvizCacheKey('digraph { rankdir=TB; A -> B }', { layout: 'LR' });
     const tb = getGraphvizCacheKey('digraph { rankdir=TB; A -> B }', { layout: 'TB' });
     expect(lr).not.toBe(tb);
+  });
+});
+
+describe('normalizeGraphvizColor', () => {
+  it('converts integer-channel rgba() to 8-digit hex (#RRGGBBAA)', () => {
+    expect(normalizeGraphvizColor('rgba(37, 99, 235, 0.06)')).toBe('#2563eb0f');
+    expect(normalizeGraphvizColor('rgba(22, 163, 74, 0.1)')).toBe('#16a34a1a');
+    expect(normalizeGraphvizColor('rgba(6, 78, 59, 0.25)')).toBe('#064e3b40');
+  });
+
+  it('drops the alpha channel when rgb() has none (opaque)', () => {
+    expect(normalizeGraphvizColor('rgb(255, 0, 0)')).toBe('#ff0000ff');
+  });
+
+  it('rounds fractional alpha to the nearest byte', () => {
+    expect(normalizeGraphvizColor('rgba(120, 53, 15, 0.28)')).toBe('#78350f47');
+  });
+
+  it('passes Graphviz-safe colors through untouched', () => {
+    expect(normalizeGraphvizColor('#fef2f2')).toBe('#fef2f2');
+    expect(normalizeGraphvizColor('transparent')).toBe('transparent');
+    expect(normalizeGraphvizColor('white')).toBe('white');
+    expect(normalizeGraphvizColor('#2563eb')).toBe('#2563eb');
+  });
+
+  it('clamps out-of-range positive channels and alpha to the byte range', () => {
+    expect(normalizeGraphvizColor('rgba(300, 10, 20, 2)')).toBe('#ff0a14ff');
+  });
+
+  it('passes non-integer-channel CSS functions through untouched', () => {
+    // Negative channels are not valid CSS rgb() input; the normalizer only owns
+    // well-formed integer channels and leaves anything else alone.
+    expect(normalizeGraphvizColor('rgba(999, -5, 300, 2)')).toBe('rgba(999, -5, 300, 2)');
+  });
+
+  it('does not mangle non-rgba CSS values or prose', () => {
+    expect(normalizeGraphvizColor('hsl(220 80% 50%)')).toBe('hsl(220 80% 50%)');
+    expect(normalizeGraphvizColor('var(--amc-info)')).toBe('var(--amc-info)');
+  });
+});
+
+describe('buildThemeDefaults', () => {
+  it('injects rounded filled card defaults with breathing spacing', () => {
+    const defaults = buildThemeDefaults(PEARL);
+    expect(defaults).toContain('shape="box"');
+    expect(defaults).toContain('style="rounded,filled"');
+    expect(defaults).toContain('fillcolor="#ffffff"'); // pearl bgInput
+    expect(defaults).toContain('color="#d5d5dc"'); // pearl borderSecondary
+    expect(defaults).toContain('pad="0.15"');
+    expect(defaults).toContain('nodesep="0.35"');
+    expect(defaults).toContain('ranksep="0.55"');
+    expect(defaults).toContain('arrowsize="0.8"');
+    expect(defaults).toContain('penwidth="1.25"');
+  });
+
+  it('uses a single sans-serif font, not a CSS font stack', () => {
+    const defaults = buildThemeDefaults(PEARL);
+    expect(defaults).not.toContain('system-ui');
+    expect(defaults).toContain('fontname="Helvetica"');
+  });
+});
+
+describe('applyThemeAndLayout (v2 theme defaults)', () => {
+  it('injects the full card defaults and default LR for a bare DOT', () => {
+    const code = applyThemeAndLayout('digraph { A -> B }', { themeId: 'pearl' });
+    expect(code).toContain('shape="box"');
+    expect(code).toContain('style="rounded,filled"');
+    expect(code).toContain('fillcolor="#ffffff"'); // pearl bgInput default node fill
+    expect(code).toContain('color="#d5d5dc"'); // pearl borderSecondary node stroke
+    expect(code).toContain('pad="0.15"');
+    expect(code).toContain('arrowsize="0.8"');
+    expect(code).toContain('rankdir="LR"');
+  });
+
+  it('maps semantic fills to soft surface colors as 8-digit hex (Graphviz-safe)', () => {
+    const code = applyThemeAndLayout('digraph { n1[fillcolor=success]; n2[fillcolor=warning] }', { themeId: 'pearl' });
+    expect(code).toContain('fillcolor="#16a34a1a"'); // pearl bgSuccess, rgba() -> #RRGGBBAA
+    expect(code).toContain('fillcolor="#d4a72c1a"'); // pearl bgWarning
+    // Graphviz cannot parse CSS rgba() functions (it would fall back to opaque
+    // black); the injected DOT must never contain one.
+    expect(code).not.toContain('rgba(');
+  });
+
+  it('maps semantic strokes and text to readable text colors', () => {
+    const code = applyThemeAndLayout('digraph { n1[color=accent]; n2[fontcolor=muted] }', { themeId: 'pearl' });
+    expect(code).toContain('color="#2563eb"'); // pearl textLink
+    expect(code).toContain('fontcolor="#4a4a55"'); // pearl textSecondary
+  });
+
+  it('maps the accent fill from its rgba surface color, and strokes stay 6-digit hex', () => {
+    // bgInfo is authored as rgba() in every theme; without normalization this
+    // fill parses as opaque black. The stroke/text map already reads as hex and
+    // passes through untouched.
+    const code = applyThemeAndLayout('digraph { a[fillcolor=accent]; b[color=accent] }', { themeId: 'pearl' });
+    expect(code).toContain('fillcolor="#2563eb0f"'); // pearl bgInfo -> #RRGGBBAA
+    expect(code).toContain('color="#2563eb"'); // pearl textLink stays as-is
+  });
+
+  it('uses onyx surface colors for the dark theme', () => {
+    const code = applyThemeAndLayout('digraph { n1; n2[fillcolor=success] }', { themeId: 'onyx' });
+    expect(code).toContain('fillcolor="#141418"'); // onyx bgInput default node fill
+    expect(code).toContain('fillcolor="#064e3b40"'); // onyx bgSuccess, rgba() -> #RRGGBBAA
+  });
+
+  it('keeps an explicit rankdir and rewrites RL/BT into the LR/TB families', () => {
+    expect(applyThemeAndLayout('digraph { rankdir=TB; A -> B }', {})).toContain('rankdir="TB"');
+    expect(applyThemeAndLayout('digraph { rankdir=RL; A -> B }', {})).toContain('rankdir="LR"');
+    expect(applyThemeAndLayout('digraph { rankdir=BT; A -> B }', {})).toContain('rankdir="TB"');
+  });
+
+  it('strips hardcoded hex fills so the injected default node fill wins', () => {
+    const code = applyThemeAndLayout('digraph { workMode[label="wm" fillcolor="#0a0a0a"] }', { themeId: 'pearl' });
+    // The model's black fill is removed; the injected pearl default fill remains.
+    expect(code).not.toContain('fillcolor="#0a0a0a"');
+    expect(code).toContain('fillcolor="#ffffff"'); // pearl bgInput default node fill
+  });
+
+  it('strips hardcoded rgb() and named color values', () => {
+    const code = applyThemeAndLayout('digraph { n1[color="rgb(0,0,0)"]; n2[fontcolor=black] }', { themeId: 'pearl' });
+    expect(code).not.toContain('rgb(0,0,0)');
+    expect(code).not.toContain('fontcolor=black');
+    expect(code).not.toMatch(/color="rgb\(0,0,0\)"/);
+  });
+
+  it('falls both fill and font back to defaults instead of light-on-light', () => {
+    const code = applyThemeAndLayout('digraph { n1[fillcolor="#000000" fontcolor="#ffffff"] }', { themeId: 'pearl' });
+    expect(code).not.toContain('fillcolor="#000000"');
+    expect(code).not.toContain('fontcolor="#ffffff"');
+    expect(code).toContain('fillcolor="#ffffff"'); // pearl default node fill
+    expect(code).toContain('fontcolor="#1a1a1f"'); // pearl default node text
+  });
+
+  it('keeps semantic color names through the scrub and maps them to theme colors', () => {
+    const code = applyThemeAndLayout('digraph { n1[fillcolor=success]; n2[fontcolor=muted] }', { themeId: 'pearl' });
+    expect(code).toContain('fillcolor="#16a34a1a"'); // pearl bgSuccess
+    expect(code).toContain('fontcolor="#4a4a55"'); // pearl textSecondary
+  });
+
+  it('handles single-quoted hardcoded colors and leaves the label untouched', () => {
+    const code = applyThemeAndLayout(`digraph { n1[label="black box" fillcolor='#000000'] }`, { themeId: 'pearl' });
+    expect(code).not.toContain('#000000');
+    expect(code).toContain('black box'); // label prose is preserved
+  });
+
+  it('does not strip theme-default attrs injected into node defaults', () => {
+    const code = applyThemeAndLayout('digraph { A -> B }', { themeId: 'pearl' });
+    // The injected node default fill/stroke/font survive the scrub.
+    expect(code).toContain('fillcolor="#ffffff"');
+    expect(code).toContain('color="#d5d5dc"');
+    expect(code).toContain('fontcolor="#1a1a1f"');
+  });
+
+  it('does not rewrite a color word inside a label', async () => {
+    const result = await renderDotToSvg('digraph { LabelNode[label="accent is blue"] }', { themeId: 'pearl' });
+    expect(result.ok).toBe(true);
+    expect(readProcessedCode((result as { ok: true; svg: string }).svg)).toContain('accent is blue');
   });
 });
 
@@ -101,6 +268,17 @@ describe('renderDotToSvg', () => {
     expect(code).toContain('rankdir="LR"');
     // Pearl primary text is near-black; the injected graph fontcolor must match.
     expect(code).toContain('#1a1a1f');
+  });
+
+  it('injects v2 card defaults through the render path', async () => {
+    const result = await renderDotToSvg('digraph { Theme -> Test }', { themeId: 'pearl' });
+    expect(result.ok).toBe(true);
+    const code = readProcessedCode((result as { ok: true; svg: string }).svg);
+    expect(code).toContain('style="rounded,filled"');
+    expect(code).toContain('fillcolor="#ffffff"'); // pearl bgInput
+    expect(code).toContain('arrowsize="0.8"');
+    expect(code).toContain('fontname="Helvetica"');
+    expect(code).not.toContain('system-ui');
   });
 
   it('rewrites an explicit rankdir when a layout is forced', async () => {

@@ -86,6 +86,7 @@ export default tseslint.config(
     files: [
       'src/components/layout/chat-runtime/ChatRuntimeContext.tsx',
       'src/components/shared/ModelIcon.tsx',
+      'src/components/message/code/LanguageIcon.tsx',
       'src/contexts/I18nContext.tsx',
       'src/contexts/WindowContext.tsx',
     ],

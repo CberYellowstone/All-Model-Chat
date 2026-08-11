@@ -1,6 +1,7 @@
 import { type ThinkingLevel } from '@google/genai';
 import { executeConfiguredApiRequest } from '@/services/api/apiExecutor';
 import { logService } from '@/services/logService';
+import { normalizeThinkingLevelForModel } from '@/utils/model/modelCapabilities';
 import { DEFAULT_THOUGHT_TRANSLATION_MODEL_ID } from '@/constants/modelConfiguration';
 
 const SCHEMA_TYPE = {
@@ -33,9 +34,17 @@ const clampForSuggestions = (text: string): string => {
 
 // Gemini 3.x uses thinkingLevel (not the 2.5-era thinkingBudget) to request
 // minimal thinking. These auxiliary requests never surface thought summaries.
-const MINIMAL_THINKING_CONFIG: { thinkingConfig: { thinkingLevel: ThinkingLevel; includeThoughts: boolean } } = {
-  thinkingConfig: { thinkingLevel: 'MINIMAL' as ThinkingLevel, includeThoughts: false },
-};
+// The level is normalized per model so a configured translation model that
+// rejects MINIMAL (e.g. the gemini-3.1-pro text line) falls back to LOW instead
+// of failing the request.
+const buildMinimalThinkingConfig = (
+  modelId: string,
+): { thinkingConfig: { thinkingLevel: ThinkingLevel; includeThoughts: boolean } } => ({
+  thinkingConfig: {
+    thinkingLevel: normalizeThinkingLevelForModel(modelId, 'MINIMAL') as ThinkingLevel,
+    includeThoughts: false,
+  },
+});
 
 type StructuredTextContent = Array<{
   role: 'user';
@@ -146,7 +155,7 @@ export const translateTextApi = async (
         config: {
           temperature: 0.1,
           topP: 0.95,
-          ...MINIMAL_THINKING_CONFIG,
+          ...buildMinimalThinkingConfig(modelId),
         },
       });
 
@@ -185,7 +194,7 @@ export const generateSuggestionsApi = async (
             model: TEXT_GENERATION_MODEL_ID,
             contents,
             config: {
-              ...MINIMAL_THINKING_CONFIG,
+              ...buildMinimalThinkingConfig(TEXT_GENERATION_MODEL_ID),
               temperature: 0.8,
               topP: 0.95,
               responseMimeType: 'application/json',
@@ -237,7 +246,7 @@ export const generateSuggestionsApi = async (
                 true,
               ),
               config: {
-                ...MINIMAL_THINKING_CONFIG,
+                ...buildMinimalThinkingConfig(TEXT_GENERATION_MODEL_ID),
                 temperature: 0.8,
                 topP: 0.95,
               },
@@ -278,7 +287,7 @@ export const generateTitleApi = async (
           model: TEXT_GENERATION_MODEL_ID,
           contents,
           config: {
-            ...MINIMAL_THINKING_CONFIG,
+            ...buildMinimalThinkingConfig(TEXT_GENERATION_MODEL_ID),
             temperature: 0.3,
             topP: 0.9,
           },

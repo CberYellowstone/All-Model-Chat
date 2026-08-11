@@ -104,16 +104,17 @@ export const resolveDotLayout = (dot: string, forced?: 'LR' | 'TB'): 'LR' | 'TB'
 
 export const getGraphvizCacheKey = (dot: string, options: DotRenderOptions = {}): string => {
   const layout = resolveDotLayout(dot, options.layout);
-  return `${options.themeId ?? ''}:${layout}:${hashString(dot)}`;
+  return `${RENDER_STYLE_VERSION}:${options.themeId ?? ''}:${layout}:${hashString(dot)}`;
 };
 
-// Semantic color names allowed by the Live Artifacts graphviz DSL. Each maps to
-// the theme's concrete color — the same values `buildPreviewThemeStyle` emits as
+// Semantic color names allowed by the Live Artifacts graphviz DSL. Strokes and
+// text map to the theme's readable text colors; fills map to the soft surface
+// colors — the same values `buildPreviewThemeStyle` emits as
 // `--amc-live-artifact-*` tokens, so a data-amc-graphviz diagram and a
 // data-amc-chart beside it resolve to identical colors on every theme.
 const SEMANTIC_COLOR_ATTRS = ['color', 'fontcolor', 'fillcolor', 'bgcolor', 'bordercolor'];
 const SEMANTIC_COLOR_NAMES = ['accent', 'success', 'warning', 'danger', 'muted', 'subtle'];
-const SEMANTIC_COLOR_MAP: Record<string, keyof Theme['colors']> = {
+const SEMANTIC_TEXT_MAP: Record<string, keyof Theme['colors']> = {
   accent: 'textLink',
   success: 'textSuccess',
   warning: 'textWarning',
@@ -121,8 +122,89 @@ const SEMANTIC_COLOR_MAP: Record<string, keyof Theme['colors']> = {
   muted: 'textSecondary',
   subtle: 'textTertiary',
 };
+const SEMANTIC_FILL_MAP: Record<string, keyof Theme['colors']> = {
+  accent: 'bgInfo',
+  success: 'bgSuccess',
+  warning: 'bgWarning',
+  danger: 'bgErrorMessage',
+  muted: 'bgInput',
+  subtle: 'bgTertiary',
+};
 
-const applyThemeAndLayout = (dot: string, options: DotRenderOptions): string => {
+// Matches `rgb(r, g, b)` and `rgba(r, g, b, a)` with integer channels and an
+// optional float alpha. Theme surface colors are authored in this CSS function
+// form; Graphviz does not understand it.
+const RGBA_CSS_COLOR_PATTERN = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([\d.]+)\s*)?\)$/i;
+
+const toHexByte = (value: number): string =>
+  Math.min(255, Math.max(0, Math.round(value)))
+    .toString(16)
+    .padStart(2, '0');
+
+/**
+ * Graphviz accepts X11 color names, `#hex`, HSV triples, and float rgb lists —
+ * but not CSS `rgb()/rgba()` functions. An unrecognized color silently falls
+ * back to opaque black, which is how a semantic fill (`fillcolor=accent`) turned
+ * into a black node. Theme surface colors are rgba strings, so every color
+ * injected into the DOT must be normalized to 8-digit hex (`#RRGGBBAA`, an alpha
+ * channel Graphviz does support) first. Values that are already Graphviz-safe
+ * (hex, names) pass through untouched. Only the integer-channel `rgba()` form is
+ * handled; percentage channels and `hsl()` are not used by any current theme and
+ * would need this function extended.
+ */
+export const normalizeGraphvizColor = (color: string): string => {
+  const trimmed = color.trim();
+  const match = RGBA_CSS_COLOR_PATTERN.exec(trimmed);
+  if (!match) return trimmed;
+
+  const [, r, g, b, a] = match;
+  const alpha = a === undefined ? 255 : Math.round(parseFloat(a) * 255);
+  return `#${toHexByte(Number(r))}${toHexByte(Number(g))}${toHexByte(Number(b))}${toHexByte(alpha)}`;
+};
+
+// Bump when the injected default styling changes so cached SVGs rendered with
+// the previous style are never reused (see getGraphvizCacheKey).
+const RENDER_STYLE_VERSION = 'v4';
+
+/**
+ * Theme-aware default styles injected before the model's own DOT so a bare
+ * graph renders as rounded, soft-filled cards with readable spacing. DOT merges
+ * same-named attributes with "last wins" and different-named attributes by
+ * union, so anything the model writes explicitly still overrides these
+ * fallbacks — exactly the safety-net semantics we want.
+ */
+export const buildThemeDefaults = (colors: Theme['colors']): string => `
+  graph [
+    bgcolor="transparent"
+    pad="0.15"
+    nodesep="0.35"
+    ranksep="0.55"
+    splines="polyline"
+    outputorder="edgesfirst"
+    newrank="true"
+    fontname="Helvetica"
+    fontcolor="${normalizeGraphvizColor(colors.textPrimary)}"
+  ];
+  node [
+    shape="box"
+    style="rounded,filled"
+    fillcolor="${normalizeGraphvizColor(colors.bgInput)}"
+    color="${normalizeGraphvizColor(colors.borderSecondary)}"
+    fontname="Helvetica"
+    fontcolor="${normalizeGraphvizColor(colors.textPrimary)}"
+    penwidth="1"
+    margin="0.14,0.08"
+  ];
+  edge [
+    color="${normalizeGraphvizColor(colors.textSecondary)}"
+    fontcolor="${normalizeGraphvizColor(colors.textSecondary)}"
+    fontname="Helvetica"
+    penwidth="1.25"
+    arrowsize="0.8"
+  ];
+`;
+
+export const applyThemeAndLayout = (dot: string, options: DotRenderOptions): string => {
   let code = dot;
   const layout = resolveDotLayout(code, options.layout);
   const colors = resolveGraphvizTheme(options.themeId).colors;
@@ -140,23 +222,47 @@ const applyThemeAndLayout = (dot: string, options: DotRenderOptions): string => 
   }
 
   // Semantic color names → theme values. The regex is anchored to a known
-  // color attribute so `label="accent"` prose is never rewritten.
+  // color attribute so `label="accent"` prose is never rewritten. Fills use the
+  // soft surface palette; strokes/text use the readable text palette.
   const semanticColorPattern = new RegExp(
     `\\b(${SEMANTIC_COLOR_ATTRS.join('|')})\\s*=\\s*["']?(${SEMANTIC_COLOR_NAMES.join('|')})["']?`,
     'gi',
   );
+
+  // Strip hardcoded color values the model wrote (violating the Live Artifacts
+  // protocol) so the injected theme defaults win. Must run BEFORE the semantic
+  // replacement: afterwards every semantic name has been rewritten to a hex/rgb
+  // value and there is no way to tell it apart from a model-hardcoded color.
+  // The negative lookahead excludes semantic names, which the next pass maps to
+  // theme colors. The whole attribute is removed (rather than remapped) so
+  // `fillcolor="#000" fontcolor="#fff"` both fall back to the node defaults
+  // instead of ending up light-on-light.
+  //
+  // The lookbehind anchors the attribute name to a structural boundary (`[`,
+  // space, `;`, `,`, `{`) while rejecting quote chars (label prose) and word
+  // chars (`somefillcolor`). It does not consume the boundary, so two adjacent
+  // hardcoded attrs on one line both get stripped. Values are split by shape
+  // because a bare named color is ambiguous with an arbitrary word (needs the
+  // semantic-name lookahead), while hex/rgb are distinctive on their own.
+  const namedColorValue = `(?!(?:${SEMANTIC_COLOR_NAMES.join('|')})\\b)[a-zA-Z][a-zA-Z0-9-]*`;
+  const attrName = `(?<!["'\\w])(?:${SEMANTIC_COLOR_ATTRS.join('|')})`;
+  const hardcodedColorPattern = new RegExp(
+    // rgba?() first so `rgb` is not consumed as a bare word by the named branch.
+    `${attrName}\\s*=\\s*["']?(?:rgba?\\([^)]*\\)|#[0-9a-fA-F]{3,8}|${namedColorValue})["']?`,
+    'gi',
+  );
+  code = code.replace(hardcodedColorPattern, '');
+
   code = code.replace(semanticColorPattern, (_match, attr: string, name: string) => {
-    const colorKey = SEMANTIC_COLOR_MAP[name.toLowerCase()] ?? 'textPrimary';
-    return `${attr}="${colors[colorKey]}"`;
+    const isFill = attr.toLowerCase() === 'fillcolor' || attr.toLowerCase() === 'bgcolor';
+    const map = isFill ? SEMANTIC_FILL_MAP : SEMANTIC_TEXT_MAP;
+    const colorKey = map[name.toLowerCase()] ?? 'textPrimary';
+    return `${attr}="${normalizeGraphvizColor(colors[colorKey])}"`;
   });
 
-  // Theme defaults mirror the Live Artifacts surface: transparent background,
-  // primary-color text, secondary-color strokes for nodes and edges.
-  const themeDefaults = `
-    graph [bgcolor="transparent" fontcolor="${colors.textPrimary}" fontname="system-ui, sans-serif" margin="0"];
-    node [color="${colors.textSecondary}" fontcolor="${colors.textPrimary}"];
-    edge [color="${colors.textSecondary}" fontcolor="${colors.textPrimary}"];
-  `;
+  // Theme defaults are injected after the opening brace and after semantic color
+  // replacement (they only carry concrete hex values, so nothing is rewritten).
+  const themeDefaults = buildThemeDefaults(colors);
 
   const openBraceIndex = code.indexOf('{');
   if (openBraceIndex !== -1) {
@@ -217,8 +323,11 @@ export const renderDotToSvg = async (dot: string, options: DotRenderOptions = {}
     const processedCode = applyThemeAndLayout(code, options);
     const svgElement = await vizInstance.renderSVGElement(processedCode);
 
-    // Preserve intrinsic SVG dimensions so flex layouts do not collapse the diagram.
-    svgElement.style.maxWidth = '100%';
+    // Keep the SVG at its natural width so narrow diagrams center via
+    // margin:auto and wide ones scroll in the container instead of being
+    // proportionally squashed into the available width.
+    svgElement.style.maxWidth = 'none';
+    svgElement.style.margin = '0 auto';
     svgElement.style.height = 'auto';
     svgElement.style.display = 'block';
 

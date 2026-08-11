@@ -17,6 +17,14 @@ import {
   updateMessageInSession as updateMessageInSessions,
   updateSessionById as updateSessionByIdInSessions,
 } from '@/utils/chat/sessionMutations';
+import {
+  finishActiveGenerationJob,
+  hasActiveGenerationJobForSession,
+  holdSessionLoadingForGenerationHandoff,
+  unregisterActiveGenerationJob,
+} from '@/features/message-sender/activeGenerationJobs';
+import { abortServerStreamJob } from '@/features/stream-jobs/streamAbort';
+import { clearPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { mergeSessionMetadata } from './sessionRefresh';
 import {
   createVirtualFullSessions,
@@ -94,6 +102,14 @@ interface ChatActions extends ChatUiSliceActions {
   markSessionViewed: (sessionId: string) => void;
   getFileOperationGeneration: () => number;
   invalidateFileOperations: () => void;
+
+  /** 停止当前会话的生成。纯 store action:读 `_activeJobs`/`activeMessages`/`loadingSessionIds`,不再依赖 hook 闭包。 */
+  stopGenerating: (options?: {
+    silent?: boolean;
+    skipLoadingUpdate?: boolean;
+  }) => 'stopped' | 'no_local_job' | 'not_loading';
+  /** 取消消息编辑:清空编辑态与文件选择,重置 editMode。 */
+  cancelEdit: () => void;
 
   setCurrentChatSettings: ChatSettingsUpdater;
 }
@@ -234,6 +250,94 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
   invalidateFileOperations: () => {
     _fileOperationGeneration += 1;
+  },
+
+  stopGenerating: (options = {}) => {
+    const { silent = false, skipLoadingUpdate = false } = options;
+    const {
+      activeSessionId,
+      activeMessages,
+      _activeJobs: activeJobs,
+      setSessionLoading,
+      updateAndPersistSessions,
+    } = get();
+    const isLoading = activeSessionId ? get().loadingSessionIds.has(activeSessionId) : false;
+
+    if (!activeSessionId || !isLoading) return 'not_loading';
+
+    const loadingMessage = activeMessages.find((message) => message.isLoading);
+    if (loadingMessage) {
+      const generationId = loadingMessage.id;
+      const controller = activeJobs.current.get(generationId);
+
+      if (controller) {
+        logService.warn(
+          `User stopped generation for session ${activeSessionId}, job ${generationId}. Silent: ${silent}`,
+        );
+        controller.abort();
+
+        // Also ask the api container to abort the upstream Gemini
+        // connection (the stream journal keeps the upstream alive across
+        // browser disconnects). Fire-and-forget; the local abort drives UI.
+        void abortServerStreamJob(generationId);
+        clearPendingStreamJob(activeSessionId);
+
+        if (!silent) {
+          updateAndPersistSessions((prev) =>
+            updateMessageInSessions(prev, activeSessionId, generationId, {
+              isLoading: false,
+              generationEndTime: new Date(),
+              stoppedByUser: true,
+            }),
+          );
+        }
+
+        if (!skipLoadingUpdate) {
+          finishActiveGenerationJob({
+            activeJobs,
+            setSessionLoading,
+            sessionId: activeSessionId,
+            generationId,
+          });
+        } else {
+          holdSessionLoadingForGenerationHandoff(activeJobs, activeSessionId);
+          unregisterActiveGenerationJob(activeJobs, generationId);
+        }
+        return 'stopped';
+      }
+
+      logService.error(
+        `Could not find active job to stop for generationId: ${generationId}. Requesting cross-tab abort.`,
+      );
+      broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+      return 'no_local_job';
+    }
+
+    logService.warn(
+      `stopGenerating called for session ${activeSessionId}, but no loading message was found. Leaving other active jobs untouched.`,
+    );
+
+    if (hasActiveGenerationJobForSession(activeJobs, activeSessionId)) {
+      return 'stopped';
+    }
+
+    // Remote tab is loading (synced isLoading) without a local job.
+    // Broadcast the abort request and let the owner tab handle cleanup and
+    // broadcast the resulting SESSION_LOADING=false. The stale-check loop
+    // (clearStaleRemoteLoading, every 30s) will clean up orphaned entries
+    // if the owner tab crashed before it could respond.
+    broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+    return 'no_local_job';
+  },
+
+  cancelEdit: () => {
+    logService.info('User cancelled message edit.');
+    const { setCommandedInput, setSelectedFiles, setEditingMessageId, setEditMode, setAppFileError } = get();
+    setCommandedInput({ text: '', id: Date.now() });
+    setSelectedFiles([]);
+    setEditingMessageId(null);
+    setEditMode('resend'); // Reset to default
+    setAppFileError(null);
   },
 
   updateAndPersistSessions: (updater, options = {}) => {

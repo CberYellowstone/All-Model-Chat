@@ -3,6 +3,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { Search, X } from 'lucide-react';
 import { IconNewChat, IconNewGroup } from '@/components/icons';
 import { DESKTOP_BREAKPOINT_PX } from '@/constants/layout';
+import { buildNewTabHref } from '@/utils/chat/lastActiveSession';
 import { SIDEBAR_ACTION_LINK_CLASS, SIDEBAR_ACTION_ROW_CLASS } from './sidebarStyles';
 
 interface SidebarActionsProps {
@@ -16,6 +17,8 @@ interface SidebarActionsProps {
   setSearchQuery: (query: string) => void;
   newChatShortcut?: string;
   searchChatsShortcut?: string;
+  /** 活跃会话 id，用于构造携带 ?from 的新标签页链接（Cmd/Ctrl+点击时继承来源会话）。 */
+  activeSessionId?: string | null;
 }
 
 const COMPACT_SHORTCUT_PARTS: Record<string, string> = {
@@ -78,6 +81,7 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
   setSearchQuery,
   newChatShortcut,
   searchChatsShortcut,
+  activeSessionId,
 }) => {
   const { t } = useI18n();
   const closeSearch = () => {
@@ -99,7 +103,7 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
     <div className="px-2 pt-2 space-y-1" data-testid="sidebar-actions-stack">
       <div>
         <a
-          href="/"
+          href={buildNewTabHref(activeSessionId ?? null)}
           onClick={handleNewChatClick}
           className={SIDEBAR_ACTION_LINK_CLASS}
           aria-label={t('headerNewChatAria')}

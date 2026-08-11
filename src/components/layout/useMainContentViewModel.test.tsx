@@ -61,7 +61,6 @@ const buildApp = (overrides: BuildAppOverrides = {}) => {
   const appSettings = createAppSettings({
     modelId: 'gemini-3-flash-preview',
     thirdPartyApi: {
-      activeProvider: 'openai',
       providers: {
         ...baseDefaults.providers,
         openai: {
@@ -120,7 +119,6 @@ const buildOpenaiProviderAppSettings = (overrides: {
     ...createAppSettings(),
     modelId: 'gemini-3-flash-preview',
     thirdPartyApi: {
-      activeProvider: 'openai' as const,
       providers: {
         ...defaults.providers,
         openai: {
@@ -169,7 +167,7 @@ describe('chat runtime values', () => {
 
     // Selecting a model only delegates to the session handler — it never
     // touches global settings (no apiMode/isThirdPartyApiEnabled/activeProvider).
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-4.1');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-4.1', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
@@ -197,14 +195,14 @@ describe('chat runtime values', () => {
       header.onSelectModel('gemini-3.1-pro-preview');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.1-pro-preview');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.1-pro-preview', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     act(() => {
       header.onSelectModel('gpt-5.6-sol');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
@@ -225,7 +223,7 @@ describe('chat runtime values', () => {
       result.current.onSelectModel('gpt-5.6-sol');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
@@ -238,7 +236,6 @@ describe('chat runtime values', () => {
         ...createAppSettings(),
         modelId: 'gemini-3-flash-preview',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...defaults.providers,
             openai: {
@@ -267,7 +264,7 @@ describe('chat runtime values', () => {
       header.onSelectModel('gpt-5.6-sol');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();
@@ -297,7 +294,7 @@ describe('chat runtime values', () => {
     // Disabled providers' models aren't in the list, but selecting one still
     // delegates (the session handler resolves the provider from the modelId).
     expect(app.setAppSettings).not.toHaveBeenCalled();
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.6-sol', undefined);
 
     unmount();
   });
@@ -328,7 +325,7 @@ describe('chat runtime values', () => {
       header.onSelectModel('gemini-3-flash-preview');
     });
 
-    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3-flash-preview');
+    expect(app.chatState.handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3-flash-preview', undefined);
     expect(app.setAppSettings).not.toHaveBeenCalled();
 
     unmount();

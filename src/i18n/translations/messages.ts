@@ -271,6 +271,7 @@ export const messagesTranslations = {
   codeDownloadLanguage: { en: 'Download {language}', zh: '下载 {language}' },
   codeDownloadOutput: { en: 'Download Output', zh: '下载输出' },
   ttsReadAloud: { en: 'Read Aloud (TTS)', zh: '朗读（TTS）' },
+  ttsError: { en: 'TTS failed', zh: '语音生成失败' },
   tableCopyMarkdown: { en: 'Copy Markdown', zh: '复制 Markdown' },
   tableCopyMarkdownAria: { en: 'Copy table as markdown', zh: '将表格复制为 Markdown' },
   tableDownloadAria: { en: 'Download table', zh: '下载表格' },

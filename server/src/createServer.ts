@@ -34,6 +34,7 @@ type CreateServerConfig = Pick<ApiServerConfig, 'geminiApiBase' | 'geminiApiKey'
       | 'enableMcpPrivateHttp'
       | 'enableLiveWsProxy'
       | 'liveWsIdleTimeoutMs'
+      | 'liveWsUpstreamBase'
       | 'serverKeyPriority'
       | 'thirdPartyRoutes'
     >
@@ -48,6 +49,7 @@ interface ResolvedServerConfig
       | 'enableMcpPrivateHttp'
       | 'enableLiveWsProxy'
       | 'liveWsIdleTimeoutMs'
+      | 'liveWsUpstreamBase'
       | 'serverKeyPriority'
       | 'thirdPartyRoutes'
     >,
@@ -58,6 +60,7 @@ interface ResolvedServerConfig
   enableMcpPrivateHttp: boolean;
   enableLiveWsProxy: boolean;
   liveWsIdleTimeoutMs: number;
+  liveWsUpstreamBase?: string;
   serverKeyPriority: boolean;
   thirdPartyRoutes: Record<string, ThirdPartyProxyRoute>;
 }

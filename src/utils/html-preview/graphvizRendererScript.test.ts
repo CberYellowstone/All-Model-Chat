@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  evictOldestPendingRender,
-  isProbablyCompleteDot,
-  GRAPHVIZ_RENDERER_SCRIPT,
-} from './graphvizRendererScript';
+import { evictOldestPendingRender, isProbablyCompleteDot, GRAPHVIZ_RENDERER_SCRIPT } from './graphvizRendererScript';
 
 type GraphvizApi = { renderAll: () => void };
 
@@ -107,9 +103,7 @@ describe('evictOldestPendingRender', () => {
     detached.setAttribute(SIG, 'abc');
     detached.setAttribute(STATE, 'pending');
     // Not appended to the document: isConnected is false.
-    const pendingById = new Map<string, { node: Element; sig: string }>([
-      ['a', { node: detached, sig: 'abc' }],
-    ]);
+    const pendingById = new Map<string, { node: Element; sig: string }>([['a', { node: detached, sig: 'abc' }]]);
 
     evictOldestPendingRender(pendingById, SIG, STATE);
 

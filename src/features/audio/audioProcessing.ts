@@ -33,7 +33,9 @@ export const float32ToPCM16Base64 = (data: Float32Array): string => {
   const sampleCount = data.length;
   const int16 = new Int16Array(sampleCount);
   for (let i = 0; i < sampleCount; i++) {
-    int16[i] = Math.max(-1, Math.min(1, data[i])) * 32768;
+    // 0x7fff (not 32768) so a full-scale +1.0 sample stays 32767 instead of
+    // wrapping Int16 to -32768. Matches float32ToPcm16Bytes below.
+    int16[i] = Math.max(-1, Math.min(1, data[i])) * 0x7fff;
   }
   let binary = '';
   const bytes = new Uint8Array(int16.buffer);

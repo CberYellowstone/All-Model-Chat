@@ -33,6 +33,7 @@ export const ChatArea: React.FC = () => {
     isPipSupported,
     isPipActive,
     onNewChat,
+    newChatHref,
     onOpenScenariosModal,
     onToggleHistorySidebar,
     onLoadLiveArtifactsPrompt,
@@ -58,6 +59,7 @@ export const ChatArea: React.FC = () => {
 
       <Header
         onNewChat={onNewChat}
+        newChatHref={newChatHref}
         onOpenScenariosModal={onOpenScenariosModal}
         onToggleHistorySidebar={onToggleHistorySidebar}
         isLoading={isLoading}

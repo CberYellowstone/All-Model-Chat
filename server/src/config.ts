@@ -12,6 +12,8 @@ export interface ApiServerConfig {
   enableMcpPrivateHttp: boolean;
   enableLiveWsProxy: boolean;
   liveWsIdleTimeoutMs: number;
+  /** Test hook only: overrides the Live upstream WS base (scheme + host). Production config never sets it. */
+  liveWsUpstreamBase?: string;
   serverKeyPriority: boolean;
   thirdPartyRoutes: Record<string, ThirdPartyProxyRoute>;
 }

@@ -1,6 +1,6 @@
 import { useMemo, type FC } from 'react';
 import { Zap } from 'lucide-react';
-import { type ModelOption, type ThinkingLevel } from '@/types';
+import { type ModelOption, type ThinkingLevel, type ThirdPartyProviderId } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { ModelPicker } from '@/components/shared/ModelPicker';
@@ -15,7 +15,7 @@ interface HeaderModelSelectorProps {
   currentModelName?: string;
   availableModels: ModelOption[];
   selectedModelId: string;
-  onSelectModel: (modelId: string) => void;
+  onSelectModel: (modelId: string, providerId?: ThirdPartyProviderId) => void;
   isSwitchingModel: boolean;
   isLoading: boolean;
   thinkingLevel?: ThinkingLevel;

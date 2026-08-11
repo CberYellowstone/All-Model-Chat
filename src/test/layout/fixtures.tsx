@@ -10,6 +10,7 @@ import {
 import { AVAILABLE_THEMES } from '@/constants/themeRegistry';
 import { I18nProvider } from '@/contexts/I18nContext';
 import type { AppViewModel } from '@/hooks/app/useApp';
+import type { QuickTtsResult } from '@/hooks/chat/message/useTextToSpeechHandler';
 import { WindowProvider } from '@/contexts/WindowContext';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -99,7 +100,7 @@ type ChatAreaMessageListValue = {
   onFollowUpSuggestionFill: (suggestion: string) => void;
   onContinueGeneration: (messageId: string) => void;
   onForkMessage: (messageId: string) => void;
-  onQuickTTS: (text: string) => Promise<string | null>;
+  onQuickTTS: (text: string) => Promise<QuickTtsResult>;
   chatInputHeight: number;
   currentModelId: string;
   onOpenSidePanel: () => void;
@@ -146,6 +147,7 @@ export const createChatAreaProviderValue = (overrides: ChatAreaProviderValueOver
       isPipSupported: true,
       isPipActive: inputOverrides.isPipActive ?? false,
       onNewChat: inputOverrides.onNewChat ?? vi.fn(),
+      newChatHref: '/',
       onOpenScenariosModal: vi.fn(),
       onToggleHistorySidebar: vi.fn(),
       onLoadLiveArtifactsPrompt: inputOverrides.onToggleLiveArtifactsPrompt ?? vi.fn(),
@@ -170,7 +172,7 @@ export const createChatAreaProviderValue = (overrides: ChatAreaProviderValueOver
       onFollowUpSuggestionFill: vi.fn(),
       onContinueGeneration: vi.fn(),
       onForkMessage: vi.fn(),
-      onQuickTTS: vi.fn(async () => null),
+      onQuickTTS: vi.fn(async () => ({ error: 'Mock TTS error' })),
       chatInputHeight: 0,
       currentModelId: 'gemini-3.1-pro-preview',
       onOpenSidePanel: vi.fn(),

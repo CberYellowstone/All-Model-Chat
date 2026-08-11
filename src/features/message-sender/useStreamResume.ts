@@ -184,11 +184,26 @@ export const useStreamResume = ({
           undefined,
           {
             jobId: pending.jobId,
-            lastSeq: pending.lastSeq,
+            // This resume path only runs after a full page load: streamingStore
+            // (which held the streamed prefix) is gone and the DB message
+            // content is still the empty string written at stream start (parts
+            // only persist on complete). localStorage's lastSeq describes how
+            // far the PREVIOUS page instance consumed — resuming from it would
+            // skip the prefix this page never received, truncating the message
+            // to just the tail. Replay from 0 instead; the server replays every
+            // buffered chunk (seq > cursor). onSeq's own guard
+            // (advancePendingStreamJobSeq: seq <= existing.lastSeq) prevents the
+            // cursor from moving backwards.
+            lastSeq: 0,
             onSeq: (seq) => advancePendingStreamJobSeq(target.sessionId, seq),
           },
         );
         logService.info('Stream resume completed.', { sessionId: target.sessionId });
+        // The job is fully replayed and persisted by streamOnComplete — drop the
+        // pending record so a later refresh cannot attach the same completed job
+        // again (it would only be caught by the 10-minute TTL or the
+        // loadingMessage.isLoading check otherwise).
+        clearPendingStreamJob(target.sessionId);
       } catch (error) {
         logService.error('Stream resume failed.', error);
         clearPendingStreamJob(target.sessionId);
@@ -196,6 +211,11 @@ export const useStreamResume = ({
         stopGenerationLeaseHeartbeat(target.sessionId);
         releaseGenerationLease(target.sessionId, target.generationId);
         unregisterActiveGenerationJob(activeJobs, target.generationId);
+        // A setup failure before the stream starts (createChatHistoryForApi /
+        // buildGenerationConfig throwing) never reaches streamOnError, which is
+        // what normally clears the loading flag. Clear it unconditionally: in
+        // the happy path streamOnComplete already did, so this is a no-op.
+        setSessionLoading(target.sessionId, false);
       }
     },
     [appSettings, getStreamHandlers, activeJobs, resolveResumeKey, setSessionLoading],

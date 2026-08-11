@@ -268,43 +268,65 @@ const renderPreviewMath = (srcDoc: string): string => {
   return `<!DOCTYPE html>${parsedDocument.documentElement.outerHTML}`;
 };
 
+/**
+ * Inject head/body-end HTML into a parsed document via the DOM, then serialize.
+ *
+ * String-based injection (`srcDoc.replace(/<\/body>/i, …)`) is fragile: it
+ * replaces the FIRST match, so if model-authored HTML contains the literal
+ * `</body>` / `<head>` / `<html ` inside a <script> string, a comment, or
+ * displayed source text in a <pre>, the bridge script or head resources land
+ * inside that string and the page JS crashes (white screen). Parsing into a
+ * real Document and appending elements keeps the injections anchored to the
+ * true document structure no matter what the text content contains.
+ *
+ * DOMParser never executes scripts, and serializing via outerHTML does not
+ * escape or rewrite script/style text content, so the round-trip matches what
+ * the browser would have parsed from the original srcdoc.
+ */
+const injectIntoParsedDocument = (
+  parsedDocument: Document,
+  injections: { headElements?: string[]; bodyEndHtml?: string },
+): string => {
+  const doc = parsedDocument;
+
+  injections.headElements?.forEach((html) => {
+    const template = doc.createElement('template');
+    template.innerHTML = html;
+    doc.head.appendChild(template.content.cloneNode(true));
+  });
+
+  if (injections.bodyEndHtml) {
+    const template = doc.createElement('template');
+    template.innerHTML = injections.bodyEndHtml;
+    doc.body.appendChild(template.content.cloneNode(true));
+  }
+
+  return `<!DOCTYPE html>${doc.documentElement.outerHTML}`;
+};
+
+const parsePreviewDocument = (srcDoc: string): Document | null => {
+  if (typeof DOMParser === 'undefined') {
+    return null;
+  }
+  return new DOMParser().parseFromString(srcDoc, 'text/html');
+};
+
 const injectPreviewSecurityPolicy = (srcDoc: string): string => {
-  // Guard on the injected <meta> element itself, not the raw policy string:
-  // model prose that merely mentions "Content-Security-Policy" (e.g. a tutorial
-  // showing the attribute) must not suppress the restrictive preview CSP —
-  // that would leave the artifact running without one.
-  if (/<meta\b[^>]*http-equiv=["']Content-Security-Policy["']/i.test(srcDoc)) {
+  const parsedDocument = parsePreviewDocument(srcDoc);
+  if (!parsedDocument) {
     return srcDoc;
   }
 
-  if (/<head\b[^>]*>/i.test(srcDoc)) {
-    return srcDoc.replace(/<head\b[^>]*>/i, (headTag) => `${headTag}${PREVIEW_CONTENT_SECURITY_POLICY_META}`);
+  // Guard on the injected <meta> ELEMENT, not the raw policy string or the
+  // attribute text: model prose that merely mentions "Content-Security-Policy"
+  // (e.g. a tutorial showing the attribute, or a <pre> displaying the meta
+  // syntax) must not suppress the restrictive preview CSP — that would leave
+  // the artifact running without one.
+  if (parsedDocument.head.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+    return srcDoc;
   }
 
-  if (/<html\b[^>]*>/i.test(srcDoc)) {
-    return srcDoc.replace(
-      /<html\b[^>]*>/i,
-      (htmlTag) => `${htmlTag}<head>${PREVIEW_CONTENT_SECURITY_POLICY_META}</head>`,
-    );
-  }
-
-  return `<!DOCTYPE html><html><head>${PREVIEW_CONTENT_SECURITY_POLICY_META}</head><body>${srcDoc}</body></html>`;
-};
-
-const injectPreviewHeadStyle = (srcDoc: string, style: string): string => {
-  if (srcDoc.includes(PREVIEW_CONTENT_SECURITY_POLICY_META)) {
-    return srcDoc.replace(PREVIEW_CONTENT_SECURITY_POLICY_META, `${PREVIEW_CONTENT_SECURITY_POLICY_META}${style}`);
-  }
-
-  if (/<head\b[^>]*>/i.test(srcDoc)) {
-    return srcDoc.replace(/<head\b[^>]*>/i, (headTag) => `${headTag}${style}`);
-  }
-
-  if (/<html\b[^>]*>/i.test(srcDoc)) {
-    return srcDoc.replace(/<html\b[^>]*>/i, (htmlTag) => `${htmlTag}<head>${style}</head>`);
-  }
-
-  return `<!DOCTYPE html><html><head>${style}</head><body>${srcDoc}</body></html>`;
+  return injectIntoParsedDocument(parsedDocument, { headElements: [PREVIEW_CONTENT_SECURITY_POLICY_META] });
 };
 
 const resolvePreviewTheme = (themeId?: string) => {
@@ -349,15 +371,20 @@ const buildPreviewThemeStyle = (themeId?: string, options: { varsOnly?: boolean 
 };
 
 const injectPreviewTheme = (srcDoc: string, themeId?: string): string => {
-  // Guard on the <style> element carrying the theme marker, not the bare marker
-  // string. A model output that merely references the attribute (e.g. shows
-  // `data-amc-live-artifact-theme` in a demo) must not skip the injection and
-  // leave every --amc-live-artifact-* variable undefined.
-  if (new RegExp(`<style\\b[^>]*${PREVIEW_THEME_ATTRIBUTE}=`, 'i').test(srcDoc)) {
+  // Guard on the <style> ELEMENT carrying the theme marker, not the bare marker
+  // string or the attribute text. A model output that merely references the
+  // attribute (e.g. shows `data-amc-live-artifact-theme` in a demo) must not
+  // skip the injection and leave every --amc-live-artifact-* variable
+  // undefined.
+  const parsedDocument = parsePreviewDocument(srcDoc);
+  if (!parsedDocument) {
+    return srcDoc;
+  }
+  if (parsedDocument.head.querySelector(`style[${PREVIEW_THEME_ATTRIBUTE}]`)) {
     return srcDoc;
   }
 
-  return injectPreviewHeadStyle(srcDoc, buildPreviewThemeStyle(themeId));
+  return injectIntoParsedDocument(parsedDocument, { headElements: [buildPreviewThemeStyle(themeId)] });
 };
 
 const buildPreviewBaseFontSizeStyle = (baseFontSize?: number): string => {
@@ -377,11 +404,15 @@ const injectPreviewBaseFontSize = (srcDoc: string, baseFontSize?: number): strin
 
   // Guard on the injected <style> element, not the bare marker string, so model
   // prose that mentions the attribute still gets the font-size injection.
-  if (new RegExp(`<style\\b[^>]*${PREVIEW_BASE_FONT_SIZE_ATTRIBUTE}=`, 'i').test(srcDoc)) {
+  const parsedDocument = parsePreviewDocument(srcDoc);
+  if (!parsedDocument) {
+    return srcDoc;
+  }
+  if (parsedDocument.head.querySelector(`style[${PREVIEW_BASE_FONT_SIZE_ATTRIBUTE}]`)) {
     return srcDoc;
   }
 
-  return injectPreviewHeadStyle(srcDoc, style);
+  return injectIntoParsedDocument(parsedDocument, { headElements: [style] });
 };
 
 const prepareHtmlPreviewSrcDoc = (srcDoc: string, options: { baseFontSize?: number; themeId?: string } = {}): string =>
@@ -406,23 +437,54 @@ const sanitizePreviewHtml = (htmlContent: string): string => {
   return `<!DOCTYPE html>${parsedDocument.documentElement.outerHTML}`;
 };
 
+/**
+ * Append the preview bridge script at the end of a parsed document's <body> via
+ * the DOM. Replaces the fragile `srcDoc.replace(/<\/body>/i, …)` which hit the
+ * FIRST literal `</body>` — inside a <script> string or displayed <pre> text,
+ * that dropped the bridge into the middle of JS and crashed the page (white
+ * screen). DOMParser never executes scripts, so appending then serializing is
+ * safe and stays anchored to the real body.
+ */
+const appendBridgeScriptToDocument = (parsedDocument: Document): string => {
+  const template = parsedDocument.createElement('template');
+  template.innerHTML = PREVIEW_BRIDGE_SCRIPT;
+  parsedDocument.body.appendChild(template.content.cloneNode(true));
+  return `<!DOCTYPE html>${parsedDocument.documentElement.outerHTML}`;
+};
+
 export const buildHtmlPreviewSrcDoc = (
   htmlContent: string,
   options: { baseFontSize?: number; themeId?: string } = {},
 ): string => {
   if (!htmlContent) {
-    const srcDoc = `<!DOCTYPE html><html><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
+    const srcDoc = `<!DOCTYPE html><html><body></body></html>`;
     return prepareHtmlPreviewSrcDoc(srcDoc, options);
   }
 
   const sanitized = sanitizePreviewHtml(htmlContent);
-  const srcDoc = sanitized.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
+  const parsedDocument = parsePreviewDocument(sanitized);
+  if (!parsedDocument) {
+    return sanitized;
+  }
+  const srcDoc = appendBridgeScriptToDocument(parsedDocument);
   return prepareHtmlPreviewSrcDoc(srcDoc, options);
 };
 
 export const buildStreamingHtmlPreviewSrcDoc = (options: { baseFontSize?: number; themeId?: string } = {}): string => {
-  const srcDoc = `<!DOCTYPE html><html><body><div data-amc-stream-preview-root="true"></div>${PREVIEW_BRIDGE_SCRIPT}${STREAMING_PREVIEW_RUNNER_SCRIPT}</body></html>`;
-  return prepareHtmlPreviewSrcDoc(srcDoc, options);
+  const srcDoc = `<!DOCTYPE html><html><body><div data-amc-stream-preview-root="true"></div></body></html>`;
+  const parsedDocument = parsePreviewDocument(srcDoc);
+  if (!parsedDocument) {
+    return srcDoc;
+  }
+  const withBridge = appendBridgeScriptToDocument(parsedDocument);
+  const withRunner = parsePreviewDocument(withBridge);
+  if (!withRunner) {
+    return withBridge;
+  }
+  const runnerTemplate = withRunner.createElement('template');
+  runnerTemplate.innerHTML = STREAMING_PREVIEW_RUNNER_SCRIPT;
+  withRunner.body.appendChild(runnerTemplate.content.cloneNode(true));
+  return prepareHtmlPreviewSrcDoc(`<!DOCTYPE html>${withRunner.documentElement.outerHTML}`, options);
 };
 
 /**
@@ -442,23 +504,21 @@ export const buildUnrestrictedHtmlPreviewSrcDoc = (
   _options: { baseFontSize?: number; themeId?: string } = {},
 ): string => {
   if (!htmlContent) {
-    return `<!DOCTYPE html><html><head></head><body>${PREVIEW_BRIDGE_SCRIPT}</body></html>`;
+    return `<!DOCTYPE html><html><head></head><body></body></html>`;
   }
 
-  let srcDoc = htmlContent;
-
-  // Wrap fragments so the browser has a full document; do not rewrite existing markup.
-  if (!/<html[\s>]/i.test(srcDoc)) {
-    srcDoc = `<!DOCTYPE html><html><head></head><body>${srcDoc}</body></html>`;
+  // Parse whatever the model produced. DOMParser auto-wraps fragments in a full
+  // <html><head></head><body> document without rewriting existing markup, so no
+  // `/<html[\s>]/` sniffing is needed — a fragment and a full document both end
+  // up with the bridge appended to the real body. Unlike string replacement
+  // (`replace(/<\/body>/i, …)`) this cannot land the bridge inside a `</body>`
+  // literal in a <script> string or <pre> text.
+  const parsedDocument = parsePreviewDocument(htmlContent);
+  if (!parsedDocument) {
+    return htmlContent;
   }
 
-  if (/<\/body>/i.test(srcDoc)) {
-    srcDoc = srcDoc.replace(/<\/body>/i, `${PREVIEW_BRIDGE_SCRIPT}</body>`);
-  } else {
-    srcDoc = `${srcDoc}${PREVIEW_BRIDGE_SCRIPT}`;
-  }
-
-  return srcDoc;
+  return appendBridgeScriptToDocument(parsedDocument);
 };
 
 export const createStaticPreviewSnapshotContainer = async (

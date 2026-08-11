@@ -15,6 +15,7 @@ describe('Header', () => {
       renderer.root.render(
         <Header
           onNewChat={vi.fn()}
+          newChatHref="/"
           onOpenScenariosModal={vi.fn()}
           onToggleHistorySidebar={vi.fn()}
           isLoading={false}
@@ -50,6 +51,7 @@ describe('Header', () => {
       renderer.root.render(
         <Header
           onNewChat={vi.fn()}
+          newChatHref="/"
           onOpenScenariosModal={vi.fn()}
           onToggleHistorySidebar={vi.fn()}
           isLoading={false}
@@ -89,6 +91,7 @@ describe('Header', () => {
       renderer.root.render(
         <Header
           onNewChat={vi.fn()}
+          newChatHref="/"
           onOpenScenariosModal={vi.fn()}
           onToggleHistorySidebar={vi.fn()}
           isLoading={false}

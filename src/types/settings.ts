@@ -90,9 +90,14 @@ export interface ThirdPartyProviderConfig {
   enabled?: boolean;
 }
 
-/** Top-level container for all third-party provider configurations. */
+/**
+ * Top-level container for all third-party provider configurations.
+ *
+ * No global "active provider" field: which provider a chat uses is decided per
+ * session by its stored (providerId, modelId), and the settings panel's
+ * expanded-card memory is local component state, not persisted settings.
+ */
 export interface ThirdPartyApiSettings {
-  activeProvider: ThirdPartyProviderId;
   providers: Record<ThirdPartyProviderId, ThirdPartyProviderConfig>;
 }
 
