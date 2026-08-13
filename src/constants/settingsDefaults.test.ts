@@ -28,8 +28,8 @@ describe('DEFAULT_APP_SETTINGS', () => {
     expect(DEFAULT_APP_SETTINGS.thoughtTranslationTargetLanguage).toBe(DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE);
   });
 
-  it('defaults speech-to-text to Gemini 3.5 Flash', () => {
-    expect(DEFAULT_APP_SETTINGS.transcriptionModelId).toBe('gemini-3.6-flash');
+  it('defaults speech-to-text to Gemini 3.7 Flash', () => {
+    expect(DEFAULT_APP_SETTINGS.transcriptionModelId).toBe('gemini-3.7-flash');
     expect(AVAILABLE_TRANSCRIPTION_MODELS.some((model) => model.id === DEFAULT_APP_SETTINGS.transcriptionModelId)).toBe(
       true,
     );

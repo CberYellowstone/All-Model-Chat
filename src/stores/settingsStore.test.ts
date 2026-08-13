@@ -152,7 +152,7 @@ describe('settingsStore', () => {
       const { appSettings } = useSettingsStore.getState();
       expect(appSettings.providerId).toBe('gemini-native');
       expect(appSettings.apiKey).toBeNull();
-      expect(appSettings.modelId).toBe('gemini-3.6-flash');
+      expect(appSettings.modelId).toBe('gemini-3.7-flash');
       expect(appSettings.thirdPartyApi.providers.openai.baseUrl).toBe('https://api.openai.com/v1');
       expect(appSettings.thirdPartyApi.providers.openai.modelId).toBe('gpt-5.6-sol');
       expect(appSettings.thirdPartyApi.providers.openai.models).toEqual([
@@ -168,7 +168,7 @@ describe('settingsStore', () => {
       expect(useSettingsStore.getState().appSettings.translationTargetLanguage).toBe('English');
     });
 
-    it('migrates the previous speech-to-text default to Gemini 3.5 Flash', async () => {
+    it('migrates the previous speech-to-text default to the current default', async () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(
         createStoredSettingsSnapshot({
           transcriptionModelId: 'gemini-3-flash-preview',
@@ -177,7 +177,7 @@ describe('settingsStore', () => {
 
       await useSettingsStore.getState().loadSettings();
 
-      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.6-flash');
+      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.7-flash');
     });
 
     it('preserves user edits made before settings finish loading', async () => {

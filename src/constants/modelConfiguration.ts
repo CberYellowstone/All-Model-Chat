@@ -1,4 +1,4 @@
-export const DEFAULT_MODEL_ID = 'gemini-3.6-flash';
+export const DEFAULT_MODEL_ID = 'gemini-3.7-flash';
 
 /**
  * Single source of truth for the Gemini Robotics ER model id.
@@ -73,7 +73,7 @@ export const DEFAULT_SHOW_THOUGHTS = true;
 export const DEFAULT_THINKING_BUDGET = -1; // -1 for auto/unlimited budget
 export const DEFAULT_TTS_VOICE = 'Zephyr';
 
-export const DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-3.6-flash';
+export const DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-3.7-flash';
 export const DEFAULT_TTS_MODEL_ID = 'gemini-3.1-flash-tts-preview';
-export const DEFAULT_LIVE_ARTIFACTS_MODEL_ID = 'gemini-3.6-flash';
+export const DEFAULT_LIVE_ARTIFACTS_MODEL_ID = 'gemini-3.7-flash';
 export const DEFAULT_THOUGHT_TRANSLATION_MODEL_ID = 'gemini-3.5-flash-lite';

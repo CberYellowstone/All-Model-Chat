@@ -375,7 +375,7 @@ GEMINI_API_KEY=your_key_here npm run verify:code-execution:api
 
 可选环境变量：
 
-- `CODE_EXECUTION_MODEL`：覆盖默认模型（默认 `gemini-3.6-flash`）
+- `CODE_EXECUTION_MODEL`：覆盖默认模型（默认 `gemini-3.7-flash`）
 
 这个脚本会：
 

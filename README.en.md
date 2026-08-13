@@ -365,7 +365,7 @@ GEMINI_API_KEY=your_key_here npm run verify:code-execution:api
 
 Optional variable:
 
-- `CODE_EXECUTION_MODEL`: override the default model, which is `gemini-3.6-flash`.
+- `CODE_EXECUTION_MODEL`: override the default model, which is `gemini-3.7-flash`.
 
 ---
 

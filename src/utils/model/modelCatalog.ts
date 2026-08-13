@@ -196,7 +196,7 @@ export const getQuickSwitchModelIds = (models: ModelOption[]): string[] => [
   ...new Set(buildModelCatalog(models).map((entry) => entry.id)),
 ];
 
-const DEFAULT_TAB_CYCLE_MODEL_IDS = ['gemini-3.1-pro-preview', 'gemini-3.6-flash'] as const;
+const DEFAULT_TAB_CYCLE_MODEL_IDS = ['gemini-3.1-pro-preview', 'gemini-3.7-flash'] as const;
 
 export const getTabCycleModelIds = (models: ModelOption[], configuredIds?: string[]): string[] => {
   const orderedIds = getQuickSwitchModelIds(models);
