@@ -294,6 +294,7 @@ export const useChat = (
     handleRenameGroup: historyHandler.handleRenameGroup,
     handleMoveSessionToGroup: historyHandler.handleMoveSessionToGroup,
     handleToggleGroupExpansion: historyHandler.handleToggleGroupExpansion,
+    handleNewChatInGroup: historyHandler.handleNewChatInGroup,
     clearCacheAndReload: historyHandler.clearCacheAndReload,
     clearAllHistory: historyHandler.clearAllHistory,
 

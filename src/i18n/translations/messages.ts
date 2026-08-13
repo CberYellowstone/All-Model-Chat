@@ -4,7 +4,6 @@ export const messagesTranslations = {
   imageZoomCloseAria: { en: 'Close image zoom view', zh: '关闭图片缩放视图' },
   imageZoomCloseTitle: { en: 'Close (Esc)', zh: '关闭（Esc）' },
   welcomeGreeting: { en: 'How can I help you today?', zh: '有什么可以帮忙的？' },
-  welcomeSuggestionTitle: { en: 'Suggested', zh: '建议' },
   suggestionSummarizeTitle: { en: 'Summarize article', zh: '一句话总结' },
   suggestionSummarizeDesc: {
     en: 'Please read the following content and distill its core theme into a single sentence. This sentence should include key elements (who, did what, what was the result) and remain concise and powerful:',
@@ -29,7 +28,6 @@ export const messagesTranslations = {
     zh: '请用通俗易懂的语言解释以下概念。使用类比或生活中的例子来帮助理解，避免使用过于专业的术语，使零基础的初学者也能轻松掌握：',
   },
   suggestionExplainShort: { en: 'Simplify complex concepts.', zh: '通俗易懂地解释复杂概念。' },
-  suggestionPromptLabel: { en: 'Prompt', zh: '提示' },
 
   // Audio transcription and subtitle suggestions
   suggestionAsrTitle: { en: 'Audio to Text', zh: '音频转写' },
@@ -70,13 +68,6 @@ export const messagesTranslations = {
     zh: '提交的交互状态过大。',
   },
 
-  welcomeTitle: { en: 'Welcome to AMC WebUI', zh: '欢迎使用 AMC WebUI' },
-  welcomeP1: {
-    en: 'Start a conversation by typing below. You can also attach files, load scenarios via the',
-    zh: '在下方输入文字开始对话。您也可以附加文件，或通过',
-  },
-  welcomeP2: { en: 'Preset Scenarios', zh: '预设场景' },
-  welcomeP3: { en: 'button, or configure settings.', zh: '按钮加载场景，或进行设置。' },
   retryButtonTitle: { en: 'Retry', zh: '重试' },
   retryAndStopButtonTitle: { en: 'Stop and Retry', zh: '停止并重试' },
   copyButtonTitle: { en: 'Copy content', zh: '复制内容' },
@@ -85,7 +76,6 @@ export const messagesTranslations = {
   assistantAvatarAlt: { en: 'Assistant avatar', zh: '助手头像' },
   continueGenerationTitle: { en: 'Continue Generating', zh: '继续生成' },
   forkMessageTitle: { en: 'Fork from here', zh: '从这里分叉' },
-  exportAsTitle: { en: 'Export as {type}', zh: '导出为 {type}' },
   exportingTitle: { en: 'Exporting {type}...', zh: '正在导出 {type}…' },
   exportCloseDialogAria: { en: 'Close export dialog', zh: '关闭导出对话框' },
   exportProcessingMessageContent: { en: 'Processing message content...', zh: '正在处理消息内容…' },
@@ -213,7 +203,6 @@ export const messagesTranslations = {
   sidePanelCodeTab: { en: 'Code', zh: '代码' },
   sidePanelDownloadCode: { en: 'Download Code', zh: '下载代码' },
   sidePanelClose: { en: 'Close Panel', zh: '关闭面板' },
-  exportedTitle: { en: '{type} Exported!', zh: '{type} 已导出！' },
   exportFailedTitle: { en: 'Export failed.', zh: '导出失败。' },
   exportFailedWithMessage: { en: 'Export failed: {message}', zh: '导出失败：{message}' },
   exportImageTooLarge: {
@@ -284,7 +273,6 @@ export const messagesTranslations = {
   audioPlayerPlaybackProgress: { en: 'Playback progress', zh: '播放进度' },
   audioPlayerPlaybackSpeed: { en: 'Playback Speed', zh: '播放速度' },
   audioPlayerDownload: { en: 'Download Audio', zh: '下载音频' },
-  cancelledByUser: { en: '[Cancelled by user]', zh: '[用户已取消]' },
   stoppedByUser: { en: '[Stopped by user]', zh: '[用户已停止]' },
   emptyResponseError: {
     en: 'The model did not provide a response. This might be due to safety filters or other content restrictions.',

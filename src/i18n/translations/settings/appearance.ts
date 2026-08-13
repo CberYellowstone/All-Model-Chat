@@ -1,5 +1,4 @@
 const appearanceSettings = {
-  settingsAppearance: { en: 'Appearance', zh: '外观' },
   settingsTheme: { en: 'Theme', zh: '主题' },
   settingsThemeSystem: { en: 'System', zh: '系统' },
   settingsThemeDark: { en: 'Dark', zh: '暗色' },
@@ -20,7 +19,6 @@ const appearanceSettings = {
   settingsLanguageEn: { en: 'English', zh: 'English' },
   settingsLanguageZh: { en: 'Chinese', zh: '中文' },
   settingsInputToolbar: { en: 'Input Toolbar', zh: '输入框工具栏' },
-  settingsBehaviorDisplay: { en: 'Interaction & Display', zh: '交互与显示' },
   settingsChatBehavior: { en: 'Chat Behavior', zh: '对话行为' },
   settingsClipboardInput: { en: 'Clipboard & Paste', zh: '剪贴板与粘贴' },
   settingsRenderingPreview: { en: 'Rendering & Preview', zh: '渲染与预览' },
@@ -75,16 +73,6 @@ const appearanceSettings = {
     en: 'Automatically generate smart replies after the model responds. Uses a fast, separate model call.',
     zh: '在模型回应后自动生成回复建议。此功能会使用一个快速、独立的模型调用。',
   },
-  settingsShowWelcomeSuggestionsLabel: { en: 'Show Welcome Suggestions', zh: '显示欢迎页建议' },
-  settingsShowWelcomeSuggestionsTooltip: {
-    en: 'Show suggestion cards on the new chat screen.',
-    zh: '在新对话屏幕上显示建议卡片。',
-  },
-  settingsAutoSendOnSuggestionClickLabel: { en: 'Tap to Send Reply', zh: '点按回复即发' },
-  settingsAutoSendOnSuggestionClickTooltip: {
-    en: 'When enabled, clicking a follow-up reply suggestion will send it immediately. Other suggestion types will only populate the input field.',
-    zh: '启用后，点击跟进型回复建议将立即发送。其他类型的建议只会填充输入框。',
-  },
   settingsAutoScrollOnSendLabel: { en: 'Scroll to Latest on Send', zh: '发送后滚到最新' },
   settingsAudioCompressionLabel: { en: 'Compress Audio Before Upload', zh: '上传前压缩音频' },
   settingsAudioCompressionTooltip: {
@@ -125,10 +113,6 @@ const appearanceSettings = {
     zh: '启用后，复制消息选区会保留 Markdown 格式。关闭后只复制纯文本。',
   },
   settingsSystemAudioRecordingLabel: { en: 'Include System Audio in Recordings', zh: '录音时包含系统音频' },
-  settingsSystemAudioRecordingTooltip: {
-    en: 'When enabled, you will be prompted to share system audio (via screen share) along with microphone input during recording.',
-    zh: '启用后，录音时将提示您共享系统音频（通过屏幕共享）以混合麦克风输入。',
-  },
   settingsRawModeLabel: { en: 'Raw Reasoning', zh: '原始推理' },
   settingsRawModeTooltip: {
     en: 'For supported models, pre-fill the response with <thinking> so replies start in raw reasoning mode. Unsupported models ignore this setting.',

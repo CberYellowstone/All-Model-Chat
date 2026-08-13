@@ -28,6 +28,15 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     },
   },
   {
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
+    groupLabels: {
+      liveArtifacts: 'Gemini 3.7 Flash',
+      transcription: 'Gemini 3.7 Flash',
+    },
+  },
+  {
     id: 'gemini-3.5-flash-lite',
     name: 'Gemini 3.5 Flash-Lite',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],

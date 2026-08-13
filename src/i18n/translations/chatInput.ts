@@ -10,16 +10,12 @@ export const chatInputTranslations = {
   imageOutputModeImageOnly: { en: 'Image Only', zh: '仅图片' },
   addByIdPlaceholder: { en: 'Paste File ID (e.g., files/xyz123)', zh: '粘贴文件 ID（例如 files/xyz123）' },
   addByIdAria: { en: 'File ID input', zh: '文件 ID 输入框' },
-  addByIdButtonAria: { en: 'Add file by ID', zh: '通过 ID 添加文件' },
-  cancelAddByIdButtonAria: { en: 'Cancel adding file by ID', zh: '取消通过 ID 添加文件' },
   addByIdHint: {
     en: 'Enter a valid Gemini API File URI, for example files/888...',
     zh: '请输入有效的 Gemini API 文件 URI，例如 files/888…',
   },
   addByUrlPlaceholder: { en: 'Paste YouTube URL...', zh: '粘贴 YouTube 链接…' },
   addByUrlAria: { en: 'YouTube URL input', zh: 'YouTube 链接输入框' },
-  addByUrlButtonAria: { en: 'Add YouTube URL as context', zh: '添加 YouTube 链接作为上下文' },
-  cancelAddByUrlButtonAria: { en: 'Cancel adding by URL', zh: '取消通过 URL 添加' },
   addByUrlInvalid: { en: 'Invalid YouTube URL provided.', zh: 'YouTube 链接无效。' },
   attachMenuTitle: { en: 'Attach file', zh: '附加文件' },
   attachMenuAria: { en: 'Attach file menu', zh: '附加文件菜单' },
@@ -32,8 +28,6 @@ export const chatInputTranslations = {
   attachMenuRecordAudio: { en: 'Record Audio', zh: '录音' },
   audioRecorderTitle: { en: 'Voice Recorder', zh: '录音' },
   audioRecorderPreviewTitle: { en: 'Preview Recording', zh: '预览录音' },
-  audioRecorderReady: { en: 'Ready to record', zh: '准备录音' },
-  audioRecorderChooseSource: { en: 'Choose an audio source', zh: '选择录音来源' },
   audioRecorderAccessingMicrophone: { en: 'Accessing microphone...', zh: '正在访问麦克风…' },
   audioRecorderRecordMicrophone: { en: 'Record microphone', zh: '录制麦克风' },
   audioRecorderMicrophoneOnly: { en: 'Mic input only', zh: '仅麦克风输入' },
@@ -77,8 +71,6 @@ export const chatInputTranslations = {
   sendMessageAria: { en: 'Send message', zh: '发送消息' },
   sendMessageTitle: { en: 'Send', zh: '发送' },
   sendMessageFastSuffix: { en: ' (Right-click for Fast Mode ⚡)', zh: '（右键开启快速模式 ⚡）' },
-  sendMessageWaitingForUploadAria: { en: 'Waiting for upload...', zh: '正在等待上传…' },
-  sendMessageWaitingForUploadTitle: { en: 'Waiting for upload to complete before sending', zh: '等待上传完成后发送' },
   cancelPendingUploadSendAria: { en: 'Cancel sending after upload', zh: '取消上传后发送' },
   cancelPendingUploadSendTitle: { en: 'Cancel sending after upload', zh: '取消上传后发送' },
   queueMessageAria: { en: 'Queue next message', zh: '排队下一条消息' },
@@ -121,8 +113,6 @@ export const chatInputTranslations = {
   alwaysKeepThinkingLabel: { en: 'Keep Thinking in Context', zh: '保留思维链' },
   alwaysKeepThinkingShort: { en: 'Keep', zh: '思维链' },
   toolsTokenCountLabel: { en: 'Token Calculator', zh: 'Token 计算器' },
-  tokenCountResult: { en: 'Estimated Tokens: {count}', zh: '预估 Token 数：{count}' },
-  tokenCountError: { en: 'Failed to count tokens.', zh: '计算 Token 失败。' },
   tokenCountErrorWithMessage: { en: 'Failed to count tokens: {message}', zh: '计算 Token 失败：{message}' },
   translateButtonTitle: { en: 'Translate input', zh: '翻译输入内容' },
   translatingButtonTitle: { en: 'Translating...', zh: '翻译中…' },
@@ -263,10 +253,6 @@ export const chatInputTranslations = {
     en: 'Response Finished with Error',
     zh: '回复完成（含错误）',
   },
-  messageSenderResponseReadyBody: {
-    en: 'Media or tool response received',
-    zh: '已收到媒体或工具响应',
-  },
   messageSenderImageEditResultPrefix: { en: 'Image {index}: ', zh: '图片 {index}：' },
   messageSenderImageEditNoImageGenerated: {
     en: 'No image was generated for this request.',
@@ -306,14 +292,11 @@ export const chatInputTranslations = {
   },
 
   // Shared video file settings
-  videoSettingsTitle: { en: 'Video Processing Options', zh: '视频处理选项' },
-  videoSettingsClipTitle: { en: 'Clip Video (Optional)', zh: '裁剪视频（可选）' },
   videoSettingsStart: { en: 'Start Time', zh: '开始时间' },
   videoSettingsEnd: { en: 'End Time', zh: '结束时间' },
   videoSettingsFps: { en: 'Frame Rate (FPS)', zh: '采样率（FPS）' },
   videoSettingsFpsPlaceholder: { en: 'e.g., 1 (Default)', zh: '例如：1（默认）' },
   videoSettingsPlaceholder: { en: 'e.g., 10s or 00:10', zh: '例如：10s 或 00:10' },
-  videoSettingsHelp: { en: 'Configure how the model sees this video.', zh: '配置模型如何处理此视频。' },
   videoSettingsTipFps: {
     en: 'Use lower FPS (<1) for static videos like lectures. Use higher FPS for fast action.',
     zh: '静态视频（如讲座）可使用低 FPS（<1）。快速动作视频请使用较高 FPS。',
@@ -428,7 +411,6 @@ export const chatInputTranslations = {
   queuedSubmissionLimitReached: { en: 'Queue is full', zh: '队列已满' },
 
   // Live Translate target language selector
-  liveTranslateTargetLanguageLabel: { en: 'Target language', zh: '目标语言' },
   liveTranslateEchoTargetLanguageTooltip: {
     en: 'Echo original audio when input is already in target language',
     zh: '输入已是目标语言时回放原声',

@@ -207,4 +207,16 @@ describe('appSettingsSchema', () => {
       },
     ]);
   });
+
+  it('defaults a missing isLoggingEnabled field to false', () => {
+    const settings = sanitizeImportedAppSettings({});
+
+    expect(settings.isLoggingEnabled).toBe(false);
+  });
+
+  it('preserves an explicit isLoggingEnabled true from imported settings', () => {
+    const settings = sanitizeImportedAppSettings({ isLoggingEnabled: true });
+
+    expect(settings.isLoggingEnabled).toBe(true);
+  });
 });

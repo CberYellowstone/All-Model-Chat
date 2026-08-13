@@ -23,6 +23,7 @@ vi.mock('@/runtime/runtimeConfig', () => ({
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { useSettingsStore } from './settingsStore';
 import { dbService } from '@/services/db/dbService';
+import { logService } from '@/services/logService';
 import { createTheme } from '@/test/data/factories';
 import type { AppSettings } from '@/types';
 
@@ -114,9 +115,35 @@ describe('settingsStore', () => {
       }));
       expect(dbService.setAppSettings).not.toHaveBeenCalled();
     });
+
+    it('mirrors the toggled isLoggingEnabled into the log gate on save', () => {
+      useSettingsStore.setState({ isSettingsLoaded: true });
+      useSettingsStore.getState().setAppSettings((prev) => ({
+        ...prev,
+        isLoggingEnabled: true,
+      }));
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(true);
+    });
   });
 
   describe('loadSettings', () => {
+    it('mirrors the loaded isLoggingEnabled value into the log gate', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(createStoredSettingsSnapshot({ isLoggingEnabled: true }));
+
+      await useSettingsStore.getState().loadSettings();
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(true);
+    });
+
+    it('closes the log gate when settings fail to load', async () => {
+      vi.mocked(dbService.getAppSettings).mockRejectedValue(new Error('DB fail'));
+
+      await useSettingsStore.getState().loadSettings();
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(false);
+    });
+
     it('defaults to Gemini native provider with an isolated third-party provider config', async () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(undefined);
 

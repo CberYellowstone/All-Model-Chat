@@ -1,4 +1,4 @@
-import { type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback } from 'react';
 import {
   type AppSettings,
   type SavedChatSession,
@@ -7,7 +7,9 @@ import {
   type InputCommand,
   type ChatMessage,
 } from '@/types';
+import { logService } from '@/services/logService';
 import { getTranslator } from '@/i18n/translations';
+import { useChatStore } from '@/stores/chatStore';
 import { useSessionLoader } from './history/useSessionLoader';
 import { useSessionActions } from './history/useSessionActions';
 import { useGroupActions } from './history/useGroupActions';
@@ -110,10 +112,24 @@ export const useChatHistory = ({
     activeJobs,
   });
 
+  const handleNewChatInGroup = useCallback(
+    (groupId: string) => {
+      logService.info(`Creating new chat in group: ${groupId}`);
+      // 分组折叠时自动展开，确保用户能看到新条目。
+      const group = useChatStore.getState().savedGroups.find((candidate) => candidate.id === groupId);
+      if (group && group.isExpanded === false) {
+        handleToggleGroupExpansion(groupId);
+      }
+      startNewChat(undefined, { groupId });
+    },
+    [handleToggleGroupExpansion, startNewChat],
+  );
+
   return {
     loadInitialData,
     loadChatSession,
     startNewChat,
+    handleNewChatInGroup,
     handleDeleteChatHistorySession,
     handleRenameSession,
     handleTogglePinSession,

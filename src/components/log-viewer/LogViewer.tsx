@@ -179,6 +179,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                 hasMore={hasMore}
                 onFetchMore={() => fetchLogs(false)}
                 onClear={() => setIsConfirmOpen(true)}
+                loggingDisabled={!appSettings.isLoggingEnabled}
               />
             )}
 

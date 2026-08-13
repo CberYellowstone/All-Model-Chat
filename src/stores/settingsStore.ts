@@ -189,6 +189,10 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
       const currentTheme = computeTheme(sanitizedNext.themeId);
       const language = resolveLanguage(sanitizedNext.language);
 
+      // Mirror the toggle into the log gate on every save path (loaded and
+      // preload branches both land here).
+      logService.setEnabled(sanitizedNext.isLoggingEnabled ?? false);
+
       if (state.isSettingsLoaded) {
         dbService
           .setAppSettings(sanitizedNext)
@@ -228,9 +232,15 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
         isSettingsLoaded: true,
         pendingPreloadSettingsOverrides: null,
       });
+      // Open/close the logging gate to match the loaded setting. The gate
+      // defaults to off in the service, so a fresh profile or a load that
+      // omitted the field (schema backfills false) stays silent until the
+      // user opts in.
+      logService.setEnabled(newSettings.isLoggingEnabled ?? false);
       persistLoadedPreloadOverrides(newSettings, preloadOverrides);
     } catch (error) {
       logService.error('Failed to load settings from IndexedDB', { error });
+      logService.setEnabled(false);
       set({ isSettingsLoaded: true });
     }
   },

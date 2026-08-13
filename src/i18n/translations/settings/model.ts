@@ -3,7 +3,6 @@ import { ttsStyleTranslations } from '@/i18n/voiceStyleTranslations';
 // settingsTtsVoice, settingsMediaResolution, and mediaResolution* labels live in
 // coreTranslations shellFeatureTranslations (chat toolbar chrome before this pack loads).
 const modelSettings = {
-  settingsModelParameters: { en: 'Defaults for New Chats', zh: '新对话默认值' },
   settingsDefaultModel: { en: 'Primary Chat Model', zh: '主对话模型' },
   settingsSystemPrompt: { en: 'Default System Prompt', zh: '默认系统提示' },
   settingsTemperature: { en: 'Temperature', zh: '温度' },
@@ -31,14 +30,7 @@ const modelSettings = {
     en: 'Gemma uses MINIMAL reasoning for faster responses.',
     zh: 'Gemma 使用 MINIMAL 推理以获得更快的响应。',
   },
-  settingsThinkingCustomPlaceholder: { en: 'Token budget', zh: 'Token 预算' },
   settingsThinkingBudget: { en: 'Reasoning Budget', zh: '推理预算' },
-  settingsThinkingLevel: { en: 'Reasoning Level', zh: '推理等级' },
-  settingsThinkingBudgetTooltip: {
-    en: 'Set a token budget for reasoning. -1 means auto/unlimited, 0 disables reasoning, and values above 0 set a fixed limit.',
-    zh: '设置推理的 Token 预算。-1 表示自动或不限量，0 表示关闭推理，大于 0 则表示固定上限。',
-  },
-  settingsThinkingBudgetPlaceholder: { en: 'e.g., -1 for auto', zh: '例如：-1 代表自动' },
   settingsMediaResolutionTooltip: {
     en: 'Controls the detail level for images, videos, and PDFs sent to the model. Higher detail uses more tokens but preserves more information.',
     zh: '控制发送给模型的图片、视频和 PDF 的细节等级。等级越高会消耗更多 Token，但保留更多细节。',
@@ -64,10 +56,6 @@ const modelSettings = {
     en: 'Controls video/audio resolution for Live API.',
     zh: '控制 Live API 的视频/音频分辨率。',
   },
-  chatBehaviorEnableThoughtsTooltip: {
-    en: "Controls the model's thinking process. 'Off' prioritizes speed. 'Auto' lets the model decide for best quality. 'Manual' allows setting a specific token budget for thinking. Affects models like Gemini 3 and Gemini 3.1.",
-    zh: '控制模型的思考过程。“关闭”优先考虑速度。“自动”让模型自行决定以获得最佳质量。“手动”允许为思考设置特定的 Token 预算。影响 Gemini 3 和 Gemini 3.1 等模型。',
-  },
   chatBehaviorSystemPromptPlaceholder: {
     en: 'e.g., You are a precise, concise assistant who proactively clarifies requirements.',
     zh: '例如：你是一个严谨、简洁、主动澄清需求的 AI 助手。',
@@ -87,7 +75,6 @@ const modelSettings = {
     en: 'Applies to files added after changing this setting. On prefers Files API. Off sends content inline when possible; oversized files may still use Files API.',
     zh: '仅影响更改设置后新添加的文件。打开时优先使用 Files API；关闭时会尽量内联发送，文件过大时仍可能使用 Files API。',
   },
-  settingsGenerateQuadImagesLabel: { en: 'Quad Image Generation', zh: '四图生成模式' },
   settingsGenerateQuadImagesTooltip: {
     en: 'When enabled, image-generation prompts will produce four independent variations at once. This will consume more API credits.',
     zh: '启用后，图片生成提示词将一次性生成四张独立变体。这将消耗更多 API 用量。',
@@ -108,7 +95,6 @@ const modelSettings = {
   settingsTranslationSectionTitle: { en: 'Translation', zh: '翻译设置' },
   settingsInputTranslationSectionTitle: { en: 'Input Translation', zh: '输入框翻译' },
   settingsInputTranslationLanguageLabel: { en: 'Input Translation Language', zh: '输入框翻译语言' },
-  settingsTranslationTargetLanguageLabel: { en: 'Target Language', zh: '目标语言' },
   settingsInputTranslationModelLabel: { en: 'Input Translation Model', zh: '输入框翻译模型' },
   settingsThoughtTranslationSectionTitle: { en: 'Reasoning Translation', zh: '推理内容翻译' },
   settingsThoughtTranslationModelLabel: { en: 'Reasoning Translation Model', zh: '推理内容翻译模型' },
@@ -129,7 +115,6 @@ const modelSettings = {
   settingsFinishModelListEdit: { en: 'Finish Editing', zh: '完成编辑' },
   settingsPinnedModel: { en: 'Pinned', zh: '置顶' },
   settingsActiveModel: { en: 'Active', zh: '当前使用' },
-  settingsSetActiveModel: { en: 'Use This Model', zh: '使用此模型' },
   settingsNoModelsInList: {
     en: 'No models in the list yet. Add one or reset the defaults.',
     zh: '当前列表中还没有模型。可以手动添加，或重置为默认列表。',
@@ -150,10 +135,8 @@ const modelSettings = {
   settingsModelNamePlaceholder: { en: 'Display Name', zh: '显示名称' },
   settingsPinModel: { en: 'Pin Model', zh: '置顶模型' },
   settingsRemoveModel: { en: 'Remove Model', zh: '移除模型' },
-  settingsSystemPromptActive: { en: 'Prompt enabled', zh: '系统提示已启用' },
   settingsSystemPromptEnabled: { en: 'Enabled', zh: '已启用' },
   settingsSystemPromptUnset: { en: 'Not set', zh: '未设置' },
-  settingsExpandEditor: { en: 'Open Full Editor', zh: '打开完整编辑器' },
   settingsExpandSystemPromptEditor: {
     en: 'Full editor',
     zh: '完整编辑器',

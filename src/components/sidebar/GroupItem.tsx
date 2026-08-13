@@ -23,6 +23,7 @@ interface GroupItemProps extends SessionItemPassedProps {
   setDragOverId: (id: string | null) => void;
   setEditingItem: (item: { type: 'session' | 'group'; id: string; title: string } | null) => void;
   onDeleteGroup: (groupId: string) => void;
+  onNewChatInGroup: (groupId: string) => void;
 }
 
 export const GroupItem: React.FC<GroupItemProps> = (props) => {
@@ -38,6 +39,7 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
     setDragOverId,
     setEditingItem,
     onDeleteGroup,
+    onNewChatInGroup,
     editInputRef,
     handleRenameConfirm,
     handleRenameKeyDown,
@@ -180,6 +182,10 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
         {activeMenu === group.id && (
           <GroupItemMenu
             menuRef={menuRef}
+            onNewChat={() => {
+              onNewChatInGroup(group.id);
+              setActiveMenu(null);
+            }}
             onStartEdit={() => {
               handleGroupStartEdit(group);
               setActiveMenu(null);

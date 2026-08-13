@@ -24,9 +24,11 @@ describe('isGemini3Model', () => {
     expect(isGemini3Model('gemini-3-flash-preview')).toBe(true);
   });
 
-  it('returns true for gemini-3.6-flash and gemini-3.5-flash-lite', () => {
+  it('returns true for gemini-3.6-flash, gemini-3.7-flash and gemini-3.5-flash-lite', () => {
     expect(isGemini3Model('gemini-3.6-flash')).toBe(true);
     expect(isGemini3Model('models/gemini-3.6-flash')).toBe(true);
+    expect(isGemini3Model('gemini-3.7-flash')).toBe(true);
+    expect(isGemini3Model('models/gemini-3.7-flash')).toBe(true);
     expect(isGemini3Model('gemini-3.5-flash-lite')).toBe(true);
     expect(isGemini3Model('models/gemini-3.5-flash-lite')).toBe(true);
   });
@@ -98,6 +100,7 @@ describe('getModelCapabilities', () => {
   it('exposes raw reasoning prefill support as a model capability', () => {
     expect(getModelCapabilities('gemini-3-flash-preview').supportsRawReasoningPrefill).toBe(true);
     expect(getModelCapabilities('gemini-3.6-flash').supportsRawReasoningPrefill).toBe(true);
+    expect(getModelCapabilities('gemini-3.7-flash').supportsRawReasoningPrefill).toBe(true);
     expect(getModelCapabilities('gemini-3.5-flash-lite').supportsRawReasoningPrefill).toBe(true);
     expect(getModelCapabilities('gemini-2.5-flash').supportsRawReasoningPrefill).toBe(false);
   });

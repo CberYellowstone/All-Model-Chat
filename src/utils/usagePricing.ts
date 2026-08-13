@@ -32,6 +32,13 @@ const MODALITY_TEXT_PRICING: Record<
     response: { TEXT: 7.5 },
     tool: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
   },
+  // Mirrors Gemini 3.6 Flash rates until official 3.7 pricing is published.
+  'gemini-3.7-flash': {
+    prompt: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+    cache: { TEXT: 0.15, IMAGE: 0.15, AUDIO: 0.15 },
+    response: { TEXT: 7.5 },
+    tool: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+  },
   // Official Gemini API pricing (Standard): $0.30 input (all modalities) / $2.50 output / $0.03 cache.
   'gemini-3.5-flash-lite': {
     prompt: { TEXT: 0.3, IMAGE: 0.3, AUDIO: 0.3 },

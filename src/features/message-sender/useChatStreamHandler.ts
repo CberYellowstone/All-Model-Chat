@@ -40,8 +40,6 @@ interface ChatStreamHandlerProps {
   activeJobs: MutableRefObject<Map<string, AbortController>>;
 }
 
-export { type StreamHandlerOptions };
-
 export const useChatStreamHandler = ({
   appSettings,
   updateAndPersistSessions,
@@ -152,10 +150,15 @@ export const useChatStreamHandler = ({
         hasCommittedThinkingTime = false;
         updateAndPersistSessions(
           (prev) =>
-            updateMessageInSession(prev, currentSessionId, generationId, {
-              thinkingTimeMs: undefined,
-              thinkingActive: true,
-            }),
+            updateMessageInSession(prev, currentSessionId, generationId, (message) =>
+              message.thinkingActive === true && message.thinkingTimeMs === undefined
+                ? message
+                : {
+                    ...message,
+                    thinkingTimeMs: undefined,
+                    thinkingActive: true,
+                  },
+            ),
           { persist: false },
         );
       };

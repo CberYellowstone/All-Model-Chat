@@ -2,7 +2,6 @@ const shortcutsSettings = {
   shortcutsGeneralTitle: { en: 'App', zh: '应用' },
   shortcutsNewChat: { en: 'Start New Chat', zh: '开始新对话' },
   shortcutsSearchChats: { en: 'Search Chats', zh: '搜索聊天' },
-  shortcutsOpenSettings: { en: 'Open Settings', zh: '打开设置' },
   shortcutsOpenLogs: { en: 'Open Logs', zh: '打开日志' },
   shortcutsTogglePip: { en: 'Toggle Picture-in-Picture', zh: '切换画中画' },
   shortcutsToggleFullscreen: { en: 'Toggle Fullscreen', zh: '切换全屏' },
@@ -23,10 +22,8 @@ const shortcutsSettings = {
   },
   shortcutsCycleModelsScopeToggleAria: { en: 'Toggle Tab cycle model panel', zh: '切换 Tab 循环模型面板' },
   shortcutsCycleModelsScopeModelAria: { en: 'Toggle Tab cycle model', zh: '切换 Tab 循环模型' },
-  shortcutsClearChat: { en: 'Clear Chat', zh: '清空对话' },
   shortcutsClearInputDraft: { en: 'Clear Draft', zh: '清空草稿' },
   shortcutsEditLast: { en: 'Edit Previous Message', zh: '编辑上一条消息' },
-  shortcutsAnyKey: { en: 'Any Key', zh: '任意键' },
 
   shortcutsGlobalTitle: { en: 'Dialogs & Global', zh: '弹窗与全局' },
   shortcutsStopCancel: { en: 'Stop or Cancel', zh: '停止或取消' },

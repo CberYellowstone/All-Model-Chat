@@ -5,6 +5,7 @@ describe('settingsModelOptions', () => {
   it('keeps connection test models aligned with the supported defaults', () => {
     expect(CONNECTION_TEST_MODELS.map((model) => model.id)).toEqual([
       'gemini-3.6-flash',
+      'gemini-3.7-flash',
       'gemini-3.5-flash-lite',
       'gemini-3.1-pro-preview',
       'gemini-robotics-er-2-preview',
@@ -38,6 +39,7 @@ describe('settingsModelOptions', () => {
   it('keeps transcription models aligned with the supported list', () => {
     expect(AVAILABLE_TRANSCRIPTION_MODELS.map((model) => model.id)).toEqual([
       'gemini-3.6-flash',
+      'gemini-3.7-flash',
       'gemini-3.5-flash-lite',
       'gemini-3.1-pro-preview',
     ]);
@@ -56,6 +58,13 @@ describe('settingsModelOptions', () => {
     expect(CONNECTION_TEST_MODELS.find((model) => model.id === 'gemini-3.6-flash')?.name).toBe('Gemini 3.6 Flash');
     expect(AVAILABLE_TRANSCRIPTION_MODELS.find((model) => model.id === 'gemini-3.6-flash')?.name).toBe(
       'Gemini 3.6 Flash',
+    );
+  });
+
+  it('shows Gemini 3.7 Flash with matching supported option groups', () => {
+    expect(CONNECTION_TEST_MODELS.find((model) => model.id === 'gemini-3.7-flash')?.name).toBe('Gemini 3.7 Flash');
+    expect(AVAILABLE_TRANSCRIPTION_MODELS.find((model) => model.id === 'gemini-3.7-flash')?.name).toBe(
+      'Gemini 3.7 Flash',
     );
   });
 });

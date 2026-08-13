@@ -54,7 +54,7 @@ export const createSettingsForNewChat = ({
   };
 };
 
-export interface ResolveNewTabTemplateInput {
+interface ResolveNewTabTemplateInput {
   /** URL ?from= 参数(来源标签页的会话 id),无则 null */
   fromSessionId: string | null;
   /** localStorage 快照(点击时同步写入,可能比 DB 新) */

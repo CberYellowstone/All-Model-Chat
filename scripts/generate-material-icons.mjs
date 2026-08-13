@@ -164,7 +164,7 @@ const recordLines = Object.entries(entries)
   .join('\n');
 
 const raw = `${HEADER}
-export type MaterialIconData = { body: string; width: number; height: number };
+type MaterialIconData = { body: string; width: number; height: number };
 
 export const MATERIAL_ICONS: Readonly<Record<string, MaterialIconData>> = {
 ${recordLines}

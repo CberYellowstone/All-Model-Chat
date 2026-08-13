@@ -39,6 +39,7 @@ type MockLogService = MockRecord & {
   warn: MockFn;
   info: MockFn;
   debug: MockFn;
+  setEnabled: MockFn;
   recordTokenUsage: MockFn;
   recordApiKeyUsage: MockFn;
   getRecentLogs: MockFn;
@@ -93,6 +94,7 @@ export const createMockLogService = (overrides: Partial<MockLogService> = {}): M
   warn: mockFn(),
   info: mockFn(),
   debug: mockFn(),
+  setEnabled: mockFn(),
   recordTokenUsage: mockFn(),
   recordApiKeyUsage: mockFn(),
   getRecentLogs: asyncMockFn([]),

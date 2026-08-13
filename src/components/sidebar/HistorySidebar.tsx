@@ -11,6 +11,7 @@ import { IconNewChat, IconSidebarToggle } from '@/components/icons';
 import { useHistorySidebarLogic } from './useHistorySidebarLogic';
 import { SIDEBAR_CLICKABLE_ICON_BUTTON_CLASS, SIDEBAR_ICON_LINK_BUTTON_CLASS } from './sidebarStyles';
 import { LimitedSessionList } from './LimitedSessionList';
+import { DESKTOP_BREAKPOINT_PX } from '@/constants/layout';
 import { isDarkThemeId } from '@/utils/themeMode';
 import { isSessionDrag } from './sidebarDragTypes';
 
@@ -35,6 +36,7 @@ interface HistorySidebarProps {
   onRenameGroup: (groupId: string, newTitle: string) => void;
   onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;
   onToggleGroupExpansion: (groupId: string) => void;
+  onNewChatInGroup: (groupId: string) => void;
   onOpenSettingsModal: () => void;
   themeId: string;
   newChatShortcut: string;
@@ -125,6 +127,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onAddNewGroup,
     onDeleteGroup,
     onToggleGroupExpansion,
+    onNewChatInGroup,
     themeId,
     onNewChat,
     onDeleteSession,
@@ -359,6 +362,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
                   sessions={sessionsByGroupId.get(group.id) || []}
                   dragOverId={dragOverId}
                   onToggleGroupExpansion={onToggleGroupExpansion}
+                  onNewChatInGroup={(groupId) => {
+                    onNewChatInGroup(groupId);
+                    // 与选择会话一致：移动端点击后自动收起侧边栏。
+                    if (window.innerWidth < DESKTOP_BREAKPOINT_PX) onAutoClose();
+                  }}
                   handleGroupStartEdit={(item) => handleStartEdit('group', item)}
                   handleDrop={handleDrop}
                   handleDragOver={handleDragOver}

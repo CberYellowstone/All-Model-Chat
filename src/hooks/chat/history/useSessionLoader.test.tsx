@@ -10,12 +10,13 @@ const {
   mockRehydrateSessionFiles,
   mockResolveSupportedModelId,
 } = vi.hoisted(() => ({
-  mockCreateNewSession: vi.fn(() => ({
+  mockCreateNewSession: vi.fn((..._args: unknown[]) => ({
     id: 'new-session',
     title: 'New Session',
     timestamp: Date.now(),
     messages: [],
     settings: { modelId: 'gemini-2.5-flash' },
+    groupId: null as string | null,
   })),
   mockCleanupFilePreviewUrls: vi.fn(),
   mockGetSession: vi.fn(),
@@ -386,7 +387,7 @@ describe('useSessionLoader', () => {
     });
 
     // 默认以当前页会话为模板，而非最近会话。
-    expect(mockCreateNewSession).toHaveBeenCalledWith(expect.objectContaining({ modelId: 'current-model' }));
+    expect(mockCreateNewSession.mock.calls[0][0]).toEqual(expect.objectContaining({ modelId: 'current-model' }));
 
     unmount();
   });
@@ -410,12 +411,120 @@ describe('useSessionLoader', () => {
       result.current.startNewChat();
     });
 
-    expect(mockCreateNewSession).toHaveBeenCalledWith(
+    expect(mockCreateNewSession.mock.calls[0][0]).toEqual(
       expect.objectContaining({
         modelId: 'kimi-k3-turbo',
         providerId: 'kimi',
       }),
     );
+
+    unmount();
+  });
+
+  it('creates a new session in the target group and activates it', () => {
+    const setActiveSessionId = vi.fn();
+    const updateAndPersistSessions = vi.fn();
+    const currentSession = createSession('session-current', 'Current Session');
+    currentSession.settings.modelId = 'current-model';
+    mockCreateNewSession.mockReturnValueOnce({
+      id: 'new-group-session',
+      title: 'New Session',
+      timestamp: Date.now(),
+      messages: [],
+      settings: { modelId: 'gemini-2.5-flash' },
+      groupId: 'group-1',
+    });
+
+    const { result, unmount } = renderSessionLoader({
+      appSettings: { modelId: 'global-model' },
+      updateAndPersistSessions,
+      setActiveSessionId,
+      activeChat: currentSession,
+      activeSessionId: 'session-current',
+      savedSessions: [currentSession],
+    });
+
+    act(() => {
+      result.current.startNewChat(undefined, { groupId: 'group-1' });
+    });
+
+    expect(mockCreateNewSession).toHaveBeenCalledWith(
+      expect.objectContaining({ modelId: 'current-model' }),
+      [],
+      'New Chat',
+      'group-1',
+      'default',
+    );
+    expect(updateAndPersistSessions).toHaveBeenCalledTimes(1);
+    const updater = updateAndPersistSessions.mock.calls[0][0];
+    const updatedSessions = updater([currentSession]);
+    expect(updatedSessions).toHaveLength(2);
+    expect(updatedSessions[0].groupId).toBe('group-1');
+    expect(setActiveSessionId).toHaveBeenLastCalledWith('new-group-session', { history: 'push' });
+
+    unmount();
+  });
+
+  it('reuses the current empty chat when it is already in the target group', () => {
+    const updateAndPersistSessions = vi.fn();
+    const emptyActiveSession = {
+      ...createSession('session-empty', 'Empty Session'),
+      messages: [],
+      groupId: 'group-1',
+    };
+
+    const { result, unmount } = renderSessionLoader({
+      appSettings: { modelId: 'global-model' },
+      updateAndPersistSessions,
+      activeChat: emptyActiveSession,
+      userScrolledUpRef: { current: true },
+      activeSessionId: 'session-empty',
+      savedSessions: [emptyActiveSession],
+    });
+
+    act(() => {
+      result.current.startNewChat(undefined, { groupId: 'group-1' });
+    });
+
+    expect(mockCreateNewSession).not.toHaveBeenCalled();
+    expect(updateAndPersistSessions).toHaveBeenCalledTimes(1);
+    const updater = updateAndPersistSessions.mock.calls[0][0];
+    const updatedSessions = updater([emptyActiveSession]);
+    expect(updatedSessions).toHaveLength(1);
+    expect(updatedSessions[0].id).toBe('session-empty');
+    expect(updatedSessions[0].groupId).toBe('group-1');
+
+    unmount();
+  });
+
+  it('moves the current empty chat into the target group instead of creating a duplicate', () => {
+    const updateAndPersistSessions = vi.fn();
+    const emptyActiveSession = {
+      ...createSession('session-empty', 'Empty Session'),
+      messages: [],
+      groupId: null,
+    };
+
+    const { result, unmount } = renderSessionLoader({
+      appSettings: { modelId: 'global-model' },
+      updateAndPersistSessions,
+      activeChat: emptyActiveSession,
+      userScrolledUpRef: { current: true },
+      activeSessionId: 'session-empty',
+      savedSessions: [emptyActiveSession],
+    });
+
+    act(() => {
+      result.current.startNewChat(undefined, { groupId: 'group-9' });
+    });
+
+    expect(mockCreateNewSession).not.toHaveBeenCalled();
+    expect(updateAndPersistSessions).toHaveBeenCalledTimes(1);
+    const updater = updateAndPersistSessions.mock.calls[0][0];
+    const updatedSessions = updater([emptyActiveSession]);
+    expect(updatedSessions).toHaveLength(1);
+    expect(updatedSessions[0].id).toBe('session-empty');
+    expect(updatedSessions[0].groupId).toBe('group-9');
 
     unmount();
   });

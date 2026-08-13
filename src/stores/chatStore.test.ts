@@ -58,6 +58,7 @@ import { useChatStore } from './chatStore';
 import { dbService } from '@/services/db/dbService';
 import { type SavedChatSession, type ChatGroup } from '@/types';
 import { createChatSettings, createSavedChatSessionMetadata, createUploadedFile } from '@/test/data/factories';
+import { updateMessageInSession as updateMessageInSessionUtil } from '@/utils/chat/sessionMutations';
 
 const makeSession = (overrides: Partial<SavedChatSession> = {}): SavedChatSession =>
   createSavedChatSessionMetadata({
@@ -164,6 +165,74 @@ describe('chatStore', () => {
       const msgs = [{ id: 'm1', role: 'user' as const, content: 'Hi', timestamp: new Date() }];
       useChatStore.getState().setActiveMessages(msgs);
       expect(useChatStore.getState().activeMessages).toEqual(msgs);
+    });
+  });
+
+  // ── Idempotent streaming patches preserve references (regression guard) ──
+  // The streaming hot path re-applies the same message patch on every SSE chunk
+  // (thinkingSource / thinking resume). When the patch changes nothing, the
+  // whole update must be a no-op: savedSessions keeps its identity so no
+  // subscriber re-renders. This is what makes the per-chunk store rewrite a
+  // short-circuit instead of a cascade.
+
+  describe('idempotent updates preserve store references', () => {
+    const sessionWithMessage = (): SavedChatSession =>
+      makeSession({
+        id: 'active',
+        messages: [{ id: 'gen-1', role: 'model' as const, content: 'hi', timestamp: new Date() }],
+      });
+
+    it('keeps savedSessions identity when a function updater changes nothing', () => {
+      const session = sessionWithMessage();
+      useChatStore.getState().setSavedSessions([session]);
+      useChatStore.getState().setActiveSessionId('active');
+
+      const before = useChatStore.getState().savedSessions;
+      useChatStore.getState().updateAndPersistSessions(
+        (prev) =>
+          updateMessageInSessionUtil(prev, 'active', 'gen-1', (message) => {
+            void message;
+            return message;
+          }),
+        { persist: false },
+      );
+
+      expect(useChatStore.getState().savedSessions).toBe(before);
+      expect(useChatStore.getState().savedSessions[0]).toBe(session);
+      expect(useChatStore.getState().activeMessages).toBe(useChatStore.getState().activeMessages);
+    });
+
+    it('keeps savedSessions identity when a patch already matches the message', () => {
+      const session = sessionWithMessage();
+      useChatStore.getState().setSavedSessions([session]);
+      useChatStore.getState().setActiveSessionId('active');
+
+      const before = useChatStore.getState().savedSessions;
+      useChatStore
+        .getState()
+        .updateAndPersistSessions((prev) => updateMessageInSessionUtil(prev, 'active', 'gen-1', { content: 'hi' }));
+
+      expect(useChatStore.getState().savedSessions).toBe(before);
+    });
+
+    it('still updates savedSessions and activeMessages when the patch changes a field', () => {
+      const session = sessionWithMessage();
+      useChatStore.getState().setSavedSessions([session]);
+      useChatStore.getState().setActiveSessionId('active');
+      // In the real streaming path activeMessages mirrors the session's runtime
+      // messages; keep them in sync so the patch actually finds its target.
+      useChatStore.getState().setActiveMessages([...session.messages]);
+
+      useChatStore
+        .getState()
+        .updateAndPersistSessions((prev) =>
+          updateMessageInSessionUtil(prev, 'active', 'gen-1', { thinkingSource: 'gemini' }),
+        );
+
+      const saved = useChatStore.getState().savedSessions[0];
+      expect(saved).not.toBe(session);
+      expect(saved.messages[0].thinkingSource).toBe('gemini');
+      expect(useChatStore.getState().activeMessages[0].thinkingSource).toBe('gemini');
     });
   });
 

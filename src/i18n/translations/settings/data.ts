@@ -1,5 +1,4 @@
 const dataSettings = {
-  settingsDataManagement: { en: 'Data Management', zh: '数据管理' },
   settingsDataImportsExports: { en: 'Import & Export', zh: '导入与导出' },
   settingsDataSettings: { en: 'App Settings', zh: '应用设置' },
   settingsDataHistory: { en: 'Chats', zh: '对话' },
@@ -12,20 +11,17 @@ const dataSettings = {
     zh: '您确定要将所有设置重置为默认值吗？这不会影响您的聊天记录。您当前的更改将丢失。',
   },
   settingsClearHistory: { en: 'Delete Chats and Groups', zh: '删除对话与分组' },
-  settingsClearHistoryAria: { en: 'Clear all chat history', zh: '清空所有聊天记录' },
   settingsClearHistoryConfirm: {
     en: 'Are you sure you want to delete all chat history and groups? This action cannot be undone.',
     zh: '您确定要删除所有聊天记录和分组吗？此操作无法撤销。',
   },
   settingsClearCache: { en: 'Delete All App Data', zh: '删除全部应用数据' },
-  settingsClearCacheAria: { en: 'Clear all application settings and data', zh: '清除所有应用设置和数据' },
   settingsClearCacheConfirm: {
     en: 'Are you sure you want to clear all application data?\n\nThis will remove:\n- Saved settings\n- Chat history\n- Preloaded scenarios\n\nThis action cannot be undone.',
     zh: '您确定要清除所有应用数据吗？\n\n这将删除：\n- 已保存的设置\n- 聊天记录\n- 预加载的场景\n\n此操作无法撤销。',
   },
   settingsInstallApp: { en: 'Install App', zh: '安装应用' },
   settingsInstallAppAria: { en: 'Install Progressive Web App', zh: '安装渐进式网络应用' },
-  settingsInstallAppAvailableTitle: { en: 'Install Progressive Web App', zh: '安装渐进式网络应用' },
   settingsInstallAppUnavailableTitle: {
     en: 'App is already installed or not supported by your browser.',
     zh: '应用已安装或浏览器不支持安装。',
@@ -34,19 +30,7 @@ const dataSettings = {
     en: 'Use your browser menu to install this app.',
     zh: '请使用浏览器菜单将此应用安装到设备。',
   },
-  settingsImportConfig: { en: 'Import Settings', zh: '导入设置' },
-  settingsImportConfigAria: { en: 'Import settings from a JSON file', zh: '从 JSON 文件导入设置' },
-  settingsExportSettingsOnly: { en: 'Export Settings', zh: '导出设置' },
-  settingsExportSettingsOnlyAria: { en: 'Export settings only to a JSON file', zh: '仅将设置导出为 JSON 文件' },
-  settingsExportAllData: { en: 'Export All Data', zh: '导出所有数据' },
-  settingsExportAllDataAria: {
-    en: 'Export all data (settings and history) to a JSON file',
-    zh: '将所有数据（设置和历史记录）导出为 JSON 文件',
-  },
   settingsImportHistory: { en: 'Import History', zh: '导入历史' },
-  settingsExportHistory: { en: 'Export History', zh: '导出历史' },
-  settingsImportScenarios: { en: 'Import Scenarios', zh: '导入场景' },
-  settingsExportScenarios: { en: 'Export Scenarios', zh: '导出场景' },
   settingsImportHistoryConfirm: {
     en: 'The imported chat history will be merged with your current data. Duplicate sessions (by ID) will be skipped to preserve your existing chats. Do you want to proceed?',
     zh: '导入的聊天记录将与当前数据合并。为保留现有数据，重复的会话（基于 ID）将被跳过。是否继续？',
@@ -72,8 +56,15 @@ const dataSettings = {
   },
   settingsViewLogs: { en: 'View Logs', zh: '查看日志' },
   settingsViewLogsAndUsage: { en: 'Open Logs & Usage', zh: '打开日志与用量' },
-  settingsViewLogsAria: { en: 'Open Application Logs', zh: '查看应用日志' },
-  settingsViewLogsTitle: { en: 'Open Application Logs (Ctrl+Alt+L)', zh: '查看应用日志（Ctrl+Alt+L）' },
+  settingsEnableLogging: { en: 'Enable Logging', zh: '启用日志记录' },
+  settingsEnableLoggingDescription: {
+    en: 'Persist system logs to local storage for troubleshooting. Off by default.',
+    zh: '将系统日志持久化到本地存储，用于排查问题。默认关闭。',
+  },
+  logViewerLoggingDisabledHint: {
+    en: 'Logging is off. Enable it in Settings → Data & App to record new logs.',
+    zh: '日志记录当前已关闭。前往 设置 → 数据与应用 开启后才会记录新日志。',
+  },
   settingsLocalAppData: { en: 'Current Local App Data', zh: '当前本地应用数据' },
   settingsLocalAppDataLoading: { en: 'Calculating local storage usage…', zh: '正在计算本地存储占用…' },
   settingsLocalAppDataError: {

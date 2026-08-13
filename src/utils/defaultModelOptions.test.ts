@@ -54,6 +54,12 @@ describe('getDefaultModelOptions', () => {
     expect(models.some((model) => model.id === 'gemini-3.5-flash-lite')).toBe(true);
   });
 
+  it('includes Gemini 3.7 Flash in pinned defaults', () => {
+    const models = getDefaultModelOptions();
+
+    expect(models.some((model) => model.id === 'gemini-3.7-flash')).toBe(true);
+  });
+
   it('keeps preview ids but omits Preview from default display names', () => {
     const models = getDefaultModelOptions();
 

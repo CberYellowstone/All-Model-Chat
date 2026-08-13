@@ -61,7 +61,8 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
   const pinnedPriorityOrder: Record<string, number> = {
     'gemini-3.1-pro-preview': 0,
     'gemini-3.6-flash': 1,
-    'gemini-3.5-flash-lite': 2,
+    'gemini-3.7-flash': 2,
+    'gemini-3.5-flash-lite': 3,
   };
 
   const getCategoryWeight = (id: string) => {

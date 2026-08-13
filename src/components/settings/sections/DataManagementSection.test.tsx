@@ -3,6 +3,7 @@ import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/pr
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { setupStoreStateReset } from '@/test/stores/reset';
+import { getDefaultAppSettings } from '@/constants/settingsDefaults';
 import { DataManagementSection } from './DataManagementSection';
 
 const { estimateAppDataSizeMock } = vi.hoisted(() => ({
@@ -37,6 +38,8 @@ describe('DataManagementSection', () => {
     onImportScenarios: vi.fn(),
     onExportScenarios: vi.fn(),
     onReset: vi.fn(),
+    settings: getDefaultAppSettings(),
+    onUpdate: vi.fn(),
     ...overrides,
   });
 
@@ -99,5 +102,29 @@ describe('DataManagementSection', () => {
     );
 
     expect(refreshButtons).toHaveLength(1);
+  });
+
+  it('renders the logging toggle off by default and reports toggles via onUpdate', async () => {
+    const onUpdate = vi.fn();
+    await renderDataManagementSection({ settings: getDefaultAppSettings(), onUpdate });
+
+    expect(renderer.container.textContent).toContain('Enable Logging');
+
+    const toggle = renderer.container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(toggle).not.toBeNull();
+    expect(toggle.checked).toBe(false);
+
+    toggle.click();
+
+    expect(onUpdate).toHaveBeenCalledWith('isLoggingEnabled', true);
+  });
+
+  it('reflects an enabled logging setting on the toggle', async () => {
+    await renderDataManagementSection({
+      settings: { ...getDefaultAppSettings(), isLoggingEnabled: true },
+    });
+
+    const toggle = renderer.container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
   });
 });

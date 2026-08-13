@@ -133,7 +133,7 @@ const finishJob = (job: StreamJob, error?: string): void => {
 // Kept distinct from upstream failures so downstream code can tell a
 // client-initiated stop (already surfaced to the user by the frontend) from a
 // genuine upstream error (which deserves an SSE error event / 502).
-export const ABORTED_BY_CLIENT_MESSAGE = 'aborted by client';
+const ABORTED_BY_CLIENT_MESSAGE = 'aborted by client';
 
 /**
  * Abort a job by id. Returns true if the job was aborted, false if not found

@@ -77,7 +77,7 @@ export const searchSettingsCatalog = (
  */
 export const SETTINGS_SEARCH_GROUP_THRESHOLD = 8;
 
-export interface SettingsSearchResultGroup {
+interface SettingsSearchResultGroup {
   tab: SettingsTab;
   results: SettingsSearchResult[];
 }

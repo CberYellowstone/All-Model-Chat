@@ -336,6 +336,13 @@ const dataEntries: SettingsSearchEntry[] = [
     groupKey: 'settingsSystemTools',
   },
   {
+    id: 'data-enable-logging',
+    tab: 'data',
+    labelKey: 'settingsEnableLogging',
+    descriptionKey: 'settingsEnableLoggingDescription',
+    groupKey: 'settingsSystemTools',
+  },
+  {
     id: 'data-install-app',
     tab: 'data',
     labelKey: 'settingsInstallApp',

@@ -34,6 +34,10 @@ describe('DEFAULT_APP_SETTINGS', () => {
       true,
     );
   });
+
+  it('defaults logging off', () => {
+    expect(DEFAULT_APP_SETTINGS.isLoggingEnabled).toBe(false);
+  });
 });
 
 describe('Live Translate settings defaults', () => {

@@ -350,6 +350,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     sortSessionsInPlace(newFullSessions);
 
+    // The streaming hot path calls updateAndPersistSessions idempotently on
+    // every chunk (thinkingSource/resume stamps). When the updater preserved
+    // every reference (no field actually changed), bail out before touching
+    // state, persistence, or any subscriber — the set() below would otherwise
+    // rebuild savedSessions and cascade re-renders through every consumer.
+    if (newFullSessions === virtualFullSessions) {
+      return;
+    }
+
     if (activeSessionId) {
       const newActiveSession = newFullSessions.find((session) => session.id === activeSessionId);
       if (newActiveSession && newActiveSession.messages !== activeMessages) {

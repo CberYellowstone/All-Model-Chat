@@ -14,6 +14,8 @@ import {
 import type { LogViewerProps } from '@/components/log-viewer/LogViewer';
 import type { PwaInstallState } from '@/pwa/install';
 import { useAppDataSize } from '@/hooks/data-management/useAppDataSize';
+import { Toggle } from '@/components/shared/Toggle';
+import type { AppSettings } from '@/types';
 import {
   SETTINGS_DANGER_OUTLINE_BUTTON_CLASS,
   SETTINGS_DANGER_SURFACE_BUTTON_CLASS,
@@ -35,6 +37,8 @@ interface DataManagementSectionProps {
   onImportScenarios: (file: File) => void;
   onExportScenarios: () => void;
   onReset: () => void;
+  settings: AppSettings;
+  onUpdate: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 }
 
 const ActionRow: React.FC<{
@@ -94,6 +98,8 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
   onImportScenarios,
   onExportScenarios,
   onReset,
+  settings,
+  onUpdate,
 }) => {
   const { t } = useI18n();
   const settingsImportRef = useRef<HTMLInputElement>(null);
@@ -187,6 +193,15 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
               <RefreshCw size={12} strokeWidth={1.5} /> {t('refresh')}
             </button>
           </ActionRow>
+          <div data-settings-item="data-enable-logging">
+            <ActionRow label={t('settingsEnableLogging')} description={t('settingsEnableLoggingDescription')}>
+              <Toggle
+                checked={settings.isLoggingEnabled ?? false}
+                onChange={(enabled) => onUpdate('isLoggingEnabled', enabled)}
+                ariaLabel={t('settingsEnableLogging')}
+              />
+            </ActionRow>
+          </div>
           <div data-settings-item="data-logs">
             <ActionRow label={t('settingsViewLogsAndUsage')}>
               <button

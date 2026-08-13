@@ -177,6 +177,8 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             onImportScenarios={onImportScenarios}
             onExportScenarios={onExportScenarios}
             onReset={onReset}
+            settings={currentSettings}
+            onUpdate={updateSetting}
           />
         </div>
       )}

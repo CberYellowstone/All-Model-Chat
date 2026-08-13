@@ -89,6 +89,7 @@ const BASE_DEFAULT_APP_SETTINGS: Omit<AppSettings, 'thirdPartyApi'> = {
   isGraphvizRenderingEnabled: true,
   isCompletionNotificationEnabled: false,
   isCompletionSoundEnabled: false,
+  isLoggingEnabled: false,
   isSuggestionsEnabled: true,
   isAutoScrollOnSendEnabled: true,
   isAutoSendOnSuggestionClick: true,

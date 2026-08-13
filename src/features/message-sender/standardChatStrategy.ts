@@ -82,7 +82,7 @@ export const sendStandardMessage = async ({
   // model role `<thinking>` prefix, so it is unsafe for those models even if listed as raw-capable.
   const modelIdLower = effectiveActiveModelId.toLowerCase();
   const bansModelTurnPrefill =
-    modelIdLower.includes('gemini-3.6') ||
+    /gemini-3\.[6-9]/.test(modelIdLower) ||
     modelIdLower.includes('gemini-3.5-flash-lite') ||
     /gemini-[4-9]/.test(modelIdLower);
   const isRawMode = Boolean(

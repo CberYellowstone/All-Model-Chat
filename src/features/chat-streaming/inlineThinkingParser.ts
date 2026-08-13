@@ -11,7 +11,7 @@
 // thinking block already had its inner text emitted as thought as it streamed,
 // and a dangling opener prefix is dropped rather than surfaced as content.
 
-export interface InlineThinkingParserState {
+interface InlineThinkingParserState {
   mode: 'content' | 'thinking';
   buffer: string;
 }
