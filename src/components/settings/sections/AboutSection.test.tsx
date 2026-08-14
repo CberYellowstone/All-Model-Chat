@@ -60,7 +60,7 @@ describe('AboutSection', () => {
 
     const logo = renderer.container.querySelector('img[alt="AMC WebUI 标志"]');
 
-    expect(logo?.getAttribute('src')).toBe('/about-logo.png');
+    expect(logo?.getAttribute('src')).toBe('/app-logo.png');
     expect(renderer.container.querySelector('svg[aria-label="AMC WebUI 标志"]')).toBeNull();
   });
 
@@ -76,7 +76,7 @@ describe('AboutSection', () => {
 
     const logo = renderer.container.querySelector('img[alt="AMC WebUI 标志"]');
 
-    expect(logo?.getAttribute('src')).toBe('/about-logo-dark.png');
+    expect(logo?.getAttribute('src')).toBe('/app-logo-dark.png');
   });
 
   it('does not render a duplicate app title under the about logo', async () => {

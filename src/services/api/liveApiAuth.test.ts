@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GoogleGenAI } from '@google/genai';
 import { getLiveApiClient } from './liveApiAuth';
-
 type MockGoogleGenAIConfig = {
   apiKey: string;
   httpOptions?: {
@@ -65,6 +64,26 @@ describe('getLiveApiClient', () => {
     });
 
     vi.unstubAllGlobals();
+  });
+
+  it('falls back to the server-managed sentinel when no browser key is given but a proxy baseUrl is configured', async () => {
+    await getLiveApiClient(
+      {
+        useCustomApiConfig: true,
+        useApiProxy: true,
+        apiProxyUrl: 'https://proxy.example.com/v1beta/',
+      },
+      { apiVersion: 'v1alpha' },
+      null,
+    );
+
+    expect(GoogleGenAI).toHaveBeenCalledWith({
+      apiKey: '__SERVER_MANAGED_API_KEY__',
+      httpOptions: {
+        apiVersion: 'v1alpha',
+        baseUrl: 'https://proxy.example.com',
+      },
+    });
   });
 
   it('applies an absolute proxy baseUrl to the browser-direct Live client when proxying is enabled', async () => {

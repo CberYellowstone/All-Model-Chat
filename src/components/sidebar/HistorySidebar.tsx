@@ -11,7 +11,9 @@ import { IconNewChat, IconSidebarToggle } from '@/components/icons';
 import { useHistorySidebarLogic } from './useHistorySidebarLogic';
 import { SIDEBAR_CLICKABLE_ICON_BUTTON_CLASS, SIDEBAR_ICON_LINK_BUTTON_CLASS } from './sidebarStyles';
 import { LimitedSessionList } from './LimitedSessionList';
+import { DESKTOP_BREAKPOINT_PX } from '@/constants/layout';
 import { isDarkThemeId } from '@/utils/themeMode';
+import { isSessionDrag } from './sidebarDragTypes';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -34,10 +36,13 @@ interface HistorySidebarProps {
   onRenameGroup: (groupId: string, newTitle: string) => void;
   onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;
   onToggleGroupExpansion: (groupId: string) => void;
+  onNewChatInGroup: (groupId: string) => void;
   onOpenSettingsModal: () => void;
   themeId: string;
   newChatShortcut: string;
   searchChatsShortcut: string;
+  brandHref?: string;
+  onBrandClick?: () => void;
 }
 
 const MiniSidebarButton = ({
@@ -99,7 +104,9 @@ const SessionListGroup = ({
 }) => {
   return (
     <div>
-      <div className="px-3 pt-4 pb-1 text-sm font-medium text-[var(--theme-text-primary)]">{title}</div>
+      <div className="px-3 pt-4 pb-1 text-xs font-semibold tracking-wide text-[var(--theme-text-secondary)]">
+        {title}
+      </div>
       <LimitedSessionList sessions={sessions} sessionItemProps={sessionItemProps} />
     </div>
   );
@@ -120,6 +127,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onAddNewGroup,
     onDeleteGroup,
     onToggleGroupExpansion,
+    onNewChatInGroup,
     themeId,
     onNewChat,
     onDeleteSession,
@@ -132,6 +140,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onSelectSession,
     newChatShortcut,
     searchChatsShortcut,
+    brandHref = '/',
+    onBrandClick,
   } = props;
 
   const {
@@ -145,7 +155,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     setActiveMenu,
     dragOverId,
     setDragOverId,
-    newlyTitledSessionId,
+    draggingSessionId,
+    newlyTitledSessionIds,
     menuRef,
     editInputRef,
     searchInputRef,
@@ -159,6 +170,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     handleDragOver,
     handleDrop,
     handleMainDragLeave,
+    handleSessionDragStart,
+    handleSessionDragEnd,
     handleMiniSearchClick,
     handleEmptySpaceClick,
     handleSessionSelect,
@@ -175,6 +188,51 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onSelectSession,
   });
 
+  // Auto-scroll: while dragging a session near the top/bottom edge of the list,
+  // nudge the scroll position each frame so the user can reach sessions that
+  // are out of view. Only active during a session drag; stopped on leave/drop.
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollRafRef = React.useRef<number | null>(null);
+  const EDGE_SCROLL_ZONE_PX = 48;
+
+  const stopEdgeScroll = () => {
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  };
+
+  const startEdgeScroll = (container: HTMLDivElement, direction: number) => {
+    if (scrollRafRef.current !== null) return;
+    const step = () => {
+      container.scrollTop += direction;
+      scrollRafRef.current = requestAnimationFrame(step);
+    };
+    scrollRafRef.current = requestAnimationFrame(step);
+  };
+
+  const handleScrollContainerDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isSessionDrag(event)) {
+      stopEdgeScroll();
+      return;
+    }
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const distanceFromTop = event.clientY - rect.top;
+    const distanceFromBottom = rect.bottom - event.clientY;
+
+    if (distanceFromTop < EDGE_SCROLL_ZONE_PX) {
+      const speed = Math.max(1, Math.ceil((EDGE_SCROLL_ZONE_PX - distanceFromTop) / 8));
+      startEdgeScroll(container, -speed);
+    } else if (distanceFromBottom < EDGE_SCROLL_ZONE_PX) {
+      const speed = Math.max(1, Math.ceil((EDGE_SCROLL_ZONE_PX - distanceFromBottom) / 8));
+      startEdgeScroll(container, speed);
+    } else {
+      stopEdgeScroll();
+    }
+  };
+
   const ungroupedSessions = sessionsByGroupId.get(null) || [];
   const pinnedUngrouped = ungroupedSessions.filter((session) => session.isPinned);
   const { categories, categoryOrder } = categorizedUngroupedSessions;
@@ -185,7 +243,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     activeMenu,
     loadingSessionIds,
     generatingTitleSessionIds,
-    newlyTitledSessionId,
+    newlyTitledSessionIds,
+    groups,
     editInputRef,
     menuRef,
     onSelectSession: handleSessionSelect,
@@ -193,17 +252,25 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onDeleteSession,
     onDuplicateSession,
     onOpenExportModal,
+    onMoveSessionToGroup,
     handleStartEdit: (item: SavedChatSession) => handleStartEdit('session', item),
     handleRenameConfirm,
     handleRenameKeyDown,
     setEditingItem,
     toggleMenu,
     setActiveMenu,
+    setDragOverId,
+    draggingSessionId,
+    onSessionDragStart: handleSessionDragStart,
+    onSessionDragEnd: handleSessionDragEnd,
   };
 
   const [listParentRef] = useAutoAnimate<HTMLDivElement>({ duration: 200 });
   const expandedPaneRef = React.useRef<HTMLDivElement>(null);
   const searchTitle = t('historySearchButton') + (searchChatsShortcut ? ` (${searchChatsShortcut})` : '');
+
+  // Cancel any pending edge-scroll rAF on unmount.
+  React.useEffect(() => () => stopEdgeScroll(), []);
 
   React.useEffect(() => {
     const pane = expandedPaneRef.current as (HTMLDivElement & { inert?: boolean }) | null;
@@ -242,7 +309,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-100 pointer-events-none md:opacity-0'
         }`}
       >
-        <SidebarHeader isOpen={isOpen} onToggle={onToggle} themeId={themeId} />
+        <SidebarHeader
+          isOpen={isOpen}
+          onToggle={onToggle}
+          themeId={themeId}
+          brandHref={brandHref}
+          onBrandClick={onBrandClick}
+        />
         <SidebarActions
           onNewChat={onNewChat}
           onCloseSidebar={onAutoClose}
@@ -254,10 +327,16 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           searchInputRef={searchInputRef}
           newChatShortcut={newChatShortcut}
           searchChatsShortcut={searchChatsShortcut}
+          activeSessionId={activeSessionId}
         />
         <div
+          ref={scrollContainerRef}
           className="flex-grow overflow-y-auto custom-scrollbar p-2 cursor-ew-resize"
           onClick={handleEmptySpaceClick}
+          onDragOver={handleScrollContainerDragOver}
+          onDrop={stopEdgeScroll}
+          onDragLeave={stopEdgeScroll}
+          onDragEnd={stopEdgeScroll}
         >
           {sessions.length === 0 && !searchQuery ? (
             <p className="p-4 text-xs sm:text-sm text-center text-[var(--theme-text-tertiary)] cursor-auto">
@@ -268,8 +347,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
               ref={listParentRef}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, 'all-conversations')}
-              onDragEnter={() => setDragOverId('all-conversations')}
+              onDragEnter={(e) => {
+                if (!isSessionDrag(e)) return;
+                setDragOverId('all-conversations');
+              }}
               onDragLeave={handleMainDragLeave}
+              onDragEnd={handleSessionDragEnd}
               className={`rounded-lg transition-colors min-h-[50px] cursor-auto ${dragOverId === 'all-conversations' ? 'bg-[var(--theme-bg-accent)] bg-opacity-10 ring-2 ring-[var(--theme-bg-accent)] ring-inset ring-opacity-50' : ''}`}
             >
               {sortedGroups.map((group) => (
@@ -279,10 +362,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
                   sessions={sessionsByGroupId.get(group.id) || []}
                   dragOverId={dragOverId}
                   onToggleGroupExpansion={onToggleGroupExpansion}
+                  onNewChatInGroup={(groupId) => {
+                    onNewChatInGroup(groupId);
+                    // 与选择会话一致：移动端点击后自动收起侧边栏。
+                    if (window.innerWidth < DESKTOP_BREAKPOINT_PX) onAutoClose();
+                  }}
                   handleGroupStartEdit={(item) => handleStartEdit('group', item)}
                   handleDrop={handleDrop}
                   handleDragOver={handleDragOver}
-                  setDragOverId={setDragOverId}
                   onDeleteGroup={onDeleteGroup}
                   {...sessionItemSharedProps}
                 />
@@ -308,10 +395,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
           )}
         </div>
 
-        <div className="p-3 bg-[var(--theme-bg-secondary)]/30">
+        <div className="p-3 border-t border-[var(--theme-border-primary)]">
           <button
             onClick={onOpenSettingsModal}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-xl transition-all duration-200 group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-xl transition-all duration-150 group active:scale-[0.98]"
           >
             <Settings
               size={20}
@@ -340,7 +427,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
         <div className="w-8 h-px bg-[var(--theme-border-primary)] my-1"></div>
 
         <MiniSidebarButton
-          href="/"
+          href={brandHref}
           onClick={onNewChat}
           icon={IconNewChat}
           title={t('newChat') + (newChatShortcut ? ` (${newChatShortcut})` : '')}

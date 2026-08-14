@@ -2,12 +2,14 @@ import { logService } from '@/services/logService';
 import React, { useMemo, useState } from 'react';
 import { type ChatMessage, type AppSettings, type SideViewContent, type UploadedFile } from '@/types';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
-import { parseThoughtProcess } from '@/utils/chat/parsing';
+import { getThinkingStreamTail, parseThinkingSections } from '@/utils/chat/parsing';
+import { THINKING_STRIP_MAX_SOURCE_LINES } from './thoughts/thinkingStripMetrics';
 import { translateTextApi } from '@/services/api/generation/textApi';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { DEFAULT_THOUGHT_TRANSLATION_MODEL_ID } from '@/constants/modelConfiguration';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { ThinkingHeader } from './thoughts/ThinkingHeader';
+import { ThinkingStrip } from './thoughts/ThinkingStrip';
 import { ThinkingActions } from './thoughts/ThinkingActions';
 import { ThoughtContent } from './thoughts/ThoughtContent';
 import { useMessageStream } from '@/hooks/ui/useMessageStream';
@@ -42,8 +44,14 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
 
   // Subscribe to live thoughts if loading to check visibility
   const { streamContent, streamThoughts } = useMessageStream(messageId, !!isLoading && role === 'model');
-  const rawThinkingExtraction = extractRawThinkingBlocks(streamContent ? `${content || ''}${streamContent}` : content);
-  const effectiveThoughts = [thoughts, streamThoughts, rawThinkingExtraction.thoughts].filter(Boolean).join('\n\n');
+  const fullStreamingText = streamContent ? `${content || ''}${streamContent}` : content;
+  // 流式期间本组件每帧重渲染，extraction 对全文跑正则，必须 memo；
+  // 字符串相等时 React 保留上一次结果，避免每帧重复解析。
+  const rawThinkingExtraction = useMemo(() => extractRawThinkingBlocks(fullStreamingText), [fullStreamingText]);
+  const effectiveThoughts = useMemo(
+    () => [thoughts, streamThoughts, rawThinkingExtraction.thoughts].filter(Boolean).join('\n\n'),
+    [thoughts, streamThoughts, rawThinkingExtraction.thoughts],
+  );
 
   const areThoughtsVisible = role === 'model' && effectiveThoughts && showThoughts;
 
@@ -56,7 +64,29 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
   // Copy Hook
   const { isCopied, copyToClipboard } = useCopyToClipboard(2000);
 
-  const lastThought = useMemo(() => parseThoughtProcess(effectiveThoughts), [effectiveThoughts]);
+  const thoughtsTail = useMemo(
+    () => getThinkingStreamTail(effectiveThoughts, THINKING_STRIP_MAX_SOURCE_LINES),
+    [effectiveThoughts],
+  );
+
+  // Sectioned Gemini-style streams (each section opens with a `**Title**`
+  // line) drive the sectioned strip; flat/third-party streams fall back to the
+  // tail window via the null return.
+  const thinkingSections = useMemo(() => parseThinkingSections(effectiveThoughts), [effectiveThoughts]);
+
+  // Preview strip is a "thinking in progress" indicator: visible while thoughts
+  // are still streaming, regardless of whether the full message has finished
+  // loading. thinkingActive is the reliable signal that the model is currently
+  // reasoning — it flips off when thinking settles (content switch) but turns
+  // back on if the model re-enters thinking (interleaved thought after code
+  // execution), so the strip re-shows instead of staying collapsed. Before the
+  // first commit (or for older messages without the field) the strip shows as
+  // long as no thinking time has been settled yet.
+  const showThinkingStrip =
+    !isExpanded &&
+    !!isLoading &&
+    thoughtsTail.length > 0 &&
+    (message.thinkingActive === true || (message.thinkingActive === undefined && message.thinkingTimeMs === undefined));
 
   if (!areThoughtsVisible) return null;
 
@@ -110,6 +140,9 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
   };
   const toggleExpanded = () => setIsExpanded((value) => !value);
   const handleToggleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ignore key events bubbling up from inner buttons so Enter/Space on the
+    // translate/copy actions no longer collapses the accordion or cancels the click.
+    if (e.target !== e.currentTarget) return;
     if (e.key !== 'Enter' && e.key !== ' ') {
       return;
     }
@@ -135,7 +168,6 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
         >
           <ThinkingHeader
             isLoading={!!isLoading}
-            lastThought={lastThought}
             thinkingTimeMs={message.thinkingTimeMs}
             generationStartTime={message.generationStartTime}
             firstTokenTimeMs={message.firstTokenTimeMs}
@@ -157,13 +189,19 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
           </div>
         </div>
 
+        {showThinkingStrip && (
+          <ThinkingStrip
+            thoughtsTail={thoughtsTail}
+            sections={thinkingSections}
+            thinkingSource={message.thinkingSource}
+          />
+        )}
+
         <div className={`thought-process-accordion ${isExpanded ? 'expanded' : ''}`}>
           <div className="thought-process-inner">
             <ThoughtContent
               messageId={messageId}
               isLoading={!!isLoading}
-              lastThought={lastThought}
-              thinkingTimeMs={message.thinkingTimeMs}
               content={isShowingTranslation && translatedThoughts ? translatedThoughts : effectiveThoughts}
               onImageClick={onImageClick}
               onOpenHtmlPreview={onOpenHtmlPreview}
@@ -172,6 +210,7 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
               isGraphvizRenderingEnabled={isGraphvizRenderingEnabled}
               themeId={themeId}
               onOpenSidePanel={onOpenSidePanel}
+              unwrapMislabeledHtmlBlocks={appSettings.unwrapMislabeledHtmlBlocks ?? true}
             />
           </div>
         </div>

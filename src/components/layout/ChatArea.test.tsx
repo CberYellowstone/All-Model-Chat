@@ -6,7 +6,7 @@ import {
   createChatAreaProviderValue,
   applyChatAreaProviderValue,
   ChatRuntimeTestProvider,
-} from '@/test/chat-area/fixtures';
+} from '@/test/layout/fixtures';
 import { useChatStore } from '@/stores/chatStore';
 import { ChatArea } from './ChatArea';
 
@@ -43,7 +43,7 @@ vi.mock('@/components/chat/overlays/ModelsErrorDisplay', () => ({
   ModelsErrorDisplay: ({ error }: { error: string | null }) => <div data-testid="models-error">{error}</div>,
 }));
 
-vi.mock('@/components/chat/MessageList', () => ({
+vi.mock('@/components/chat/message-list/MessageList', () => ({
   MessageList: React.memo(() => {
     const messages = useChatStore((state) => state.activeMessages);
     return <div data-testid="message-list">{messages.length}</div>;

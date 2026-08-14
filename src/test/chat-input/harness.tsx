@@ -6,7 +6,7 @@ import {
   applyChatAreaProviderValue,
   createChatAreaProviderValue,
   type ChatAreaProviderValue,
-} from '@/test/chat-area/fixtures';
+} from '@/test/layout/fixtures';
 import { type ChatSettings, type InputCommand, type UploadedFile } from '@/types';
 
 export type { ChatAreaProviderValue };
@@ -182,7 +182,7 @@ vi.mock('@/hooks/ui/useFileModalState', () => ({
   }),
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   getModelCapabilities: () => mockModelCapabilities.value,
   isGemini3Model: (modelId: string) => modelId.includes('gemini-3'),
 }));
@@ -235,7 +235,7 @@ vi.mock('@/components/chat/input/ChatInputArea', async () => {
       localFileState,
       inputDisabled,
       canQueueMessage,
-      queuedSubmissionView,
+      queuedSubmissionsView,
       handleStartLiveCamera,
       handleStartLiveScreenShare,
     } = useChatInputContext();
@@ -248,15 +248,30 @@ vi.mock('@/components/chat/input/ChatInputArea', async () => {
         }}
       >
         <div data-testid="chat-input-value">{inputState.inputText}</div>
-        {queuedSubmissionView ? (
+        {queuedSubmissionsView ? (
           <div data-testid="queued-card">
-            <div data-testid="queued-title">{queuedSubmissionView.title}</div>
-            <div data-testid="queued-preview">{queuedSubmissionView.previewText}</div>
-            <button type="button" data-testid="queued-edit" onClick={queuedSubmissionView.onEdit}>
+            <div data-testid="queued-title">{queuedSubmissionsView.title}</div>
+            {queuedSubmissionsView.items.map((item) => (
+              <div data-testid="queued-preview" key={item.id}>
+                {item.previewText}
+              </div>
+            ))}
+            <button
+              type="button"
+              data-testid="queued-edit"
+              onClick={() => queuedSubmissionsView?.onEditItem(queuedSubmissionsView.items[0]?.id ?? '')}
+            >
               edit
             </button>
-            <button type="button" data-testid="queued-remove" onClick={queuedSubmissionView.onRemove}>
+            <button
+              type="button"
+              data-testid="queued-remove"
+              onClick={() => queuedSubmissionsView?.onRemoveItem(queuedSubmissionsView.items[0]?.id ?? '')}
+            >
               remove
+            </button>
+            <button type="button" data-testid="queued-clear" onClick={queuedSubmissionsView.onClearAll}>
+              clear
             </button>
           </div>
         ) : null}

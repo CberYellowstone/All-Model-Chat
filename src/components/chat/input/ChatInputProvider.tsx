@@ -26,7 +26,8 @@ const useLatestCallback = <Args extends unknown[], ReturnValue>(callback: (...ar
 export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useI18n();
   const logic = useChatInput();
-  const { inputState, localFileState, voiceState, liveApi, queuedSubmission, handlers, isAnyModalOpen } = logic;
+  const { inputState, localFileState, voiceState, liveApi, queuedSubmissions, handlers, isAnyModalOpen } = logic;
+  const queuedCount = queuedSubmissions.length;
 
   const handleStartLiveCamera = React.useCallback(async () => {
     const didStart = await liveApi.startCamera();
@@ -84,21 +85,33 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const onQueueMessage = useLatestCallback(handlers.queueCurrentSubmission);
   const onCancelPendingUploadSend = useLatestCallback(handlers.cancelPendingUploadSend);
 
-  const queuedSubmissionView = useMemo(
+  const queuedSubmissionsView = useMemo(
     () =>
-      queuedSubmission
+      queuedSubmissions.length > 0
         ? {
             title: t('queuedSubmissionTitle'),
-            previewText:
-              queuedSubmission.inputText.trim() ||
-              queuedSubmission.textToSend.trim() ||
-              t('queuedSubmissionAttachmentOnlyPreview'),
-            fileCount: queuedSubmission.files.length,
-            onEdit: handlers.restoreQueuedSubmission,
-            onRemove: handlers.removeQueuedSubmission,
+            items: queuedSubmissions.map((submission) => ({
+              id: submission.id,
+              previewText:
+                submission.inputText.trim() ||
+                submission.textToSend.trim() ||
+                t('queuedSubmissionAttachmentOnlyPreview'),
+              fileCount: submission.files.length,
+            })),
+            onEditItem: handlers.restoreQueuedSubmission,
+            onRemoveItem: handlers.removeQueuedSubmission,
+            onReorderItem: handlers.reorderQueuedSubmissions,
+            onClearAll: handlers.removeAllQueuedSubmissions,
           }
         : undefined,
-    [handlers.removeQueuedSubmission, handlers.restoreQueuedSubmission, queuedSubmission, t],
+    [
+      handlers.removeAllQueuedSubmissions,
+      handlers.removeQueuedSubmission,
+      handlers.reorderQueuedSubmissions,
+      handlers.restoreQueuedSubmission,
+      queuedSubmissions,
+      t,
+    ],
   );
 
   const toolbarValue = useMemo<ChatInputToolbarContextValue>(
@@ -175,7 +188,6 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       onToggleToolAndFocus,
       onCountTokens,
       isImageGenerationModel: logic.capabilities.isImageGenerationModel || false,
-      isRealImagenModel: logic.capabilities.isRealImagenModel || false,
       isNativeAudioModel: logic.capabilities.isNativeAudioModel || false,
       canAddYouTubeVideo: !!logic.capabilities.permissions?.canUseYouTubeUrl,
       isLoading: logic.chatInput.isLoading,
@@ -194,7 +206,6 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       liveApi.videoSource,
       logic.capabilities.isImageGenerationModel,
       logic.capabilities.isNativeAudioModel,
-      logic.capabilities.isRealImagenModel,
       logic.capabilities.permissions?.canUseYouTubeUrl,
       logic.chatInput.appSettings.showInputClearButton,
       logic.chatInput.appSettings.showInputPasteButton,
@@ -226,6 +237,7 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       hasTrimmedInput,
       canSend: logic.canSend,
       canQueueMessage: logic.canQueueMessage,
+      queuedCount,
       onTranslate,
       onPasteFromClipboard,
       onClearInput,
@@ -237,6 +249,7 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       hasTrimmedInput,
       logic.canQueueMessage,
       logic.canSend,
+      queuedCount,
       onClearInput,
       onFastSendMessage,
       onPasteFromClipboard,
@@ -253,9 +266,10 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       initialTextareaHeight: INITIAL_TEXTAREA_HEIGHT_PX,
       handleStartLiveCamera,
       handleStartLiveScreenShare,
-      queuedSubmissionView,
+      queuedCount,
+      queuedSubmissionsView,
     }),
-    [handleStartLiveCamera, handleStartLiveScreenShare, inputDisabled, logic, queuedSubmissionView],
+    [handleStartLiveCamera, handleStartLiveScreenShare, inputDisabled, logic, queuedCount, queuedSubmissionsView],
   );
 
   return (

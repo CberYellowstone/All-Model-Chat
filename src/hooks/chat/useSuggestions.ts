@@ -2,10 +2,10 @@ import { type MutableRefObject, useEffect, useRef, useCallback } from 'react';
 import { type AppSettings, type SavedChatSession, type ChatSettings as IndividualChatSettings } from '@/types';
 import { logService } from '@/services/logService';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 import { generateSuggestionsApi } from '@/services/api/generation/textApi';
 import { getVisibleChatMessages } from '@/utils/chat/visibility';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { isThirdPartyApiRoute } from '@/utils/chatApiRoute';
 
 type MessageUpdater = (
   sessionId: string,
@@ -42,7 +42,9 @@ export const useSuggestions = ({
     ) => {
       updateMessageInSession(sessionId, messageId, { isGeneratingSuggestions: true });
 
-      const stickyKey = isThirdPartyApiActive(appSettings) ? undefined : sessionKeyMapRef?.current?.get(sessionId);
+      const stickyKey = isThirdPartyApiRoute(appSettings, sessionSettings)
+        ? undefined
+        : sessionKeyMapRef?.current?.get(sessionId);
       let keyToUse: string;
 
       if (stickyKey) {
@@ -100,8 +102,8 @@ export const useSuggestions = ({
         generateAndAttachSuggestions(
           sessionId,
           lastMessage.id,
-          secondLastMessage.content,
-          lastMessage.content,
+          secondLastMessage.content.slice(0, 4000),
+          lastMessage.content.slice(0, 4000),
           settings,
         );
       }

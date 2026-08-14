@@ -39,7 +39,7 @@ export const ScenarioMessageInput: React.FC<ScenarioMessageInputProps> = ({
   return (
     <div className="flex-shrink-0 p-3 sm:p-4 bg-[var(--theme-bg-secondary)]/45 border-t border-[var(--theme-border-secondary)]">
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-[10px] font-bold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
+        <span className="text-xs font-bold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
           {t('scenariosEditorAddMessageAs')}
         </span>
         <div className="flex bg-[var(--theme-bg-input)] p-0.5 rounded-lg border border-[var(--theme-border-secondary)]">
@@ -76,7 +76,7 @@ export const ScenarioMessageInput: React.FC<ScenarioMessageInputProps> = ({
           <Send size={18} strokeWidth={2.5} />
         </button>
       </div>
-      <div className="text-[10px] text-[var(--theme-text-tertiary)] mt-2 text-center font-medium opacity-60">
+      <div className="text-xs text-[var(--theme-text-tertiary)] mt-2 text-center font-medium opacity-60">
         {saveConfirmShortcut} {t('add')}
       </div>
     </div>

@@ -58,7 +58,6 @@ const MarkdownTocPanel: React.FC<{
   onSelect: (item: MarkdownTocItem) => void;
   translate: (key: string) => string;
 }> = ({ items, onSelect, translate }) => {
-
   if (items.length === 0) {
     return (
       <div className="px-4 py-6 text-sm text-[var(--theme-text-tertiary)]">{translate('markdownPreviewTocEmpty')}</div>
@@ -118,7 +117,8 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const mode = modeState.storageKey === storageKey ? modeState.mode : readStoredMarkdownViewMode(storageKey);
   const forcePreview = forcePreviewState.storageKey === storageKey && forcePreviewState.value;
-  const tocVisible = tocVisibleState.storageKey === tocStorageKey ? tocVisibleState.value : readStoredTocVisibility(tocStorageKey);
+  const tocVisible =
+    tocVisibleState.storageKey === tocStorageKey ? tocVisibleState.value : readStoredTocVisibility(tocStorageKey);
 
   useEffect(() => {
     if (hasProvidedContent) return;
@@ -205,9 +205,7 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
       const activeElement = document.activeElement as HTMLElement | null;
       const isEditingFieldFocused =
         !!activeElement &&
-        (activeElement.tagName === 'INPUT' ||
-          activeElement.tagName === 'TEXTAREA' ||
-          activeElement.isContentEditable);
+        (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable);
 
       if (isEditingFieldFocused) return;
 
@@ -230,7 +228,9 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`flex h-full items-center justify-center text-[var(--theme-text-tertiary)] ${contentPaddingClass}`}>
+      <div
+        className={`flex h-full items-center justify-center text-[var(--theme-text-tertiary)] ${contentPaddingClass}`}
+      >
         <Loader2 className="mr-2 animate-spin" /> {t('filePreviewLoadingTextContent')}
       </div>
     );
@@ -252,7 +252,9 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
   );
 
   return (
-    <div className={`flex h-full min-h-0 flex-col bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] ${contentPaddingClass}`}>
+    <div
+      className={`flex h-full min-h-0 flex-col bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] ${contentPaddingClass}`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] p-1">
@@ -366,7 +368,7 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
             <div className="border-b border-[var(--theme-border-secondary)] px-4 py-3">
               <h3 className="text-sm font-semibold text-[var(--theme-text-primary)]">{t('markdownPreviewTocTitle')}</h3>
             </div>
-           <MarkdownTocPanel items={tocItems} onSelect={handleTocSelect} translate={t} />
+            <MarkdownTocPanel items={tocItems} onSelect={handleTocSelect} translate={t} />
           </aside>
         )}
       </div>

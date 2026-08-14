@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppSettings, ChatMessage, ModelOption, SavedChatSession } from '@/types';
-import { createAppSettings, createChatSettings } from '@/test/chat-area/fixtures';
+import { createAppSettings, createChatSettings } from '@/test/layout/fixtures';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { useApp } from './useApp';
 import { renderHook } from '@/test/render/renderer';
@@ -365,23 +365,20 @@ describe('useApp', () => {
     unmount();
   });
 
-  it('displays the independent OpenAI-compatible model name in OpenAI-compatible mode', () => {
+  it('displays the independent OpenAI-compatible model name in a third-party session', () => {
     const thirdPartyDefaults = createDefaultThirdPartyApiSettings();
     currentAppSettings = {
       ...currentAppSettings,
-      isThirdPartyApiEnabled: true,
-      apiMode: 'third-party',
       modelId: 'gemini-3-flash-preview',
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...thirdPartyDefaults.providers,
           openai: {
             apiKey: null,
             baseUrl: thirdPartyDefaults.providers.openai.baseUrl,
-            modelId: 'gpt-5.5',
+            modelId: 'gpt-5.6-sol',
             models: [
-              { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+              { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
               { id: 'gpt-4.1', name: 'GPT-4.1' },
             ],
             protocol: 'openai-compatible',
@@ -394,14 +391,15 @@ describe('useApp', () => {
       ...hydratedSession,
       settings: {
         ...hydratedSession.settings,
-        modelId: 'gemini-3-flash-preview',
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
       },
     };
     currentChatState.apiModels = [{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }];
 
     const { result, unmount } = renderHook(() => useApp());
 
-    expect(result.current.getCurrentModelDisplayName()).toBe('GPT-5.5');
+    expect(result.current.getCurrentModelDisplayName()).toBe('GPT-5.6 Sol');
 
     unmount();
   });

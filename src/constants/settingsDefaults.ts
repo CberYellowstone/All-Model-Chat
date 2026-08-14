@@ -1,7 +1,13 @@
 import { getRuntimeConfigAppSettingsOverrides } from '@/runtime/runtimeConfig';
-import { MediaResolution, type AppSettings, type FilesApiConfig, type ModelOption, type ThinkingLevel } from '@/types';
-import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL } from '@/utils/apiProxyUrl';
-import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import {
+  MediaResolution,
+  type AppSettings,
+  type ChatSettings,
+  type FilesApiConfig,
+  type ThinkingLevel,
+  GEMINI_PROVIDER_ID,
+} from '@/types';
+import { createEmptyLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { DEFAULT_THEME_ID } from './themeRegistry';
 import {
   DEFAULT_MODEL_ID,
@@ -17,7 +23,7 @@ import {
 } from './modelConfiguration';
 import { DEFAULT_SAFETY_SETTINGS } from './safetySettings';
 import { DEFAULT_THOUGHT_TRANSLATION_TARGET_LANGUAGE, DEFAULT_TRANSLATION_TARGET_LANGUAGE } from './translationOptions';
-import { DEFAULT_THIRD_PARTY_API_SETTINGS } from '@/utils/thirdPartyApiProviders';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 
 export const DEFAULT_SYSTEM_INSTRUCTION = '';
 
@@ -25,11 +31,6 @@ const DEFAULT_IS_STREAMING_ENABLED = true;
 const DEFAULT_BASE_FONT_SIZE = 16;
 const DEFAULT_LIVE_ARTIFACTS_CUSTOM_FONT_SIZE = 16;
 const DEFAULT_IS_AUDIO_COMPRESSION_ENABLED = true;
-const DEFAULT_IS_OPENAI_COMPATIBLE_API_ENABLED = false;
-const DEFAULT_OPENAI_COMPATIBLE_MODEL_ID = 'gpt-5.5';
-const DEFAULT_OPENAI_COMPATIBLE_MODELS: ModelOption[] = [
-  { id: DEFAULT_OPENAI_COMPATIBLE_MODEL_ID, name: 'GPT-5.5', isPinned: true },
-];
 const DEFAULT_MEDIA_RESOLUTION = MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED;
 
 export const DEFAULT_FILES_API_CONFIG: FilesApiConfig = {
@@ -40,8 +41,9 @@ export const DEFAULT_FILES_API_CONFIG: FilesApiConfig = {
   text: false,
 };
 
-export const DEFAULT_CHAT_SETTINGS = {
+export const DEFAULT_CHAT_SETTINGS: Omit<ChatSettings, 'lockedApiKey'> & { lockedApiKey: null } = {
   modelId: DEFAULT_MODEL_ID,
+  providerId: GEMINI_PROVIDER_ID,
   temperature: DEFAULT_TEMPERATURE,
   topP: DEFAULT_TOP_P,
   topK: DEFAULT_TOP_K,
@@ -58,25 +60,19 @@ export const DEFAULT_CHAT_SETTINGS = {
   isDeepSearchEnabled: false,
   isRawModeEnabled: false,
   hideThinkingInContext: false,
+  alwaysKeepThinkingInContext: false,
   safetySettings: DEFAULT_SAFETY_SETTINGS,
   mediaResolution: DEFAULT_MEDIA_RESOLUTION,
 };
 
-const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
+const BASE_DEFAULT_APP_SETTINGS: Omit<AppSettings, 'thirdPartyApi'> = {
   ...DEFAULT_CHAT_SETTINGS,
   themeId: DEFAULT_THEME_ID,
   baseFontSize: DEFAULT_BASE_FONT_SIZE,
-  apiMode: 'gemini-native',
-  isOpenAICompatibleApiEnabled: DEFAULT_IS_OPENAI_COMPATIBLE_API_ENABLED,
-  isThirdPartyApiEnabled: false,
   useCustomApiConfig: false,
   serverManagedApi: false,
   apiKey: null,
   apiProxyUrl: 'https://api-proxy.de/gemini',
-  openaiCompatibleApiKey: null,
-  openaiCompatibleBaseUrl: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
-  openaiCompatibleModelId: DEFAULT_OPENAI_COMPATIBLE_MODEL_ID,
-  openaiCompatibleModels: DEFAULT_OPENAI_COMPATIBLE_MODELS,
   useApiProxy: false,
   language: 'system',
   translationTargetLanguage: DEFAULT_TRANSLATION_TARGET_LANGUAGE,
@@ -93,11 +89,13 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   isGraphvizRenderingEnabled: true,
   isCompletionNotificationEnabled: false,
   isCompletionSoundEnabled: false,
+  isLoggingEnabled: false,
   isSuggestionsEnabled: true,
   isAutoScrollOnSendEnabled: true,
   isAutoSendOnSuggestionClick: true,
   generateQuadImages: false,
-  autoFullscreenHtml: true,
+  autoFullscreenHtml: false,
+  unwrapMislabeledHtmlBlocks: true,
   showWelcomeSuggestions: true,
   isAudioCompressionEnabled: DEFAULT_IS_AUDIO_COMPRESSION_ENABLED,
   liveArtifactsPromptMode: 'inline',
@@ -115,13 +113,16 @@ const BASE_DEFAULT_APP_SETTINGS: AppSettings = {
   tabModelCycleIds: undefined,
   liveTranslateTargetLanguageCode: 'en',
   liveTranslateEchoTargetLanguage: false,
-  thirdPartyApi: DEFAULT_THIRD_PARTY_API_SETTINGS,
 };
 
 export function getDefaultAppSettings(): AppSettings {
   return {
     ...BASE_DEFAULT_APP_SETTINGS,
     ...getRuntimeConfigAppSettingsOverrides(),
+    // Fresh clone per call: a shared module-level thirdPartyApi object would
+    // leak mutations from one consumer into every other default. The provider
+    // configs (incl. the models array) must be copied, not shared by reference.
+    thirdPartyApi: createDefaultThirdPartyApiSettings(),
   };
 }
 

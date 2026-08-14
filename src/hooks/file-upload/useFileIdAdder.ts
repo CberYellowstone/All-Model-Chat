@@ -16,8 +16,8 @@ import {
   getUploadLifecycleForGeminiState,
 } from '@/utils/file-upload/fileUploadPolicy';
 import { useI18n } from '@/contexts/I18nContext';
-import { isVideoMimeType } from '@/utils/fileTypeClassification';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { isVideoMimeType } from '@/utils/file/fileTypeClassification';
+import { isThirdPartyApiRoute } from '@/utils/chatApiRoute';
 
 interface UseFileIdAdderProps {
   appSettings: AppSettings;
@@ -64,7 +64,7 @@ export const useFileIdAdder = ({
       }
       const { key: keyToUse, isNewKey } = keyResult;
 
-      if (isNewKey && !isThirdPartyApiActive(appSettings)) {
+      if (isNewKey && !isThirdPartyApiRoute(appSettings, currentChatSettings)) {
         logService.info('New API key selected for this session due to adding file by ID.');
         setCurrentChatSettings((prev) => ({ ...prev, lockedApiKey: keyToUse }));
       }

@@ -1,6 +1,7 @@
 import type { Part } from '@google/genai';
-import type { ChatHistoryItem } from '@/types';
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import type { ChatHistoryItem, ThinkingLevel } from '@/types';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
+import { isAnthropicEffortModel } from '@/utils/model/modelCapabilities';
 import type { AnthropicChatConfig, AnthropicContentBlock, AnthropicMessage } from './anthropicTypes';
 
 const ANTHROPIC_FILE_DATA_ERROR = 'Anthropic mode cannot send Gemini Files API file references.';
@@ -73,8 +74,18 @@ const buildAnthropicMessages = (
 const ANTHROPIC_OUTPUT_TOKENS = 8192;
 const ANTHROPIC_MIN_THINKING_BUDGET = 1024;
 
-// Fable 5 has adaptive thinking always-on and does not accept the `thinking` parameter.
-const isAnthropicFableModel = (modelId: string) => /fable/i.test(modelId);
+const mapThinkingLevelToAnthropicEffort = (level: ThinkingLevel | undefined): 'low' | 'medium' | 'high' => {
+  switch (level) {
+    case 'MINIMAL':
+    case 'LOW':
+      return 'low';
+    case 'MEDIUM':
+      return 'medium';
+    case 'HIGH':
+    default:
+      return 'high';
+  }
+};
 
 export const buildAnthropicRequestBody = (
   modelId: string,
@@ -102,7 +113,11 @@ export const buildAnthropicRequestBody = (
     body['top_p'] = config.topP;
   }
 
-  if (typeof config.thinkingBudget === 'number' && config.thinkingBudget > 0 && !isAnthropicFableModel(modelId)) {
+  if (isAnthropicEffortModel(modelId)) {
+    // Adaptive models: control thoroughness via output_config.effort; never send budget_tokens.
+    body.output_config = { effort: mapThinkingLevelToAnthropicEffort(config.thinkingLevel) };
+  } else if (typeof config.thinkingBudget === 'number' && config.thinkingBudget > 0) {
+    // Legacy extended thinking for models that still accept budget_tokens (e.g. Haiku).
     const budgetTokens = Math.max(ANTHROPIC_MIN_THINKING_BUDGET, config.thinkingBudget);
     body.thinking = { type: 'enabled', budget_tokens: budgetTokens };
     body.max_tokens = budgetTokens + ANTHROPIC_OUTPUT_TOKENS;

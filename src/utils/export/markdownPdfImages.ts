@@ -1,4 +1,4 @@
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 
 const FALLBACK_IMAGE_WIDTH = 1200;
 const FALLBACK_IMAGE_HEIGHT = 675;

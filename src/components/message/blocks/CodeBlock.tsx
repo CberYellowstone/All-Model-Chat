@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, X, Terminal, AlertTriangle, FileOutput, RotateCcw } from 'lucide-react';
 import { type SideViewContent } from '@/types';
 import { useCodeBlock } from '@/hooks/ui/useCodeBlock';
@@ -6,20 +6,23 @@ import { usePyodide } from '@/features/local-python/usePyodide';
 import { CodeHeader } from './parts/CodeHeader';
 import { ArtifactFrame } from './ArtifactFrame';
 import { extractTextFromNode } from '@/utils/reactNodeText';
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { FileDisplay } from '@/components/message/FileDisplay';
 import { useI18n } from '@/contexts/I18nContext';
+import { logService } from '@/services/logService';
 import {
-  isLikelyHtml,
-  isLikelyStreamingHtmlArtifact,
   isLikelyStreamingLiveArtifactInteractionJson,
   isLiveArtifactInteractionLanguage,
   isLiveArtifactLanguage,
 } from '@/utils/previewableMarkdown';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
-import { parseLiveArtifactInteractionSpec } from '@/utils/liveArtifactInteraction';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
+import {
+  diagnoseLiveArtifactInteraction,
+  hasLiveArtifactInteractionShape,
+} from '@/utils/live-artifacts/liveArtifactInteraction';
 import { LiveArtifactInteractionFrame } from './LiveArtifactInteractionFrame';
+import { LiveArtifactInteractionDiagnostic } from './LiveArtifactInteractionDiagnostic';
 
 interface CodeBlockProps {
   children: React.ReactNode;
@@ -33,7 +36,17 @@ interface CodeBlockProps {
   liveArtifactFontSize?: number;
   themeId?: string;
   onLiveArtifactFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
+  liveArtifactsMode?: boolean;
 }
+
+type GeneratedFileEntry = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+  uploadState: 'active';
+};
 
 const LiveArtifactInteractionPendingFrame: React.FC<{ label: string; baseFontSize?: number }> = ({
   label,
@@ -96,10 +109,15 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
     if (rawCode) runCode(rawCode);
   };
 
-  const generatedFiles = useMemo(() => {
-    return files.map((file, fileIndex) => {
+  // Object URLs are external resources — create/release only in effects so Strict
+  // Mode / concurrent discarded renders cannot leave unreclaimed blob: URLs.
+  // setState here is intentional: URLs must not be allocated during render.
+  const [generatedFiles, setGeneratedFiles] = useState<GeneratedFileEntry[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const nextEntries = files.map((file, fileIndex) => {
       const blob = new Blob([file.data], { type: file.type });
-      // Build a file-like wrapper so FileDisplay can render generated artifacts.
       return {
         id: `generated-file-${fileIndex}`,
         name: file.name,
@@ -109,48 +127,89 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
         uploadState: 'active' as const,
       };
     });
-  }, [files]);
-
-  // Object URLs are external resources that outlive the render that created
-  // them; release the previous batch whenever the derived entries change.
-  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL lifecycle must stay in effects
+    setGeneratedFiles(nextEntries);
     return () => {
-      for (const entry of generatedFiles) {
+      for (const entry of nextEntries) {
         releaseManagedObjectUrl(entry.dataUrl);
       }
     };
-  }, [generatedFiles]);
-
-  const imageUrl = useMemo(() => {
-    if (!image) return null;
-    const blob = new Blob([image], { type: 'image/png' });
-    return createManagedObjectUrl(blob);
-  }, [image]);
+  }, [files]);
 
   useEffect(() => {
-    if (!imageUrl) return;
-    return () => releaseManagedObjectUrl(imageUrl);
-  }, [imageUrl]);
+    const url = image ? createManagedObjectUrl(new Blob([image], { type: 'image/png' })) : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL lifecycle must stay in effects
+    setImageUrl(url);
+    return () => {
+      if (url) {
+        releaseManagedObjectUrl(url);
+      }
+    };
+  }, [image]);
 
   const displayInlineImage = imageUrl && !generatedFiles.some((file) => isImageMimeType(file.type)) ? imageUrl : null;
   const isInteractive = props.showPreviewControls ?? true;
   const showPreviewControls = isInteractive && showPreview;
-  const interactionSpec = useMemo(
-    () =>
-      isLiveArtifactInteractionLanguage(sourceLanguage) ? parseLiveArtifactInteractionSpec(resolvedCodeText) : null,
-    [resolvedCodeText, sourceLanguage],
-  );
+  const isInteractionFence = isLiveArtifactInteractionLanguage(sourceLanguage);
+  const isLikelyJsonShape = isInteractionFence || hasLiveArtifactInteractionShape(resolvedCodeText);
+  // The diagnostic/repair pass is only consumed for interaction fences or
+  // ```json blocks while Live Artifacts mode is on. Skip it otherwise so a
+  // session with LA disabled does not pay a full spec parse on every ```json
+  // code block (the bare-JSON wrapping already gated this the same way).
+  const shouldDiagnoseInteraction = isLikelyJsonShape && (isInteractionFence || props.liveArtifactsMode);
+
+  const diagnosis = useMemo(() => {
+    if (!shouldDiagnoseInteraction || !resolvedCodeText) return null;
+    return diagnoseLiveArtifactInteraction(resolvedCodeText);
+  }, [resolvedCodeText, shouldDiagnoseInteraction]);
+
+  const interactionSpec = diagnosis?.spec ?? null;
+
+  // Log rejected specs for observability
+  useEffect(() => {
+    if (diagnosis && diagnosis.errors.length > 0 && props.cacheKey) {
+      logService.warn('Live Artifact interaction spec rejected', {
+        cacheKey: props.cacheKey,
+        codes: diagnosis.errors.map((e) => e.code),
+        fenceLanguage: isInteractionFence ? 'amc-live-artifact-interaction' : 'json',
+      });
+    }
+  }, [diagnosis, props.cacheKey, isInteractionFence]);
+
   const isStreamingInteractionCandidate =
-    isLiveArtifactInteractionLanguage(sourceLanguage) &&
-    Boolean(props.isLoading) &&
-    isLikelyStreamingLiveArtifactInteractionJson(resolvedCodeText);
+    isInteractionFence && Boolean(props.isLoading) && isLikelyStreamingLiveArtifactInteractionJson(resolvedCodeText);
+  // Fenced Live Artifacts (amc-live-artifact-html) always go through ArtifactFrame.
+  // Do not gate on isLikelyHtml: that helper rejects common fragments that include
+  // <style> tags or are only partially closed while streaming, which used to leave
+  // a blank/missing preview even though the fence language is authoritative.
   const showInlineHtmlPreview =
     showPreviewControls &&
     isLiveArtifactLanguage(sourceLanguage) &&
     previewMarkupType === 'html' &&
-    (isLikelyHtml(resolvedCodeText) || (Boolean(props.isLoading) && isLikelyStreamingHtmlArtifact(resolvedCodeText)));
+    (resolvedCodeText.trim().length > 0 || Boolean(props.isLoading));
 
-  if (isInteractive && interactionSpec) {
+  // Streaming pending frame: partial JSON during streaming takes priority over diagnostic
+  // (incomplete JSON will fail parse and produce errors, but we want the skeleton, not a diagnosis).
+  if (isInteractive && isStreamingInteractionCandidate) {
+    return <LiveArtifactInteractionPendingFrame label={t('thinkingText')} baseFontSize={props.liveArtifactFontSize} />;
+  }
+
+  // Render diagnostic card when the spec failed validation (amc-live-artifact-interaction fence
+  // OR ```json with liveArtifactsMode enabled).
+  if (isInteractive && diagnosis && diagnosis.errors.length > 0 && (isInteractionFence || props.liveArtifactsMode)) {
+    return (
+      <LiveArtifactInteractionDiagnostic
+        diagnosis={diagnosis}
+        rawJson={resolvedCodeText}
+        baseFontSize={props.liveArtifactFontSize}
+        onFollowUp={props.onLiveArtifactFollowUp}
+      />
+    );
+  }
+
+  // Render the form when the spec parsed successfully (amc-live-artifact-interaction fence
+  // OR ```json with liveArtifactsMode enabled).
+  if (isInteractive && interactionSpec && (isInteractionFence || props.liveArtifactsMode)) {
     return (
       <LiveArtifactInteractionFrame
         spec={interactionSpec}
@@ -158,10 +217,6 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
         onFollowUp={props.onLiveArtifactFollowUp}
       />
     );
-  }
-
-  if (isInteractive && isStreamingInteractionCandidate) {
-    return <LiveArtifactInteractionPendingFrame label={t('thinkingText')} baseFontSize={props.liveArtifactFontSize} />;
   }
 
   if (showInlineHtmlPreview) {
@@ -241,7 +296,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
       {hasRun && (
         <div className="border-t border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] rounded-b-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex select-none items-center justify-between px-3 py-1.5 bg-[var(--theme-bg-tertiary)]/50">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex items-center gap-1.5">
               <Terminal size={12} /> {t('codeLocalPythonOutput')}
             </span>
             <div className="flex items-center gap-1">
@@ -284,7 +339,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
 
             {generatedFiles.length > 0 && (
               <div className="mt-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex select-none items-center gap-1.5 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] flex select-none items-center gap-1.5 mb-2">
                   <FileOutput size={12} /> {t('codeGeneratedFiles')}
                 </span>
                 <div className="flex flex-wrap gap-2">

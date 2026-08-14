@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
-import { type ChatSettings } from '@/types';
+import { type ChatSettings, GEMINI_PROVIDER_ID } from '@/types';
 import {
   formatApiKeyErrorMessage,
   getGeminiKeyForRequest,
@@ -23,6 +23,7 @@ describe('getKeyForRequest', () => {
 
   const chatSettings: ChatSettings = {
     modelId: 'gemini-2.5-flash-preview-09-2025',
+    providerId: GEMINI_PROVIDER_ID,
     temperature: 1,
     topP: 0.95,
     topK: 64,
@@ -31,6 +32,8 @@ describe('getKeyForRequest', () => {
     ttsVoice: 'Puck',
     thinkingBudget: 0,
   };
+
+  const openaiProvider = { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai, apiKey: 'openai-key' };
 
   it('returns server-managed marker key when using proxy custom config with no browser key', () => {
     const result = getKeyForRequest(
@@ -86,26 +89,24 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('uses the dedicated third-party provider key without mutating Gemini API keys', () => {
+  it('uses the provider key when the session routes to that third-party provider', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
-            openai: {
-              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
-              apiKey: 'openai-key',
-            },
+            openai: openaiProvider,
           },
         },
       },
-      chatSettings,
+      {
+        ...chatSettings,
+        modelId: openaiProvider.modelId,
+        providerId: 'openai',
+      },
     );
 
     expect(result).toEqual({
@@ -114,34 +115,86 @@ describe('getKeyForRequest', () => {
     });
   });
 
-  it('reports a missing key for third-party mode when the active provider has none', () => {
+  it('resolves the provider from the modelId when the session has no explicit providerId', () => {
+    // A legacy session with no providerId whose modelId belongs to an enabled
+    // provider routes there (composite-key lookup).
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
-            openai: { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai, apiKey: null },
+            openai: { ...openaiProvider, enabled: true },
           },
         },
       },
-      chatSettings,
+      {
+        ...chatSettings,
+        modelId: 'gpt-5.6-sol',
+        providerId: undefined,
+      },
+    );
+
+    expect(result).toEqual({
+      key: 'openai-key',
+      isNewKey: true,
+    });
+  });
+
+  it('uses the explicit session provider key over the default openai provider', () => {
+    const kimiProvider = { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.kimi, apiKey: 'kimi-key' };
+    const result = getKeyForRequest(
+      {
+        ...DEFAULT_APP_SETTINGS,
+        useCustomApiConfig: true,
+        apiKey: 'gemini-key',
+        thirdPartyApi: {
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: { ...openaiProvider, enabled: true },
+            kimi: { ...kimiProvider, enabled: true },
+          },
+        },
+      },
+      {
+        ...chatSettings,
+        modelId: 'kimi-k3',
+        providerId: 'kimi',
+      },
+    );
+
+    expect(result).toEqual({ key: 'kimi-key', isNewKey: true });
+  });
+
+  it('reports a missing key when the routed provider has none', () => {
+    const result = getKeyForRequest(
+      {
+        ...DEFAULT_APP_SETTINGS,
+        useCustomApiConfig: true,
+        apiKey: 'gemini-key',
+        thirdPartyApi: {
+          providers: {
+            ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
+            openai: { ...openaiProvider, apiKey: null },
+          },
+        },
+      },
+      {
+        ...chatSettings,
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
+      },
     );
 
     expect(result).toEqual({ error: 'API Key not configured.' });
   });
 
-  it('uses Gemini key handling when third-party mode is stored but the provider switch is off', () => {
+  it('uses Gemini key handling when the session routes to Gemini', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: false,
-        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
       },
@@ -172,27 +225,23 @@ describe('getKeyForRequest', () => {
     expect(logService.recordApiKeyUsage).not.toHaveBeenCalled();
   });
 
-  it('can force Gemini key handling while third-party mode is active', () => {
+  it('can force Gemini key handling while the session routes third-party', () => {
     const result = getGeminiKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
-            openai: {
-              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
-              apiKey: 'openai-key',
-            },
+            openai: openaiProvider,
           },
         },
       },
       {
         ...chatSettings,
+        modelId: openaiProvider.modelId,
+        providerId: 'openai',
         lockedApiKey: 'openai-key',
       },
       { skipIncrement: true },
@@ -208,50 +257,49 @@ describe('getKeyForRequest', () => {
     const result = getGeminiKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         useCustomApiConfig: true,
         apiKey: null,
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
-            openai: {
-              ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.openai,
-              apiKey: 'openai-key',
-            },
+            openai: openaiProvider,
           },
         },
       },
-      chatSettings,
+      {
+        ...chatSettings,
+        modelId: openaiProvider.modelId,
+        providerId: 'openai',
+      },
       { skipIncrement: true },
     );
 
     expect(result).toEqual({ error: 'API Key not configured.' });
   });
 
-  it('resolves the active third-party provider api key when third-party mode is active', () => {
+  it('resolves the anthropic provider key when the session routes there', () => {
     const anthropicProvider = {
       apiKey: 'sk-ant-test',
       baseUrl: 'https://api.anthropic.com',
-      modelId: 'claude-sonnet-4-6',
-      models: [{ id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', isPinned: true }],
+      modelId: 'claude-sonnet-5',
+      models: [{ id: 'claude-sonnet-5', name: 'Claude Sonnet 5', isPinned: true }],
       protocol: 'anthropic' as const,
     };
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         thirdPartyApi: {
-          activeProvider: 'anthropic',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             anthropic: anthropicProvider,
           },
         },
       },
-      chatSettings,
+      {
+        ...chatSettings,
+        modelId: 'claude-sonnet-5',
+        providerId: 'anthropic',
+      },
     );
 
     expect('key' in result).toBe(true);
@@ -262,17 +310,18 @@ describe('getKeyForRequest', () => {
     const result = getKeyForRequest(
       {
         ...DEFAULT_APP_SETTINGS,
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         thirdPartyApi: {
-          activeProvider: 'anthropic',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             anthropic: { ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers.anthropic, apiKey: null },
           },
         },
       },
-      chatSettings,
+      {
+        ...chatSettings,
+        modelId: 'claude-sonnet-5',
+        providerId: 'anthropic',
+      },
     );
 
     expect(result).toEqual({ error: 'API Key not configured.' });

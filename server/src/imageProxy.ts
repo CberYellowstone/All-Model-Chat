@@ -1,40 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fetchImageProxyWithSafeRedirects } from '../../shared/imageProxyFetch.js';
+import { parseAllowedImageProxyUrl } from '../../shared/imageProxyUrl.js';
 import { getCorsHeaders, sendJson } from './cors.js';
-import { isPrivateNetworkHostname } from './privateNetwork.js';
 
 export const IMAGE_PROXY_PATH = '/api/image-proxy';
 
 const MAX_IMAGE_PROXY_BYTES = 25 * 1024 * 1024;
 const IMAGE_PROXY_TIMEOUT_MS = 15_000;
-
-function parseAllowedImageProxyUrl(value: string | null): URL | null {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(value);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return null;
-    }
-    if (parsedUrl.username || parsedUrl.password || isPrivateNetworkHostname(parsedUrl.hostname)) {
-      return null;
-    }
-    return parsedUrl;
-  } catch {
-    return null;
-  }
-}
-
-// Reject any URL whose final resolved host is private. Guards against DNS rebinding and
-// cross-origin redirects that land on internal services after the input-URL check passes.
-const isPrivateResponseUrl = (responseUrl: string): boolean => {
-  try {
-    return isPrivateNetworkHostname(new URL(responseUrl).hostname);
-  } catch {
-    return true;
-  }
-};
 
 export async function proxyExternalImage(
   request: IncomingMessage,
@@ -54,14 +26,7 @@ export async function proxyExternalImage(
     return;
   }
 
-  // Follow up to 3 redirects, re-validating each Location against the private-network
-  // guard. Many CDNs (S3/CloudFront signed URLs) 302 to the final object; rejecting
-  // those (as the previous unconditional 400 did) breaks legitimate image embedding.
-  const MAX_REDIRECTS = 3;
-  let currentUrl = targetUrl;
-  let upstreamResponse: Response | undefined;
-  let lastError: unknown;
-
+  // Follow redirects with per-hop private-network + DNS rebinding checks (shared with Vite).
   const abortController = new AbortController();
   const abortUpstream = () => {
     if (!abortController.signal.aborted) {
@@ -71,69 +36,50 @@ export async function proxyExternalImage(
   const timeout = setTimeout(abortUpstream, IMAGE_PROXY_TIMEOUT_MS);
   request.once('close', abortUpstream);
 
+  let fetchResult: Awaited<ReturnType<typeof fetchImageProxyWithSafeRedirects>>;
   try {
-    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-      try {
-        upstreamResponse = await fetchImpl(currentUrl, {
-          headers: {
-            accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-            'user-agent': 'AMC-WebUI image proxy',
-          },
-          redirect: 'manual',
-          signal: abortController.signal,
-        });
-      } catch (error) {
-        lastError = error;
-        break;
-      }
-
-      if (upstreamResponse.status < 300 || upstreamResponse.status >= 400) {
-        break;
-      }
-
-      const location = upstreamResponse.headers.get('location');
-      if (!location) {
-        break;
-      }
-      const redirectUrl = new URL(location, currentUrl);
-      if (isPrivateResponseUrl(redirectUrl.toString())) {
-        sendJson(
-          request,
-          response,
-          400,
-          { error: 'Image proxy target attempted an unsafe redirect.' },
-          allowedOrigins,
-        );
-        return;
-      }
-      if (redirectUrl.username || redirectUrl.password) {
-        sendJson(
-          request,
-          response,
-          400,
-          { error: 'Image proxy target attempted an unsafe redirect.' },
-          allowedOrigins,
-        );
-        return;
-      }
-      currentUrl = redirectUrl;
-      upstreamResponse = undefined;
-    }
+    fetchResult = await fetchImageProxyWithSafeRedirects(targetUrl, {
+      fetchImpl,
+      signal: abortController.signal,
+    });
   } finally {
     clearTimeout(timeout);
     request.off('close', abortUpstream);
   }
 
-  if (!upstreamResponse) {
+  if (!fetchResult.ok) {
+    if (fetchResult.kind === 'unsafe_redirect') {
+      sendJson(request, response, 400, { error: 'Image proxy target attempted an unsafe redirect.' }, allowedOrigins);
+      return;
+    }
+
+    if (fetchResult.kind === 'blocked') {
+      sendJson(request, response, 400, { error: fetchResult.message }, allowedOrigins);
+      return;
+    }
+
     const aborted = abortController.signal.aborted;
     const message =
-      aborted && !request.destroyed ? 'Image proxy request timed out.' : lastError instanceof Error ? lastError.message : 'Unknown upstream error';
-    console.error('[image-proxy] upstream request failed:', lastError);
-    sendJson(request, response, aborted ? 504 : 502, { error: `Image proxy request failed: ${message}` }, allowedOrigins);
+      aborted && !request.destroyed
+        ? 'Image proxy request timed out.'
+        : fetchResult.kind === 'fetch_error' && fetchResult.error instanceof Error
+          ? fetchResult.error.message
+          : 'Unknown upstream error';
+    console.error(
+      '[image-proxy] upstream request failed:',
+      fetchResult.kind === 'fetch_error' ? fetchResult.error : fetchResult.kind,
+    );
+    sendJson(
+      request,
+      response,
+      aborted ? 504 : 502,
+      { error: `Image proxy request failed: ${message}` },
+      allowedOrigins,
+    );
     return;
   }
 
-  const finalUpstreamResponse = upstreamResponse;
+  const finalUpstreamResponse = fetchResult.response;
 
   if (!finalUpstreamResponse.ok) {
     sendJson(

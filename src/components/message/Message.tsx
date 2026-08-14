@@ -3,7 +3,7 @@ import { type ChatMessage, type UploadedFile, type SideViewContent } from '@/typ
 import { MessageContent } from './MessageContent';
 import { MessageActions } from './MessageActions';
 import { useSettingsStore } from '@/stores/settingsStore';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import type { UserMessageCollapseController } from './content/userMessageCollapse';
 
 interface MessageProps {
@@ -54,15 +54,15 @@ export const Message: React.FC<MessageProps> = React.memo((props) => {
   let bubbleClasses = `flex flex-col min-w-0 transition-all duration-200 ${widthConstraints} message-content-container `;
 
   if (message.role === 'user') {
-    bubbleClasses += 'w-fit px-4 py-3 sm:px-5 sm:py-4 shadow-sm ';
+    bubbleClasses += 'w-fit px-4 py-3 sm:px-5 sm:py-4 card-shadow ';
     bubbleClasses +=
-      'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] rounded-2xl rounded-tr-sm border border-transparent';
+      'bg-[var(--theme-bg-user-message)] text-[var(--theme-bg-user-message-text)] rounded-2xl border border-[var(--theme-border-secondary)]/30';
   } else if (message.role === 'model') {
     bubbleClasses += `w-full py-0 text-[var(--theme-text-primary)] ${isModelThinkingOrHasThoughts ? 'sm:min-w-[320px]' : ''}`;
   } else {
-    bubbleClasses += 'w-fit px-4 py-3 shadow-sm ';
+    bubbleClasses += 'w-fit px-4 py-3 card-shadow ';
     bubbleClasses +=
-      'bg-[var(--theme-bg-error-message)] text-[var(--theme-bg-error-message-text)] rounded-2xl border border-transparent';
+      'bg-[var(--theme-bg-error-message)] text-[var(--theme-bg-error-message-text)] rounded-2xl border border-[var(--theme-text-danger)]/20';
   }
 
   const messageActions = (

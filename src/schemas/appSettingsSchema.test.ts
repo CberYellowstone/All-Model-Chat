@@ -109,6 +109,13 @@ describe('appSettingsSchema', () => {
             token: 'remote-token',
           },
         },
+        {
+          id: 'legacy-sse',
+          name: 'Legacy SSE',
+          enabled: true,
+          transport: 'sse',
+          url: 'https://mcp.example.com/sse',
+        },
       ],
     });
 
@@ -137,6 +144,13 @@ describe('appSettingsSchema', () => {
           type: 'bearer',
           token: 'remote-token',
         },
+      },
+      {
+        id: 'legacy-sse',
+        name: 'Legacy SSE',
+        enabled: true,
+        transport: 'sse',
+        url: 'https://mcp.example.com/sse',
       },
     ]);
   });
@@ -192,5 +206,17 @@ describe('appSettingsSchema', () => {
         },
       },
     ]);
+  });
+
+  it('defaults a missing isLoggingEnabled field to false', () => {
+    const settings = sanitizeImportedAppSettings({});
+
+    expect(settings.isLoggingEnabled).toBe(false);
+  });
+
+  it('preserves an explicit isLoggingEnabled true from imported settings', () => {
+    const settings = sanitizeImportedAppSettings({ isLoggingEnabled: true });
+
+    expect(settings.isLoggingEnabled).toBe(true);
   });
 });

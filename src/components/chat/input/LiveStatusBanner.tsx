@@ -11,7 +11,7 @@ interface LiveStatusBannerProps {
   error: string | null;
 }
 
-export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
+const LiveStatusBannerComponent: React.FC<LiveStatusBannerProps> = ({
   isConnected,
   isSpeaking,
   isReconnecting,
@@ -33,7 +33,7 @@ export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
             <span className="text-xs font-bold text-[var(--theme-text-primary)]">
               {error || t('liveStatusRefreshing')}
             </span>
-            <span className="text-[10px] text-[var(--theme-text-secondary)] truncate">
+            <span className="text-xs text-[var(--theme-text-secondary)] truncate">
               {t('liveStatusReconnectingAutomatically')}
             </span>
           </div>
@@ -86,7 +86,7 @@ export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
           <span className="text-xs font-bold text-[var(--theme-text-primary)]">
             {isSpeaking ? t('liveStatusSpeaking') : t('liveStatusListening')}
           </span>
-          <span className="text-[10px] text-[var(--theme-text-secondary)] truncate">{t('liveStatusActiveHint')}</span>
+          <span className="text-xs text-[var(--theme-text-secondary)] truncate">{t('liveStatusActiveHint')}</span>
         </div>
       </div>
 
@@ -99,3 +99,5 @@ export const LiveStatusBanner: React.FC<LiveStatusBannerProps> = ({
     </div>
   );
 };
+
+export const LiveStatusBanner = React.memo(LiveStatusBannerComponent);

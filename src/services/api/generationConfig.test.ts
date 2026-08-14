@@ -13,8 +13,10 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-vi.mock('@/utils/modelCapabilities', async () => {
-  const actual = await vi.importActual<typeof import('@/utils/modelCapabilities')>('@/utils/modelCapabilities');
+vi.mock('@/utils/model/modelCapabilities', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/model/modelCapabilities')>(
+    '@/utils/model/modelCapabilities',
+  );
 
   return {
     ...actual,
@@ -192,9 +194,9 @@ describe('buildGenerationConfig', () => {
     );
   });
 
-  it('returns image config for gemini-2.5-flash-image-preview', async () => {
+  it('returns image config for gemini-2.5-flash-image (retained GA image model)', async () => {
     const config = await buildGenerationConfig(
-      'gemini-2.5-flash-image-preview',
+      'gemini-2.5-flash-image',
       'sys',
       baseConfig,
       false,
@@ -460,9 +462,22 @@ describe('buildGenerationConfig', () => {
     expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
 
-  it('uses thinkingBudget when > 0 for Gemini 3', async () => {
-    const config = await buildGenerationConfig('gemini-3-flash-preview', 'sys', baseConfig, false, 8000);
-    expect(config.thinkingConfig!.thinkingBudget).toBe(8000);
+  it('prefers thinkingLevel over thinkingBudget for Gemini 3 even when budget is set', async () => {
+    const config = await buildGenerationConfig(
+      'gemini-3.6-flash',
+      'sys',
+      baseConfig,
+      true,
+      8000,
+      false,
+      false,
+      false,
+      'MEDIUM',
+    );
+    expect(config.thinkingConfig).toEqual({
+      includeThoughts: true,
+      thinkingLevel: 'MEDIUM',
+    });
   });
 
   it('uses thinkingLevel when budget is 0 for Gemini 3', async () => {
@@ -470,7 +485,7 @@ describe('buildGenerationConfig', () => {
       'gemini-3-flash-preview',
       'sys',
       baseConfig,
-      false,
+      true,
       0,
       false,
       false,
@@ -478,6 +493,7 @@ describe('buildGenerationConfig', () => {
       'LOW',
     );
     expect(config.thinkingConfig!.thinkingLevel).toBe('LOW');
+    expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
 
   it('normalizes unsupported MINIMAL thinking level for Gemini 3.1 Pro', async () => {
@@ -527,25 +543,25 @@ describe('buildGenerationConfig', () => {
     expect(config.thinkingConfig!.includeThoughts).toBe(true);
   });
 
-  it('includes thinkingBudget config for Gemini Robotics-ER 1.6', async () => {
-    const config = await buildGenerationConfig('gemini-robotics-er-1.6-preview', 'sys', baseConfig, false, 1024);
+  it('includes thinkingBudget config for Gemini Robotics-ER 2', async () => {
+    const config = await buildGenerationConfig('gemini-robotics-er-2-preview', 'sys', baseConfig, false, 1024);
     expect(config.thinkingConfig).toEqual({
       thinkingBudget: 1024,
       includeThoughts: true,
     });
   });
 
-  it('preserves auto thinking for Gemini Robotics-ER 1.6', async () => {
-    const config = await buildGenerationConfig('gemini-robotics-er-1.6-preview', 'sys', baseConfig, false, -1);
+  it('preserves auto thinking for Gemini Robotics-ER 2', async () => {
+    const config = await buildGenerationConfig('gemini-robotics-er-2-preview', 'sys', baseConfig, false, -1);
     expect(config.thinkingConfig).toEqual({
       includeThoughts: true,
       thinkingLevel: 'HIGH',
     });
   });
 
-  it('uses thinkingLevel when budget is 0 for Gemini Robotics-ER 1.6', async () => {
+  it('uses thinkingLevel when budget is 0 for Gemini Robotics-ER 2', async () => {
     const config = await buildGenerationConfig(
-      'gemini-robotics-er-1.6-preview',
+      'gemini-robotics-er-2-preview',
       'sys',
       baseConfig,
       false,
@@ -871,7 +887,7 @@ describe('appendFunctionDeclarationsToTools', () => {
 
   it('keeps custom function declarations alongside built-in tools for Gemini Robotics models', () => {
     const config = appendFunctionDeclarationsToTools(
-      'gemini-robotics-er-1.6-preview',
+      'gemini-robotics-er-2-preview',
       { tools: [{ googleSearch: {} }] },
       [
         {

@@ -12,7 +12,7 @@ interface SlashCommandMenuProps {
   className?: string;
 }
 
-export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
+const SlashCommandMenuComponent: React.FC<SlashCommandMenuProps> = ({
   isOpen,
   commands,
   onSelect,
@@ -51,14 +51,14 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
           className="max-h-80 overflow-y-auto custom-scrollbar flex flex-col scroll-pt-10"
         >
           <div className="sticky top-0 z-10 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-secondary)] px-3 py-2 flex justify-between items-center">
-            <span className="text-[10px] font-bold text-[var(--theme-text-tertiary)] uppercase tracking-widest">
+            <span className="text-xs font-bold text-[var(--theme-text-tertiary)] uppercase tracking-widest">
               {t('slashCommandsTitle')}
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
+              <span className="text-xs text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
                 {t('slashCommandsNavigateHint')}
               </span>
-              <span className="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
+              <span className="text-xs text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
                 {t('slashCommandsSelectHint')}
               </span>
             </div>
@@ -114,7 +114,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
                     </div>
 
                     {isSelected && (
-                      <div className="flex-shrink-0 hidden sm:flex items-center gap-1 text-[10px] font-medium text-[var(--theme-text-secondary)] animate-in fade-in slide-in-from-left-1 duration-200">
+                      <div className="flex-shrink-0 hidden sm:flex items-center gap-1 text-xs font-medium text-[var(--theme-text-secondary)] animate-in fade-in slide-in-from-left-1 duration-200">
                         <CornerDownLeft size={12} />
                       </div>
                     )}
@@ -128,3 +128,5 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
     </div>
   );
 };
+
+export const SlashCommandMenu = React.memo(SlashCommandMenuComponent);

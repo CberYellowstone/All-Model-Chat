@@ -33,7 +33,7 @@ describe('ShortcutsSection', () => {
           availableModels={[
             { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true },
             { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true },
-            { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite Preview', isPinned: true },
+            { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', isPinned: true },
           ]}
           onUpdateSettings={onUpdateSettings}
         />,
@@ -42,7 +42,7 @@ describe('ShortcutsSection', () => {
 
     expect(renderer.container.textContent).toContain('Models Included In Tab Cycle');
     expect(renderer.container.textContent).toContain('2 models selected');
-    expect(renderer.container.textContent).not.toContain('Gemini 3.1 Flash Lite Preview');
+    expect(renderer.container.textContent).not.toContain('Gemini 3.5 Flash-Lite');
 
     const shortcutText = renderer.container.textContent ?? '';
     expect(shortcutText.indexOf('Cycle Models')).toBeLessThan(shortcutText.indexOf('Models Included In Tab Cycle'));
@@ -72,7 +72,7 @@ describe('ShortcutsSection', () => {
     expect(toggleButton?.getAttribute('aria-expanded')).toBe('true');
     expect(renderer.container.textContent).toContain('Gemini 3.1 Pro Preview');
     expect(renderer.container.textContent).toContain('Gemini 3 Flash Preview');
-    expect(renderer.container.textContent).toContain('Gemini 3.1 Flash Lite Preview');
+    expect(renderer.container.textContent).toContain('Gemini 3.5 Flash-Lite');
 
     const flashCheckbox = renderer.container.querySelector<HTMLInputElement>(
       'input[aria-label="Toggle Tab cycle model: Gemini 3 Flash Preview"]',

@@ -1,9 +1,16 @@
 import { type MutableRefObject, useCallback } from 'react';
-import { type AppSettings, type ChatSettings as IndividualChatSettings, type SavedChatSession } from '@/types';
+import {
+  type AppSettings,
+  type ChatSettings as IndividualChatSettings,
+  type SavedChatSession,
+  type ThirdPartyProviderId,
+  GEMINI_PROVIDER_ID,
+} from '@/types';
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { createNewSession } from '@/utils/chat/session';
 import { focusChatInput } from '@/utils/chat-input/focus';
-import { resolveModelSwitchSettings } from '@/utils/modelSwitchSettings';
+import { resolveModelSwitchSettings } from '@/utils/model/modelSwitchSettings';
+import { getEnabledThirdPartyProviders, resolveProviderForModelId } from '@/utils/thirdPartyApiProviders';
 
 interface UseModelSelectionProps {
   appSettings: AppSettings;
@@ -41,16 +48,34 @@ export const useModelSelection = ({
   userScrolledUpRef,
 }: UseModelSelectionProps) => {
   const handleSelectModelInHeader = useCallback(
-    (modelId: string) => {
+    (modelId: string, explicitProviderId?: ThirdPartyProviderId) => {
+      const thirdPartyModels = getEnabledThirdPartyProviders(appSettings);
+      const isThirdPartyModel = thirdPartyModels.some(({ config }) => config.models.some((m) => m.id === modelId));
+      // An explicit providerId (point-to-point pick from the header) wins. When
+      // absent (keyboard tab cycle, legacy callers), keep the old inference so
+      // the session still routes deterministically.
+      const provider =
+        explicitProviderId && appSettings.thirdPartyApi?.providers[explicitProviderId]
+          ? { id: explicitProviderId, config: appSettings.thirdPartyApi.providers[explicitProviderId] }
+          : isThirdPartyModel
+            ? resolveProviderForModelId(appSettings, modelId)
+            : undefined;
       const sourceSettings = activeSessionId ? currentChatSettings : appSettings;
       const resolvedModelSettings: Partial<IndividualChatSettings> = resolveModelSwitchSettings({
         currentSettings: currentChatSettings,
         sourceSettings,
         targetModelId: modelId,
       });
+      // The routing key is a single derived value: which provider this modelId
+      // belongs to. Writing only (providerId) — with modelId coming from
+      // resolvedModelSettings — keeps the session self-consistent and never
+      // touches a global mode.
+      const routingSettings: Pick<IndividualChatSettings, 'providerId'> =
+        provider && provider.config ? { providerId: provider.id } : { providerId: GEMINI_PROVIDER_ID };
+      const nextModelSettings = { ...resolvedModelSettings, ...routingSettings };
 
       if (!activeSessionId) {
-        const sessionSettings = { ...DEFAULT_CHAT_SETTINGS, ...appSettings, ...resolvedModelSettings };
+        const sessionSettings = { ...DEFAULT_CHAT_SETTINGS, ...appSettings, ...nextModelSettings };
         const newSession = createNewSession(sessionSettings);
 
         updateAndPersistSessions((prev) => [newSession, ...prev]);
@@ -62,18 +87,21 @@ export const useModelSelection = ({
           updateAndPersistSessions((prev) =>
             prev.map((session) =>
               session.id === activeSessionId
-                ? { ...session, settings: { ...session.settings, ...resolvedModelSettings } }
+                ? { ...session, settings: { ...session.settings, ...nextModelSettings } }
                 : session,
             ),
           );
-        } else if (hasResolvedModelSettingChanges(currentChatSettings, resolvedModelSettings)) {
-          setCurrentChatSettings((prev) => ({
-            ...prev,
-            thinkingBudget: resolvedModelSettings.thinkingBudget ?? prev.thinkingBudget,
-            thinkingLevel: resolvedModelSettings.thinkingLevel,
-          }));
+        } else {
+          const routingChanged = currentChatSettings.providerId !== routingSettings.providerId;
+          if (routingChanged || hasResolvedModelSettingChanges(currentChatSettings, resolvedModelSettings)) {
+            setCurrentChatSettings((prev) => ({
+              ...prev,
+              ...nextModelSettings,
+            }));
+          }
         }
       }
+
       userScrolledUpRef.current = false;
       focusChatInput();
     },

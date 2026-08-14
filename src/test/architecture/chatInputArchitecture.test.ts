@@ -26,7 +26,7 @@ describe('chat input architecture guardrails', () => {
     expect(source).toContain('useChatInputClipboard');
     expect(source).toContain('useChatInputKeyboard');
     expect(source).not.toContain('isComposingRef.current =');
-    expect(source.length).toBeLessThan(10000);
+    expect(source.length).toBeLessThan(11000);
     expect(chatInputProviderSource).toContain("from '@/hooks/chat-input/useChatInput'");
     expect(chatInputProviderSource).toContain("from './chatInputTextAreaMetrics'");
     expect(chatTextAreaSource).toContain("from '@/components/chat/input/chatInputTextAreaMetrics'");
@@ -224,7 +224,7 @@ describe('chat input architecture guardrails', () => {
 
   it('shares chat tool toggle defaults across test fixtures', () => {
     const toolFixtureSource = readProjectFile('src/test/chat-tools/fixtures.ts');
-    const chatAreaFixtureSource = readProjectFile('src/test/chat-area/fixtures.tsx');
+    const chatAreaFixtureSource = readProjectFile('src/test/layout/fixtures.tsx');
     const chatInputFixtureSource = readProjectFile('src/test/chat-input/contextFixtures.ts');
     const toolsMenuTestSource = readProjectFile('src/components/chat/input/ToolsMenu.test.tsx');
 

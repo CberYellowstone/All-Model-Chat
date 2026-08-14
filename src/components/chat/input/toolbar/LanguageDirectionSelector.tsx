@@ -2,10 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Languages, Volume2, Search } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useSettingsStore } from '@/stores/settingsStore';
-import {
-  LIVE_TRANSLATE_TARGET_LANGUAGE_CODES,
-  liveTranslateLanguageLabel,
-} from '@/constants/translationOptions';
+import { LIVE_TRANSLATE_TARGET_LANGUAGE_CODES, liveTranslateLanguageLabel } from '@/constants/translationOptions';
 
 /**
  * Live Translate 模式的目标语言选择器（替代普通 Live 模式的 voice 选择器）。
@@ -86,12 +83,12 @@ export const LanguageDirectionSelector: React.FC = () => {
                   }}
                   className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between gap-2 transition-colors duration-100 ${
                     o.code === targetLanguageCode
-                      ? 'bg-[var(--theme-accent-bg)] text-[var(--theme-accent-text)]'
+                      ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)]'
                       : 'text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-secondary)]'
                   }`}
                 >
                   <span className="truncate">{o.label}</span>
-                  <span className="text-[var(--theme-text-tertiary)] text-[10px] flex-shrink-0">{o.code}</span>
+                  <span className="text-[var(--theme-text-tertiary)] text-xs flex-shrink-0">{o.code}</span>
                 </button>
               ))}
             </div>
@@ -101,7 +98,12 @@ export const LanguageDirectionSelector: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => setAppSettings((prev) => ({ ...prev, liveTranslateEchoTargetLanguage: !prev.liveTranslateEchoTargetLanguage }))}
+        onClick={() =>
+          setAppSettings((prev) => ({
+            ...prev,
+            liveTranslateEchoTargetLanguage: !prev.liveTranslateEchoTargetLanguage,
+          }))
+        }
         className={`
           flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 mb-2
           ${

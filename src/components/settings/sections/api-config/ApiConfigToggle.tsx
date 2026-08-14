@@ -41,7 +41,7 @@ export const ApiConfigToggle: React.FC<ApiConfigToggleProps> = ({
         <span className="text-sm font-medium text-[var(--theme-text-primary)] flex items-center gap-2 group-hover:text-[var(--theme-text-link)] transition-colors">
           {t('settingsUseCustomApi')}
           {hasEnvKey && !useCustomApiConfig && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-600 border border-green-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
               <ShieldCheck size={10} /> {t('apiConfigEnvActiveBadge')}
             </span>
           )}

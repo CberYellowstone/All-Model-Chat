@@ -2,7 +2,7 @@ import { useCallback, type MutableRefObject } from 'react';
 import { type SavedChatSession } from '@/types';
 import { logService } from '@/services/logService';
 import { cloneMessagesWithFreshIds, createNewSession } from '@/utils/chat/session';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import { dbService } from '@/services/db/dbService';
 import { removeSessionScopedLocalStorageEntries } from '@/utils/sessionLocalStorage';
 import { useI18n } from '@/contexts/I18nContext';
@@ -49,7 +49,9 @@ export const useSessionActions = ({ updateAndPersistSessions, activeJobs }: UseS
       if (!newTitle.trim()) return;
       logService.info(`Renaming session ${sessionId} to "${newTitle}"`);
       updateAndPersistSessions((prev) =>
-        prev.map((session) => (session.id === sessionId ? { ...session, title: newTitle.trim() } : session)),
+        prev.map((session) =>
+          session.id === sessionId ? { ...session, title: newTitle.trim(), titleSource: 'manual' } : session,
+        ),
       );
     },
     [updateAndPersistSessions],
@@ -84,6 +86,8 @@ export const useSessionActions = ({ updateAndPersistSessions, activeJobs }: UseS
           fullSessionToDuplicate.settings,
           duplicatedMessages,
           t('historyCopyTitle').replace('{title}', duplicateTitle),
+          null,
+          'manual',
         );
         return [newSession, ...prev];
       });

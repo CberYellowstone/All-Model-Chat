@@ -77,7 +77,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/chat/input/ChatInputArea.tsx', 'src/components/chat/input/HiddenFileInputs.tsx'],
+    files: ['src/components/chat/input/ChatInputArea.tsx', 'src/components/chat/input/files/HiddenFileInputs.tsx'],
     rules: {
       'react-hooks/refs': 'off',
     },
@@ -85,6 +85,8 @@ export default tseslint.config(
   {
     files: [
       'src/components/layout/chat-runtime/ChatRuntimeContext.tsx',
+      'src/components/shared/ModelIcon.tsx',
+      'src/components/message/code/LanguageIcon.tsx',
       'src/contexts/I18nContext.tsx',
       'src/contexts/WindowContext.tsx',
     ],

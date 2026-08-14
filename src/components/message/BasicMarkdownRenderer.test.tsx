@@ -200,7 +200,9 @@ describe('BasicMarkdownRenderer', () => {
 
     expect(table).not.toBeNull();
     expect(table?.className).not.toContain('rich-html-table');
-    expect(table?.className).toContain('w-max');
+    // Markdown tables carry no data-layout attribute; column sizing is
+    // table-layout: auto in CSS.
+    expect(table?.getAttribute('data-layout')).toBeNull();
   });
 
   it('strips raw html positioning attributes that can escape the markdown surface', () => {

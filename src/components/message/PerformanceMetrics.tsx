@@ -73,7 +73,7 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ message,
   if (!showTokens && !showTimer) return null;
 
   return (
-    <div className="mt-2 flex justify-end items-center flex-wrap gap-x-3 gap-y-1 text-[10px] sm:text-[11px] text-[var(--theme-text-primary)] font-mono select-none">
+    <div className="mt-2 flex justify-end items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--theme-text-primary)] font-mono select-none">
       {showTokens && (
         <div
           className="flex items-center gap-1.5 bg-[var(--theme-bg-tertiary)]/30 px-2 py-0.5 rounded-md border border-[var(--theme-border-secondary)]/30"

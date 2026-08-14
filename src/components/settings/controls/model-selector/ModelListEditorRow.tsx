@@ -15,7 +15,7 @@ interface ModelListEditorRowProps {
 
 const providerOptions: Array<{ apiMode: ApiMode; labelKey: string; shortLabel: string }> = [
   { apiMode: 'gemini-native', labelKey: 'modelPickerProviderGemini', shortLabel: 'Gemini' },
-  { apiMode: 'openai-compatible', labelKey: 'modelPickerProviderOpenAICompatible', shortLabel: 'OpenAI' },
+  { apiMode: 'third-party', labelKey: 'modelPickerProviderThirdParty', shortLabel: 'Third-party' },
 ];
 
 export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({
@@ -30,7 +30,9 @@ export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({
   return (
     <div className="group rounded-lg border border-transparent bg-[var(--theme-bg-primary)]/35 p-2">
       <div className="flex items-center gap-2">
-        <div className="w-8 flex justify-center text-[var(--theme-text-tertiary)]">{getModelIcon(model)}</div>
+        <div className="w-9 flex justify-center items-center text-[var(--theme-text-tertiary)]">
+          {getModelIcon(model)}
+        </div>
         <input
           type="text"
           value={model.id}
@@ -79,7 +81,7 @@ export const ModelListEditorRow: React.FC<ModelListEditorRowProps> = ({
                 onClick={() => onUpdate(index, 'apiMode', option.apiMode)}
                 aria-pressed={isActive}
                 title={t(option.labelKey)}
-                className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                   isActive
                     ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)]'
                     : 'text-[var(--theme-text-tertiary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]'

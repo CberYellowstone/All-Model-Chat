@@ -4,7 +4,7 @@ import { logService } from '@/services/logService';
 import { formatApiKeyErrorMessage, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { transcribeAudioApi } from '@/services/api/generation/audioApi';
 import { useI18n } from '@/contexts/I18nContext';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
+import { isThirdPartyApiRoute } from '@/utils/chatApiRoute';
 import { usesRemoteFileReference } from '@/utils/chat/fileTransferStrategy';
 
 interface UseAudioActionsProps {
@@ -35,7 +35,7 @@ export const useAudioActions = ({
         return null;
       }
 
-      if (keyResult.isNewKey && !isThirdPartyApiActive(appSettings)) {
+      if (keyResult.isNewKey && !isThirdPartyApiRoute(appSettings, currentChatSettings)) {
         const fileRequiresApi = selectedFiles.some(
           (selectedFile) => usesRemoteFileReference(selectedFile) && selectedFile.fileUri,
         );

@@ -4,7 +4,6 @@ export const messagesTranslations = {
   imageZoomCloseAria: { en: 'Close image zoom view', zh: '关闭图片缩放视图' },
   imageZoomCloseTitle: { en: 'Close (Esc)', zh: '关闭（Esc）' },
   welcomeGreeting: { en: 'How can I help you today?', zh: '有什么可以帮忙的？' },
-  welcomeSuggestionTitle: { en: 'Suggested', zh: '建议' },
   suggestionSummarizeTitle: { en: 'Summarize article', zh: '一句话总结' },
   suggestionSummarizeDesc: {
     en: 'Please read the following content and distill its core theme into a single sentence. This sentence should include key elements (who, did what, what was the result) and remain concise and powerful:',
@@ -29,7 +28,6 @@ export const messagesTranslations = {
     zh: '请用通俗易懂的语言解释以下概念。使用类比或生活中的例子来帮助理解，避免使用过于专业的术语，使零基础的初学者也能轻松掌握：',
   },
   suggestionExplainShort: { en: 'Simplify complex concepts.', zh: '通俗易懂地解释复杂概念。' },
-  suggestionPromptLabel: { en: 'Prompt', zh: '提示' },
 
   // Audio transcription and subtitle suggestions
   suggestionAsrTitle: { en: 'Audio to Text', zh: '音频转写' },
@@ -61,18 +59,15 @@ export const messagesTranslations = {
     zh: '请输入允许范围内的值。',
   },
   liveArtifactInteractionEnum: { en: 'Choose an allowed option.', zh: '请选择允许的选项。' },
+  liveArtifactInteractionInvalidDate: {
+    en: 'Enter a date in YYYY-MM-DD format.',
+    zh: '请输入 YYYY-MM-DD 格式的日期。',
+  },
   liveArtifactInteractionStateTooLarge: {
     en: 'The submitted interaction state is too large.',
     zh: '提交的交互状态过大。',
   },
 
-  welcomeTitle: { en: 'Welcome to AMC WebUI', zh: '欢迎使用 AMC WebUI' },
-  welcomeP1: {
-    en: 'Start a conversation by typing below. You can also attach files, load scenarios via the',
-    zh: '在下方输入文字开始对话。您也可以附加文件，或通过',
-  },
-  welcomeP2: { en: 'Preset Scenarios', zh: '预设场景' },
-  welcomeP3: { en: 'button, or configure settings.', zh: '按钮加载场景，或进行设置。' },
   retryButtonTitle: { en: 'Retry', zh: '重试' },
   retryAndStopButtonTitle: { en: 'Stop and Retry', zh: '停止并重试' },
   copyButtonTitle: { en: 'Copy content', zh: '复制内容' },
@@ -81,7 +76,6 @@ export const messagesTranslations = {
   assistantAvatarAlt: { en: 'Assistant avatar', zh: '助手头像' },
   continueGenerationTitle: { en: 'Continue Generating', zh: '继续生成' },
   forkMessageTitle: { en: 'Fork from here', zh: '从这里分叉' },
-  exportAsTitle: { en: 'Export as {type}', zh: '导出为 {type}' },
   exportingTitle: { en: 'Exporting {type}...', zh: '正在导出 {type}…' },
   exportCloseDialogAria: { en: 'Close export dialog', zh: '关闭导出对话框' },
   exportProcessingMessageContent: { en: 'Processing message content...', zh: '正在处理消息内容…' },
@@ -209,7 +203,6 @@ export const messagesTranslations = {
   sidePanelCodeTab: { en: 'Code', zh: '代码' },
   sidePanelDownloadCode: { en: 'Download Code', zh: '下载代码' },
   sidePanelClose: { en: 'Close Panel', zh: '关闭面板' },
-  exportedTitle: { en: '{type} Exported!', zh: '{type} 已导出！' },
   exportFailedTitle: { en: 'Export failed.', zh: '导出失败。' },
   exportFailedWithMessage: { en: 'Export failed: {message}', zh: '导出失败：{message}' },
   exportImageTooLarge: {
@@ -234,6 +227,8 @@ export const messagesTranslations = {
   thinkingShowOriginal: { en: 'Show Original', zh: '显示原文' },
   thinkingTranslateToChinese: { en: 'Translate to Chinese', zh: '翻译为中文' },
   thinkingRawProcess: { en: 'Raw Thinking Process', zh: '原始推理过程' },
+  thinkingSectionCounter: { en: 'Section {index}', zh: '第 {index} 段' },
+  thinkingBackToLatest: { en: 'Back to latest', zh: '回到最新' },
   metricsTtft: { en: 'TTFT', zh: '首字延迟' },
   metricsTokenUsage: { en: 'Token Usage', zh: 'Token 用量' },
   metricsGenerationSpeed: { en: 'Generation Speed (excluding TTFT)', zh: '生成速度（不含首字延迟）' },
@@ -265,6 +260,7 @@ export const messagesTranslations = {
   codeDownloadLanguage: { en: 'Download {language}', zh: '下载 {language}' },
   codeDownloadOutput: { en: 'Download Output', zh: '下载输出' },
   ttsReadAloud: { en: 'Read Aloud (TTS)', zh: '朗读（TTS）' },
+  ttsError: { en: 'TTS failed', zh: '语音生成失败' },
   tableCopyMarkdown: { en: 'Copy Markdown', zh: '复制 Markdown' },
   tableCopyMarkdownAria: { en: 'Copy table as markdown', zh: '将表格复制为 Markdown' },
   tableDownloadAria: { en: 'Download table', zh: '下载表格' },
@@ -277,7 +273,6 @@ export const messagesTranslations = {
   audioPlayerPlaybackProgress: { en: 'Playback progress', zh: '播放进度' },
   audioPlayerPlaybackSpeed: { en: 'Playback Speed', zh: '播放速度' },
   audioPlayerDownload: { en: 'Download Audio', zh: '下载音频' },
-  cancelledByUser: { en: '[Cancelled by user]', zh: '[用户已取消]' },
   stoppedByUser: { en: '[Stopped by user]', zh: '[用户已停止]' },
   emptyResponseError: {
     en: 'The model did not provide a response. This might be due to safety filters or other content restrictions.',
@@ -285,4 +280,30 @@ export const messagesTranslations = {
   },
   codeFullscreenMonitor: { en: 'Monitor Fullscreen', zh: '显示器全屏' },
   codeFullscreenModal: { en: 'Preview Overlay', zh: '预览弹窗' },
+
+  // Live Artifact Interaction Diagnostic (P0-1)
+  liveArtifactInteractionInvalidTitle: {
+    en: 'Interaction form generation failed',
+    zh: '交互表单生成失败',
+  },
+  liveArtifactInteractionInvalidReasonLead: {
+    en: 'The spec failed validation:',
+    zh: '验证未通过：',
+  },
+  liveArtifactInteractionRepairsApplied: {
+    en: 'Some issues were auto-fixed:',
+    zh: '以下项已自动修正：',
+  },
+  liveArtifactInteractionRetry: {
+    en: 'Ask model to fix',
+    zh: '让模型修正',
+  },
+  liveArtifactInteractionRetryPrompt: {
+    en: 'The previous amc-live-artifact-interaction JSON failed validation. Please output only the corrected JSON block (keep instruction and schema structure). Issues:\n{reasons}',
+    zh: '上一次输出的 amc-live-artifact-interaction JSON 校验失败。请修正后仅重新输出该 JSON 块（保持 instruction 与 schema 结构）。问题：\n{reasons}',
+  },
+  liveArtifactInteractionRawJson: {
+    en: 'Raw JSON',
+    zh: '原始 JSON',
+  },
 };

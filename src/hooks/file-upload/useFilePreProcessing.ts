@@ -2,7 +2,7 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { type AppSettings, type UploadedFile } from '@/types';
 import { logService } from '@/services/logService';
 import { generateUniqueId } from '@/utils/chat/ids';
-import { isAudioMimeType } from '@/utils/fileTypeClassification';
+import { isAudioMimeType } from '@/utils/file/fileTypeClassification';
 import { compressAudioToMp3 } from '@/features/audio/audioCompression';
 import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { useI18n } from '@/contexts/I18nContext';

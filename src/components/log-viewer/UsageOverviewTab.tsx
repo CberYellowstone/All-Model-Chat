@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity, BarChart3, Coins, Loader2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
-import { useUsageStats, type UsageTimeRange } from '@/hooks/log-viewer/useUsageStats';
+import { useUsageStats, type UsageTimeRange } from './useUsageStats';
 import { formatPriceUsd } from '@/utils/usagePricing';
 
 const RANGE_OPTIONS: Array<{ value: UsageTimeRange; labelKey: string }> = [
@@ -41,7 +41,7 @@ const PriceValue: React.FC<{
     <span className="inline-flex flex-col items-end gap-0.5">
       <span>{hasPricedAmount ? formatPriceUsd(amount) : '—'}</span>
       {unavailableRequests > 0 && (
-        <span className="text-[11px] font-medium text-[var(--theme-text-tertiary)]">
+        <span className="text-xs font-medium text-[var(--theme-text-tertiary)]">
           {getUnavailablePriceLabel(unavailableRequests, language)}
         </span>
       )}

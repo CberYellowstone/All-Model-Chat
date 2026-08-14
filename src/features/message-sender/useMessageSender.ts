@@ -10,13 +10,12 @@ import {
 import { useI18n } from '@/contexts/I18nContext';
 import { logService } from '@/services/logService';
 import { formatApiKeyErrorMessage } from '@/utils/apiKeySelection';
+import { useChatStore } from '@/stores/chatStore';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderModelId } from '@/utils/thirdPartyApiProviders';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 
 import { ensureFilesApiReferences, formatFileReferenceErrorMessage } from './fileApiReference';
-import { sendImageGenerationMessage } from './imageGenerationStrategy';
 import { sendImageEditMessage } from './imageEditStrategy';
 import { prepareFilesForOpenAICompatibleMode } from './openaiCompatibleFiles';
 import { validateMessageBeforeSend } from './sendMessageValidation';
@@ -26,6 +25,7 @@ import { sendTtsMessage } from './ttsStrategy';
 import { useChatStreamHandler } from './useChatStreamHandler';
 import { useMessageLifecycle } from './useMessageLifecycle';
 import { useModelRequestRunner } from './useModelRequestRunner';
+import { useStreamResume } from './useStreamResume';
 
 interface MessageSenderProps {
   appSettings: AppSettings;
@@ -78,6 +78,14 @@ export const useMessageSender = (props: MessageSenderProps) => {
     activeJobs,
   });
 
+  const { resumePendingStream } = useStreamResume({
+    appSettings,
+    getStreamHandlers,
+    activeJobs,
+    sessionKeyMapRef,
+    setSessionLoading,
+  });
+
   const { runMessageLifecycle } = useMessageLifecycle({
     updateAndPersistSessions,
     setSessionLoading,
@@ -102,24 +110,29 @@ export const useMessageSender = (props: MessageSenderProps) => {
       settingsOverride?: IndividualChatSettings;
     }) => {
       const textToUse = overrideOptions?.text ?? '';
-      const filesToUse = overrideOptions?.files ?? selectedFiles;
+      // Prefer explicitly-passed files, then the live store value when the
+      // closure's selectedFiles has gone stale. In the pending-submission flush
+      // path handleSendMessage can run before React commits the new files, so
+      // the closed-over selectedFiles may still show isProcessing: true; reading
+      // the store here lets a send that would otherwise be blocked (and its text
+      // silently dropped) proceed with the real current files.
+      const storeSelectedFiles = useChatStore.getState().selectedFiles;
+      const filesToUse =
+        overrideOptions?.files ?? (selectedFiles === storeSelectedFiles ? selectedFiles : storeSelectedFiles);
       const effectiveEditingId = overrideOptions?.editingId ?? editingMessageId;
       const isContinueMode = overrideOptions?.isContinueMode ?? false;
       const isFastMode = overrideOptions?.isFastMode ?? false;
 
       const sessionToUpdate = overrideOptions?.settingsOverride ?? currentChatSettings;
-      const isOpenAICompatibleMode = isThirdPartyApiActive(appSettings);
-      const activeModelId = isOpenAICompatibleMode
-        ? getThirdPartyProviderModelId(appSettings)
-        : sessionToUpdate.modelId;
+      const apiRoute = resolveChatApiRoute(appSettings, sessionToUpdate);
+      const activeModelId = apiRoute.modelId;
       const capabilities = getModelCapabilities(activeModelId);
       const isTtsModel = capabilities.isTtsModel;
-      const isRealImagenModel = capabilities.isRealImagenModel;
       const isImageEditModel = capabilities.isFlashImageModel;
       const isGemini3Image = capabilities.isGemini3ImageModel;
       const permissions = capabilities.permissions ?? {
-        canAcceptAttachments: !isRealImagenModel,
-        requiresTextPrompt: isTtsModel || isRealImagenModel || isImageEditModel || isGemini3Image,
+        canAcceptAttachments: !isTtsModel && !capabilities.isNativeAudioModel,
+        requiresTextPrompt: isTtsModel || isImageEditModel || isGemini3Image,
       };
 
       logService.info(`Sending message with model ${activeModelId}`, {
@@ -156,10 +169,15 @@ export const useMessageSender = (props: MessageSenderProps) => {
         isContinueMode && effectiveEditingId ? messages.find((message) => message.id === effectiveEditingId) : null;
       const request = prepareModelRequest({
         activeModelId,
+        apiRoute,
         files: filesToUse,
         keySettings: sessionToUpdate,
         generationId: continueTargetMessage ? (effectiveEditingId ?? undefined) : undefined,
-        generationStartTime: continueTargetMessage?.generationStartTime,
+        // Continue reuses the target's generation id so stream state stays
+        // aligned, but the turn starts fresh: a new generationStartTime keeps
+        // timing metrics (TTFT, thinking time, elapsed time) measured from this
+        // run, not from when the target message was originally generated.
+        generationStartTime: undefined,
         messages: {
           noModelSelected: t('messageSenderNoModelSelected'),
           noModelTitle: t('messageSenderErrorSessionTitle'),
@@ -171,20 +189,21 @@ export const useMessageSender = (props: MessageSenderProps) => {
         return;
       }
       const { keyToUse, shouldLockKey, generationId, abortController: newAbortController } = request;
-      const fileReferenceResult = isOpenAICompatibleMode
-        ? prepareFilesForOpenAICompatibleMode(filesToUse)
-        : await ensureFilesApiReferences({
-            files: filesToUse,
-            apiKey: keyToUse,
-            abortSignal: newAbortController.signal,
-            onFileUpdate: (fileId, patch) => {
-              if (overrideOptions?.files !== undefined) {
-                return;
-              }
+      const fileReferenceResult =
+        apiRoute.apiMode === 'third-party'
+          ? prepareFilesForOpenAICompatibleMode(filesToUse)
+          : await ensureFilesApiReferences({
+              files: filesToUse,
+              apiKey: keyToUse,
+              abortSignal: newAbortController.signal,
+              onFileUpdate: (fileId, patch) => {
+                if (overrideOptions?.files !== undefined) {
+                  return;
+                }
 
-              setSelectedFiles((prev) => prev.map((file) => (file.id === fileId ? { ...file, ...patch } : file)));
-            },
-          });
+                setSelectedFiles((prev) => prev.map((file) => (file.id === fileId ? { ...file, ...patch } : file)));
+              },
+            });
 
       if (!fileReferenceResult.ok) {
         setAppFileError(formatFileReferenceErrorMessage(fileReferenceResult, t));
@@ -206,28 +225,6 @@ export const useMessageSender = (props: MessageSenderProps) => {
           appSettings,
           currentChatSettings: sessionToUpdate,
           text: textToUse.trim(),
-          shouldLockKey,
-          updateAndPersistSessions,
-          setActiveSessionId,
-          runMessageLifecycle,
-          t,
-        });
-        if (editingMessageId) setEditingMessageId(null);
-        return;
-      }
-
-      if (isRealImagenModel) {
-        await sendImageGenerationMessage({
-          keyToUse,
-          activeSessionId,
-          generationId,
-          abortController: newAbortController,
-          appSettings,
-          currentChatSettings: sessionToUpdate,
-          text: textToUse.trim(),
-          aspectRatio,
-          imageSize,
-          personGeneration,
           shouldLockKey,
           updateAndPersistSessions,
           setActiveSessionId,
@@ -321,5 +318,5 @@ export const useMessageSender = (props: MessageSenderProps) => {
     ],
   );
 
-  return { handleSendMessage };
+  return { handleSendMessage, resumePendingStream };
 };

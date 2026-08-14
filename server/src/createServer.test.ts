@@ -5,9 +5,23 @@ import { createHttpServerCleanup, startHttpServer } from '../test/httpServer';
 import http from 'node:http';
 import { Buffer } from 'node:buffer';
 
+// Image proxy resolves hostnames before fetch (DNS rebinding guard). Keep suites offline.
+const dnsLookup = vi.hoisted(() => vi.fn(async () => [{ address: '1.2.3.4', family: 4 as const }]));
+
+vi.mock('node:dns/promises', () => ({
+  default: {
+    lookup: dnsLookup,
+  },
+  lookup: dnsLookup,
+}));
+
 const serverCleanup = createHttpServerCleanup();
 
-afterEach(serverCleanup.cleanup);
+afterEach(async () => {
+  await serverCleanup.cleanup();
+  dnsLookup.mockReset();
+  dnsLookup.mockResolvedValue([{ address: '1.2.3.4', family: 4 }]);
+});
 
 describe('createServer', () => {
   it('returns health details from GET /health', async () => {
@@ -324,10 +338,7 @@ describe('createServer', () => {
         headers: { 'content-type': 'image/png' },
       });
     });
-    const app = createServer(
-      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
-      { fetchImpl },
-    );
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
     const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
@@ -346,10 +357,7 @@ describe('createServer', () => {
         headers: { location: 'http://127.0.0.1/private.png' },
       });
     });
-    const app = createServer(
-      { geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' },
-      { fetchImpl },
-    );
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
     const started = serverCleanup.track(await startHttpServer(app));
 
     const response = await fetch(
@@ -359,6 +367,25 @@ describe('createServer', () => {
 
     expect(response.status).toBe(400);
     expect(body).toEqual({ error: 'Image proxy target attempted an unsafe redirect.' });
+  });
+
+  it('rejects image-proxy hosts that resolve to private addresses (DNS rebinding)', async () => {
+    dnsLookup.mockResolvedValue([{ address: '127.0.0.1', family: 4 }]);
+    const fetchImpl = vi.fn();
+    const app = createServer({ geminiApiBase: 'https://example.test', geminiApiKey: 'server-key' }, { fetchImpl });
+    const started = serverCleanup.track(await startHttpServer(app));
+
+    const response = await fetch(
+      `${started.baseUrl}/api/image-proxy?url=${encodeURIComponent('https://evil.example.com/img.png')}`,
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      error: 'Image proxy host "evil.example.com" resolves to private address 127.0.0.1.',
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(dnsLookup).toHaveBeenCalledWith('evil.example.com', { all: true, verbatim: true });
   });
 
   it('returns the local clipboard image when available', async () => {

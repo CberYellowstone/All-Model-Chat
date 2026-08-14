@@ -6,7 +6,7 @@ import type {
   ThirdPartyProviderConfig,
   ThirdPartyProviderId,
 } from '@/types';
-import { deduplicateModelsById, sanitizeModelOptions } from './modelSorting';
+import { deduplicateModelsById, sanitizeModelOptions } from './model/modelSorting';
 
 export const THIRD_PARTY_PROVIDER_IDS = [
   'openai',
@@ -34,8 +34,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   openai: {
     apiKey: null,
     baseUrl: 'https://api.openai.com/v1',
-    modelId: 'gpt-5.5',
-    models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+    modelId: 'gpt-5.6-sol',
+    models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -56,8 +56,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     modelId: 'claude-fable-5',
     models: [
       { id: 'claude-fable-5', name: 'Claude Fable 5', isPinned: true },
-      { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
+      { id: 'claude-opus-5', name: 'Claude Opus 5' },
+      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5' },
       { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' },
     ],
     protocol: 'anthropic',
@@ -77,7 +77,7 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     modelId: 'qwen3.7-max',
     models: [
       { id: 'qwen3.7-max', name: 'Qwen3.7 Max', isPinned: true },
-      { id: 'qwen-plus', name: 'Qwen Plus' },
+      { id: 'qwen3.7-plus', name: 'Qwen3.7 Plus' },
     ],
     protocol: 'openai-compatible',
     enabled: false,
@@ -85,8 +85,8 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   kimi: {
     apiKey: null,
     baseUrl: 'https://api.moonshot.ai/v1',
-    modelId: 'kimi-k2.6',
-    models: [{ id: 'kimi-k2.6', name: 'Kimi K2.6', isPinned: true }],
+    modelId: 'kimi-k3',
+    models: [{ id: 'kimi-k3', name: 'Kimi K3', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -94,10 +94,7 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
     apiKey: null,
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     modelId: 'glm-5.2',
-    models: [
-      { id: 'glm-5.2', name: 'GLM-5.2', isPinned: true },
-      { id: 'glm-5.1', name: 'GLM-5.1' },
-    ],
+    models: [{ id: 'glm-5.2', name: 'GLM-5.2', isPinned: true }],
     protocol: 'openai-compatible',
     enabled: false,
   },
@@ -111,14 +108,6 @@ const DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS: Record<ThirdPartyProviderId, ThirdPa
   },
 };
 
-export const DEFAULT_THIRD_PARTY_API_SETTINGS: ThirdPartyApiSettings = {
-  activeProvider: 'openai',
-  providers: DEFAULT_THIRD_PARTY_PROVIDER_CONFIGS,
-};
-
-const isThirdPartyProviderId = (value: unknown): value is ThirdPartyProviderId =>
-  typeof value === 'string' && THIRD_PARTY_PROVIDER_IDS.includes(value as ThirdPartyProviderId);
-
 const isThirdPartyProtocol = (value: unknown): value is ThirdPartyApiProtocol =>
   value === 'openai-compatible' || value === 'anthropic';
 
@@ -130,7 +119,6 @@ const cloneThirdPartyProviderConfig = (config: ThirdPartyProviderConfig): ThirdP
 });
 
 export const createDefaultThirdPartyApiSettings = (): ThirdPartyApiSettings => ({
-  activeProvider: DEFAULT_THIRD_PARTY_API_SETTINGS.activeProvider,
   providers: Object.fromEntries(
     THIRD_PARTY_PROVIDER_IDS.map((providerId) => [
       providerId,
@@ -138,19 +126,6 @@ export const createDefaultThirdPartyApiSettings = (): ThirdPartyApiSettings => (
     ]),
   ) as Record<ThirdPartyProviderId, ThirdPartyProviderConfig>,
 });
-
-export const getThirdPartyProviderConfig = (
-  settings: Pick<AppSettings, 'thirdPartyApi'>,
-): ThirdPartyProviderConfig => {
-  const thirdPartyApi = settings.thirdPartyApi ?? createDefaultThirdPartyApiSettings();
-  return thirdPartyApi.providers[thirdPartyApi.activeProvider] ?? thirdPartyApi.providers.openai;
-};
-
-export const getThirdPartyProviderModels = (settings: Pick<AppSettings, 'thirdPartyApi'>): ModelOption[] =>
-  getThirdPartyProviderConfig(settings).models;
-
-export const getThirdPartyProviderModelId = (settings: Pick<AppSettings, 'thirdPartyApi'>): string =>
-  getThirdPartyProviderConfig(settings).modelId;
 
 /**
  * Returns all enabled third-party providers as { id, config } pairs.
@@ -160,47 +135,45 @@ export const getEnabledThirdPartyProviders = (
   settings: Pick<AppSettings, 'thirdPartyApi'>,
 ): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig }[] => {
   const thirdPartyApi = settings.thirdPartyApi ?? createDefaultThirdPartyApiSettings();
-  return THIRD_PARTY_PROVIDER_IDS.filter(
-    (id) => thirdPartyApi.providers[id]?.enabled === true,
-  ).map((id) => ({ id, config: thirdPartyApi.providers[id] }));
+  return THIRD_PARTY_PROVIDER_IDS.filter((id) => thirdPartyApi.providers[id]?.enabled === true).map((id) => ({
+    id,
+    config: thirdPartyApi.providers[id],
+  }));
 };
 
 /**
- * Given a modelId, find the enabled provider that contains it.
- * Falls back to the activeProvider config if no match is found.
+ * Given a modelId, find the enabled provider that contains it. Returns undefined
+ * when the modelId belongs to no enabled provider — the caller decides how to
+ * route (Gemini fallback). Never falls back to a default provider, because
+ * doing so would route a Gemini modelId to a third-party provider.
  */
 export const resolveProviderForModelId = (
   settings: Pick<AppSettings, 'thirdPartyApi'>,
   modelId: string,
-): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig } => {
-  const enabled = getEnabledThirdPartyProviders(settings);
-  const match = enabled.find(({ config }) =>
-    config.models.some((m) => m.id === modelId),
-  );
-  if (match) return match;
-
-  // Fallback: active provider
-  const activeId = settings.thirdPartyApi?.activeProvider ?? 'openai';
-  const activeConfig = getThirdPartyProviderConfig(settings);
-  return { id: activeId, config: activeConfig };
+): { id: ThirdPartyProviderId; config: ThirdPartyProviderConfig } | undefined => {
+  return getEnabledThirdPartyProviders(settings).find(({ config }) => config.models.some((m) => m.id === modelId));
 };
 
+/**
+ * Merges built-in (Gemini) models with every enabled third-party provider's
+ * models. Same-named model ids from different providers are both kept (the
+ * header picker groups them per provider), so a model id that exists on two
+ * providers stays selectable on both. Duplicates *within* a single provider's
+ * list are still dropped.
+ */
 export const buildProviderAwareModelList = (
-  appSettings: Pick<AppSettings, 'isThirdPartyApiEnabled' | 'thirdPartyApi'>,
+  appSettings: Pick<AppSettings, 'thirdPartyApi'>,
   baseModels: ModelOption[],
 ): ModelOption[] => {
-  const thirdPartyModels =
-    appSettings.isThirdPartyApiEnabled === true
-      ? getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
-          config.models.map((model) => ({
-            ...model,
-            apiMode: 'third-party' as const,
-            providerId: id,
-          })),
-        )
-      : [];
+  const thirdPartyModels = getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
+    deduplicateModelsById(config.models).map((model) => ({
+      ...model,
+      apiMode: 'third-party' as const,
+      providerId: id,
+    })),
+  );
 
-  return deduplicateModelsById([...baseModels, ...thirdPartyModels]);
+  return [...deduplicateModelsById(baseModels), ...thirdPartyModels];
 };
 
 const sanitizeThirdPartyProviderConfig = (
@@ -226,14 +199,10 @@ const sanitizeThirdPartyProviderConfig = (
 
 export const sanitizeThirdPartyApiSettings = (
   value: Partial<ThirdPartyApiSettings> | undefined,
-  legacyOpenAICompatible?: {
-    apiKey?: string | null;
-    baseUrl?: string | null;
-    modelId?: string;
-    models?: ModelOption[];
-  },
 ): ThirdPartyApiSettings => {
-  const activeProvider = isThirdPartyProviderId(value?.activeProvider) ? value.activeProvider : 'openai';
+  // Any legacy `activeProvider` field on the input is deliberately dropped — it
+  // was UI memory leaked into persisted settings, and sessions route by their
+  // own (providerId, modelId) instead.
   const valueProviders: Partial<Record<ThirdPartyProviderId, Partial<ThirdPartyProviderConfig>>> =
     value?.providers ?? {};
   const providers = Object.fromEntries(
@@ -243,19 +212,7 @@ export const sanitizeThirdPartyApiSettings = (
     ]),
   ) as Record<ThirdPartyProviderId, ThirdPartyProviderConfig>;
 
-  if (legacyOpenAICompatible) {
-    providers.openai = sanitizeThirdPartyProviderConfig('openai', {
-      ...providers.openai,
-      apiKey: legacyOpenAICompatible.apiKey ?? providers.openai.apiKey,
-      baseUrl: legacyOpenAICompatible.baseUrl ?? providers.openai.baseUrl,
-      modelId: legacyOpenAICompatible.modelId ?? providers.openai.modelId,
-      models: legacyOpenAICompatible.models ?? providers.openai.models,
-      protocol: 'openai-compatible',
-    });
-  }
-
   return {
-    activeProvider,
     providers,
   };
 };
@@ -265,7 +222,6 @@ export const updateThirdPartyProviderConfig = (
   providerId: ThirdPartyProviderId,
   updates: Partial<ThirdPartyProviderConfig>,
 ): ThirdPartyApiSettings => ({
-  ...thirdPartyApi,
   providers: {
     ...thirdPartyApi.providers,
     [providerId]: sanitizeThirdPartyProviderConfig(providerId, {
@@ -274,8 +230,3 @@ export const updateThirdPartyProviderConfig = (
     }),
   },
 });
-
-export const updateActiveThirdPartyProviderConfig = (
-  thirdPartyApi: ThirdPartyApiSettings,
-  updates: Partial<ThirdPartyProviderConfig>,
-): ThirdPartyApiSettings => updateThirdPartyProviderConfig(thirdPartyApi, thirdPartyApi.activeProvider, updates);

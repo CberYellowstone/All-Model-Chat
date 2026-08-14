@@ -71,7 +71,7 @@ describe('ModelPicker behavior', () => {
         renderPicker({
           models: [
             { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-            { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'third-party' },
           ],
           selectedId: 'gemini-3-flash-preview',
         }),
@@ -85,12 +85,13 @@ describe('ModelPicker behavior', () => {
     });
 
     const geminiSection = renderer.container.querySelector('[data-provider-section="gemini-native"]');
-    const openaiSection = renderer.container.querySelector('[data-provider-section="openai-compatible"]');
+    const openaiSection = renderer.container.querySelector('[data-provider-section="third-party"]');
 
     expect(geminiSection?.textContent).toContain('Gemini');
     expect(geminiSection?.textContent).toContain('Gemini 3 Flash Preview');
-    expect(openaiSection?.textContent).toContain('OpenAI Compatible');
-    expect(openaiSection?.textContent).toContain('GPT-5.5');
+    // Third-party models render under the converged Third-Party section label.
+    expect(openaiSection?.textContent).toContain('Third-Party');
+    expect(openaiSection?.textContent).toContain('GPT-5.6 Sol');
   });
 
   it('supports keyboard navigation through model options', () => {
@@ -108,7 +109,7 @@ describe('ModelPicker behavior', () => {
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
 
-    expect(onSelect).toHaveBeenCalledWith('gemma-4-31b-it');
+    expect(onSelect).toHaveBeenCalledWith('gemma-4-31b-it', undefined);
     expect(renderer.container.querySelector('[role="listbox"]')).toBeNull();
   });
 

@@ -1,8 +1,7 @@
-import { type AppSettings, type ChatSettings } from '@/types';
+import { type AppSettings, type ChatSettings, type ThirdPartyProviderConfig } from '@/types';
 import { API_KEY_LAST_USED_INDEX_KEY } from '@/constants/storageKeys';
 import { logService } from '@/services/logService';
-import { isThirdPartyApiActive } from './thirdPartyApiActive';
-import { getThirdPartyProviderConfig } from './thirdPartyApiProviders';
+import { resolveChatApiRoute } from './chatApiRoute';
 
 export const SERVER_MANAGED_API_KEY = '__SERVER_MANAGED_API_KEY__';
 
@@ -25,19 +24,48 @@ type GetKeyForRequestOptions = {
   skipIncrement?: boolean;
   skipUsageLogging?: boolean;
   apiMode?: ApiKeyRequestMode;
+  provider?: ThirdPartyProviderConfig;
 };
 
-const resolveApiKeyRequestMode = (appSettings: AppSettings, apiMode: ApiKeyRequestMode = 'active') => {
+const resolveApiKeyRequestMode = (
+  appSettings: AppSettings,
+  currentChatSettings: ChatSettings,
+  apiMode: ApiKeyRequestMode = 'active',
+) => {
   if (apiMode !== 'active') {
     return apiMode;
   }
 
-  return isThirdPartyApiActive(appSettings) ? 'third-party' : 'gemini-native';
+  // Follow the session's routing decision, not a global mode that can drift
+  // stale after switching to a differently-routed chat.
+  return resolveChatApiRoute(appSettings, currentChatSettings).apiMode === 'third-party'
+    ? 'third-party'
+    : 'gemini-native';
+};
+
+// Resolve the provider whose key should be used. An explicit `options.provider`
+// wins (callers already resolved the route), then the session's routing
+// decision (the derived (providerId, modelId) key), then the global active
+// provider as a last-resort fallback.
+const resolveProviderForKey = (
+  appSettings: AppSettings,
+  currentChatSettings: ChatSettings,
+  options: GetKeyForRequestOptions,
+): ThirdPartyProviderConfig | undefined => {
+  if (options.provider) {
+    return options.provider;
+  }
+  const route = resolveChatApiRoute(appSettings, currentChatSettings);
+  if (route.provider) {
+    return route.provider;
+  }
+  return undefined;
 };
 
 const getActiveApiConfig = (
   appSettings: AppSettings,
-  apiMode: ApiKeyRequestMode = 'active',
+  currentChatSettings: ChatSettings,
+  options: GetKeyForRequestOptions = {},
 ): { apiKeysString: string | null } => {
   const importEnv = (
     import.meta as ImportMeta & {
@@ -48,10 +76,10 @@ const getActiveApiConfig = (
     }
   ).env;
 
-  if (resolveApiKeyRequestMode(appSettings, apiMode) === 'third-party') {
-    const activeProvider = getThirdPartyProviderConfig(appSettings);
-    const envFallback = activeProvider.protocol === 'openai-compatible' ? importEnv?.VITE_OPENAI_API_KEY : null;
-    return { apiKeysString: activeProvider.apiKey || envFallback || null };
+  if (resolveApiKeyRequestMode(appSettings, currentChatSettings, options.apiMode) === 'third-party') {
+    const provider = resolveProviderForKey(appSettings, currentChatSettings, options);
+    const envFallback = provider?.protocol === 'openai-compatible' ? importEnv?.VITE_OPENAI_API_KEY : null;
+    return { apiKeysString: provider?.apiKey || envFallback || null };
   }
 
   if (appSettings.useCustomApiConfig) {
@@ -79,7 +107,7 @@ export const getKeyForRequest = (
 ): { key: string; isNewKey: boolean } | { error: string } => {
   const { skipIncrement = false } = options;
   const { skipUsageLogging = false } = options;
-  const apiKeyRequestMode = resolveApiKeyRequestMode(appSettings, options.apiMode);
+  const apiKeyRequestMode = resolveApiKeyRequestMode(appSettings, currentChatSettings, options.apiMode);
   const shouldUseServerManagedMarker =
     apiKeyRequestMode !== 'third-party' && isServerManagedApiEnabledForProxyRequests(appSettings);
 
@@ -89,7 +117,7 @@ export const getKeyForRequest = (
     }
   };
 
-  const { apiKeysString } = getActiveApiConfig(appSettings, options.apiMode);
+  const { apiKeysString } = getActiveApiConfig(appSettings, currentChatSettings, options);
   if (!apiKeysString) {
     if (shouldUseServerManagedMarker) {
       return { key: SERVER_MANAGED_API_KEY, isNewKey: false };
@@ -158,9 +186,10 @@ export const getGeminiKeyForRequest = (
   currentChatSettings: ChatSettings,
   options: Omit<GetKeyForRequestOptions, 'apiMode'> = {},
 ): { key: string; isNewKey: boolean } | { error: string } => {
-  const keySettings = isThirdPartyApiActive(appSettings)
-    ? { ...currentChatSettings, lockedApiKey: null }
-    : currentChatSettings;
+  const keySettings =
+    resolveChatApiRoute(appSettings, currentChatSettings).apiMode === 'third-party'
+      ? { ...currentChatSettings, lockedApiKey: null }
+      : currentChatSettings;
 
   return getKeyForRequest(appSettings, keySettings, {
     ...options,

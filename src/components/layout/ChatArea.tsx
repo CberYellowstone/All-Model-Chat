@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Header } from '@/components/header/Header';
-import { MessageList } from '@/components/chat/MessageList';
+import { MessageList } from '@/components/chat/message-list/MessageList';
 import { ChatInput } from '@/components/chat/input/ChatInput';
 import { DragDropOverlay } from '@/components/chat/overlays/DragDropOverlay';
 import { ModelsErrorDisplay } from '@/components/chat/overlays/ModelsErrorDisplay';
@@ -33,6 +33,7 @@ export const ChatArea: React.FC = () => {
     isPipSupported,
     isPipActive,
     onNewChat,
+    newChatHref,
     onOpenScenariosModal,
     onToggleHistorySidebar,
     onLoadLiveArtifactsPrompt,
@@ -58,6 +59,7 @@ export const ChatArea: React.FC = () => {
 
       <Header
         onNewChat={onNewChat}
+        newChatHref={newChatHref}
         onOpenScenariosModal={onOpenScenariosModal}
         onToggleHistorySidebar={onToggleHistorySidebar}
         isLoading={isLoading}

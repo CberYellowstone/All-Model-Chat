@@ -23,8 +23,8 @@ import {
   normalizeThinkingLevelForModel,
   normalizeAspectRatioForModel,
   normalizeImageSizeForModel,
-} from '@/utils/modelCapabilities';
-import { normalizeModelId } from '@/utils/modelId';
+} from '@/utils/model/modelCapabilities';
+import { normalizeModelId } from '@/utils/model/modelId';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 
 const IMAGE_TEXT_MODALITIES = ['IMAGE', 'TEXT'];
@@ -173,7 +173,7 @@ async function buildGenerationConfigFromOptions({
   const normalizedImageSize = normalizeImageSizeForModel(modelId, imageSize);
   const googleSearchTool = buildGoogleSearchToolForModel(modelId);
 
-  if (normalizeModelId(modelId) === 'gemini-2.5-flash-image-preview' || normalizeModelId(modelId) === 'gemini-2.5-flash-image') {
+  if (normalizeModelId(modelId) === 'gemini-2.5-flash-image') {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {};
     if (normalizedAspectRatio && normalizedAspectRatio !== 'Auto') {
       imageConfig.aspectRatio = normalizedAspectRatio;
@@ -205,7 +205,10 @@ async function buildGenerationConfigFromOptions({
       imageConfig,
     };
 
-    if (normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' || normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image') {
+    if (
+      normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' ||
+      normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image'
+    ) {
       generationConfig.thinkingConfig = {
         includeThoughts: true,
         // Gemini 3.1 Flash Image / Lite expose only minimal/high thinking levels.
@@ -266,17 +269,18 @@ async function buildGenerationConfigFromOptions({
   const supportsThinkingLevel = isGemini3 || isGeminiRoboticsModel(modelId);
 
   if (supportsThinkingLevel) {
+    // Gemini 3 series (incl. 3.7 Flash / 3.6 Flash / 3.5 Flash-Lite): official API is thinkingLevel + includeThoughts.
+    // Do not send thinkingBudget alone — it is a 2.5-era parameter and can omit thought summaries on 3.x.
+    // includeThoughts stays true so summaries are available; UI visibility is gated by showThoughts.
     generationConfig.thinkingConfig = {
       includeThoughts: true,
+      thinkingLevel: toSdkThinkingLevel(normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'), 'HIGH'),
     };
 
-    if (thinkingBudget > 0) {
+    // Robotics still accepts budget for backwards-compatible token control when set.
+    if (!isGemini3 && thinkingBudget > 0) {
+      delete generationConfig.thinkingConfig.thinkingLevel;
       generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
-    } else {
-      generationConfig.thinkingConfig.thinkingLevel = toSdkThinkingLevel(
-        normalizeThinkingLevelForModel(modelId, thinkingLevel, 'HIGH'),
-        'HIGH',
-      );
     }
   } else if (isGemma) {
     generationConfig.thinkingConfig = {
@@ -319,7 +323,9 @@ export const buildGenerationConfig = (options: BuildGenerationConfigOptions): Pr
   buildGenerationConfigFromOptions(toInternalBuildGenerationConfigOptions(options));
 
 const hasBuiltInTools = (tools: GenerationConfig['tools'] | undefined): boolean =>
-  !!tools?.some((tool) => 'googleSearch' in tool || 'googleMaps' in tool || 'codeExecution' in tool || 'urlContext' in tool);
+  !!tools?.some(
+    (tool) => 'googleSearch' in tool || 'googleMaps' in tool || 'codeExecution' in tool || 'urlContext' in tool,
+  );
 
 export const appendFunctionDeclarationsToTools = (
   modelId: string,

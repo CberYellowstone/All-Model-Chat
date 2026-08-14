@@ -32,10 +32,14 @@ export type OpenAIChoice = {
   message?: {
     content?: string | Array<{ text?: string }>;
     reasoning_content?: string;
+    reasoning?: string;
+    reasoning_details?: Array<{ text?: string }>;
   };
   delta?: {
     content?: string;
     reasoning_content?: string;
+    reasoning?: string;
+    reasoning_details?: Array<{ text?: string }>;
   };
 };
 

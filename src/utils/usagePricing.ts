@@ -1,15 +1,9 @@
 import type { ApiUsageExactPricing, ApiUsageModalityTokenCount, ApiUsageRecord } from '@/services/db/dbService';
-import { normalizeModelId } from './modelId';
+import { normalizeModelId } from './model/modelId';
 
 const TOKENS_PER_MILLION = 1_000_000;
 /** Gemini 3.1 Pro applies higher per-token rates once combined prompt+cache tokens exceed this threshold. */
 const PRO_MODEL_TIER_THRESHOLD_TOKENS = 200_000;
-
-const IMAGE_GENERATION_PRICING: Record<string, { perImage: number } | null> = {
-  'imagen-4.0-fast-generate-001': { perImage: 0.02 },
-  'imagen-4.0-generate-001': { perImage: 0.04 },
-  'imagen-4.0-ultra-generate-001': { perImage: 0.06 },
-};
 
 const MODALITY_TEXT_PRICING: Record<
   string,
@@ -31,11 +25,26 @@ const MODALITY_TEXT_PRICING: Record<
     response: { TEXT: 3 },
     tool: { TEXT: 0.5, IMAGE: 0.5, AUDIO: 1 },
   },
-  'gemini-3.1-flash-lite': {
-    prompt: { TEXT: 0.25, IMAGE: 0.25, AUDIO: 0.5 },
-    cache: { TEXT: 0.025, IMAGE: 0.025, AUDIO: 0.05 },
-    response: { TEXT: 1.5 },
-    tool: { TEXT: 0.25, IMAGE: 0.25, AUDIO: 0.5 },
+  // Official Gemini API pricing (Standard): $1.50 input / $7.50 output / $0.15 cache.
+  'gemini-3.6-flash': {
+    prompt: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+    cache: { TEXT: 0.15, IMAGE: 0.15, AUDIO: 0.15 },
+    response: { TEXT: 7.5 },
+    tool: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+  },
+  // Mirrors Gemini 3.6 Flash rates until official 3.7 pricing is published.
+  'gemini-3.7-flash': {
+    prompt: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+    cache: { TEXT: 0.15, IMAGE: 0.15, AUDIO: 0.15 },
+    response: { TEXT: 7.5 },
+    tool: { TEXT: 1.5, IMAGE: 1.5, AUDIO: 1.5 },
+  },
+  // Official Gemini API pricing (Standard): $0.30 input (all modalities) / $2.50 output / $0.03 cache.
+  'gemini-3.5-flash-lite': {
+    prompt: { TEXT: 0.3, IMAGE: 0.3, AUDIO: 0.3 },
+    cache: { TEXT: 0.03, IMAGE: 0.03, AUDIO: 0.03 },
+    response: { TEXT: 2.5 },
+    tool: { TEXT: 0.3, IMAGE: 0.3, AUDIO: 0.3 },
   },
   'gemini-3.1-pro-preview': {
     prompt: { TEXT: 2 },
@@ -79,12 +88,10 @@ const hasAnyDetails = (details: ApiUsageModalityTokenCount[] | undefined) =>
 const calculateFromExactPricing = (modelId: string, exactPricing: ApiUsageExactPricing): number | null => {
   const normalizedModelId = normalizeModelId(modelId);
 
+  // Per-image Imagen pricing was removed with Imagen model support. Historical
+  // image_generate usage records stay unpriced.
   if (exactPricing.requestKind === 'image_generate') {
-    const imagePricing = IMAGE_GENERATION_PRICING[normalizedModelId];
-    if (!imagePricing || !exactPricing.generatedImageCount) {
-      return null;
-    }
-    return exactPricing.generatedImageCount * imagePricing.perImage;
+    return null;
   }
 
   // 'tts' requestKind intentionally falls through to the modality table, which has

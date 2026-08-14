@@ -8,7 +8,12 @@ import { SERVER_MANAGED_API_KEY } from '@/utils/apiKeySelection';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import { ApiConfigSection } from './ApiConfigSection';
 
-const { getClientMock, generateContentMock, sendOpenAICompatibleMessageNonStreamMock, sendAnthropicMessageNonStreamMock } = vi.hoisted(() => ({
+const {
+  getClientMock,
+  generateContentMock,
+  sendOpenAICompatibleMessageNonStreamMock,
+  sendAnthropicMessageNonStreamMock,
+} = vi.hoisted(() => ({
   getClientMock: vi.fn(),
   generateContentMock: vi.fn(),
   sendOpenAICompatibleMessageNonStreamMock: vi.fn(),
@@ -80,10 +85,7 @@ describe('ApiConfigSection', () => {
   }): Partial<AppSettings> => {
     const defaults = createDefaultThirdPartyApiSettings();
     return {
-      isThirdPartyApiEnabled: true,
-      apiMode: 'third-party',
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...defaults.providers,
           openai: {
@@ -92,6 +94,7 @@ describe('ApiConfigSection', () => {
             modelId: overrides.modelId ?? defaults.providers.openai.modelId,
             models: overrides.models ?? defaults.providers.openai.models,
             protocol: 'openai-compatible' as const,
+            enabled: true,
           },
         },
       },
@@ -141,7 +144,7 @@ describe('ApiConfigSection', () => {
 
     await vi.waitFor(() => {
       expect(generateContentMock).toHaveBeenCalledWith({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.7-flash',
         contents: 'Hello',
       });
     });
@@ -153,9 +156,6 @@ describe('ApiConfigSection', () => {
     expect(renderer.container.textContent).not.toContain('API & Connections');
     expect(renderer.container.textContent).toContain('Test Connection');
     expect(renderer.container.textContent).toContain('File Transfer Method');
-    expect(renderer.container.textContent).toContain('API Provider');
-    expect(renderer.container.textContent).toContain('Gemini Official API');
-    expect(renderer.container.textContent).toContain('Third-Party API');
 
     act(() => {
       useSettingsStore.setState({ language: 'zh' });
@@ -164,73 +164,38 @@ describe('ApiConfigSection', () => {
     expect(renderer.container.textContent).not.toContain('API 与连接');
     expect(renderer.container.textContent).toContain('测试连通性');
     expect(renderer.container.textContent).toContain('文件传输方式');
-    expect(renderer.container.textContent).toContain('API 提供方');
-    expect(renderer.container.textContent).toContain('Gemini 官方接口');
-    expect(renderer.container.textContent).toContain('第三方接口');
   });
 
-  it('renders a single provider selector and enables third-party mode from it', async () => {
-    const onUpdate = vi.fn();
+  it('shows the third-party provider cards without a global mode selector', async () => {
+    await renderApiConfigSection();
 
-    await renderApiConfigSection({ onUpdate });
-
-    const providerSelector = renderer.container.querySelector('[role="group"][aria-label="API Provider"]');
-    const openaiProviderButton = Array.from(renderer.container.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Third-Party API',
-    );
-
-    expect(providerSelector).not.toBeNull();
+    // No global mode toggle exists anymore — providers are enabled per-card.
+    expect(renderer.container.querySelector('[role="group"][aria-label="API Provider"]')).toBeNull();
     expect(renderer.container.querySelector('#openai-compatible-api-enabled-toggle')).toBeNull();
-    expect(openaiProviderButton).toBeDefined();
-
-    await act(async () => {
-      openaiProviderButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(onUpdate).toHaveBeenCalledWith('isThirdPartyApiEnabled', true);
-    expect(onUpdate).toHaveBeenCalledWith('apiMode', 'third-party');
+    expect(renderer.container.textContent).toContain('OpenAI');
+    expect(renderer.container.textContent).toContain('Anthropic');
   });
 
-  it('returns to Gemini provider from the same selector and hides third-party settings', async () => {
-    const onUpdate = vi.fn();
-
+  it('tests the third-party openai endpoint with the active provider key', async () => {
     await renderApiConfigSection({
-      settings: { ...settingsFixture, ...withOpenaiProvider({}) },
-      onUpdate,
-    });
-
-    const geminiProviderButton = Array.from(renderer.container.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Gemini Official API',
-    );
-
-    expect(renderer.container.querySelector('#openai-compatible-api-enabled-toggle')).toBeNull();
-    expect(geminiProviderButton).toBeDefined();
-    expect(renderer.container.textContent).toContain('Provider');
-
-    await act(async () => {
-      geminiProviderButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(onUpdate).toHaveBeenCalledWith('isThirdPartyApiEnabled', false);
-    expect(onUpdate).toHaveBeenCalledWith('apiMode', 'gemini-native');
-  });
-
-  it('tests the third-party openai endpoint with the active provider key when third-party mode is selected', async () => {
-    await renderApiConfigSection({
-      apiKey: 'gemini-key',
+      useCustomApiConfig: false,
       settings: {
         ...settingsFixture,
         ...withOpenaiProvider({
           apiKey: 'openai-compatible-key',
           baseUrl: 'https://api.openai.com/v1',
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
         }),
       },
     });
 
-    const testButton = Array.from(renderer.container.querySelectorAll('button')).find((button) =>
+    // The Gemini tester is always in the DOM (CSS-collapsed when custom config
+    // is off). The OpenAI card's tester is the LAST one — the Gemini tester
+    // renders first inside the collapsed custom-config block.
+    const testButtons = Array.from(renderer.container.querySelectorAll('button')).filter((button) =>
       button.textContent?.includes('Test Connection'),
     );
+    const testButton = testButtons[testButtons.length - 1];
 
     await act(async () => {
       testButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -239,7 +204,7 @@ describe('ApiConfigSection', () => {
     expect(getClientMock).not.toHaveBeenCalled();
     expect(sendOpenAICompatibleMessageNonStreamMock).toHaveBeenCalledWith(
       'openai-compatible-key',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       [],
       [{ text: 'Hello' }],
       {
@@ -270,7 +235,7 @@ describe('ApiConfigSection', () => {
     const onUpdate = vi.fn();
 
     await renderApiConfigSection({
-      apiKey: 'gemini-key',
+      useCustomApiConfig: false, // hide the Gemini api key input so #api-key-input is the third-party one
       setApiKey,
       settings: {
         ...settingsFixture,
@@ -279,7 +244,10 @@ describe('ApiConfigSection', () => {
       onUpdate,
     });
 
-    const apiKeyInput = renderer.container.querySelector('#api-key-input') as HTMLTextAreaElement | null;
+    // The Gemini api-key input is always in the DOM (CSS-collapsed when custom
+    // config is off). The OpenAI card's input is the LAST one.
+    const apiKeyInputs = Array.from(renderer.container.querySelectorAll<HTMLTextAreaElement>('#api-key-input'));
+    const apiKeyInput = apiKeyInputs[apiKeyInputs.length - 1];
     expect(apiKeyInput).not.toBeNull();
 
     await act(async () => {
@@ -291,9 +259,7 @@ describe('ApiConfigSection', () => {
 
     expect(setApiKey).not.toHaveBeenCalled();
     // The active provider api key is written through onUpdate with the full thirdPartyApi object.
-    const thirdPartyUpdate = onUpdate.mock.calls.find(
-      ([key]) => key === 'thirdPartyApi',
-    );
+    const thirdPartyUpdate = onUpdate.mock.calls.find(([key]) => key === 'thirdPartyApi');
     expect(thirdPartyUpdate).toBeDefined();
     const updatedSettings = thirdPartyUpdate![1] as AppSettings['thirdPartyApi'];
     expect(updatedSettings.providers.openai.apiKey).toBe('sk-openai');
@@ -304,16 +270,15 @@ describe('ApiConfigSection', () => {
       settings: {
         ...settingsFixture,
         ...withOpenaiProvider({
-          modelId: 'gpt-5.5',
+          modelId: 'gpt-5.6-sol',
           models: [
-            { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
             { id: 'gpt-4.1', name: 'GPT-4.1' },
           ],
         }),
       },
     });
 
-    expect(renderer.container.textContent).toContain('Provider');
     expect(renderer.container.querySelector('#third-party-base-url-input')).not.toBeNull();
     // Per-provider collapsible UI (no separate <select>): the active provider
     // (openai) is expanded by default and its model list editor is rendered.

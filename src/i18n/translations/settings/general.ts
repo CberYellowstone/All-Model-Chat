@@ -1,5 +1,6 @@
+// settingsTitle lives in coreTranslations shellFeatureTranslations (sidebar chrome
+// before the settings pack loads). Do not re-declare it here.
 const generalSettings = {
-  settingsTitle: { en: 'Settings', zh: '设置' },
   settingsTabChat: { en: 'Chat', zh: '聊天' },
   settingsTabModels: { en: 'Models', zh: '模型' },
   settingsTabGeneration: { en: 'Model Behavior', zh: '模型行为' },
@@ -18,6 +19,15 @@ const generalSettings = {
     en: 'Open a chat to edit current-chat settings.',
     zh: '打开对话后可编辑当前会话设置。',
   },
+  settingsSearchPlaceholder: { en: 'Search settings…', zh: '搜索设置…' },
+  settingsSearchNoResults: { en: 'No matching settings.', zh: '未找到匹配的设置。' },
+  settingsSearchResultsCount: { en: '{count} results', zh: '{count} 个结果' },
+  settingsSearchClearAria: { en: 'Clear search', zh: '清除搜索' },
+  settingsSearchAria: { en: 'Search settings', zh: '搜索设置' },
+  settingsAdvancedMode: { en: 'Advanced Mode', zh: '高级模式' },
+  settingsShowAdvancedParameters: { en: 'Show Advanced Parameters', zh: '展开高级微调参数' },
+  settingsHideAdvancedParameters: { en: 'Hide Advanced Parameters', zh: '折叠高级微调参数' },
+
   usageTitle: { en: 'API Usage', zh: 'API 用量' },
   usageDescription: {
     en: 'Track token consumption and request counts for recent model activity.',
@@ -40,7 +50,6 @@ const generalSettings = {
   usageModelColumn: { en: 'Model', zh: '模型' },
   usageRequestsColumn: { en: 'Requests', zh: '请求次数' },
   usagePriceColumn: { en: 'Price', zh: '价格' },
-  usagePriceUnavailable: { en: 'Unavailable', zh: '不可用' },
   usagePricingNote: {
     en: 'Strict official mode: prices include only records with exact billing evidence, either from provider modality details or from proven local text-only request/response structure. Rows may show a partial amount with an unavailable-record count when older or unsupported records cannot be priced. Explicit cache storage charges are excluded because cache TTL is not stored.',
     zh: '严格官方模式：价格仅汇总拥有精确定价证据的记录，这些证据要么来自官方返回的模态明细，要么来自本地可证明的纯文本请求/响应结构。当旧记录或不支持的记录无法定价时，行内会显示部分金额以及不可定价记录数。由于没有保存缓存 TTL，显式缓存的存储费用不会计入。',

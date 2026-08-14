@@ -1,4 +1,5 @@
 import type { UsageMetadata } from '@google/genai';
+import type { ThinkingLevel } from '@/types';
 
 export interface AnthropicChatConfig {
   baseUrl?: string | null;
@@ -6,6 +7,8 @@ export interface AnthropicChatConfig {
   temperature?: number;
   topP?: number;
   thinkingBudget?: number;
+  /** Maps to output_config.effort on adaptive Claude models (Fable 5 / Opus 5 / Sonnet 5, …). */
+  thinkingLevel?: ThinkingLevel;
 }
 
 export type AnthropicContentBlock =
@@ -26,7 +29,7 @@ export type AnthropicUsage = {
 export type AnthropicResponsePayload = {
   id?: string;
   role?: string;
-  content?: Array<{ type?: string; text?: string }>;
+  content?: Array<{ type?: string; text?: string; thinking?: string }>;
   model?: string;
   usage?: AnthropicUsage;
   error?: { message?: string };
@@ -36,7 +39,7 @@ export type AnthropicResponsePayload = {
 export type AnthropicStreamEvent = {
   type: string;
   message?: AnthropicResponsePayload;
-  delta?: { type?: string; text?: string };
+  delta?: { type?: string; text?: string; thinking?: string };
   usage?: AnthropicUsage;
 };
 

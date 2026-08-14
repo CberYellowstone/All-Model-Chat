@@ -145,6 +145,40 @@ describe('project structure boundaries', () => {
     expect(listEmptyDirectories('src')).toEqual([]);
   });
 
+  it('keeps directory naming on the consolidated domain layout', () => {
+    const expectedPaths = [
+      'src/components/chat/message-list/MessageList.tsx',
+      'src/components/audio/AudioVisualizer.tsx',
+      'src/components/log-viewer/useUsageStats.ts',
+      'src/components/settings/sections/TabCycleModelsCard.tsx',
+      'src/hooks/chat/message/useMessageActions.ts',
+      'src/hooks/data-management/ChatExportRenderer.tsx',
+      'src/utils/model/modelCapabilities.ts',
+      'src/utils/file/fileTypeClassification.ts',
+      'src/utils/live-artifacts/liveArtifactFollowup.ts',
+      'src/test/layout/fixtures.tsx',
+    ];
+    const removedPaths = [
+      'src/components/chat/MessageList.tsx',
+      'src/components/recorder',
+      'src/features/chat-export',
+      'src/hooks/log-viewer',
+      'src/hooks/chat/messages',
+      'src/components/settings/sections/models',
+      'src/test/chat-area',
+      'src/utils/modelCapabilities.ts',
+      'src/utils/fileTypeClassification.ts',
+      'src/utils/liveArtifactFollowup.ts',
+    ];
+
+    for (const relativePath of expectedPaths) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
+    }
+    for (const relativePath of removedPaths) {
+      expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(false);
+    }
+  });
+
   it('keeps OpenAI-compatible file names and imports on the same lower-camel spelling', () => {
     const sourceFiles = listProjectSourceFilesExcept('src', thisTestFile);
     const discouragedOpenAiSpelling = `open${'AI'}`;
@@ -205,7 +239,7 @@ describe('project structure boundaries', () => {
 
   it('names Gemini 3 required-thinking model constants by their actual role', () => {
     const modelConfigurationSource = readProjectFile('src/constants/modelConfiguration.ts');
-    const modelCapabilitiesSource = readProjectFile('src/utils/modelCapabilities.ts');
+    const modelCapabilitiesSource = readProjectFile('src/utils/model/modelCapabilities.ts');
 
     expect(modelConfigurationSource).toContain('export const REQUIRED_THINKING_MODEL_IDS');
     expect(modelConfigurationSource).not.toContain('GEMINI_3_RO_MODELS');
@@ -342,11 +376,11 @@ describe('project structure boundaries', () => {
     const sourceFiles = listProjectSourceFilesExcept('src', thisTestFile);
 
     for (const relativePath of [
-      'src/utils/fileClipboard.ts',
-      'src/utils/fileEncoding.ts',
-      'src/utils/fileMime.ts',
-      'src/utils/filePreviewUrls.ts',
-      'src/utils/fileSize.ts',
+      'src/utils/file/fileClipboard.ts',
+      'src/utils/file/fileEncoding.ts',
+      'src/utils/file/fileMime.ts',
+      'src/utils/file/filePreviewUrls.ts',
+      'src/utils/file/fileSize.ts',
     ]) {
       expect(fs.existsSync(path.join(projectRoot, relativePath)), relativePath).toBe(true);
     }

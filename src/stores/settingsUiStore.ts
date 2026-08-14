@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import {
-  createPersistedStateStorage,
-  readPersistentStorageItem,
-  registerPersistedStoreSync,
-} from './persistentStorage';
+import { createPersistedStateStorage, readPersistentStorageItem } from './persistentStorage';
 
 export type SettingsTab = 'models' | 'interface' | 'api' | 'mcp' | 'data' | 'shortcuts' | 'about';
 export type SettingsTabDescriptor = { id: SettingsTab; labelKey: string };
@@ -12,18 +8,21 @@ export type SettingsTabDescriptor = { id: SettingsTab; labelKey: string };
 const SETTINGS_UI_STORE_STORAGE_KEY = 'all_model_chat_settings_ui_v1';
 
 const LEGACY_SETTINGS_TAB_STORAGE_KEY = 'chatSettingsLastTab';
-const SETTINGS_TABS: SettingsTab[] = ['models', 'interface', 'api', 'mcp', 'data', 'shortcuts', 'about'];
+export const SETTINGS_TABS: SettingsTab[] = ['models', 'interface', 'api', 'mcp', 'data', 'shortcuts', 'about'];
 
 interface SettingsUiState {
   activeTab: SettingsTab;
   scrollPositions: Partial<Record<SettingsTab, number>>;
   legacySettingsUiHydrated: boolean;
+  isAdvancedModeEnabled: boolean;
 }
 
 interface SettingsUiActions {
   hydrateLegacySettingsUiPreferences: () => void;
   setActiveTab: (tab: SettingsTab) => void;
   setScrollPosition: (tab: SettingsTab, scrollTop: number) => void;
+  setIsAdvancedModeEnabled: (enabled: boolean) => void;
+  toggleAdvancedMode: () => void;
 }
 
 const normalizeSettingsTab = (savedTab: string | null): SettingsTab | null => {
@@ -79,6 +78,7 @@ const buildInitialSettingsUiState = (): SettingsUiState => ({
   activeTab: readLegacyActiveTab(),
   scrollPositions: readLegacyScrollPositions(),
   legacySettingsUiHydrated: false,
+  isAdvancedModeEnabled: false,
 });
 
 export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
@@ -111,16 +111,20 @@ export const useSettingsUiStore = create<SettingsUiState & SettingsUiActions>()(
             [tab]: Math.max(0, Math.round(scrollTop)),
           },
         })),
+
+      setIsAdvancedModeEnabled: (enabled) => set({ isAdvancedModeEnabled: enabled }),
+
+      toggleAdvancedMode: () => set((state) => ({ isAdvancedModeEnabled: !state.isAdvancedModeEnabled })),
     }),
     {
       name: SETTINGS_UI_STORE_STORAGE_KEY,
-      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 150 })),
+      // Tab-private UI chrome (active tab, scroll, advanced toggle).
+      storage: createJSONStorage(() => createPersistedStateStorage({ debounceMs: 150, notifyUpdate: () => {} })),
       partialize: (state) => ({
         activeTab: state.activeTab,
         scrollPositions: state.scrollPositions,
+        isAdvancedModeEnabled: state.isAdvancedModeEnabled,
       }),
     },
   ),
 );
-
-registerPersistedStoreSync(useSettingsUiStore, SETTINGS_UI_STORE_STORAGE_KEY);

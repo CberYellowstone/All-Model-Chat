@@ -13,8 +13,7 @@ import {
 import { type UploadedFile } from '@/types';
 import { ChatInput } from './ChatInput';
 
-const { mockChatStoreState, mockChatStoreSubscribers, mockLiveApiState, mockModelCapabilities } =
-  getChatInputHarnessMocks();
+const { mockChatStoreState, mockLiveApiState, mockModelCapabilities } = getChatInputHarnessMocks();
 
 describe('ChatInput', () => {
   const renderer = setupProviderTestRenderer({ providers: { language: 'en' } });
@@ -668,11 +667,13 @@ describe('ChatInput', () => {
 
     expect(onSendMessage).not.toHaveBeenCalled();
 
+    // The attachment finishes as failed: re-rendering with the failed file
+    // drives the commit-time flush, which sees the blocked upload and surfaces
+    // the error instead of sending.
+    providerValue.input.selectedFiles = [failedFile];
+    mockChatStoreState.selectedFiles = [failedFile];
     await act(async () => {
-      const previousState = { selectedFiles: [processingFile] };
-      const nextState = { selectedFiles: [failedFile] };
-      mockChatStoreState.selectedFiles = nextState.selectedFiles;
-      mockChatStoreSubscribers.forEach((subscriber) => subscriber(nextState, previousState));
+      renderChatInput(providerValue);
     });
 
     expect(onSendMessage).not.toHaveBeenCalled();
@@ -732,11 +733,13 @@ describe('ChatInput', () => {
       cancelPendingButton?.click();
     });
 
+    // The upload finishes after the user cancelled: re-rendering with the
+    // active file drives the commit-time flush, but the pending submission was
+    // cancelled, so nothing is sent.
+    providerValue.input.selectedFiles = [activeFile];
+    mockChatStoreState.selectedFiles = [activeFile];
     await act(async () => {
-      const previousState = { selectedFiles: [processingFile] };
-      const nextState = { selectedFiles: [activeFile] };
-      mockChatStoreState.selectedFiles = nextState.selectedFiles;
-      mockChatStoreSubscribers.forEach((subscriber) => subscriber(nextState, previousState));
+      renderChatInput(providerValue);
     });
 
     expect(onSendMessage).not.toHaveBeenCalled();

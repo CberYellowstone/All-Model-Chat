@@ -1,5 +1,5 @@
 import React from 'react';
-import { CornerDownLeft, Trash2 } from 'lucide-react';
+import { CornerDownLeft, GripVertical, Trash2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { FOCUS_VISIBLE_RING_INPUT_OFFSET_CLASS } from '@/constants/focusClasses';
 import { SMALL_ICON_DANGER_BUTTON_CLASS } from '@/constants/buttonClasses';
@@ -10,14 +10,22 @@ interface QueuedSubmissionCardProps {
   fileCount: number;
   onEdit: () => void;
   onRemove: () => void;
+  onDragStart?: (event: React.DragEvent) => void;
+  onDragOver?: (event: React.DragEvent) => void;
+  onDrop?: (event: React.DragEvent) => void;
+  isDragging?: boolean;
 }
 
-export const QueuedSubmissionCard: React.FC<QueuedSubmissionCardProps> = ({
+const QueuedSubmissionCardComponent: React.FC<QueuedSubmissionCardProps> = ({
   title,
   previewText,
   fileCount,
   onEdit,
   onRemove,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  isDragging,
 }) => {
   const { t } = useI18n();
   const attachmentLabel =
@@ -28,7 +36,13 @@ export const QueuedSubmissionCard: React.FC<QueuedSubmissionCardProps> = ({
   return (
     <div
       data-queued-submission-card="composer-strip"
-      className="flex min-h-14 items-start justify-between gap-2 rounded-[24px] border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)]/85 px-3 pb-4 pt-2 text-sm shadow-[0_4px_14px_rgba(15,23,42,0.08)] backdrop-blur-sm"
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`flex min-h-14 items-start justify-between gap-2 rounded-[24px] border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)]/85 px-3 pb-4 pt-2 text-sm shadow-[0_4px_14px_rgba(15,23,42,0.08)] backdrop-blur-sm ${
+        isDragging ? 'opacity-60' : ''
+      }`}
     >
       <button
         type="button"
@@ -68,7 +82,16 @@ export const QueuedSubmissionCard: React.FC<QueuedSubmissionCardProps> = ({
         >
           <Trash2 size={14} strokeWidth={2} />
         </button>
+        <span
+          className="flex h-7 w-7 cursor-grab items-center justify-center rounded-full text-[var(--theme-text-tertiary)] transition-colors hover:bg-[var(--theme-bg-tertiary)]"
+          title={t('queuedSubmissionDragAria')}
+          aria-label={t('queuedSubmissionDragAria')}
+        >
+          <GripVertical size={13} strokeWidth={2} />
+        </span>
       </div>
     </div>
   );
 };
+
+export const QueuedSubmissionCard = React.memo(QueuedSubmissionCardComponent);

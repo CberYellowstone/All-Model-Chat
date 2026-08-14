@@ -57,7 +57,7 @@ describe('prepareElementForExport', () => {
     viewport.style.height = height;
 
     const iframe = document.createElement('iframe');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-modals allow-downloads');
     iframe.setAttribute('srcdoc', '<div>Artifact</div>');
     viewport.appendChild(iframe);
     frame.appendChild(viewport);
@@ -75,7 +75,7 @@ describe('prepareElementForExport', () => {
 
     const iframe = clone.querySelector('iframe');
     expect(iframe).not.toBeNull();
-    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
+    expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts allow-forms allow-popups allow-modals allow-downloads');
     expect(iframe?.getAttribute('srcdoc')).toContain('<div>Artifact</div>');
   });
 

@@ -2,7 +2,6 @@ import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Quote, Copy, Check, CornerRightDown, Volume2 } from 'lucide-react';
 import { IconGoogle } from '@/components/icons';
-import { type translations } from '@/i18n/translations';
 
 interface StandardActionsViewProps {
   onQuote: (e: React.MouseEvent) => void;
@@ -11,7 +10,8 @@ interface StandardActionsViewProps {
   onSearch: (e: React.MouseEvent) => void;
   onTTS?: (e: React.MouseEvent) => void;
   isCopied: boolean;
-  t?: (key: keyof typeof translations) => string;
+  /** Non-null shows a transient error message attached to the TTS button. */
+  ttsError?: string | null;
 }
 
 export const StandardActionsView: React.FC<StandardActionsViewProps> = ({
@@ -21,17 +21,18 @@ export const StandardActionsView: React.FC<StandardActionsViewProps> = ({
   onSearch,
   onTTS,
   isCopied,
+  ttsError,
 }) => {
   const { t } = useI18n();
-  const quoteLabel = t ? t('quote') : 'Quote';
-  const insertLabel = t ? t('fillInput') : 'Insert';
-  const copyLabel = isCopied ? (t ? t('copied') : 'Copied') : t ? t('copy') : 'Copy';
-  const searchLabel = t ? t('search') : 'Search';
+  const quoteLabel = t('quote');
+  const insertLabel = t('fillInput');
+  const copyLabel = isCopied ? t('copied') : t('copy');
+  const searchLabel = t('search');
   const actionButtonClass =
     'flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-medium text-[var(--theme-text-primary)] transition-all hover:bg-[var(--theme-bg-tertiary)] sm:px-3';
 
   return (
-    <>
+    <div className="flex items-center">
       <button onMouseDown={onQuote} className={actionButtonClass} title={quoteLabel} aria-label={quoteLabel}>
         <Quote size={14} className="text-[var(--theme-text-link)]" />
         <span>{quoteLabel}</span>
@@ -70,15 +71,15 @@ export const StandardActionsView: React.FC<StandardActionsViewProps> = ({
           <div className="mx-0.5 h-3.5 w-px shrink-0 bg-[var(--theme-border-secondary)]" />
           <button
             onMouseDown={onTTS}
-            className={actionButtonClass}
-            title={t('ttsReadAloud')}
-            aria-label={t('ttsReadAloud')}
+            className={`${actionButtonClass} ${ttsError ? 'text-[var(--theme-text-danger)]' : ''}`}
+            title={ttsError ?? t('ttsReadAloud')}
+            aria-label={ttsError ?? t('ttsReadAloud')}
           >
-            <Volume2 size={14} className="text-purple-500" />
-            <span>TTS</span>
+            <Volume2 size={14} className={ttsError ? 'text-[var(--theme-text-danger)]' : 'text-purple-500'} />
+            <span>{ttsError ? t('ttsError') : 'TTS'}</span>
           </button>
         </>
       )}
-    </>
+    </div>
   );
 };

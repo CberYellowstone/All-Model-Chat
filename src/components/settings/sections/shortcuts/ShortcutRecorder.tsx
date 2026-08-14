@@ -147,7 +147,7 @@ export const ShortcutRecorder: React.FC<ShortcutRecorderProps> = ({ value, defau
                                         border border-[var(--theme-border-secondary)] 
                                         border-b-2
                                         rounded-[6px]
-                                        text-[11px] font-sans font-medium text-[var(--theme-text-secondary)]
+                                        text-xs font-sans font-medium text-[var(--theme-text-secondary)]
                                         shadow-sm
                                         select-none
                                     "

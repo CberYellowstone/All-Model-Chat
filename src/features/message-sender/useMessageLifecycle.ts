@@ -1,7 +1,14 @@
 import { useCallback, type MutableRefObject } from 'react';
 import type { ChatMessage } from '@/types';
 import { createMessage } from '@/utils/chat/session';
+import { logService } from '@/services/logService';
 import { finishActiveGenerationJob, startActiveGenerationJob } from './activeGenerationJobs';
+import {
+  releaseGenerationLease,
+  startGenerationLeaseHeartbeat,
+  stopGenerationLeaseHeartbeat,
+  tryAcquireGenerationLease,
+} from './generationLease';
 import type { SessionsUpdater } from './messageSenderTypes';
 import { useApiErrorHandler } from './useApiErrorHandler';
 
@@ -51,15 +58,23 @@ export const useMessageLifecycle = ({
   const createLifecycleLoadingModelMessage = useCallback(createLoadingModelMessage, []);
 
   const startMessageLifecycle = useCallback(
-    (sessionId: string, generationId: string, abortController: AbortController) => {
+    (sessionId: string, generationId: string, abortController: AbortController): boolean => {
+      if (!tryAcquireGenerationLease(sessionId, generationId)) {
+        logService.warn(`Generation lease held by another tab for session ${sessionId}; refusing to start.`);
+        return false;
+      }
+      startGenerationLeaseHeartbeat(sessionId, generationId);
       setSessionLoading(sessionId, true);
       startActiveGenerationJob(activeJobs, sessionId, generationId, abortController);
+      return true;
     },
     [activeJobs, setSessionLoading],
   );
 
   const finishMessageLifecycle = useCallback(
     (sessionId: string, generationId: string) => {
+      stopGenerationLeaseHeartbeat(sessionId);
+      releaseGenerationLease(sessionId, generationId);
       finishActiveGenerationJob({
         activeJobs,
         setSessionLoading,
@@ -80,7 +95,18 @@ export const useMessageLifecycle = ({
       execute,
       onError,
     }: RunMessageLifecycleParams<T>): Promise<T | undefined> => {
-      startMessageLifecycle(sessionId, generationId, abortController);
+      const started = startMessageLifecycle(sessionId, generationId, abortController);
+      if (!started) {
+        const leaseError = new Error(
+          'This chat is already generating in another tab. Stop it there first, or wait for it to finish.',
+        );
+        if (onError) {
+          onError(leaseError);
+        } else {
+          handleApiError(leaseError, sessionId, modelMessageId, errorPrefix);
+        }
+        return undefined;
+      }
 
       try {
         return await execute();

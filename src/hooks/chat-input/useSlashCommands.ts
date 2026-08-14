@@ -5,6 +5,7 @@ import type { SlashCommand as Command } from '@/types/slashCommands';
 import type { ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { getSlashCommandToolDefinitions } from '@/features/chat-tools/toolRegistry';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
+import { isImageGenerationModel } from '@/utils/model/modelCapabilities';
 
 export type SlashCommandState = {
   isOpen: boolean;
@@ -62,7 +63,7 @@ const buildModelCommands = (
   models.map((model) => ({
     name: model.name,
     description: model.isPinned ? `Pinned Model` : `ID: ${model.id}`,
-    icon: model.id.includes('imagen') ? 'image' : model.isPinned ? 'pin' : 'bot',
+    icon: isImageGenerationModel(model.id) ? 'image' : model.isPinned ? 'pin' : 'bot',
     action: () => {
       onSelectModel(model.id);
       setInputText('');

@@ -1,5 +1,5 @@
 import { logService } from '@/services/logService';
-import { decodeBase64ToArrayBuffer } from '@/utils/fileEncoding';
+import { decodeBase64ToArrayBuffer } from '@/utils/file/fileEncoding';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 
 export { decodeBase64ToArrayBuffer };
@@ -33,7 +33,9 @@ export const float32ToPCM16Base64 = (data: Float32Array): string => {
   const sampleCount = data.length;
   const int16 = new Int16Array(sampleCount);
   for (let i = 0; i < sampleCount; i++) {
-    int16[i] = Math.max(-1, Math.min(1, data[i])) * 32768;
+    // 0x7fff (not 32768) so a full-scale +1.0 sample stays 32767 instead of
+    // wrapping Int16 to -32768. Matches float32ToPcm16Bytes below.
+    int16[i] = Math.max(-1, Math.min(1, data[i])) * 0x7fff;
   }
   let binary = '';
   const bytes = new Uint8Array(int16.buffer);
@@ -79,6 +81,55 @@ const createWavBuffer = (pcmData: Uint8Array, sampleRate: number, numChannels: n
 
   new Uint8Array(wav, 44).set(pcmData);
   return wav;
+};
+
+const float32ToPcm16Bytes = (data: Float32Array): Uint8Array => {
+  const int16 = new Int16Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    int16[i] = Math.max(-1, Math.min(1, data[i])) * 0x7fff;
+  }
+  return new Uint8Array(int16.buffer);
+};
+
+/** Encode mono Float32 PCM into a Gemini-supported WAV File. */
+export const float32ToWavFile = (
+  pcmData: Float32Array,
+  sampleRate: number,
+  fileName = `voice-input-${Date.now()}.wav`,
+): File => {
+  const wavBuffer = createWavBuffer(float32ToPcm16Bytes(pcmData), sampleRate, 1);
+  return new File([wavBuffer], fileName, { type: 'audio/wav' });
+};
+
+/** Decode any browser-decodable audio blob to a mono WAV File for Gemini transcription. */
+export const convertAudioBlobToWavFile = async (file: File | Blob): Promise<File> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContextClass();
+
+  try {
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+    const frameCount = audioBuffer.length;
+    const mono = new Float32Array(frameCount);
+
+    if (audioBuffer.numberOfChannels === 1) {
+      mono.set(audioBuffer.getChannelData(0));
+    } else {
+      const channelCount = audioBuffer.numberOfChannels;
+      for (let channel = 0; channel < channelCount; channel++) {
+        const channelData = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < frameCount; i++) {
+          mono[i] += channelData[i] / channelCount;
+        }
+      }
+    }
+
+    const originalName = (file as File).name || `voice-input-${Date.now()}`;
+    const wavName = originalName.replace(/\.[^/.]+$/, '') + '.wav';
+    return float32ToWavFile(mono, audioBuffer.sampleRate, wavName);
+  } finally {
+    await audioCtx.close().catch(() => undefined);
+  }
 };
 
 /**

@@ -1,7 +1,7 @@
 import type { ElementType } from 'react';
 import { Edit3, Scissors, Settings2, SlidersHorizontal } from 'lucide-react';
 import type { UploadedFile } from '@/types';
-import { getFileTypeCategory } from '@/utils/fileTypeClassification';
+import { getFileTypeCategory } from '@/utils/file/fileTypeClassification';
 
 interface FileCardMetaOptions {
   isGemini3?: boolean;

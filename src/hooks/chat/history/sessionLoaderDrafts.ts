@@ -1,5 +1,5 @@
 import type { SavedChatSession, UploadedFile } from '@/types';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 
 export const toSessionMetadata = (session: SavedChatSession): SavedChatSession => ({ ...session, messages: [] });
 

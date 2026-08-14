@@ -15,6 +15,7 @@ import {
   normalizeOpenAICompatibleModelRows,
   toEditableOpenAICompatibleModelRows,
 } from './openaiCompatibleModelListState';
+import { useOpenAICompatibleModelRowHandlers } from './useOpenAICompatibleModelRowHandlers';
 
 interface OpenAICompatibleModelListEditorProps {
   models: ModelOption[];
@@ -60,7 +61,15 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
     const modelIds = modelOptions.map((model) => model.id);
     setEditorState({
       rows: nextRows,
-      sourceModelsKey: externalModelsKey,
+      // Use the key of the model list AFTER this commit, not the pre-commit
+      // externalModelsKey captured in the closure. Otherwise onModelsChange
+      // updates the parent, sourceModelsKey !== externalModelsKey on the next
+      // render, rows fall back to externalRows (rebuilt with fresh random
+      // rowIds each call), and every keystroke remounts the row inputs, losing
+      // focus. buildOpenAICompatibleModelOptions normalizes the committed
+      // values (trim id/name, empty name falls back to id, dedupe by id), so
+      // the parent round-trip produces an identical idname key.
+      sourceModelsKey: buildOpenAICompatibleModelsKey(modelOptions),
     });
     onModelsChange(modelOptions);
 
@@ -68,6 +77,8 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
       onSelectedModelChange(modelIds[0]);
     }
   };
+  const { handleUpdateModel, handleUpdateModelName, handleTrimModel, handleTrimModelName, handleRemoveModel } =
+    useOpenAICompatibleModelRowHandlers(rows, commitRows);
 
   const handleAddModel = () => {
     setEditorState({
@@ -79,26 +90,6 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
   const handleOpenFetchPreview = () => {
     setIsManagerOpen(true);
     setFetchRequestId((requestId) => requestId + 1);
-  };
-
-  const handleUpdateModel = (rowId: string, id: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id } : row)));
-  };
-
-  const handleUpdateModelName = (rowId: string, name: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name } : row)));
-  };
-
-  const handleTrimModel = (rowId: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id: row.id.trim() } : row)));
-  };
-
-  const handleTrimModelName = (rowId: string) => {
-    commitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name: row.name.trim() } : row)));
-  };
-
-  const handleRemoveModel = (rowId: string) => {
-    commitRows(rows.filter((row) => row.rowId !== rowId));
   };
 
   return (
@@ -152,7 +143,7 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
                 <div className="min-w-0 space-y-1">
                   <label
                     htmlFor={`${row.rowId}-id`}
-                    className="block text-[10px] font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
+                    className="block text-xs font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
                   >
                     {t('settingsOpenAICompatibleModelIdShort')}
                   </label>
@@ -164,14 +155,14 @@ export const OpenAICompatibleModelListEditor: React.FC<OpenAICompatibleModelList
                     onBlur={() => handleTrimModel(row.rowId)}
                     data-openai-compatible-model-id-input="true"
                     className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-mono text-[var(--theme-text-primary)] transition-colors placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] focus:bg-[var(--theme-bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]/15"
-                    placeholder="gpt-5.5"
+                    placeholder="gpt-5.6-sol"
                     aria-label={`${t('settingsOpenAICompatibleModelIdShort')} ${index + 1}`}
                   />
                 </div>
                 <div className="min-w-0 space-y-1">
                   <label
                     htmlFor={`${row.rowId}-name`}
-                    className="block text-[10px] font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
+                    className="block text-xs font-medium uppercase tracking-wider text-[var(--theme-text-tertiary)]"
                   >
                     {t('settingsOpenAICompatibleModelName')}
                   </label>

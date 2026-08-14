@@ -5,7 +5,7 @@ import { Z_INDEX_MODAL_BACKDROP } from '@/constants/layout';
 import { useHtmlPreviewModal } from '@/hooks/ui/useHtmlPreviewModal';
 import { HtmlPreviewHeader } from './html-preview/HtmlPreviewHeader';
 import { HtmlPreviewContent } from './html-preview/HtmlPreviewContent';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 
 interface HtmlPreviewModalProps {
   isOpen: boolean;
@@ -31,12 +31,14 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
     isDirectFullscreenLaunch,
     scale,
     isPreviewReady,
+    contentHeight,
     isScreenshotting,
     handleZoomIn,
     handleZoomOut,
     handleDownload,
     handleScreenshot,
     handleRefresh,
+    iframeRefreshKey,
     enterTrueFullscreen,
     exitTrueFullscreen,
     getPreviewTitle,
@@ -97,7 +99,13 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
           onClose={onClose}
         />
 
-        <HtmlPreviewContent iframeRef={iframeRef} htmlContent={htmlContent} scale={scale} />
+        <HtmlPreviewContent
+          key={iframeRefreshKey}
+          iframeRef={iframeRef}
+          htmlContent={htmlContent}
+          scale={scale}
+          contentHeight={contentHeight}
+        />
       </div>
     </div>,
     targetDocument.body,

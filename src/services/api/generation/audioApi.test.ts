@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { blobToBase64Mock, generateContentMock, getConfiguredApiClientMock } = vi.hoisted(() => ({
   blobToBase64Mock: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('@/services/api/apiClient', () => ({
   getConfiguredApiClient: getConfiguredApiClientMock,
 }));
 
-vi.mock('@/utils/fileEncoding', () => ({
+vi.mock('@/utils/file/fileEncoding', () => ({
   blobToBase64: blobToBase64Mock,
 }));
 
@@ -99,6 +99,82 @@ Jane: Thanks, it is great to be here.`,
         }),
       }),
     );
+  });
+});
+
+describe('generateSpeechApi timeout', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('passes an abort signal into the generateContent config so a stalled request can be cancelled', async () => {
+    generateContentMock.mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ inlineData: { data: 'pcm-audio' } }],
+          },
+        },
+      ],
+    });
+
+    await generateSpeechApi(
+      'api-key',
+      'gemini-3.1-flash-tts-preview',
+      'Say hello',
+      'Aoede',
+      new AbortController().signal,
+    );
+
+    const request = generateContentMock.mock.calls[0][0];
+    expect(request.config.abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('rejects with a timeout error when the request exceeds the wall-clock budget', async () => {
+    vi.useFakeTimers();
+
+    generateContentMock.mockImplementation(
+      () =>
+        new Promise((_resolve) => {
+          // Never settles — simulates a stalled upstream.
+        }),
+    );
+
+    const promise = generateSpeechApi(
+      'api-key',
+      'gemini-3.1-flash-tts-preview',
+      'Say hello',
+      'Aoede',
+      new AbortController().signal,
+    );
+
+    const assertRejects = expect(promise).rejects.toThrow('timed out');
+
+    vi.advanceTimersByTime(30_000 + 1);
+
+    await assertRejects;
+  });
+
+  it('does not leak the timeout timer after a normal request settles', async () => {
+    vi.useFakeTimers();
+
+    generateContentMock.mockResolvedValue({
+      candidates: [{ content: { parts: [{ inlineData: { data: 'pcm-audio' } }] } }],
+    });
+
+    await generateSpeechApi(
+      'api-key',
+      'gemini-3.1-flash-tts-preview',
+      'Say hello',
+      'Aoede',
+      new AbortController().signal,
+    );
+
+    // Advancing far past the budget must not reject a settled request.
+    await expect(
+      Promise.race([Promise.resolve('done'), new Promise((r) => setTimeout(() => r('tick'), 0))]),
+    ).resolves.toBe('done');
+    vi.advanceTimersByTime(60_000);
   });
 });
 

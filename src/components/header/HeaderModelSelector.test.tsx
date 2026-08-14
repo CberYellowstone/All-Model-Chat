@@ -145,9 +145,9 @@ describe('HeaderModelSelector', () => {
     await act(async () => {
       renderer.root.render(
         <HeaderModelSelector
-          currentModelName="Gemini Robotics-ER 1.6 Preview"
-          availableModels={[{ id: 'gemini-robotics-er-1.6-preview', name: 'Gemini Robotics-ER 1.6 Preview' }]}
-          selectedModelId="gemini-robotics-er-1.6-preview"
+          currentModelName="Gemini Robotics-ER 2 Preview"
+          availableModels={[{ id: 'gemini-robotics-er-2-preview', name: 'Gemini Robotics-ER 2 Preview' }]}
+          selectedModelId="gemini-robotics-er-2-preview"
           onSelectModel={vi.fn()}
           isSwitchingModel={false}
           isLoading={false}
@@ -160,20 +160,20 @@ describe('HeaderModelSelector', () => {
     });
 
     const label = Array.from(renderer.container.querySelectorAll('span')).find(
-      (node) => node.textContent === 'Robotics-ER 1.6',
+      (node) => node.textContent === 'Robotics-ER 2',
     );
     expect(label?.className).toContain('font-semibold');
   });
 
-  it('shows the fast toggle for Gemini Robotics-ER 1.6 and uses minimal thinking as fast mode', async () => {
+  it('shows the fast toggle for Gemini Robotics-ER 2 and uses minimal thinking as fast mode', async () => {
     const onSetThinkingLevel = vi.fn();
 
     await act(async () => {
       renderer.root.render(
         <HeaderModelSelector
-          currentModelName="Gemini Robotics-ER 1.6 Preview"
-          availableModels={[{ id: 'gemini-robotics-er-1.6-preview', name: 'Gemini Robotics-ER 1.6 Preview' }]}
-          selectedModelId="gemini-robotics-er-1.6-preview"
+          currentModelName="Gemini Robotics-ER 2 Preview"
+          availableModels={[{ id: 'gemini-robotics-er-2-preview', name: 'Gemini Robotics-ER 2 Preview' }]}
+          selectedModelId="gemini-robotics-er-2-preview"
           onSelectModel={vi.fn()}
           isSwitchingModel={false}
           isLoading={false}

@@ -8,14 +8,13 @@ import {
   buildModelCatalogSections,
   filterModelCatalog,
   getModelProviderSectionLabelKey,
-} from '@/utils/modelCatalog';
+} from '@/utils/model/modelCatalog';
 
 interface ModelListViewProps {
   availableModels: ModelOption[];
   selectedModelId: string;
   selectedApiMode?: ApiMode;
   onSelectModel: (id: string, apiMode?: ApiMode) => void;
-  extraContent?: React.ReactNode;
 }
 
 export const ModelListView: React.FC<ModelListViewProps> = ({
@@ -23,7 +22,6 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
   selectedModelId,
   selectedApiMode,
   onSelectModel,
-  extraContent,
 }) => {
   const { t } = useI18n();
 
@@ -41,7 +39,7 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
         {sections.map((section) => (
           <div key={section.key} className="space-y-1" data-provider-section={section.providerKey}>
             {section.providerKey && (
-              <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
+              <div className="px-2 pt-1 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--theme-text-tertiary)]">
                 {t(getModelProviderSectionLabelKey(section.providerKey))}
               </div>
             )}
@@ -49,13 +47,15 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
               const isSelected =
                 entry.id === selectedModelId &&
                 (!selectedApiMode || !entry.model.apiMode || entry.model.apiMode === selectedApiMode);
-              const optionKey = entry.model.apiMode ? `${entry.model.apiMode}:${entry.id}` : entry.id;
+              // Two third-party providers may list the same model id — scope the
+              // key and testid by provider so they stay distinct.
+              const optionKey = `${entry.model.providerId ?? 'gemini-native'}:${entry.id}`;
 
               return (
                 <button
                   type="button"
                   key={optionKey}
-                  data-testid={`settings-model-option-${entry.id}`}
+                  data-testid={`settings-model-option-${optionKey}`}
                   onPointerDown={(event) => {
                     event.preventDefault();
                   }}
@@ -77,14 +77,14 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
                         {entry.name}
                       </span>
                     </div>
-                    <div className="text-[10px] text-[var(--theme-text-tertiary)] font-mono truncate opacity-70">
+                    <div className="text-xs text-[var(--theme-text-tertiary)] font-mono truncate opacity-70">
                       {entry.id}
                     </div>
                   </div>
 
                   <div className="flex-shrink-0 ml-2">
                     {isSelected && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] text-[10px] font-bold shadow-sm border border-transparent">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] text-xs font-bold shadow-sm border border-transparent">
                         <Check size={11} strokeWidth={3} />
                         <span>{t('settingsActiveModel')}</span>
                       </div>
@@ -106,7 +106,6 @@ export const ModelListView: React.FC<ModelListViewProps> = ({
           </div>
         )}
       </div>
-      {extraContent && <div className="border-t border-[var(--theme-border-secondary)] p-3">{extraContent}</div>}
     </div>
   );
 };

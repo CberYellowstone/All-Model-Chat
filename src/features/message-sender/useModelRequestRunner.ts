@@ -3,6 +3,7 @@ import type { AppSettings, ChatSettings as IndividualChatSettings, UploadedFile 
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { logService } from '@/services/logService';
 import { getKeyForRequest } from '@/utils/apiKeySelection';
+import type { ChatApiRoute } from '@/utils/chatApiRoute';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { usesRemoteFileReference } from '@/utils/chat/fileTransferStrategy';
 import { createMessage, createNewSession } from '@/utils/chat/session';
@@ -32,6 +33,7 @@ interface ModelRequestMessages {
 
 interface PrepareModelRequestParams {
   activeModelId: string;
+  apiRoute?: ChatApiRoute;
   files: UploadedFile[];
   messages: ModelRequestMessages;
   keySettings?: IndividualChatSettings;
@@ -49,9 +51,7 @@ interface UseModelRequestRunnerParams {
 }
 
 const hasLockableActiveFile = (files: UploadedFile[]) =>
-  files.some(
-    (file) => usesRemoteFileReference(file) && file.fileUri && file.uploadState === 'active',
-  );
+  files.some((file) => usesRemoteFileReference(file) && file.fileUri && file.uploadState === 'active');
 
 export const useModelRequestRunner = ({
   appSettings,
@@ -74,6 +74,7 @@ export const useModelRequestRunner = ({
   const prepareModelRequest = useCallback(
     ({
       activeModelId,
+      apiRoute,
       files,
       messages,
       keySettings = currentChatSettings,
@@ -87,7 +88,11 @@ export const useModelRequestRunner = ({
         return { ok: false };
       }
 
-      const keyResult = getKeyForRequest(appSettings, keySettings, keyOptions);
+      const keyResult = getKeyForRequest(appSettings, keySettings, {
+        ...keyOptions,
+        apiMode: apiRoute?.apiMode,
+        provider: apiRoute?.provider,
+      });
       if ('error' in keyResult) {
         logService.error('Send message failed: API Key not configured.');
         createErrorSession(translateApiKeyError(keyResult.error), messages.apiKeyTitle);

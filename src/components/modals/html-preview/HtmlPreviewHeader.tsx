@@ -70,7 +70,7 @@ export const HtmlPreviewHeader: React.FC<HtmlPreviewHeaderProps> = ({
           >
             {title}
           </h2>
-          <span className="text-[10px] text-[var(--theme-text-tertiary)] truncate">{subtitle}</span>
+          <span className="text-xs text-[var(--theme-text-tertiary)] truncate">{subtitle}</span>
         </div>
       </div>
 

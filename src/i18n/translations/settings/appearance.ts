@@ -1,11 +1,14 @@
 const appearanceSettings = {
-  settingsAppearance: { en: 'Appearance', zh: '外观' },
   settingsTheme: { en: 'Theme', zh: '主题' },
   settingsThemeSystem: { en: 'System', zh: '系统' },
   settingsThemeDark: { en: 'Dark', zh: '暗色' },
   settingsThemeGray: { en: 'Gray', zh: '灰色' },
   settingsThemeLight: { en: 'Light', zh: '浅色' },
   settingsFontSize: { en: 'Reading Size', zh: '阅读字号' },
+  settingsFontSizeTooltip: {
+    en: 'Controls message body text size in chat. Sidebar, headers, and other chrome stay at the interface scale.',
+    zh: '控制聊天消息正文的字号。侧边栏、顶栏等界面元素保持界面字号，不受此设置影响。',
+  },
   settingsLiveArtifactsFontSize: { en: 'Live Artifacts Base Size', zh: 'Live Artifacts 基础字号' },
   settingsLiveArtifactsFontSizeTooltip: {
     en: 'Sets the default font size for inline Live Artifacts in chat. Artifact content with its own font-size may still override it.',
@@ -16,7 +19,10 @@ const appearanceSettings = {
   settingsLanguageEn: { en: 'English', zh: 'English' },
   settingsLanguageZh: { en: 'Chinese', zh: '中文' },
   settingsInputToolbar: { en: 'Input Toolbar', zh: '输入框工具栏' },
-  settingsBehaviorDisplay: { en: 'Interaction & Display', zh: '交互与显示' },
+  settingsChatBehavior: { en: 'Chat Behavior', zh: '对话行为' },
+  settingsClipboardInput: { en: 'Clipboard & Paste', zh: '剪贴板与粘贴' },
+  settingsRenderingPreview: { en: 'Rendering & Preview', zh: '渲染与预览' },
+  settingsNotificationsFeedback: { en: 'Notifications & Feedback', zh: '通知与反馈' },
   // Interface Toggles
   settingsExpandCodeBlocksByDefaultLabel: { en: 'Expand Code Blocks Automatically', zh: '自动展开代码块' },
   settingsEnableMermaidRenderingLabel: { en: 'Render Mermaid Diagrams', zh: '渲染 Mermaid 图表' },
@@ -33,6 +39,11 @@ const appearanceSettings = {
   settingsAutoFullscreenHtmlTooltip: {
     en: 'Automatically open a fullscreen preview after an HTML or SVG block is generated.',
     zh: '在 HTML 或 SVG 代码块生成后自动打开全屏预览。',
+  },
+  settingsUnwrapMislabeledHtmlLabel: { en: 'Render mislabeled HTML code blocks', zh: '渲染误标记的 HTML 代码块' },
+  settingsUnwrapMislabeledHtmlTooltip: {
+    en: 'When a code block labeled text/css/markdown contains a complete HTML document or Live Artifacts markup, render it as a live preview instead of plain source. Turn off to always show these blocks as code.',
+    zh: '当 text/css/markdown 等代码块中包含完整 HTML 文档或 Live Artifacts 标记时，自动渲染为实时预览而非源码。关闭后此类代码块始终按源码显示。',
   },
   isAutoTitleEnabled: { en: 'Auto-name New Chats', zh: '自动命名新对话' },
   isAutoTitleEnabledTooltip: {
@@ -61,16 +72,6 @@ const appearanceSettings = {
   settingsEnableSuggestionsTooltip: {
     en: 'Automatically generate smart replies after the model responds. Uses a fast, separate model call.',
     zh: '在模型回应后自动生成回复建议。此功能会使用一个快速、独立的模型调用。',
-  },
-  settingsShowWelcomeSuggestionsLabel: { en: 'Show Welcome Suggestions', zh: '显示欢迎页建议' },
-  settingsShowWelcomeSuggestionsTooltip: {
-    en: 'Show suggestion cards on the new chat screen.',
-    zh: '在新对话屏幕上显示建议卡片。',
-  },
-  settingsAutoSendOnSuggestionClickLabel: { en: 'Tap to Send Reply', zh: '点按回复即发' },
-  settingsAutoSendOnSuggestionClickTooltip: {
-    en: 'When enabled, clicking a follow-up reply suggestion will send it immediately. Other suggestion types will only populate the input field.',
-    zh: '启用后，点击跟进型回复建议将立即发送。其他类型的建议只会填充输入框。',
   },
   settingsAutoScrollOnSendLabel: { en: 'Scroll to Latest on Send', zh: '发送后滚到最新' },
   settingsAudioCompressionLabel: { en: 'Compress Audio Before Upload', zh: '上传前压缩音频' },
@@ -112,10 +113,6 @@ const appearanceSettings = {
     zh: '启用后，复制消息选区会保留 Markdown 格式。关闭后只复制纯文本。',
   },
   settingsSystemAudioRecordingLabel: { en: 'Include System Audio in Recordings', zh: '录音时包含系统音频' },
-  settingsSystemAudioRecordingTooltip: {
-    en: 'When enabled, you will be prompted to share system audio (via screen share) along with microphone input during recording.',
-    zh: '启用后，录音时将提示您共享系统音频（通过屏幕共享）以混合麦克风输入。',
-  },
   settingsRawModeLabel: { en: 'Raw Reasoning', zh: '原始推理' },
   settingsRawModeTooltip: {
     en: 'For supported models, pre-fill the response with <thinking> so replies start in raw reasoning mode. Unsupported models ignore this setting.',
@@ -125,6 +122,11 @@ const appearanceSettings = {
   settingsHideThinkingInContextTooltip: {
     en: 'Collapse raw reasoning in the UI and remove it from future API context to save tokens.',
     zh: '在界面中折叠原始推理内容，并在后续 API 上下文中省略它以节省 Token。',
+  },
+  settingsAlwaysKeepThinkingInContextLabel: { en: 'Always Keep Reasoning in Context', zh: '始终保留思维链' },
+  settingsAlwaysKeepThinkingInContextTooltip: {
+    en: 'Replay the full reasoning text of prior turns in every follow-up API request so the model keeps its earlier reasoning. Mutually exclusive with the option above. Significantly increases token usage and context length.',
+    zh: '将每一轮的完整推理文本回放进后续每一次 API 请求，让模型保留此前的推理。与上方选项互斥。会显著增加 Token 消耗与上下文长度。',
   },
 };
 export default appearanceSettings;

@@ -3,6 +3,7 @@ import { setupTestRenderer } from '@/test/render/renderer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
+import { type ApiMode } from '@/types';
 import { SettingsContent } from './SettingsContent';
 import type { SettingsTab } from '@/stores/settingsUiStore';
 import type { ModelsSection } from './sections/ModelsSection';
@@ -18,16 +19,15 @@ type SettingsContentTestProps = Omit<ComponentProps<typeof SettingsContent>, 'cu
 
 const removedSettingsTab = (tab: string): SettingsTab => tab as SettingsTab;
 
-const buildOpenaiProviderSettings = (overrides: {
-  modelId?: string;
-  models?: Array<{ id: string; name: string; isPinned?: boolean }>;
-} = {}) => {
+const buildOpenaiProviderSettings = (
+  overrides: {
+    modelId?: string;
+    models?: Array<{ id: string; name: string; isPinned?: boolean }>;
+  } = {},
+) => {
   const defaults = createDefaultThirdPartyApiSettings();
   return {
-    isThirdPartyApiEnabled: true,
-    apiMode: 'third-party' as const,
     thirdPartyApi: {
-      activeProvider: 'openai' as const,
       providers: {
         ...defaults.providers,
         openai: {
@@ -36,6 +36,7 @@ const buildOpenaiProviderSettings = (overrides: {
           modelId: overrides.modelId ?? defaults.providers.openai.modelId,
           models: overrides.models ?? defaults.providers.openai.models,
           protocol: 'openai-compatible' as const,
+          enabled: true,
         },
       },
     },
@@ -109,7 +110,10 @@ vi.mock('./sections/ModelsSection', () => ({
         >
           select gemini
         </button>
-        <button data-testid="select-openai-model" onClick={() => props.setModelId('gpt-5.5', 'openai-compatible')}>
+        <button
+          data-testid="select-openai-model"
+          onClick={() => props.setModelId('gpt-5.6-sol', 'openai-compatible' as ApiMode)}
+        >
           select openai
         </button>
       </>
@@ -337,8 +341,19 @@ describe('SettingsContent', () => {
           activeTab="models"
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
-            isOpenAICompatibleApiEnabled: false,
-            openaiCompatibleModels: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+            thirdPartyApi: {
+              providers: {
+                ...createDefaultThirdPartyApiSettings().providers,
+                openai: {
+                  apiKey: null,
+                  baseUrl: 'https://api.openai.com/v1',
+                  modelId: 'gpt-5.6-sol',
+                  models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
+                  protocol: 'openai-compatible',
+                  enabled: false,
+                },
+              },
+            },
           }}
           availableModels={[{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' }]}
           updateSetting={vi.fn()}
@@ -382,9 +397,9 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
+              modelId: 'gpt-5.6-sol',
               models: [
-                { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+                { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
                 { id: 'gpt-4.1', name: 'GPT-4.1' },
               ],
             }),
@@ -418,7 +433,10 @@ describe('SettingsContent', () => {
     expect(mockModelsSection.lastProps!.defaultModels).not.toContainEqual(
       expect.objectContaining({ apiMode: 'third-party' }),
     );
-    expect(mockModelsSection.lastProps!.isOpenAICompatibleMode).toBe(true);
+    // The session routes Gemini (its modelId is gemini-family and no providerId
+    // pins a third-party provider), so the Models tab is in Gemini mode even
+    // though an OpenAI provider is enabled.
+    expect(mockModelsSection.lastProps!.isThirdPartyMode).toBe(false);
 
     act(() => {
       renderer.container
@@ -431,7 +449,7 @@ describe('SettingsContent', () => {
     expect(handleModelChange).toHaveBeenCalledWith('gemini-new');
   });
 
-  it('switches API mode when selecting a provider-tagged model from settings', () => {
+  it('pins the Gemini provider when selecting a Gemini model from settings', () => {
     const updateSetting = vi.fn();
     const handleModelChange = vi.fn();
 
@@ -442,8 +460,8 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
-              models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
             }),
             modelId: 'gemini-3-flash-preview',
           }}
@@ -474,7 +492,7 @@ describe('SettingsContent', () => {
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(updateSetting).toHaveBeenCalledWith('apiMode', 'gemini-native');
+    expect(updateSetting).toHaveBeenCalledWith('providerId', 'gemini-native');
     expect(handleModelChange).toHaveBeenCalledWith('gemini-3-flash-preview');
   });
 
@@ -486,9 +504,9 @@ describe('SettingsContent', () => {
           currentSettings={{
             ...DEFAULT_APP_SETTINGS,
             ...buildOpenaiProviderSettings({
-              modelId: 'gpt-5.5',
+              modelId: 'gpt-5.6-sol',
               models: [
-                { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true },
+                { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
                 { id: 'gpt-4.1', name: 'GPT-4.1' },
               ],
             }),
@@ -516,8 +534,8 @@ describe('SettingsContent', () => {
 
     expect(mockShortcutsSection.lastProps!.availableModels).toEqual([
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true, apiMode: 'third-party' },
-      { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true, apiMode: 'third-party', providerId: 'openai' },
+      { id: 'gpt-4.1', name: 'GPT-4.1', apiMode: 'third-party', providerId: 'openai' },
     ]);
   });
 

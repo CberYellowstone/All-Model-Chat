@@ -59,7 +59,7 @@ vi.mock('@/utils/chat/parsing', () => ({
   createUploadedFileFromBase64: createUploadedFileFromBase64Mock,
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   shouldStripThinkingFromContext: vi.fn(() => false),
 }));
 

@@ -1,9 +1,37 @@
 import type { Part } from '@google/genai';
-import type { ChatHistoryItem } from '@/types';
-import { isAudioMimeType, isImageMimeType } from '@/utils/fileTypeClassification';
+import type { ChatHistoryItem, ThinkingLevel } from '@/types';
+import { isAudioMimeType, isImageMimeType } from '@/utils/file/fileTypeClassification';
+import { isGlmModel, isKimiK3Model, isOpenAIGpt5FamilyModel } from '@/utils/model/modelCapabilities';
 import type { OpenAICompatibleChatConfig, OpenAIMessage, OpenAIMessageContent } from './openaiCompatibleTypes';
 
 const OPENAI_COMPATIBLE_FILE_DATA_ERROR = 'OpenAI-compatible mode cannot send Gemini Files API file references.';
+
+const mapThinkingLevelToOpenAIReasoningEffort = (level: ThinkingLevel | undefined): string => {
+  switch (level) {
+    case 'MINIMAL':
+      return 'none';
+    case 'LOW':
+      return 'low';
+    case 'MEDIUM':
+      return 'medium';
+    case 'HIGH':
+    default:
+      return 'high';
+  }
+};
+
+const mapThinkingLevelToKimiReasoningEffort = (level: ThinkingLevel | undefined): 'low' | 'high' | 'max' => {
+  switch (level) {
+    case 'MINIMAL':
+    case 'LOW':
+      return 'low';
+    case 'MEDIUM':
+      return 'high';
+    case 'HIGH':
+    default:
+      return 'max';
+  }
+};
 
 const getInlineAudioFormat = (mimeType: string): string => {
   const subtype = mimeType.split('/')[1]?.split(';')[0]?.trim();
@@ -140,9 +168,19 @@ export const buildOpenAICompatibleRequestBody = (
   // GLM-5 series supports a thinking parameter for chain-of-thought reasoning.
   // The header Zap button toggles thinkingLevel between LOW (fast/disabled) and HIGH.
   // Map HIGH/MEDIUM to enabled, LOW/MINIMAL to disabled.
-  if (modelId.toLowerCase().startsWith('glm-')) {
+  if (isGlmModel(modelId)) {
     const thinkingEnabled = config.thinkingLevel === 'HIGH' || config.thinkingLevel === 'MEDIUM';
     body.thinking = { type: thinkingEnabled ? 'enabled' : 'disabled' };
+  }
+
+  // OpenAI GPT-5.x: map UI thinkingLevel → reasoning_effort (none/low/medium/high).
+  if (isOpenAIGpt5FamilyModel(modelId)) {
+    body.reasoning_effort = mapThinkingLevelToOpenAIReasoningEffort(config.thinkingLevel);
+  }
+
+  // Kimi K3: always-on reasoning; top-level reasoning_effort is low/high/max (default max).
+  if (isKimiK3Model(modelId)) {
+    body.reasoning_effort = mapThinkingLevelToKimiReasoningEffort(config.thinkingLevel);
   }
 
   if (stream) {

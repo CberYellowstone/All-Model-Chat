@@ -12,7 +12,8 @@ import { useChatInputTranslation } from './useChatInputTranslation';
 import { getChatInputAvailability, getCurrentChatInputMode } from '@/utils/chat-input/chatInputAvailability';
 
 export const useChatInput = () => {
-  const { t, chatInput, inputState, fileRefs, targetDocument, insertText, capabilities, liveApi } = useChatInputCore();
+  const core = useChatInputCore();
+  const { t, chatInput, inputState, fileRefs, targetDocument, insertText, capabilities, liveApi } = core;
   const {
     appSettings,
     currentChatSettings,
@@ -118,11 +119,13 @@ export const useChatInput = () => {
 
   const {
     canQueueMessage,
-    activeQueuedSubmission,
+    activeQueuedSubmissions,
     queueCurrentSubmission,
     cancelPendingUploadSend,
     restoreQueuedSubmission,
     removeQueuedSubmission,
+    removeAllQueuedSubmissions,
+    reorderQueuedSubmissions,
     handleSubmit,
     handleFastSubmit,
     handleSmartSendMessage,
@@ -168,7 +171,7 @@ export const useChatInput = () => {
     localFileState,
     capabilities,
     liveApi,
-    activeQueuedSubmission,
+    activeQueuedSubmissions,
     canQueueMessage,
     isEditing,
     isProcessingFile,
@@ -264,6 +267,8 @@ export const useChatInput = () => {
       cancelPendingUploadSend,
       restoreQueuedSubmission,
       removeQueuedSubmission,
+      removeAllQueuedSubmissions,
+      reorderQueuedSubmissions,
     }),
     [
       handleAddFileByIdSubmit,
@@ -282,6 +287,8 @@ export const useChatInput = () => {
       queueCurrentSubmission,
       cancelPendingUploadSend,
       removeQueuedSubmission,
+      removeAllQueuedSubmissions,
+      reorderQueuedSubmissions,
       restoreQueuedSubmission,
       handleSubmit,
       handleToggleToolAndFocus,
@@ -309,22 +316,44 @@ export const useChatInput = () => {
     handlePasteAction,
   });
 
-  return {
-    chatInput,
-    inputState,
-    capabilities,
-    liveApi,
-    modalsState,
-    localFileState,
-    voiceState,
-    slashCommandState,
-    handlers,
-    targetDocument,
-    canSend,
-    canQueueMessage,
-    queuedSubmission: activeQueuedSubmission,
-    chatInputMode,
-    isAnyModalOpen,
-    handleSmartSendMessage,
-  };
+  const result = useMemo(
+    () => ({
+      chatInput,
+      inputState,
+      capabilities,
+      liveApi,
+      modalsState,
+      localFileState,
+      voiceState,
+      slashCommandState,
+      handlers,
+      targetDocument,
+      canSend,
+      canQueueMessage,
+      queuedSubmissions: activeQueuedSubmissions,
+      chatInputMode,
+      isAnyModalOpen,
+      handleSmartSendMessage,
+    }),
+    [
+      activeQueuedSubmissions,
+      canQueueMessage,
+      canSend,
+      capabilities,
+      chatInput,
+      chatInputMode,
+      handleSmartSendMessage,
+      handlers,
+      inputState,
+      isAnyModalOpen,
+      liveApi,
+      localFileState,
+      modalsState,
+      slashCommandState,
+      targetDocument,
+      voiceState,
+    ],
+  );
+
+  return result;
 };

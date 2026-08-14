@@ -105,7 +105,9 @@ const WelcomeEasterEggText: React.FC<{ text: string }> = ({ text }) => {
       type="button"
       aria-label={accessibleText}
       aria-live="polite"
-      className="flex w-full h-full items-center justify-center min-h-[1.5em] appearance-none border-0 bg-transparent p-0 font-mono text-inherit tracking-tight select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] rounded-sm"
+      className={`flex w-full h-full items-center justify-center min-h-[1.5em] appearance-none border-0 bg-transparent p-0 text-inherit tracking-tight select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] rounded-md ${
+        isShowingCurrentQuote ? 'font-mono' : 'font-sans'
+      }`}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -127,9 +129,16 @@ const WelcomeEasterEggText: React.FC<{ text: string }> = ({ text }) => {
 export const WelcomeScreen: React.FC = () => {
   const { t } = useI18n();
   return (
-    <div className="flex flex-col items-center justify-center min-h-full w-full max-w-4xl mx-auto px-4 pb-16">
-      <div className="w-full">
-        <h1 className="text-3xl md:text-4xl font-medium text-center text-[var(--theme-text-primary)] mb-6 sm:mb-12 welcome-message-animate tracking-tight min-h-[3rem] flex items-center justify-center">
+    <div className="flex flex-col items-center justify-center min-h-full w-full max-w-4xl mx-auto px-4 pb-20 sm:pb-28">
+      <div className="w-full flex flex-col items-center">
+        {/* Decorative gradient orb — neutral only, no accent/blue tint */}
+        <div
+          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mb-6 sm:mb-8 opacity-20 blur-2xl"
+          style={{
+            background: 'radial-gradient(circle, var(--theme-text-secondary) 0%, transparent 70%)',
+          }}
+        />
+        <h1 className="text-3xl md:text-4xl font-medium text-center welcome-message-animate tracking-tight min-h-[3rem] flex items-center justify-center text-[var(--theme-text-primary)]">
           <WelcomeEasterEggText text={t('welcomeGreeting')} />
         </h1>
       </div>

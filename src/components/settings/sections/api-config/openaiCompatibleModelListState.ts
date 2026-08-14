@@ -1,5 +1,5 @@
 import type { ModelOption } from '@/types';
-import { deduplicateModelsById, sanitizeModelOptions } from '@/utils/modelSorting';
+import { deduplicateModelsById, sanitizeModelOptions } from '@/utils/model/modelSorting';
 
 export interface EditableOpenAICompatibleModelRow {
   id: string;

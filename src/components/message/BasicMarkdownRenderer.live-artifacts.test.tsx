@@ -109,6 +109,22 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
     expect(renderer.container.textContent).toContain('Demo Artifact');
   });
 
+  it('renders fenced Live Artifacts that include style tags inside artifact frames', () => {
+    const fragment = '<section><style>.card{color:red}</style><div class="card">Styled Live Artifact</div></section>';
+
+    renderMarkdown({
+      content: `\`\`\`amc-live-artifact-html\n${fragment}\n\`\`\``,
+      allowHtml: true,
+    });
+
+    const iframe = renderer.container.querySelector('iframe[title="HTML Preview"]');
+
+    expect(renderer.container.querySelector('[data-live-artifact-frame="true"]')).not.toBeNull();
+    expect(renderer.container.querySelector('pre')).toBeNull();
+    expect(iframe?.getAttribute('srcdoc')).toContain('Styled Live Artifact');
+    expect(iframe?.getAttribute('srcdoc')).toContain('.card{color:red}');
+  });
+
   it('skips syntax highlighting while content is still streaming', () => {
     renderMarkdown({ content: '```js\nconst value = 1;\n```', isLoading: true });
 
@@ -158,9 +174,11 @@ describe('BasicMarkdownRenderer Live Artifacts', () => {
     const srcDoc = iframe?.getAttribute('srcdoc') ?? '';
 
     expect(srcDoc).toContain('data-amc-live-artifact-theme="true"');
-    expect(srcDoc).toContain('html,body{margin:0;padding:0;background:transparent');
-    expect(srcDoc).toContain('--amc-live-artifact-text:#f4f4f5');
-    expect(srcDoc).toContain('--amc-live-artifact-surface:#18181b');
+    expect(srcDoc).toContain(
+      'html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent',
+    );
+    expect(srcDoc).toContain('--amc-live-artifact-text:#f5f5f7');
+    expect(srcDoc).toContain('--amc-live-artifact-surface:#1c1c20');
   });
 
   it('does not show inline action buttons over Live Artifact frames', () => {

@@ -54,30 +54,38 @@ describe('naming and structure optimization guardrails', () => {
   });
 
   it('reuses the exported model capabilities contract instead of duplicating the shape', () => {
-    const modelCapabilitiesSource = readProjectFile('src/utils/modelCapabilities.ts');
+    const modelCapabilitiesSource = readProjectFile('src/utils/model/modelCapabilities.ts');
     const chatInputContextTypesSource = readProjectFile('src/components/chat/input/chatInputContextTypes.ts');
     const chatInputAvailabilitySource = readProjectFile('src/utils/chat-input/chatInputAvailability.ts');
 
     expect(modelCapabilitiesSource).toContain('export interface ModelCapabilities');
     expect(modelCapabilitiesSource).toContain('isImageGenerationModel');
     expect(modelCapabilitiesSource).not.toContain('isImagenModel');
+    expect(modelCapabilitiesSource).not.toContain('isRealImagenModel');
     expect(modelCapabilitiesSource).not.toContain('isImageModel =');
-    expect(chatInputContextTypesSource).toContain("import type { ModelCapabilities } from '@/utils/modelCapabilities'");
+    expect(chatInputContextTypesSource).toContain(
+      "import type { ModelCapabilities } from '@/utils/model/modelCapabilities'",
+    );
     expect(chatInputContextTypesSource).toContain('isImageGenerationModel: boolean;');
+    expect(chatInputContextTypesSource).not.toContain('isRealImagenModel');
     expect(chatInputContextTypesSource).not.toContain('isImageModel: boolean;');
     expect(chatInputContextTypesSource).not.toContain('interface ChatInputCapabilities');
-    expect(chatInputAvailabilitySource).toContain("import type { ModelCapabilities } from '@/utils/modelCapabilities'");
+    expect(chatInputAvailabilitySource).toContain(
+      "import type { ModelCapabilities } from '@/utils/model/modelCapabilities'",
+    );
     expect(chatInputAvailabilitySource).not.toContain('interface ChatInputCapabilities');
   });
 
-  it('splits TTS and image generation sender strategies by media type', () => {
+  it('splits TTS and image edit sender strategies by media type', () => {
     const useMessageSenderSource = readProjectFile('src/features/message-sender/useMessageSender.ts');
 
     expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/ttsStrategy.ts'))).toBe(true);
-    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageGenerationStrategy.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageEditStrategy.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/imageGenerationStrategy.ts'))).toBe(false);
     expect(fs.existsSync(path.join(projectRoot, 'src/features/message-sender/ttsImagenStrategy.ts'))).toBe(false);
     expect(useMessageSenderSource).toContain("from './ttsStrategy'");
-    expect(useMessageSenderSource).toContain("from './imageGenerationStrategy'");
+    expect(useMessageSenderSource).toContain("from './imageEditStrategy'");
+    expect(useMessageSenderSource).not.toContain('imageGenerationStrategy');
     expect(useMessageSenderSource).not.toContain('ttsImagenStrategy');
     expect(useMessageSenderSource).not.toContain('sendTtsImagenMessage');
   });
@@ -158,7 +166,7 @@ describe('naming and structure optimization guardrails', () => {
     const sourceFiles = listProjectSourceFilesExcept('src', thisTestFile);
 
     expect(fs.existsSync(path.join(projectRoot, 'src/utils/durationFormat.ts'))).toBe(true);
-    expect(fs.existsSync(path.join(projectRoot, 'src/utils/fileTypeClassification.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/utils/file/fileTypeClassification.ts'))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, 'src/utils/keyboardShortcuts.ts'))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, 'src/utils/screenCapture.ts'))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, 'src/components/icons/iconPrimitives.ts'))).toBe(true);
@@ -292,12 +300,11 @@ describe('naming and structure optimization guardrails', () => {
     expect(apiConfigSource).not.toContain('DEFAULT_OPENAI_COMPATIBLE_BASE_URL');
     expect(apiConfigSource).not.toContain('settingsOpenAICompatibleRequestUrlPreview');
     expect(thirdPartySettingsSource).toContain('THIRD_PARTY_PROVIDER_IDS');
-    expect(thirdPartySettingsSource).toContain('getThirdPartyProviderConfig');
     expect(thirdPartySettingsSource).toContain('updateThirdPartyProviderConfig');
   });
 
   it('keeps user message collapse state outside the markdown renderer component', () => {
-    const messageListSource = readProjectFile('src/components/chat/MessageList.tsx');
+    const messageListSource = readProjectFile('src/components/chat/message-list/MessageList.tsx');
     const messageTextSource = readProjectFile('src/components/message/content/MessageText.tsx');
     const collapseSource = readProjectFile('src/components/message/content/userMessageCollapse.ts');
     const hookSource = readProjectFile('src/components/chat/message-list/hooks/useExpandedUserMessages.ts');
@@ -306,7 +313,7 @@ describe('naming and structure optimization guardrails', () => {
     expect(
       fs.existsSync(path.join(projectRoot, 'src/components/chat/message-list/hooks/useExpandedUserMessages.ts')),
     ).toBe(true);
-    expect(messageListSource).toContain("from './message-list/hooks/useExpandedUserMessages'");
+    expect(messageListSource).toContain("from './hooks/useExpandedUserMessages'");
     expect(messageListSource).toContain('const userMessageCollapse = useExpandedUserMessages(activeSessionId);');
     expect(messageTextSource).toContain("from './userMessageCollapse'");
     expect(messageTextSource).toContain('userMessageCollapse?: UserMessageCollapseController;');

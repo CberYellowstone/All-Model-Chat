@@ -6,12 +6,14 @@ import {
   type SavedChatSession,
   type Theme,
   type UploadedFile,
+  GEMINI_PROVIDER_ID,
 } from '@/types';
 import { AVAILABLE_THEMES } from '@/constants/themeRegistry';
 import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 
 export const createChatSettings = (overrides: Partial<ChatSettings> = {}): ChatSettings => ({
   modelId: 'gemini-3.1-pro-preview',
+  providerId: GEMINI_PROVIDER_ID,
   temperature: 1,
   topP: 1,
   topK: 1,
@@ -37,15 +39,9 @@ export const createAppSettings = (overrides: Partial<AppSettings> = {}): AppSett
   ...createChatSettings(),
   themeId: 'pearl',
   baseFontSize: 14,
-  apiMode: 'gemini-native',
-  isOpenAICompatibleApiEnabled: false,
   useCustomApiConfig: false,
   apiKey: 'api-key',
   apiProxyUrl: null,
-  openaiCompatibleApiKey: null,
-  openaiCompatibleBaseUrl: null,
-  openaiCompatibleModelId: '',
-  openaiCompatibleModels: [],
   language: 'en',
   translationTargetLanguage: 'English',
   isStreamingEnabled: true,

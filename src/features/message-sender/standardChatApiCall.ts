@@ -2,7 +2,11 @@ import { createChatHistoryForApi } from '@/utils/chat/builder';
 import { toError } from '@/utils/errorMessage';
 import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
-import { isGemini3Model, isImageGenerationModel, shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
+import {
+  isGemini3Model,
+  isImageGenerationModel,
+  shouldStripThinkingFromContext,
+} from '@/utils/model/modelCapabilities';
 import { appendFunctionDeclarationsToTools, buildGenerationConfig } from '@/services/api/generationConfig';
 import {
   generateContentTurnApi,
@@ -20,6 +24,12 @@ import { runStandardToolLoop } from '@/features/standard-chat/standardToolLoop';
 import { collectLocalPythonInputFiles } from '@/features/local-python/executionFiles';
 import { getPyodideService } from '@/features/local-python/loadPyodideService';
 import { updateSessionById } from '@/utils/chat/sessionMutations';
+import {
+  recordPendingStreamJob,
+  advancePendingStreamJobSeq,
+  clearPendingStreamJob,
+} from '@/features/stream-jobs/amcStreamJobs';
+import { isGeminiProxyRelativePath } from '@/services/api/geminiApiBaseUrl';
 import type {
   ChatMessage,
   ChatSettings as IndividualChatSettings,
@@ -34,8 +44,7 @@ import type {
   StreamHandlerFunctions,
 } from './messageSenderTypes';
 import type { resolveStandardChatTurn } from './standardChatTurn';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import { getThirdPartyProviderConfig, resolveProviderForModelId } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 
 interface StandardChatApiCallContext {
   appSettings: StandardChatProps['appSettings'];
@@ -78,16 +87,16 @@ const createNonStreamCompleteHandler =
     streamOnPart,
     onThoughtChunk,
     streamOnComplete,
-  }: Pick<
-    StreamHandlerFunctions,
-    'streamOnPart' | 'onThoughtChunk' | 'streamOnComplete'
-  >): NonStreamMessageCompleteHandler =>
+    source,
+  }: Pick<StreamHandlerFunctions, 'streamOnPart' | 'onThoughtChunk' | 'streamOnComplete'> & {
+    source?: 'gemini' | 'third-party';
+  }): NonStreamMessageCompleteHandler =>
   (parts, thoughts, usage, grounding, urlContext) => {
     for (const part of parts) {
-      streamOnPart(part);
+      streamOnPart(part, { recordFirstToken: false, source });
     }
     if (thoughts) {
-      onThoughtChunk(thoughts);
+      onThoughtChunk(thoughts, { recordFirstToken: false, source });
     }
     streamOnComplete(usage, grounding, urlContext);
   };
@@ -116,20 +125,9 @@ export const performStandardChatApiCall = async ({
   textToUse,
   enrichedFiles,
 }: PerformStandardChatApiCallParams) => {
-  const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-  // Resolve provider: if the active provider doesn't contain the selected model,
-  // fall back to searching enabled providers for the correct one.
-  let activeProvider = isThirdPartyMode ? getThirdPartyProviderConfig(appSettings) : null;
-  if (activeProvider) {
-    const hasModel = activeProvider.models.some((m) => m.id === activeProvider!.modelId);
-    if (!hasModel) {
-      const resolved = resolveProviderForModelId(appSettings, activeProvider!.modelId);
-      if (resolved.config) {
-        activeProvider = resolved.config;
-      }
-    }
-  }
-  const apiModelId = activeProvider ? activeProvider.modelId : activeModelId;
+  const apiRoute = resolveChatApiRoute(appSettings, sessionToUpdate);
+  const activeProvider = apiRoute.provider ?? null;
+  const apiModelId = apiRoute.modelId || activeModelId;
   const { baseMessagesForApi, finalRole, finalParts, shouldSkipApiCall } = resolveTurn({
     messages,
     promptParts,
@@ -145,15 +143,19 @@ export const performStandardChatApiCall = async ({
     return;
   }
 
+  const alwaysKeepThinking =
+    sessionToUpdate.alwaysKeepThinkingInContext ?? appSettings.alwaysKeepThinkingInContext ?? false;
   const shouldStripThinking = shouldStripThinkingFromContext(
     apiModelId,
     sessionToUpdate.hideThinkingInContext ?? appSettings.hideThinkingInContext,
+    alwaysKeepThinking,
   );
   const historyForChat = await createChatHistoryForApi(
     baseMessagesForApi,
     shouldStripThinking,
     apiModelId,
     isServerCodeExecutionMode(sessionToUpdate),
+    alwaysKeepThinking,
   );
 
   const { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk } = getStreamHandlers(
@@ -164,10 +166,15 @@ export const performStandardChatApiCall = async ({
     sessionToUpdate,
     finalParts,
   );
+  const wrappedStreamOnComplete: typeof streamOnComplete = (usage, grounding, urlContext) => {
+    clearPendingStreamJob(finalSessionId);
+    streamOnComplete(usage, grounding, urlContext);
+  };
   const nonStreamOnComplete = createNonStreamCompleteHandler({
     streamOnPart,
     onThoughtChunk,
-    streamOnComplete,
+    streamOnComplete: wrappedStreamOnComplete,
+    source: activeProvider ? 'third-party' : 'gemini',
   });
 
   if (activeProvider) {
@@ -180,8 +187,16 @@ export const performStandardChatApiCall = async ({
       thinkingBudget: sessionToUpdate.thinkingBudget,
     };
     const isAnthropic = activeProvider.protocol === 'anthropic';
+    // Tagged so the api container's third-party proxy can route to the right
+    // upstream in THIRD_PARTY_ROUTES. Null in static deploys (no proxy).
+    const providerId = apiRoute.providerId ?? null;
 
     if (appSettings.isStreamingEnabled) {
+      // Stamp thinking provenance on every third-party streaming callback; the
+      // first chunk decides the strip mode, so wrapping here (single point for
+      // both Anthropic and OpenAI-compatible streams) covers the whole run.
+      const thirdPartyOnThoughtChunk = (chunk: string) => onThoughtChunk(chunk, { source: 'third-party' });
+      const thirdPartyOnPart = (part: ContentPart) => streamOnPart(part, { source: 'third-party' });
       await routeThrownStreamError(
         () =>
           isAnthropic
@@ -192,11 +207,12 @@ export const performStandardChatApiCall = async ({
                 finalParts,
                 providerConfig,
                 newAbortController.signal,
-                streamOnPart,
-                onThoughtChunk,
+                thirdPartyOnPart,
+                thirdPartyOnThoughtChunk,
                 streamOnError,
                 streamOnComplete,
                 finalRole,
+                providerId,
               )
             : sendOpenAICompatibleMessageStream(
                 keyToUse,
@@ -205,11 +221,12 @@ export const performStandardChatApiCall = async ({
                 finalParts,
                 providerConfig,
                 newAbortController.signal,
-                streamOnPart,
-                onThoughtChunk,
+                thirdPartyOnPart,
+                thirdPartyOnThoughtChunk,
                 streamOnError,
                 streamOnComplete,
                 finalRole,
+                providerId,
               ),
         streamOnError,
       );
@@ -229,6 +246,7 @@ export const performStandardChatApiCall = async ({
               streamOnError,
               nonStreamOnComplete,
               finalRole,
+              providerId,
             )
           : sendOpenAICompatibleMessageNonStream(
               keyToUse,
@@ -240,6 +258,7 @@ export const performStandardChatApiCall = async ({
               streamOnError,
               nonStreamOnComplete,
               finalRole,
+              providerId,
             ),
       streamOnError,
     );
@@ -282,14 +301,13 @@ export const performStandardChatApiCall = async ({
       return pyodideService.runPython(code, options);
     },
   });
+  const enabledMcpServers = (appSettings.mcpServers ?? []).filter((server) => server.enabled);
   const isMcpEnabledForTurn =
-    finalRole === 'user' &&
-    !isRawMode &&
-    !isImageGenerationModel(apiModelId) &&
-    (appSettings.mcpServers?.length ?? 0) > 0;
+    finalRole === 'user' && !isRawMode && !isImageGenerationModel(apiModelId) && enabledMcpServers.length > 0;
+  // Discovery is resilient: failures log and yield {} so chat continues without MCP tools.
   const mcpClientFunctions = isMcpEnabledForTurn
     ? await createMcpClientFunctions({
-        servers: appSettings.mcpServers ?? [],
+        servers: enabledMcpServers,
         abortSignal: newAbortController.signal,
       })
     : {};
@@ -370,10 +388,10 @@ export const performStandardChatApiCall = async ({
       }
 
       for (const part of toolLoopResult.finalTurn.parts) {
-        streamOnPart(part);
+        streamOnPart(part, { recordFirstToken: false });
       }
       if (toolLoopResult.finalTurn.thoughts) {
-        onThoughtChunk(toolLoopResult.finalTurn.thoughts);
+        onThoughtChunk(toolLoopResult.finalTurn.thoughts, { recordFirstToken: false });
       }
       streamOnComplete(
         toolLoopResult.finalTurn.usage,
@@ -388,6 +406,30 @@ export const performStandardChatApiCall = async ({
   }
 
   if (appSettings.isStreamingEnabled) {
+    // Stream journal: only the Docker default (relative /api/gemini) routes
+    // through our api container where the job buffer lives. Absolute proxy
+    // URLs bypass the container, so journaling is skipped there. Also only
+    // meaningful for a fresh user-driven turn (the common resume case); tool
+    // loops and other internal turns don't carry a stable generation id.
+    const canJournalStream =
+      !activeProvider && isGeminiProxyRelativePath(appSettings) && finalRole === 'user' && !isContinueMode;
+    const streamResume = canJournalStream
+      ? {
+          jobId: generationId,
+          lastSeq: 0,
+          onSeq: (seq: number) => advancePendingStreamJobSeq(finalSessionId, seq),
+        }
+      : undefined;
+
+    if (canJournalStream) {
+      recordPendingStreamJob({
+        sessionId: finalSessionId,
+        generationId,
+        jobId: generationId,
+        startedAt: generationStartTime.getTime(),
+      });
+    }
+
     await routeThrownStreamError(
       () =>
         sendStatelessMessageStreamApi(
@@ -400,8 +442,10 @@ export const performStandardChatApiCall = async ({
           streamOnPart,
           onThoughtChunk,
           streamOnError,
-          streamOnComplete,
+          wrappedStreamOnComplete,
           finalRole,
+          undefined,
+          streamResume,
         ),
       streamOnError,
     );

@@ -7,6 +7,20 @@ import { formatMessageSenderText } from './i18nFormat';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
+// An aborted/errored reply with thoughts but no settled thinking time gets a
+// fallback duration so the header still shows how long reasoning ran, matching
+// the abort path (finalizeMessages) which computes it on stream completion.
+const fallbackThinkingTimeMs = (message: {
+  thoughts?: string;
+  thinkingTimeMs?: number;
+  generationStartTime?: Date;
+}): number | undefined => {
+  if (!message.thoughts?.trim() || message.thinkingTimeMs !== undefined || !message.generationStartTime) {
+    return undefined;
+  }
+  return new Date().getTime() - message.generationStartTime.getTime();
+};
+
 export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) => {
   const { t } = useI18n();
 
@@ -18,6 +32,7 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
       errorPrefix?: string,
       partialContent?: string,
       partialThoughts?: string,
+      recordCompletion?: boolean,
     ) => {
       const resolvedErrorPrefix =
         !errorPrefix || errorPrefix === 'Error' ? t('messageSenderApiErrorPrefix') : errorPrefix;
@@ -36,6 +51,8 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
               thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
               isLoading: false,
               generationEndTime: new Date(),
+              stoppedByUser: true,
+              thinkingTimeMs: fallbackThinkingTimeMs(message),
             })),
           );
         }
@@ -67,8 +84,19 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
           thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
           isLoading: false,
           generationEndTime: new Date(),
+          thinkingTimeMs: fallbackThinkingTimeMs(message),
         })),
       );
+
+      // 仅标准聊天流的错误写入完成标记(TTS/图片编辑等乐观 pipeline 的调用
+      // 方不传该参数,保持 out-of-scope)。AbortError 已在上面提前返回。
+      // 动态导入避免把 chatStore 的全依赖链(含 rehydrateSessionFiles 等)拉到
+      // 本模块的静态依赖,使按模块 mock 的测试无需为此补齐导出。
+      if (recordCompletion) {
+        void import('@/stores/chatStore').then(({ useChatStore }) => {
+          useChatStore.getState().markSessionCompleted(sessionId, 'error');
+        });
+      }
     },
     [t, updateAndPersistSessions],
   );

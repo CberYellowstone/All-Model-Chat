@@ -1,4 +1,5 @@
 import type { ModelOption } from '@/types';
+import { ROBOTICS_MODEL } from './modelConfiguration';
 
 type ModelRegistryGroup =
   | 'defaultPinned'
@@ -18,21 +19,31 @@ interface RegisteredModel {
 
 const MODEL_REGISTRY: RegisteredModel[] = [
   {
-    id: 'gemini-3.5-flash',
-    name: 'Gemini 3.5 Flash',
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
     groupLabels: {
-      liveArtifacts: 'Gemini 3.5 Flash',
-      transcription: 'Gemini 3.5 Flash',
+      liveArtifacts: 'Gemini 3.6 Flash',
+      transcription: 'Gemini 3.6 Flash',
     },
   },
   {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
     groupLabels: {
-      liveArtifacts: 'Gemini 3 Flash',
-      transcription: 'Gemini 3.0 Flash',
+      liveArtifacts: 'Gemini 3.7 Flash',
+      transcription: 'Gemini 3.7 Flash',
+    },
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash-Lite',
+    groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
+    groupLabels: {
+      liveArtifacts: 'Gemini 3.5 Flash-Lite',
+      connectionTest: 'Gemini 3.5 Flash-Lite',
+      transcription: 'Gemini 3.5 Flash-Lite',
     },
   },
   {
@@ -46,16 +57,6 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     groups: ['defaultPinned'],
   },
   {
-    id: 'gemini-3.1-flash-lite',
-    name: 'Gemini 3.1 Flash Lite',
-    groups: ['defaultPinned', 'liveArtifacts', 'connectionTest', 'transcription'],
-    groupLabels: {
-      liveArtifacts: 'Gemini 3.1 Flash Lite',
-      connectionTest: 'Gemini 3.1 Flash Lite',
-      transcription: 'Gemini 3.1 Flash Lite',
-    },
-  },
-  {
     id: 'gemini-3.1-pro-preview',
     name: 'Gemini 3.1 Pro',
     groups: ['defaultPinned', 'liveArtifacts', 'transcription', 'connectionTest'],
@@ -66,12 +67,12 @@ const MODEL_REGISTRY: RegisteredModel[] = [
     },
   },
   {
-    id: 'gemini-robotics-er-1.6-preview',
-    name: 'Gemini Robotics-ER 1.6',
+    id: ROBOTICS_MODEL,
+    name: 'Gemini Robotics-ER 2',
     groups: ['defaultPinned', 'liveArtifacts', 'connectionTest'],
     groupLabels: {
-      liveArtifacts: 'Gemini Robotics-ER 1.6',
-      connectionTest: 'Gemini Robotics-ER 1.6',
+      liveArtifacts: 'Gemini Robotics-ER 2',
+      connectionTest: 'Gemini Robotics-ER 2',
     },
   },
   {
@@ -102,21 +103,6 @@ const MODEL_REGISTRY: RegisteredModel[] = [
   {
     id: 'gemini-3.1-flash-lite-image',
     name: 'Nano Banana Lite',
-    groups: ['image'],
-  },
-  {
-    id: 'imagen-4.0-fast-generate-001',
-    name: 'Imagen 4.0 Fast',
-    groups: ['image'],
-  },
-  {
-    id: 'imagen-4.0-generate-001',
-    name: 'Imagen 4.0',
-    groups: ['image'],
-  },
-  {
-    id: 'imagen-4.0-ultra-generate-001',
-    name: 'Imagen 4.0 Ultra',
     groups: ['image'],
   },
 ];

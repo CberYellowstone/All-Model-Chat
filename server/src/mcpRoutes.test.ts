@@ -407,6 +407,92 @@ describe('MCP routes', () => {
     });
   });
 
+  it('returns the underlying MCP error message when a tool call fails', async () => {
+    const callTool = vi.fn(async () => {
+      throw new Error('ENOENT: no such file or directory');
+    });
+    const app = createServer(
+      {
+        geminiApiBase: 'https://example.test',
+        geminiApiKey: 'server-key',
+        enableMcpStdio: true,
+      },
+      {
+        mcpClient: {
+          listTools: vi.fn(),
+          callTool,
+        },
+      },
+    );
+    const started = serverCleanup.track(await startHttpServer(app));
+
+    const response = await fetch(`${started.baseUrl}/api/mcp/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        server: {
+          id: 'filesystem',
+          name: 'Filesystem',
+          enabled: true,
+          transport: 'stdio',
+          command: 'npx',
+        },
+        toolName: 'read_file',
+        args: { path: '/missing' },
+      }),
+    });
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(502);
+    expect(body).toEqual({
+      error: 'ENOENT: no such file or directory',
+    });
+  });
+
+  it('accepts SSE transport server configs for listing tools', async () => {
+    const listTools = vi.fn(async () => [{ name: 'ping', inputSchema: { type: 'object' } }]);
+    const app = createServer(
+      {
+        geminiApiBase: 'https://example.test',
+        geminiApiKey: 'server-key',
+      },
+      {
+        mcpClient: {
+          listTools,
+          callTool: vi.fn(),
+        },
+      },
+    );
+    const started = serverCleanup.track(await startHttpServer(app));
+
+    const server = {
+      id: 'legacy',
+      name: 'Legacy',
+      enabled: true,
+      transport: 'sse',
+      url: 'https://mcp.example.com/sse',
+    };
+    const response = await fetch(`${started.baseUrl}/api/mcp/tools`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ servers: [server] }),
+    });
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(listTools).toHaveBeenCalledWith(server);
+    expect(body).toEqual({
+      servers: [
+        {
+          serverId: 'legacy',
+          serverName: 'Legacy',
+          tools: [{ name: 'ping', inputSchema: { type: 'object' } }],
+        },
+      ],
+      errors: [],
+    });
+  });
+
   it('lists MCP resources and prompts for enabled HTTP servers', async () => {
     const listResourcesAndTemplates = vi.fn(async () => ({
       resources: [

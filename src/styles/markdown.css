@@ -4,7 +4,7 @@
   color: inherit !important;
   font-family: inherit !important;
   font-size: inherit !important;
-  line-height: 1.8 !important; /* Increased line spacing */
+  line-height: 1.75 !important; /* Refined line spacing */
 }
 
 .message-content-container .markdown-body {
@@ -14,22 +14,30 @@
   word-break: break-word;
 }
 
+/* Comfortable line length for prose; wide blocks keep full bubble width */
+.message-content-container .markdown-body > p,
+.message-content-container .markdown-body > ul,
+.message-content-container .markdown-body > ol,
+.message-content-container .markdown-body > blockquote {
+  max-width: min(100%, var(--app-text-measure, 75ch));
+}
+
 .markdown-body h1 {
-  font-size: 1.8em !important;
-  font-weight: 800 !important;
+  font-size: 1.75em !important;
+  font-weight: 700 !important;
 }
 .markdown-body h2 {
-  font-size: 1.55em !important;
-  font-weight: 750 !important;
+  font-size: 1.45em !important;
+  font-weight: 700 !important;
 }
 .markdown-body h3 {
-  font-size: 1.3em !important;
-  font-weight: 700 !important;
+  font-size: 1.25em !important;
+  font-weight: 600 !important;
 }
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  font-weight: 650 !important;
+  font-weight: 600 !important;
 }
 
 .markdown-body pre {
@@ -166,8 +174,13 @@
 }
 
 /* Ensure first element doesn't push down the content, aligning text with avatar */
+/* BaseMarkdownRenderer 在 .markdown-body 与真实 markdown 节点之间多包了一层
+   wrapper div，需覆盖到第二层的第一个真实内容节点。Suspense/Fragment 不产生
+   DOM 节点，两级选择器即可，不要加更深层级或 :has()。 */
 .markdown-body > *:first-child,
-.is-loading > *:first-child {
+.markdown-body > *:first-child > *:first-child,
+.is-loading > *:first-child,
+.is-loading > *:first-child > *:first-child {
   margin-top: 0 !important;
 }
 
@@ -198,12 +211,14 @@
 
 /* Blockquote Overrides */
 .markdown-body blockquote {
-  color: inherit !important; /* Inherit color to ensure high contrast in chat bubbles */
-  border-left: 3px solid currentColor !important; /* Use current text color for border */
-  background-color: transparent !important;
-  padding: 0.25rem 0 0.25rem 1rem !important;
-  margin: 0.5rem 0 !important;
-  opacity: 0.85; /* Slight dimming for differentiation, but keeping high readability */
+  color: var(--theme-text-secondary) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-border-secondary) 30%, transparent) !important;
+  border-left: 3px solid var(--theme-border-focus) !important;
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 28%, transparent) !important;
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.5rem 0.85rem !important;
+  margin: 0.75rem 0 !important;
+  opacity: 1;
 }
 
 .markdown-body details {
@@ -299,93 +314,108 @@ code.hljs {
   color: var(--theme-text-link) !important;
   background-color: var(--theme-bg-info) !important;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.3rem;
   padding: 0.2em 0.4em;
-  border: 1px solid var(--theme-bg-info);
+  border: 1px solid color-mix(in srgb, var(--theme-text-link) 15%, transparent);
   font-size: 0.9em;
   line-height: 1.4; /* Slightly tighter for inline code tags */
 }
 
-/* Table Styles - Clean Minimalist Style (No Grid Borders) */
+/* Table Styles — Linear Minimal
+   Frameless: no outer border/background. Structure = one strong uppercase
+   header rule + hairline row separators. Columns are content-sized
+   (table-layout: auto); the TableBlock wrapper handles horizontal scroll.
+   No !important: the LA inline-style protocol says model inline styles must
+   win, and source-order cascade already beats tailwind utility classes. */
 .markdown-body table:not(.rich-html-table) {
   border-collapse: collapse;
-  width: 100%;
   min-width: 100%;
   margin: 0; /* Handled by TableBlock wrapper */
-  background-color: transparent !important;
-  border: none !important;
-  table-layout: fixed;
+  background-color: transparent;
+  table-layout: auto;
 }
 
 .markdown-body table:not(.rich-html-table) caption {
   caption-side: top;
-  color: inherit !important;
-  font-weight: 600;
+  color: var(--theme-text-tertiary);
+  font-weight: 500;
+  font-size: 0.75em;
   text-align: left;
-  padding: 0.875rem 1rem 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 1rem 0.5rem;
 }
 
-.markdown-body table:not(.rich-html-table) thead {
-  background-color: transparent !important;
-  border-bottom: 1px solid var(--theme-border-secondary) !important;
-}
-
-.markdown-body table:not(.rich-html-table) thead tr {
-  background-color: transparent !important;
-  border: none !important;
-}
-
+/* Header: single strong bottom rule; uppercase small caps feel. No fill. */
 .markdown-body table:not(.rich-html-table) thead th {
-  background-color: transparent !important;
-  color: inherit !important;
-  font-weight: 700;
-  padding: 0.875rem 1rem;
+  background-color: transparent;
+  color: var(--theme-text-tertiary);
+  font-weight: 500;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   text-align: left;
-  border: none !important;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--theme-border-secondary);
+  white-space: nowrap;
   vertical-align: top;
-  font-size: 0.95em;
-  opacity: 0.9;
 }
 
-.markdown-body table:not(.rich-html-table) tbody {
-  background-color: transparent !important;
-}
-
-/* Horizontal lines between rows */
-.markdown-body table:not(.rich-html-table) tbody tr {
-  background-color: transparent !important;
-  border-bottom: 1px solid var(--theme-border-secondary) !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-}
-
-/* Remove border from last row to avoid double border with container bottom if present, or just clean look */
-.markdown-body table:not(.rich-html-table) tbody tr:last-child {
-  border-bottom: none !important;
-}
-
-.markdown-body table:not(.rich-html-table) tbody tr:hover {
-  background-color: transparent !important; /* No hover effect for cleaner look, or maybe subtle */
-}
-
+/* Body rows: hairline separators, generous padding, no eager word-break. */
 .markdown-body table:not(.rich-html-table) tbody td {
-  padding: 1rem;
-  border: none !important;
-  color: inherit !important;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-secondary) 30%, transparent);
+  color: inherit;
   vertical-align: top;
-  background-color: transparent !important;
+  background-color: transparent;
   line-height: 1.6;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown-body table:not(.rich-html-table) tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Hover: soft lift only, no hard fill. */
+.markdown-body table:not(.rich-html-table) tbody tr:hover {
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 25%, transparent);
+}
+
+/* GFM column alignment — :---: / ---: in the delimiter row emits align attrs */
+.markdown-body :where(th, td)[align='center'] {
+  text-align: center;
+}
+
+.markdown-body :where(th, td)[align='right'] {
+  text-align: right;
 }
 
 .markdown-body table.rich-html-table {
   max-width: 100%;
+}
+
+/* Fullscreen tables scroll the whole sheet; keep the header pinned above the fold.
+   NOTE: base header background is transparent, so the sticky fullscreen header
+   needs an opaque background here. This selector is intentionally more specific
+   than the base `.markdown-body table:not(.rich-html-table) thead th` rule. */
+[data-table-fullscreen-overlay='true'] .markdown-body table:not(.rich-html-table) thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--theme-bg-primary);
+  box-shadow: 0 1px 0 var(--theme-border-secondary); /* collapse drops th borders, shadow fills in */
+}
+
+/* Touch devices have no hover, so the table actions would otherwise be unreachable.
+   Keep the bar visible and interactive wherever hover is not supported. */
+@media (hover: none) {
+  .markdown-body [data-table-actions-scope='true'] > div:last-child {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* Citation Styles */

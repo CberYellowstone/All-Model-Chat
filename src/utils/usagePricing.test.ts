@@ -91,10 +91,10 @@ describe('calculateApiUsageRecordPriceUsd', () => {
     expect(calculateApiUsageRecordPriceUsd(record)).toBeNull();
   });
 
-  it('prices Imagen 4 exactly from generated image count', () => {
+  it('leaves legacy image_generate usage records unpriced after Imagen removal', () => {
     const record: ApiUsageRecord = {
       timestamp: Date.now(),
-      modelId: 'imagen-4.0-generate-001',
+      modelId: 'legacy-image-generate',
       promptTokens: 0,
       completionTokens: 0,
       totalTokens: 0,
@@ -105,7 +105,7 @@ describe('calculateApiUsageRecordPriceUsd', () => {
       },
     };
 
-    expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(0.08, 6);
+    expect(calculateApiUsageRecordPriceUsd(record)).toBeNull();
   });
 
   it('prices Gemini 3.1 Pro exactly when modality evidence exists', () => {
@@ -126,5 +126,67 @@ describe('calculateApiUsageRecordPriceUsd', () => {
     };
 
     expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(2.38, 6);
+  });
+
+  it('prices Gemini 3.6 Flash exactly when modality evidence exists', () => {
+    const record: ApiUsageRecord = {
+      timestamp: Date.now(),
+      modelId: 'gemini-3.6-flash',
+      promptTokens: 1_000_000,
+      cachedPromptTokens: 500_000,
+      completionTokens: 100_000,
+      totalTokens: 1_100_000,
+      exactPricing: {
+        version: 1,
+        requestKind: 'chat',
+        promptTokensDetails: [{ modality: 'TEXT', tokenCount: 1_000_000 }],
+        cacheTokensDetails: [{ modality: 'TEXT', tokenCount: 500_000 }],
+        responseTokensDetails: [{ modality: 'TEXT', tokenCount: 100_000 }],
+      },
+    };
+
+    // 1.0 * 1.5 + 0.5 * 0.15 + 0.1 * 7.5 = 1.5 + 0.075 + 0.75 = 2.325
+    expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(2.325, 6);
+  });
+
+  it('prices Gemini 3.7 Flash exactly when modality evidence exists (mirrors 3.6 Flash)', () => {
+    const record: ApiUsageRecord = {
+      timestamp: Date.now(),
+      modelId: 'gemini-3.7-flash',
+      promptTokens: 1_000_000,
+      cachedPromptTokens: 500_000,
+      completionTokens: 100_000,
+      totalTokens: 1_100_000,
+      exactPricing: {
+        version: 1,
+        requestKind: 'chat',
+        promptTokensDetails: [{ modality: 'TEXT', tokenCount: 1_000_000 }],
+        cacheTokensDetails: [{ modality: 'TEXT', tokenCount: 500_000 }],
+        responseTokensDetails: [{ modality: 'TEXT', tokenCount: 100_000 }],
+      },
+    };
+
+    // 1.0 * 1.5 + 0.5 * 0.15 + 0.1 * 7.5 = 1.5 + 0.075 + 0.75 = 2.325
+    expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(2.325, 6);
+  });
+
+  it('prices Gemini 3.5 Flash-Lite exactly when modality evidence exists', () => {
+    const record: ApiUsageRecord = {
+      timestamp: Date.now(),
+      modelId: 'gemini-3.5-flash-lite',
+      promptTokens: 1_000_000,
+      cachedPromptTokens: 0,
+      completionTokens: 100_000,
+      totalTokens: 1_100_000,
+      exactPricing: {
+        version: 1,
+        requestKind: 'chat',
+        promptTokensDetails: [{ modality: 'TEXT', tokenCount: 1_000_000 }],
+        responseTokensDetails: [{ modality: 'TEXT', tokenCount: 100_000 }],
+      },
+    };
+
+    // 1.0 * 0.3 + 0.1 * 2.5 = 0.3 + 0.25 = 0.55
+    expect(calculateApiUsageRecordPriceUsd(record)).toBeCloseTo(0.55, 6);
   });
 });

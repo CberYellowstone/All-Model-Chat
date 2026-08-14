@@ -1,6 +1,6 @@
 import { MediaResolution } from '@/types';
-import { isGemini3Model } from './modelCapabilities';
-import { isVideoMimeType } from './fileTypeClassification';
+import { isGemini3Model } from './model/modelCapabilities';
+import { isVideoMimeType } from './file/fileTypeClassification';
 
 // Token cost per video frame for Gemini 3 models, by media resolution.
 // Source: https://ai.google.dev/gemini-api/docs/media-resolution

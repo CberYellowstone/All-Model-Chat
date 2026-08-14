@@ -8,16 +8,18 @@ import { usePreloadedScenarios } from '@/hooks/scenarios/usePreloadedScenarios';
 import { useMessageSender } from '@/features/message-sender/useMessageSender';
 import { useChatScroll } from './useChatScroll';
 import { useAutoTitling } from './useAutoTitling';
+import { useAutoTitleBackfill } from './useAutoTitleBackfill';
 import { useSuggestions } from './useSuggestions';
 import { useChatState } from './useChatState';
 import { useChatActions } from './useChatActions';
 import { useChatEffects } from './useChatEffects';
 import { useBackgroundKeepAlive } from '@/hooks/core/useBackgroundKeepAlive';
-import { useMessageActions } from './messages/useMessageActions';
-import { useTextToSpeechHandler } from './messages/useTextToSpeechHandler';
+import { useMessageActions } from './message/useMessageActions';
+import { useTextToSpeechHandler } from './message/useTextToSpeechHandler';
 import { createLiveClientFunctions } from '@/utils/live-api/liveClientFunctions';
 import { getPyodideService } from '@/features/local-python/loadPyodideService';
 import { useChatStore } from '@/stores/chatStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export const useChat = (
   appSettings: AppSettings,
@@ -26,6 +28,7 @@ export const useChat = (
 ) => {
   const { activeChat, currentChatSettings, isLoading, activeSessionId, savedSessions, activeMessages } =
     useChatState(appSettings);
+  const isSettingsLoaded = useSettingsStore((state) => state.isSettingsLoaded);
 
   const savedGroups = useChatStore((state) => state.savedGroups);
   const editingMessageId = useChatStore((state) => state.editingMessageId);
@@ -201,6 +204,7 @@ export const useChat = (
     setGeneratingTitleSessionIds,
     sessionKeyMapRef,
   });
+  useAutoTitleBackfill({ appSettings, language });
   useSuggestions({ appSettings, activeChat, isLoading, updateMessageInSession, language, sessionKeyMapRef });
 
   const { loadChatSession, startNewChat, handleDeleteChatHistorySession } = historyHandler;
@@ -238,9 +242,11 @@ export const useChat = (
     setAspectRatio,
     imageSize,
     setImageSize,
+    isSettingsLoaded,
     loadInitialData: historyHandler.loadInitialData,
     loadChatSession,
     startNewChat,
+    resumePendingStream: messageSender.resumePendingStream,
   });
 
   return {
@@ -288,6 +294,7 @@ export const useChat = (
     handleRenameGroup: historyHandler.handleRenameGroup,
     handleMoveSessionToGroup: historyHandler.handleMoveSessionToGroup,
     handleToggleGroupExpansion: historyHandler.handleToggleGroupExpansion,
+    handleNewChatInGroup: historyHandler.handleNewChatInGroup,
     clearCacheAndReload: historyHandler.clearCacheAndReload,
     clearAllHistory: historyHandler.clearAllHistory,
 
@@ -325,11 +332,6 @@ export const useChat = (
     setCurrentChatSettings,
     handleSelectModelInHeader: chatActions.handleSelectModelInHeader,
     handleClearCurrentChat: chatActions.handleClearCurrentChat,
-    toggleGoogleSearch: chatActions.toggleGoogleSearch,
-    toggleCodeExecution: chatActions.toggleCodeExecution,
-    toggleLocalPython: chatActions.toggleLocalPython,
-    toggleUrlContext: chatActions.toggleUrlContext,
-    toggleDeepSearch: chatActions.toggleDeepSearch,
     handleTogglePinCurrentSession: chatActions.handleTogglePinCurrentSession,
     handleUpdateMessageContent: chatActions.handleUpdateMessageContent,
     handleUpdateMessageFile: chatActions.handleUpdateMessageFile,

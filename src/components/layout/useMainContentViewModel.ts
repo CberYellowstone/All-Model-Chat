@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 import type { AppViewModel } from '@/hooks/app/useApp';
 import { useUIStore } from '@/stores/uiStore';
 import { getShortcutDisplay } from '@/utils/keyboardShortcuts';
+import { buildNewTabHref, writeLastActiveSessionSnapshot } from '@/utils/chat/lastActiveSession';
 import { buildSidePanelKey } from './mainContentModels';
 
 interface UseMainContentViewModelOptions {
@@ -66,6 +67,18 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
     [chatState.activeSessionId, loadChatSession, setIsExportModalOpen],
   );
 
+  // 点击 logo / 新聊天入口开新标签页时，先把当前会话快照同步写入 localStorage。
+  // 快照写入是同步的，先于新标签页启动，兜住 DB 异步持久化未落盘的竞态；
+  // 新标签页的 ?from 仍以 DB 会话为真源，快照仅在同一会话时提供更新 settings。
+  const handleBrandClick = useCallback(() => {
+    if (chatState.activeSessionId) {
+      writeLastActiveSessionSnapshot({
+        sessionId: chatState.activeSessionId,
+        settings: chatState.currentChatSettings,
+      });
+    }
+  }, [chatState.activeSessionId, chatState.currentChatSettings]);
+
   const sidebarProps = useMemo(
     () => ({
       isOpen: uiState.isHistorySidebarOpen,
@@ -88,10 +101,13 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
       onRenameGroup: chatState.handleRenameGroup,
       onMoveSessionToGroup: chatState.handleMoveSessionToGroup,
       onToggleGroupExpansion: chatState.handleToggleGroupExpansion,
+      onNewChatInGroup: chatState.handleNewChatInGroup,
       onOpenSettingsModal: openSettingsModal,
       themeId: currentTheme.id,
       newChatShortcut: getShortcutDisplay('general.newChat', appSettings),
       searchChatsShortcut: getShortcutDisplay('general.searchChats', appSettings),
+      brandHref: buildNewTabHref(chatState.activeSessionId),
+      onBrandClick: handleBrandClick,
     }),
     [
       appSettings,
@@ -105,6 +121,7 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
       chatState.handleRenameGroup,
       chatState.handleRenameSession,
       chatState.handleToggleGroupExpansion,
+      chatState.handleNewChatInGroup,
       chatState.handleTogglePinCurrentSession,
       chatState.loadingSessionIds,
       chatState.savedGroups,
@@ -117,6 +134,7 @@ export const useMainContentViewModel = ({ app }: UseMainContentViewModelOptions)
       setIsHistorySidebarOpenTransient,
       toggleHistorySidebar,
       uiState.isHistorySidebarOpen,
+      handleBrandClick,
     ],
   );
 

@@ -87,10 +87,16 @@ describe('runtimeConfig', () => {
 
     expect(webServerSource).toContain('serverManagedApi: toBool(process.env.RUNTIME_SERVER_MANAGED_API)');
     expect(webServerSource).toContain('RUNTIME_PYODIDE_BASE_URL');
-    expect(composeSource).toContain('RUNTIME_SERVER_MANAGED_API:-false');
+    expect(webServerSource).toContain('RUNTIME_LIVE_API_BASE_URL');
+    expect(webServerSource).toContain('RUNTIME_THIRD_PARTY_PROXY_URL');
+    expect(composeSource).toContain('RUNTIME_SERVER_MANAGED_API:-true');
+    expect(composeSource).toContain('RUNTIME_LIVE_API_BASE_URL:-/api/live');
+    expect(composeSource).toContain('RUNTIME_THIRD_PARTY_PROXY_URL:-/api/openai');
     expect(composeSource).toContain('RUNTIME_PYODIDE_BASE_URL');
     expect(envExampleSource).toContain('GEMINI_API_KEY=');
-    expect(envExampleSource).toContain('RUNTIME_SERVER_MANAGED_API=false');
+    expect(envExampleSource).toContain('RUNTIME_SERVER_MANAGED_API=true');
+    expect(envExampleSource).toContain('RUNTIME_LIVE_API_BASE_URL=/api/live');
+    expect(envExampleSource).toContain('RUNTIME_THIRD_PARTY_PROXY_URL=/api/openai');
     expect(envExampleSource).toContain('RUNTIME_PYODIDE_BASE_URL=');
     expect(envExampleSource).not.toContain('/api/live-token');
   });

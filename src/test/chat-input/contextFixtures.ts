@@ -6,7 +6,7 @@ import type {
   ChatInputToolbarContextValue,
 } from '@/components/chat/input/ChatInputContext';
 import { createChatToolToggleStates } from '@/test/chat-tools/fixtures';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 
 export const createChatInputActionsContextValue = (
   overrides: Partial<ChatInputActionsContextValue> = {},
@@ -36,7 +36,6 @@ export const createChatInputActionsContextValue = (
   onToggleToolAndFocus: vi.fn((toggle: () => void) => toggle()),
   onCountTokens: vi.fn(),
   isImageGenerationModel: false,
-  isRealImagenModel: false,
   isNativeAudioModel: false,
   canAddYouTubeVideo: false,
   isLoading: false,
@@ -53,6 +52,7 @@ export const createChatInputComposerStatusContextValue = (
   hasTrimmedInput: false,
   canSend: true,
   canQueueMessage: false,
+  queuedCount: 0,
   onTranslate: vi.fn(),
   onPasteFromClipboard: vi.fn(),
   onClearInput: vi.fn(),

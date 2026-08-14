@@ -18,9 +18,9 @@ import { type UploadedFile } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { triggerDownload } from '@/utils/export/core';
-import { copyFileToClipboard } from '@/utils/fileClipboard';
-import { formatFileSize } from '@/utils/fileSize';
-import { getFileKindFlags } from '@/utils/fileTypeClassification';
+import { copyFileToClipboard } from '@/utils/file/fileClipboard';
+import { formatFileSize } from '@/utils/file/fileSize';
+import { getFileKindFlags } from '@/utils/file/fileTypeClassification';
 import { FloatingToolbar, ToolbarButton, ToolbarDivider } from './FloatingToolbar';
 
 interface FilePreviewHeaderProps {
@@ -136,7 +136,7 @@ export const FilePreviewHeader = React.forwardRef<FilePreviewHeaderHandle, FileP
             )}
 
             {!isEditable && (
-              <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono text-white/50 leading-none mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-white/50 leading-none mt-0.5">
                 <span className="truncate max-w-[60px]">{file.type.split('/').pop()?.toUpperCase()}</span>
                 <span className="w-0.5 h-0.5 rounded-full bg-white/30 flex-shrink-0"></span>
                 <span className="whitespace-nowrap">{formatFileSize(file.size)}</span>

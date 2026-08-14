@@ -1,5 +1,6 @@
 import { createManagedObjectUrl, releaseManagedObjectUrl } from '@/services/objectUrlManager';
 import { SUPPORTED_AUDIO_MIME_TYPES } from '@/constants/fileTypeSupport';
+import { convertAudioBlobToWavFile, float32ToWavFile } from './audioProcessing';
 import { audioCompressionWorkerCode } from './audioCompressionWorkerCode';
 
 const BYTES_PER_KIB = 1024;
@@ -13,10 +14,20 @@ const MP3_TARGET_KBPS = 64;
 const normalizeAudioMimeType = (mimeType: string): string => mimeType.trim().toLowerCase().split(';')[0];
 
 const isGeminiSupportedAudioMimeType = (file: File | Blob): boolean =>
-  SUPPORTED_AUDIO_MIME_TYPES.includes(normalizeAudioMimeType(file.type));
+  SUPPORTED_AUDIO_MIME_TYPES.includes(normalizeAudioMimeType(file.type || ''));
 
 const canKeepOriginalAudio = (file: File | Blob): file is File =>
   file instanceof File && isGeminiSupportedAudioMimeType(file);
+
+const toNamedFile = (file: File | Blob, fallbackName: string): File => {
+  if (file instanceof File) return file;
+  return new File([file], fallbackName, { type: file.type || 'application/octet-stream' });
+};
+
+const wavFileNameFor = (file: File | Blob): string => {
+  const originalName = (file as File).name || `voice-input-${Date.now()}`;
+  return originalName.replace(/\.[^/.]+$/, '') + '.wav';
+};
 
 interface EncodeMp3WithWorkerOptions {
   pcmData: Float32Array;
@@ -59,6 +70,16 @@ const encodeMp3WithWorker = async ({
       );
     }
 
+    const resolveFallback = () => {
+      cleanup();
+      // Prefer keeping an already-supported source; otherwise encode the PCM we already decoded.
+      if (isGeminiSupportedAudioMimeType(file)) {
+        resolve(toNamedFile(file, `recording-${Date.now()}.wav`));
+        return;
+      }
+      resolve(float32ToWavFile(pcmData, sampleRate, wavFileNameFor(file)));
+    };
+
     worker.onmessage = (event) => {
       if (event.data.type === 'success') {
         const mp3Blob = new Blob(event.data.buffers, { type: 'audio/mpeg' });
@@ -67,19 +88,17 @@ const encodeMp3WithWorker = async ({
         cleanup();
         resolve(new File([mp3Blob], newName, { type: 'audio/mpeg' }));
       } else {
-        cleanup();
-        const originalName = (file as File).name || `recording-${Date.now()}.wav`;
-        resolve(new File([file], originalName, { type: file.type || 'audio/wav' }));
+        resolveFallback();
       }
     };
 
     worker.onerror = () => {
-      cleanup();
-      const originalName = (file as File).name || `recording-${Date.now()}.wav`;
-      resolve(new File([file], originalName, { type: file.type || 'audio/wav' }));
+      resolveFallback();
     };
 
-    worker.postMessage({ pcmData, sampleRate, kbps }, [pcmData.buffer]);
+    // Copy before transfer so pcmData remains usable for the WAV fallback path.
+    const pcmForWorker = pcmData.slice();
+    worker.postMessage({ pcmData: pcmForWorker, sampleRate, kbps }, [pcmForWorker.buffer]);
   });
 };
 
@@ -147,7 +166,35 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
     ) {
       throw error;
     }
-    const originalName = (file as File).name || `recording-${Date.now()}.wav`;
-    return new File([file], originalName, { type: file.type || 'audio/wav' });
+    // Never hand Gemini-unsupported MIME types (e.g. browser webm) back as "success".
+    if (isGeminiSupportedAudioMimeType(file)) {
+      return toNamedFile(file, `recording-${Date.now()}.wav`);
+    }
+    return convertAudioBlobToWavFile(file);
   }
+};
+
+/**
+ * Ensures browser-recorded audio (often audio/webm;codecs=opus) is converted to a
+ * Gemini transcription-supported MIME type. Independent of the "audio compression" setting.
+ */
+export const prepareAudioForGeminiTranscription = async (file: File | Blob): Promise<File> => {
+  if (isGeminiSupportedAudioMimeType(file)) {
+    return toNamedFile(file, `voice-input-${Date.now()}.wav`);
+  }
+
+  try {
+    const compressed = await compressAudioToMp3(file);
+    if (isGeminiSupportedAudioMimeType(compressed)) {
+      return compressed;
+    }
+  } catch {
+    // Fall through to WAV conversion.
+  }
+
+  const wavFile = await convertAudioBlobToWavFile(file);
+  if (!isGeminiSupportedAudioMimeType(wavFile)) {
+    throw new Error('Failed to convert recorded audio into a format supported by Gemini transcription.');
+  }
+  return wavFile;
 };

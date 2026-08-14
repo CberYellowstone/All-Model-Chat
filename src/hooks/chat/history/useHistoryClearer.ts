@@ -2,9 +2,10 @@ import { useCallback, type Dispatch, type SetStateAction, type MutableRefObject 
 import { type SavedChatSession, type ChatGroup } from '@/types';
 import { dbService } from '@/services/db/dbService';
 import { logService } from '@/services/logService';
-import { cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import { removeSessionScopedLocalStorageEntries } from '@/utils/sessionLocalStorage';
 import { useChatDraftStore } from '@/stores/chatDraftStore';
+import { useChatStore } from '@/stores/chatStore';
 import { clearPyodideResultCache } from '@/features/local-python/usePyodide';
 
 interface UseHistoryClearerProps {
@@ -50,6 +51,7 @@ export const useHistoryClearer = ({
 
     setSavedSessions([]);
     setSavedGroups([]);
+    useChatStore.getState().setCompletedSessions({});
     clearPyodideResultCache();
     startNewChat();
   }, [savedSessions, setSavedSessions, setSavedGroups, startNewChat, activeJobs]);

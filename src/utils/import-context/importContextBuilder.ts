@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 
-import { fileToString } from '@/utils/fileEncoding';
+import { fileToString } from '@/utils/file/fileEncoding';
 import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { attachRelativePath, getFilePath } from './filePath';
 import { buildRootGitignoreMatchers, isIgnoredByGitignore, type IgnoreMatcher } from './ignoreMatcher';

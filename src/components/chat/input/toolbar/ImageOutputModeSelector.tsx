@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import type { ImageOutputMode } from '@/types';
-import { Select } from '@/components/shared/Select';
+import { ToolbarSegmentedControl } from './ToolbarSegmentedControl';
 
 interface ImageOutputModeSelectorProps {
   imageOutputMode: ImageOutputMode;
@@ -13,19 +13,24 @@ export const ImageOutputModeSelector: React.FC<ImageOutputModeSelectorProps> = (
   setImageOutputMode,
 }) => {
   const { t } = useI18n();
+
   return (
-    <Select
-      id="image-output-mode-selector"
-      label={t('imageOutputModeTitle')}
-      hideLabel
+    <ToolbarSegmentedControl<ImageOutputMode>
+      aria-label={t('imageOutputModeTitle')}
       value={imageOutputMode}
-      onChange={(e) => setImageOutputMode(e.target.value as ImageOutputMode)}
-      className="mb-0"
-      wrapperClassName="relative w-[150px]"
-      direction="up"
-    >
-      <option value="IMAGE_TEXT">{t('imageOutputModeTextAndImage')}</option>
-      <option value="IMAGE_ONLY">{t('imageOutputModeImageOnly')}</option>
-    </Select>
+      onChange={setImageOutputMode}
+      options={[
+        {
+          value: 'IMAGE_TEXT',
+          label: t('imageOutputModeTextAndImage'),
+          title: t('imageOutputModeTextAndImage'),
+        },
+        {
+          value: 'IMAGE_ONLY',
+          label: t('imageOutputModeImageOnly'),
+          title: t('imageOutputModeImageOnly'),
+        },
+      ]}
+    />
   );
 };

@@ -17,11 +17,22 @@ describe('ToggleItem', () => {
     expect(row).not.toBeNull();
     expect(row?.getAttribute('tabindex')).toBe('0');
     expect(row?.getAttribute('aria-checked')).toBe('false');
+    expect(row?.className).toContain('py-3');
+    expect(row?.className).not.toContain('py-${');
 
     act(() => {
       row?.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     });
 
     expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('keeps tooltip icons spaced from the label', () => {
+    act(() => {
+      renderer.root.render(<ToggleItem label="Paste button" checked={true} onChange={vi.fn()} tooltip="Help text" />);
+    });
+
+    const labelRow = renderer.container.querySelector('[role="switch"] > div');
+    expect(labelRow?.className).toContain('gap-1.5');
   });
 });

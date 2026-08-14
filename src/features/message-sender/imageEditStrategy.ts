@@ -16,8 +16,8 @@ import {
   GEMINI_IMAGE_HISTORY_REHYDRATION_ERROR,
 } from '@/utils/chat/builder';
 import { createUploadedFileFromBase64 } from '@/utils/chat/parsing';
-import { shouldStripThinkingFromContext } from '@/utils/modelCapabilities';
-import { isImageMimeType } from '@/utils/fileTypeClassification';
+import { shouldStripThinkingFromContext } from '@/utils/model/modelCapabilities';
+import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { appendApiPart } from '@/features/chat-streaming/messageStreamParts';
 import { formatMessageSenderText } from './i18nFormat';
 import { runOptimisticMessagePipeline, type MessageLifecycleRunner } from './messagePipeline';
@@ -107,9 +107,12 @@ export const sendImageEditMessage = async ({
     runMessageLifecycle,
     execute: async () => {
       const { contentParts: promptParts } = await buildContentParts(text, imageFiles, currentChatSettings.modelId);
+      const alwaysKeepThinking =
+        currentChatSettings.alwaysKeepThinkingInContext ?? appSettings.alwaysKeepThinkingInContext ?? false;
       const shouldStripThinking = shouldStripThinkingFromContext(
         currentChatSettings.modelId,
         currentChatSettings.hideThinkingInContext ?? appSettings.hideThinkingInContext,
+        alwaysKeepThinking,
       );
 
       let historyMessages = messages;
@@ -124,6 +127,8 @@ export const sendImageEditMessage = async ({
           historyMessages,
           shouldStripThinking,
           currentChatSettings.modelId,
+          false,
+          alwaysKeepThinking,
         );
       } catch (error) {
         throw translateImageHistoryError(error, t);
@@ -222,6 +227,12 @@ export const sendImageEditMessage = async ({
           files: combinedFiles,
           apiParts: combinedApiParts,
           generationEndTime: new Date(),
+        },
+        feedback: {
+          notification: {
+            title: t('messageSenderImageEditReadyTitle'),
+            body: t('messageSenderImageEditReadyBody'),
+          },
         },
       };
     },

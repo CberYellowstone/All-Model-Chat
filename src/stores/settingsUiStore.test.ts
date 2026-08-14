@@ -25,4 +25,16 @@ describe('settingsUiStore', () => {
 
     expect(useSettingsUiStore.getState().scrollPositions.api).toBe(42);
   });
+
+  it('supports toggling advanced mode state', async () => {
+    const { useSettingsUiStore } = await importFreshSettingsUiStore();
+
+    expect(useSettingsUiStore.getState().isAdvancedModeEnabled).toBe(false);
+
+    useSettingsUiStore.getState().toggleAdvancedMode();
+    expect(useSettingsUiStore.getState().isAdvancedModeEnabled).toBe(true);
+
+    useSettingsUiStore.getState().setIsAdvancedModeEnabled(false);
+    expect(useSettingsUiStore.getState().isAdvancedModeEnabled).toBe(false);
+  });
 });

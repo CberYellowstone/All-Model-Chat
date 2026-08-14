@@ -1,11 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { DESKTOP_BREAKPOINT_PX } from '@/constants/layout';
-import {
-  createPersistedStateStorage,
-  readPersistentStorageItem,
-  registerPersistedStoreSync,
-} from './persistentStorage';
+import { createPersistedStateStorage, readPersistentStorageItem } from './persistentStorage';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 
 const UI_PREFERENCES_STORAGE_KEY = 'all_model_chat_ui_preferences_v1';
@@ -145,7 +141,8 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: UI_PREFERENCES_STORAGE_KEY,
-      storage: createJSONStorage(() => createPersistedStateStorage()),
+      // Sidebar open/closed is tab chrome — keep per-tab, no cross-tab rehydrate.
+      storage: createJSONStorage(() => createPersistedStateStorage({ notifyUpdate: () => {} })),
       partialize: (state) => ({
         desktopHistorySidebarOpen: state.desktopHistorySidebarOpen,
         mobileHistorySidebarOpen: state.mobileHistorySidebarOpen,
@@ -154,5 +151,3 @@ export const useUIStore = create<UIState & UIActions>()(
     },
   ),
 );
-
-registerPersistedStoreSync(useUIStore, UI_PREFERENCES_STORAGE_KEY);

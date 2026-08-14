@@ -1,7 +1,9 @@
 import { act, type ComponentProps } from 'react';
+import { fireEvent } from '@testing-library/react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_APP_SETTINGS, DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
+import { ensureFeatureTranslations } from '@/i18n/featureTranslations';
 import { setupStoreStateReset } from '@/test/stores/reset';
 import { SettingsModal } from './SettingsModal';
 
@@ -55,7 +57,7 @@ describe('SettingsModal', () => {
 
     expect(fixedDesktopTitle).toBeNull();
     expect(scrollingDesktopTitle?.textContent).toBe('API');
-    expect(document.body.textContent).toContain('Third-Party API');
+    expect(document.body.textContent).toContain('Test Connection');
   });
 
   it('opens the settings surface without any enter animation class', async () => {
@@ -80,23 +82,31 @@ describe('SettingsModal', () => {
   it('renders shortcuts in its own sidebar group', async () => {
     await renderSettingsModal();
 
-    const groups = Array.from(document.querySelectorAll('[data-settings-group]')).map((group) =>
+    const groupTabLabels = Array.from(document.querySelectorAll('[data-settings-group]')).map((group) =>
       Array.from(group.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent?.trim()),
     );
 
-    expect(groups).toEqual([
+    expect(groupTabLabels).toEqual([
       ['Models', 'API', 'MCP', 'Interface & Interaction', 'Data & App'],
       ['Shortcuts'],
       ['About'],
     ]);
 
-    for (const group of document.querySelectorAll('[data-settings-group]')) {
-      expect(group.className).not.toContain('border-l');
+    const groupElements = document.querySelectorAll('[data-settings-group]');
+    for (const group of groupElements) {
       expect(group.className).not.toContain('border-t');
-      expect(group.className).not.toContain('ml-1');
-      expect(group.className).not.toContain('pl-2');
-      expect(group.className).not.toContain('pt-3');
     }
+  });
+
+  it('places the desktop close control in the content pane, not the sidebar', async () => {
+    await renderSettingsModal();
+
+    const closeButtons = Array.from(document.querySelectorAll('button[aria-label="Close"]'));
+    expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+
+    const contentClose = document.querySelector('main button[aria-label="Close"]');
+    expect(contentClose).not.toBeNull();
+    expect(contentClose?.className).toContain('md:inline-flex');
   });
 
   it('routes scoped chat changes to current chat settings', async () => {
@@ -130,7 +140,7 @@ describe('SettingsModal', () => {
 
     await act(async () => {
       document
-        .querySelector('[data-testid="settings-model-option-next-chat-model"]')
+        .querySelector('[data-testid="settings-model-option-gemini-native:next-chat-model"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
@@ -155,5 +165,37 @@ describe('SettingsModal', () => {
     });
 
     expect(document.body.textContent).not.toContain('Current Chat');
+  });
+
+  it('searches settings and navigates to the matching section', async () => {
+    await ensureFeatureTranslations('settings');
+    localStorage.setItem('chatSettingsLastTab', 'api');
+    await renderSettingsModal();
+
+    const searchInput = document.querySelector<HTMLInputElement>('input[aria-label="Search settings"]');
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.change(searchInput!, { target: { value: 'mermaid' } });
+    });
+
+    expect(searchInput?.value).toBe('mermaid');
+    expect(document.body.textContent).toContain('Render Mermaid Diagrams');
+    expect(document.body.textContent).toMatch(/result/i);
+
+    const mermaidResult = Array.from(document.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Render Mermaid Diagrams'),
+    );
+    expect(mermaidResult).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(mermaidResult!);
+    });
+
+    const clearedSearch = document.querySelector<HTMLInputElement>('input[aria-label="Search settings"]');
+    expect(clearedSearch?.value).toBe('');
+    expect(document.body.textContent).toContain('Rendering & Preview');
+    expect(document.body.textContent).toContain('Render Mermaid Diagrams');
+    expect(document.querySelector('[data-settings-item="interface-mermaid"]')).not.toBeNull();
   });
 });

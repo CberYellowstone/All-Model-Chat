@@ -3,14 +3,13 @@ import { setupTestRenderer } from '@/test/render/renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { createChatInputToolbarContextValue } from '@/test/chat-input/contextFixtures';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 
-const personGenerationSelectorMock = vi.fn();
+const imageOutputModeSelectorMock = vi.fn();
 const mockCapabilities = vi.hoisted(() => ({
   value: {
     isImageGenerationModel: false,
     isGemini3ImageModel: false,
-    isRealImagenModel: false,
     isTtsModel: false,
     isNativeAudioModel: false,
     supportedAspectRatios: [] as string[],
@@ -20,18 +19,17 @@ const mockCapabilities = vi.hoisted(() => ({
 
 vi.mock('./toolbar/AddFileByIdInput', () => ({ AddFileByIdInput: () => null }));
 vi.mock('./toolbar/AddUrlInput', () => ({ AddUrlInput: () => null }));
-vi.mock('./toolbar/ImagenAspectRatioSelector', () => ({ ImagenAspectRatioSelector: () => null }));
+vi.mock('./toolbar/AspectRatioSelector', () => ({ AspectRatioSelector: () => null }));
 vi.mock('./toolbar/ImageSizeSelector', () => ({ ImageSizeSelector: () => null }));
-vi.mock('./toolbar/ImageOutputModeSelector', () => ({ ImageOutputModeSelector: () => null }));
+vi.mock('./toolbar/ImageOutputModeSelector', () => ({
+  ImageOutputModeSelector: (props: unknown) => {
+    imageOutputModeSelectorMock(props);
+    return <div data-testid="image-output-mode-selector" />;
+  },
+}));
 vi.mock('./toolbar/QuadImageToggle', () => ({ QuadImageToggle: () => null }));
 vi.mock('./toolbar/TtsVoiceSelector', () => ({ TtsVoiceSelector: () => null }));
 vi.mock('./toolbar/MediaResolutionSelector', () => ({ MediaResolutionSelector: () => null }));
-vi.mock('./toolbar/PersonGenerationSelector', () => ({
-  PersonGenerationSelector: (props: unknown) => {
-    personGenerationSelectorMock(props);
-    return <div data-testid="person-generation-selector" />;
-  },
-}));
 import { ChatInputToolbarContext } from './ChatInputContext';
 import { ChatInputToolbar } from './ChatInputToolbar';
 
@@ -44,7 +42,7 @@ describe('ChatInputToolbar', () => {
         <ChatInputToolbarContext.Provider
           value={createChatInputToolbarContextValue({
             capabilities: {
-              ...getModelCapabilities('imagen-test-model'),
+              ...getModelCapabilities('gemini-3.1-flash-image-preview'),
               ...mockCapabilities.value,
             },
           })}
@@ -56,17 +54,16 @@ describe('ChatInputToolbar', () => {
   };
 
   beforeEach(() => {
-    personGenerationSelectorMock.mockClear();
+    imageOutputModeSelectorMock.mockClear();
     useChatStore.setState({
       activeSessionId: null,
       savedSessions: [],
       activeMessages: [],
-      personGeneration: 'ALLOW_ADULT',
+      imageOutputMode: 'IMAGE_TEXT',
     });
     mockCapabilities.value = {
       isImageGenerationModel: false,
       isGemini3ImageModel: false,
-      isRealImagenModel: false,
       isTtsModel: false,
       isNativeAudioModel: false,
       supportedAspectRatios: [],
@@ -74,29 +71,27 @@ describe('ChatInputToolbar', () => {
     };
   });
 
-  it('shows person generation selector for real Imagen models', () => {
+  it('shows image output mode selector for Gemini image models', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
       isImageGenerationModel: true,
-      isRealImagenModel: true,
     };
 
     renderToolbar();
 
-    expect(personGenerationSelectorMock).toHaveBeenCalledWith(
-      expect.objectContaining({ personGeneration: 'ALLOW_ADULT' }),
-    );
+    expect(imageOutputModeSelectorMock).toHaveBeenCalled();
+    expect(renderer.container.querySelector('[data-testid="image-settings-cluster"]')).not.toBeNull();
   });
 
-  it('hides person generation selector for Gemini image models', () => {
+  it('hides image output mode selector for non-image models', () => {
     mockCapabilities.value = {
       ...mockCapabilities.value,
-      isImageGenerationModel: true,
-      isRealImagenModel: false,
+      isImageGenerationModel: false,
     };
 
     renderToolbar();
 
-    expect(personGenerationSelectorMock).not.toHaveBeenCalled();
+    expect(imageOutputModeSelectorMock).not.toHaveBeenCalled();
+    expect(renderer.container.querySelector('[data-testid="image-settings-cluster"]')).toBeNull();
   });
 });

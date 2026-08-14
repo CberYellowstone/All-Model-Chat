@@ -3,88 +3,55 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getCorsHeaders, sendJson } from './cors.js';
+import { maybeStreamWithJob } from './streamJobs.js';
+import { isPrivateNetworkHostname } from '../../shared/privateNetwork.js';
+import {
+  STRIPPED_PROXY_RESPONSE_HEADERS,
+  buildGeminiProxyHeaders,
+  getConnectionManagedHeaders,
+  resolveGeminiRequestApiKey,
+} from './proxyHeaders.js';
 
 export const GEMINI_PROXY_PREFIX = '/api/gemini';
-
-const HOP_BY_HOP_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
-const STRIPPED_PROXY_REQUEST_HEADERS = new Set([
-  ...HOP_BY_HOP_HEADERS,
-  'accept-encoding',
-  'authorization',
-  'content-length',
-  'cookie',
-  'host',
-]);
-const STRIPPED_PROXY_RESPONSE_HEADERS = new Set([...HOP_BY_HOP_HEADERS, 'content-encoding', 'content-length']);
+const GEMINI_UPSTREAM_BASE_HEADER = 'x-gemini-upstream-base-url';
 
 export interface GeminiProxyConfig {
   geminiApiBase: string;
   geminiApiKey?: string;
   allowedOrigins: string[];
+  // When false (default): a browser-supplied x-goog-api-key wins, the server
+  // key is the fallback (BYOK 兜底). When true: the server key wins.
+  serverKeyPriority?: boolean;
 }
 
-function getConnectionManagedHeaders(value: string | null | undefined): Set<string> {
-  if (!value) {
-    return new Set();
+/**
+ * Parse and validate the x-gemini-upstream-base-url header. Returns a validated
+ * trailing-slash-stripped base URL string, or null when the header is absent or
+ * fails SSRF validation. When present and valid, the proxy uses this as the
+ * upstream target instead of config.geminiApiBase.
+ *
+ * Security constraints (matching thirdPartyProxy):
+ *  - https only
+ *  - no embedded credentials
+ *  - non-private network host (SSRF guard via isPrivateNetworkHostname)
+ */
+function resolveUpstreamBaseOverride(request: IncomingMessage): string | null {
+  const raw = request.headers[GEMINI_UPSTREAM_BASE_HEADER];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value || typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'https:') return null;
+    if (url.username || url.password) return null;
+    if (isPrivateNetworkHostname(url.hostname)) return null;
+    return trimmed.replace(/\/$/, '');
+  } catch {
+    return null;
   }
-
-  return new Set(
-    value
-      .split(',')
-      .map((headerName) => headerName.trim().toLowerCase())
-      .filter((headerName) => headerName.length > 0),
-  );
-}
-
-function resolveRequestApiKey(request: IncomingMessage, serverApiKey?: string): string {
-  const trimmedServerApiKey = serverApiKey?.trim();
-  if (trimmedServerApiKey) {
-    return trimmedServerApiKey;
-  }
-
-  const browserApiKey = request.headers['x-goog-api-key'];
-  if (Array.isArray(browserApiKey)) {
-    return browserApiKey[0]?.trim() ?? '';
-  }
-
-  return browserApiKey?.trim() ?? '';
-}
-
-function buildProxyHeaders(request: IncomingMessage, apiKey: string): Headers {
-  const headers = new Headers();
-  const connectionManagedHeaders = getConnectionManagedHeaders(
-    Array.isArray(request.headers.connection) ? request.headers.connection.join(',') : request.headers.connection,
-  );
-
-  for (const [name, value] of Object.entries(request.headers)) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-
-    const normalizedName = name.toLowerCase();
-    if (STRIPPED_PROXY_REQUEST_HEADERS.has(normalizedName) || connectionManagedHeaders.has(normalizedName)) {
-      continue;
-    }
-
-    if (Array.isArray(value)) {
-      headers.set(normalizedName, value.join(','));
-      continue;
-    }
-
-    headers.set(normalizedName, value);
-  }
-
-  headers.set('x-goog-api-key', apiKey);
-  return headers;
 }
 
 function buildProxyResponseHeaders(
@@ -114,7 +81,7 @@ export async function proxyGeminiRequest(
   config: GeminiProxyConfig,
   fetchImpl: typeof fetch,
 ): Promise<void> {
-  const apiKeyForProxy = resolveRequestApiKey(request, config.geminiApiKey);
+  const apiKeyForProxy = resolveGeminiRequestApiKey(request, config.geminiApiKey, config.serverKeyPriority);
 
   if (!apiKeyForProxy) {
     sendJson(request, response, 500, { error: 'GEMINI_API_KEY is not configured.' }, config.allowedOrigins);
@@ -123,8 +90,30 @@ export async function proxyGeminiRequest(
 
   const requestUrl = new URL(request.url || '/', 'http://localhost');
   const upstreamPath = requestUrl.pathname.slice(GEMINI_PROXY_PREFIX.length) || '/';
-  const targetBase = config.geminiApiBase.replace(/\/$/, '');
+
+  // Override the upstream target when the browser sends a validated
+  // x-gemini-upstream-base-url header (e.g. a user-configured proxy address).
+  // When absent or invalid, falls back to config.geminiApiBase (the default).
+  const upstreamBaseOverride = resolveUpstreamBaseOverride(request);
+  const targetBase = upstreamBaseOverride ?? config.geminiApiBase.replace(/\/$/, '');
   const upstreamUrl = `${targetBase}${upstreamPath}${requestUrl.search}`;
+
+  // Stream journal: when the browser sends an x-amc-job-id header on a
+  // streamGenerateContent request, the upstream is buffered independently of
+  // the browser connection so a page refresh can resume from the last seq.
+  // No header → ordinary pass-through (today's behavior), fully reversible.
+  if (
+    await maybeStreamWithJob(request, response, upstreamPath, upstreamUrl, {
+      geminiApiBase: config.geminiApiBase,
+      geminiApiKey: config.geminiApiKey,
+      allowedOrigins: config.allowedOrigins,
+      serverKeyPriority: config.serverKeyPriority,
+      fetchImpl,
+    })
+  ) {
+    return;
+  }
+
   const method = request.method || 'GET';
   const hasBody = !['GET', 'HEAD'].includes(method);
   const abortController = new AbortController();
@@ -136,7 +125,7 @@ export async function proxyGeminiRequest(
 
   const requestInit: RequestInit & { duplex?: 'half' } = {
     method,
-    headers: buildProxyHeaders(request, apiKeyForProxy),
+    headers: buildGeminiProxyHeaders(request, apiKeyForProxy),
     signal: abortController.signal,
     // redirect: 'manual' so a public GEMINI_API_BASE cannot 302 into a private network host
     // after the input URL passed validation.
@@ -175,7 +164,13 @@ export async function proxyGeminiRequest(
     request.off('aborted', abortUpstream);
     response.off('close', abortUpstream);
     console.error('[gemini] upstream returned redirect:', upstreamResponse.status);
-    sendJson(request, response, 502, { error: 'Gemini upstream returned an unexpected redirect.' }, config.allowedOrigins);
+    sendJson(
+      request,
+      response,
+      502,
+      { error: 'Gemini upstream returned an unexpected redirect.' },
+      config.allowedOrigins,
+    );
     return;
   }
 

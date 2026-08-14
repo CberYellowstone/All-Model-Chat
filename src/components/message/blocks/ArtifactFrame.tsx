@@ -6,13 +6,20 @@ import {
   buildStreamingHtmlPreviewRenderPayload,
   buildHtmlPreviewSrcDoc,
   buildStreamingHtmlPreviewSrcDoc,
+  whenKatexReady,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
   HTML_PREVIEW_STREAM_RENDER_EVENT,
 } from '@/utils/html-preview/previewDocument';
-import { normalizeLiveArtifactFollowupPayload, type LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import { renderDotToSvgCached, type DotRenderResult } from '@/features/graphviz/vizRuntime';
+import {
+  normalizeLiveArtifactFollowupPayload,
+  type LiveArtifactFollowupPayload,
+} from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   createRelayedLiveArtifactSelectionDetail,
   dispatchLiveArtifactSelection,
@@ -30,7 +37,16 @@ interface ArtifactFrameProps {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'escape' | 'resize' | 'followup' | 'selection' | 'copy' | 'diagnostic';
+  event?:
+    | 'ready'
+    | 'escape'
+    | 'resize'
+    | 'followup'
+    | 'selection'
+    | 'copy'
+    | 'diagnostic'
+    | 'graphviz-render-request'
+    | 'graphviz-render-response';
   height?: number;
   payload?: unknown;
 };
@@ -97,6 +113,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   const { window: targetWindow } = useWindowContext();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const latestStreamingHtmlRef = useRef(html);
+  const isLoadingRef = useRef(isLoading);
   const lastPostedStreamingHtmlRef = useRef<string | null>(null);
   const streamingFlushTimeoutRef = useRef<number | null>(null);
   const contentHeightCacheKey = useMemo(() => getContentFrameHeightCacheKey(html, cacheKey), [cacheKey, html]);
@@ -110,43 +127,37 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     heightCacheKey,
     height: readCachedFrameHeight(heightCacheKey, streamingHeightCacheKey),
   }));
+  // Incremented when KaTeX finishes loading so the final srcDoc (which embeds
+  // rendered math) is recomputed after the first render skipped the formulas.
+  const [katexReadyTick, setKatexReadyTick] = useState(0);
+  const finalSrcDoc = useMemo(() => {
+    // Guard: while streaming, the iframe renders `streamingSrcDoc` (live,
+    // chunk-by-chunk via postMessage) and `finalSrcDoc` is unused. Building it
+    // every chunk would re-run the full DOMParser + sanitize + inject pipeline
+    // for content the iframe cannot see yet. Deferring the build to the end of
+    // the stream keeps the heavy final pass off the hot path.
+    if (isLoading) {
+      return '';
+    }
+    // katexReadyTick is an intentional invalidation token: reading it ties the
+    // memo to the lazy KaTeX load so the first render (which skips formulas)
+    // is recomputed once the chunk has arrived.
+    void katexReadyTick;
+    return buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId });
+  }, [baseFontSize, html, isLoading, katexReadyTick, themeId]);
   const frameHeight =
     frameHeightState.heightCacheKey === heightCacheKey
       ? frameHeightState.height
       : readCachedFrameHeight(heightCacheKey, streamingHeightCacheKey);
-  const finalSrcDoc = useMemo(
-    () => buildHtmlPreviewSrcDoc(html, { baseFontSize, themeId }),
-    [baseFontSize, html, themeId],
-  );
   const srcDoc = isLoading ? streamingSrcDoc : finalSrcDoc;
 
   useLayoutEffect(() => {
     latestStreamingHtmlRef.current = html;
   }, [html]);
 
-  const postStreamingHtml = useCallback(
-    (nextHtml: string, force = false) => {
-      if (!force && lastPostedStreamingHtmlRef.current === nextHtml) {
-        return;
-      }
-
-      const iframeWindow = iframeRef.current?.contentWindow;
-      if (!iframeWindow) {
-        return;
-      }
-
-      iframeWindow.postMessage(
-        {
-          channel: HTML_PREVIEW_MESSAGE_CHANNEL,
-          event: HTML_PREVIEW_STREAM_RENDER_EVENT,
-          html: buildStreamingHtmlPreviewRenderPayload(nextHtml),
-        },
-        '*',
-      );
-      lastPostedStreamingHtmlRef.current = nextHtml;
-    },
-    [iframeRef],
-  );
+  useLayoutEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   const clearStreamingFlushTimeout = useCallback(() => {
     if (streamingFlushTimeoutRef.current === null) {
@@ -157,16 +168,72 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     streamingFlushTimeoutRef.current = null;
   }, [targetWindow]);
 
-  const scheduleStreamingHtmlFlush = useCallback(() => {
-    if (streamingFlushTimeoutRef.current !== null) {
-      return;
+  // Returns false when the iframe is not ready yet so callers can retry.
+  const postStreamingHtml = useCallback((nextHtml: string, force = false): boolean => {
+    if (!force && lastPostedStreamingHtmlRef.current === nextHtml) {
+      return true;
     }
 
-    streamingFlushTimeoutRef.current = targetWindow.setTimeout(() => {
-      streamingFlushTimeoutRef.current = null;
-      postStreamingHtml(latestStreamingHtmlRef.current);
-    }, STREAMING_SRC_DOC_THROTTLE_MS);
-  }, [postStreamingHtml, targetWindow]);
+    const iframeWindow = iframeRef.current?.contentWindow;
+    if (!iframeWindow) {
+      return false;
+    }
+
+    try {
+      iframeWindow.postMessage(
+        {
+          channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+          event: HTML_PREVIEW_STREAM_RENDER_EVENT,
+          html: buildStreamingHtmlPreviewRenderPayload(nextHtml),
+        },
+        '*',
+      );
+      lastPostedStreamingHtmlRef.current = nextHtml;
+      return true;
+    } catch (error) {
+      logService.warn('Failed to post Live Artifact streaming html:', error);
+      return false;
+    }
+  }, []);
+
+  const scheduleStreamingHtmlFlush = useCallback(
+    (force = false) => {
+      if (streamingFlushTimeoutRef.current !== null) {
+        return;
+      }
+
+      // Named retry loop avoids a useCallback self-reference (react-hooks/immutability).
+      const attemptFlush = () => {
+        streamingFlushTimeoutRef.current = null;
+        if (!isLoadingRef.current) {
+          return;
+        }
+
+        const posted = postStreamingHtml(latestStreamingHtmlRef.current, force);
+        // contentWindow can appear after the first timeout (Virtuoso remount / slow srcDoc).
+        if (!posted) {
+          streamingFlushTimeoutRef.current = targetWindow.setTimeout(attemptFlush, STREAMING_SRC_DOC_THROTTLE_MS);
+        }
+      };
+
+      streamingFlushTimeoutRef.current = targetWindow.setTimeout(attemptFlush, STREAMING_SRC_DOC_THROTTLE_MS);
+    },
+    [postStreamingHtml, targetWindow],
+  );
+
+  const flushStreamingHtmlNow = useCallback(
+    (force = false) => {
+      if (!isLoadingRef.current) {
+        return;
+      }
+
+      const posted = postStreamingHtml(latestStreamingHtmlRef.current, force);
+      if (!posted) {
+        scheduleStreamingHtmlFlush(force);
+      }
+    },
+    [postStreamingHtml, scheduleStreamingHtmlFlush],
+  );
 
   useEffect(() => {
     if (!isLoading) {
@@ -183,6 +250,31 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   }, [clearStreamingFlushTimeout]);
 
   useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    // When the final srcDoc first meets a TeX delimiter, renderPreviewMath
+    // returns it unrendered and kicks off the lazy KaTeX load. Re-render once
+    // the chunk is available so embedded formulas appear. The promise resolves
+    // immediately after the first load, so this is a no-op on later frames.
+    let cancelled = false;
+    void whenKatexReady()
+      .then(() => {
+        if (!cancelled) {
+          setKatexReadyTick((tick) => tick + 1);
+        }
+      })
+      .catch(() => {
+        // The lazy KaTeX load failed (offline / chunk error). Nothing to tick:
+        // the next render that sees a math delimiter will attempt the load
+        // again, so the failure is not permanent.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading]);
+
+  useEffect(() => {
     const handleMessage = (event: MessageEvent<HtmlPreviewBridgeMessage>) => {
       const data = event.data;
       if (!data || data.channel !== HTML_PREVIEW_MESSAGE_CHANNEL) {
@@ -196,6 +288,13 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
       const iframeWindow = iframeRef.current?.contentWindow;
       if (iframeWindow && event.source !== iframeWindow) {
+        return;
+      }
+
+      // Bridge ready means the streaming runner is listening — re-push HTML that may
+      // have been posted too early (or lost during Virtuoso remount).
+      if (data.event === 'ready') {
+        flushStreamingHtmlNow(true);
         return;
       }
 
@@ -238,6 +337,34 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
         return;
       }
 
+      // The sandboxed iframe cannot run viz.js (WASM + opaque origin), so it
+      // forwards `data-amc-graphviz` nodes here for layout on the parent page.
+      // Render results are cached by theme+dot, so repeated requests across
+      // remounts are cheap.
+      if (data.event === HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT) {
+        const payload = data.payload;
+        if (
+          !payload ||
+          typeof payload !== 'object' ||
+          typeof (payload as { id?: unknown }).id !== 'string' ||
+          typeof (payload as { dot?: unknown }).dot !== 'string'
+        ) {
+          return;
+        }
+        const { id, dot } = payload as { id: string; dot: string };
+        void renderDotToSvgCached(dot, { themeId }).then((result: DotRenderResult) => {
+          iframeWindow?.postMessage(
+            {
+              channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+              event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+              payload: result.ok ? { id, ok: true, svg: result.svg } : { id, ok: false, error: result.error },
+            },
+            '*',
+          );
+        });
+        return;
+      }
+
       if (data.event !== 'resize') {
         return;
       }
@@ -245,7 +372,11 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
       if (typeof data.height === 'number' && Number.isFinite(data.height)) {
         const nextHeight = normalizeFrameHeight(data.height);
         cacheFrameHeight(heightCacheKey, nextHeight);
-        if (heightCacheKey !== contentHeightCacheKey) {
+        // While streaming, only the streaming key is written so the content
+        // (final-html) cache is not polluted with intermediate frame heights.
+        // The streaming key is not derived from the message content, so each
+        // write replaces the same entry instead of churning the LRU.
+        if (!isLoading && heightCacheKey !== contentHeightCacheKey) {
           cacheFrameHeight(contentHeightCacheKey, nextHeight);
         }
         if (streamingHeightCacheKey && heightCacheKey !== streamingHeightCacheKey) {
@@ -261,7 +392,16 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
 
     targetWindow.addEventListener('message', handleMessage);
     return () => targetWindow.removeEventListener('message', handleMessage);
-  }, [contentHeightCacheKey, heightCacheKey, onFollowUp, streamingHeightCacheKey, targetWindow]);
+  }, [
+    contentHeightCacheKey,
+    flushStreamingHtmlNow,
+    heightCacheKey,
+    isLoading,
+    onFollowUp,
+    streamingHeightCacheKey,
+    targetWindow,
+    themeId,
+  ]);
 
   useEffect(() => {
     const handleClearSelection = () => {
@@ -294,13 +434,14 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
           srcDoc={srcDoc}
           title={t('htmlPreviewTitle')}
           className="h-full w-full border-0 bg-transparent"
-          sandbox="allow-scripts allow-forms"
+          // SECURITY: allow-same-origin is intentionally omitted (opaque origin).
+          // allow-popups enables target="_blank" external links in Live Artifacts.
+          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
           allow="clipboard-write"
           scrolling="no"
           onLoad={() => {
-            if (isLoading) {
-              postStreamingHtml(html, true);
-            }
+            // Prefer refs so remount/load races always flush the latest streaming html.
+            flushStreamingHtmlNow(true);
           }}
         />
       </div>

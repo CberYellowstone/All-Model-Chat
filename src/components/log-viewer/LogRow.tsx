@@ -44,7 +44,7 @@ export const LogRow: React.FC<{ log: LogEntry }> = React.memo(({ log }) => {
         <span className={`w-12 font-bold flex-shrink-0 pt-0.5 ${LOG_LEVEL_COLORS[log.level]}`}>{log.level}</span>
 
         <span
-          className={`px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 self-start uppercase tracking-wider ${CATEGORY_COLORS[log.category] || 'bg-gray-700'}`}
+          className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 self-start uppercase tracking-wider ${CATEGORY_COLORS[log.category] || 'bg-gray-700'}`}
         >
           {log.category}
         </span>
@@ -65,7 +65,7 @@ export const LogRow: React.FC<{ log: LogEntry }> = React.memo(({ log }) => {
 
       {hasData && isDataExpanded && (
         <div className="bg-[var(--theme-bg-code-block)] border-t border-[var(--theme-border-secondary)] p-3 overflow-x-auto custom-scrollbar animate-in fade-in slide-in-from-top-1 duration-150">
-          <pre className="text-[11px] text-[var(--theme-text-secondary)] font-mono">
+          <pre className="text-xs text-[var(--theme-text-secondary)] font-mono">
             {JSON.stringify(log.data, null, 2)}
           </pre>
         </div>

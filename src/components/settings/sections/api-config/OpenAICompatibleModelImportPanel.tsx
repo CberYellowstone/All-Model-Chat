@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardList, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { ClipboardList, Loader2, Plus, RefreshCw, Search, X } from 'lucide-react';
 import type { ModelOption } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import {
@@ -42,9 +42,18 @@ export const OpenAICompatibleModelImportPanel: React.FC<OpenAICompatibleModelImp
   const { t } = useI18n();
   const [batchModelText, setBatchModelText] = useState('');
   const [fetchedPreviewModels, setFetchedPreviewModels] = useState<ModelOption[]>([]);
+  const [searchFilter, setSearchFilter] = useState('');
   const [selectedFetchedModelIds, setSelectedFetchedModelIds] = useState<Set<string>>(() => new Set());
   const [managerMessage, setManagerMessage] = useState<string | null>(null);
   const handledFetchRequestIdRef = useRef(0);
+
+  const filteredPreviewModels = useMemo(() => {
+    if (!searchFilter.trim()) return fetchedPreviewModels;
+    const query = searchFilter.toLowerCase().trim();
+    return fetchedPreviewModels.filter(
+      (model) => model.id.toLowerCase().includes(query) || model.name.toLowerCase().includes(query),
+    );
+  }, [fetchedPreviewModels, searchFilter]);
 
   const importableFetchedModelIds = useMemo(
     () => fetchedPreviewModels.filter((model) => !currentModelIds.has(model.id)).map((model) => model.id),
@@ -179,6 +188,29 @@ export const OpenAICompatibleModelImportPanel: React.FC<OpenAICompatibleModelImp
 
         {fetchedPreviewModels.length > 0 ? (
           <>
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-tertiary)]"
+              />
+              <input
+                type="text"
+                value={searchFilter}
+                onChange={(event) => setSearchFilter(event.target.value)}
+                placeholder={t('settingsOpenAICompatibleModelSearch')}
+                className="w-full rounded-md border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)] py-1.5 pl-8 pr-8 text-xs text-[var(--theme-text-primary)] outline-none placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] focus:ring-1 focus:ring-[var(--theme-border-focus)]"
+              />
+              {searchFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSearchFilter('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)]"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs text-[var(--theme-text-tertiary)]">
                 {t('settingsOpenAICompatibleFetchedPreviewCount')
@@ -205,7 +237,7 @@ export const OpenAICompatibleModelImportPanel: React.FC<OpenAICompatibleModelImp
               </div>
             </div>
             <div className="max-h-56 overflow-y-auto rounded-md bg-[var(--theme-bg-input)]/45 p-1 custom-scrollbar">
-              {fetchedPreviewModels.map((model) => {
+              {filteredPreviewModels.map((model) => {
                 const alreadyAdded = currentModelIds.has(model.id);
                 const checked = !alreadyAdded && selectedFetchedModelIds.has(model.id);
 

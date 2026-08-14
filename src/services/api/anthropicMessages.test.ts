@@ -10,7 +10,7 @@ const history: ChatHistoryItem[] = [
 describe('buildAnthropicRequestBody', () => {
   it('extracts system instruction to top-level system field', () => {
     const body = buildAnthropicRequestBody(
-      'claude-sonnet-4-6',
+      'claude-sonnet-5',
       history,
       [{ text: 'How are you?' }],
       { systemInstruction: 'Be helpful', temperature: 0.5 },
@@ -23,7 +23,7 @@ describe('buildAnthropicRequestBody', () => {
 
   it('maps history roles: model->assistant, user stays user', () => {
     const body = buildAnthropicRequestBody(
-      'claude-sonnet-4-6',
+      'claude-sonnet-5',
       history,
       [{ text: 'How are you?' }],
       {},
@@ -47,22 +47,98 @@ describe('buildAnthropicRequestBody', () => {
     expect(bodyNoStream.stream).toBe(false);
   });
 
-  it('enables thinking with budget_tokens for non-Fable Claude models', () => {
+  it('maps thinkingLevel to output_config.effort for Claude Sonnet 5 / Opus 5', () => {
+    expect(
+      (
+        buildAnthropicRequestBody(
+          'claude-sonnet-5',
+          [],
+          [{ text: 'hi' }],
+          { thinkingLevel: 'HIGH' },
+          'user',
+          false,
+        ) as { output_config: { effort: string } }
+      ).output_config,
+    ).toEqual({ effort: 'high' });
+
+    expect(
+      (
+        buildAnthropicRequestBody(
+          'claude-opus-5',
+          [],
+          [{ text: 'hi' }],
+          { thinkingLevel: 'MEDIUM' },
+          'user',
+          false,
+        ) as { output_config: { effort: string } }
+      ).output_config,
+    ).toEqual({ effort: 'medium' });
+
+    expect(
+      (
+        buildAnthropicRequestBody('claude-sonnet-5', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false) as {
+          output_config: { effort: string };
+        }
+      ).output_config,
+    ).toEqual({ effort: 'low' });
+  });
+
+  it('defaults effort to high for adaptive Claude models when thinkingLevel is omitted', () => {
+    expect(
+      (
+        buildAnthropicRequestBody('claude-sonnet-5', [], [{ text: 'hi' }], {}, 'user', false) as {
+          output_config: { effort: string };
+        }
+      ).output_config,
+    ).toEqual({ effort: 'high' });
+  });
+
+  it('never sends budget_tokens thinking for Claude Sonnet 5 / Opus 5 / Fable 5', () => {
+    for (const modelId of ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']) {
+      const body = buildAnthropicRequestBody(
+        modelId,
+        [],
+        [{ text: 'hi' }],
+        { thinkingBudget: 5000, thinkingLevel: 'HIGH' },
+        'user',
+        false,
+      ) as { thinking?: unknown; max_tokens: number; output_config?: { effort: string } };
+      expect(body.thinking).toBeUndefined();
+      expect(body.max_tokens).toBe(8192);
+      expect(body.output_config).toEqual({ effort: 'high' });
+    }
+  });
+
+  it('maps Fable 5 thinkingLevel to output_config.effort without thinking block', () => {
     const body = buildAnthropicRequestBody(
-      'claude-sonnet-4-6',
+      'claude-fable-5',
+      [],
+      [{ text: 'hi' }],
+      { thinkingLevel: 'MEDIUM', thinkingBudget: 9999 },
+      'user',
+      false,
+    ) as { thinking?: unknown; output_config: { effort: string } };
+    expect(body.thinking).toBeUndefined();
+    expect(body.output_config).toEqual({ effort: 'medium' });
+  });
+
+  it('keeps legacy budget_tokens thinking for models without effort support', () => {
+    const body = buildAnthropicRequestBody(
+      'claude-haiku-4-5',
       [],
       [{ text: 'hi' }],
       { thinkingBudget: 5000 },
       'user',
       false,
-    ) as { thinking: { type: string; budget_tokens: number }; max_tokens: number };
+    ) as { thinking: { type: string; budget_tokens: number }; max_tokens: number; output_config?: unknown };
     expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 5000 });
     expect(body.max_tokens).toBe(5000 + 8192);
+    expect(body.output_config).toBeUndefined();
   });
 
-  it('clamps thinking budget to the Anthropic minimum (1024)', () => {
+  it('clamps legacy thinking budget to the Anthropic minimum (1024)', () => {
     const body = buildAnthropicRequestBody(
-      'claude-opus-4-8',
+      'claude-haiku-4-5',
       [],
       [{ text: 'hi' }],
       { thinkingBudget: 500 },
@@ -72,23 +148,12 @@ describe('buildAnthropicRequestBody', () => {
     expect(body.thinking.budget_tokens).toBe(1024);
   });
 
-  it('omits thinking for Fable 5 (adaptive thinking is always on)', () => {
-    const body = buildAnthropicRequestBody(
-      'claude-fable-5',
-      [],
-      [{ text: 'hi' }],
-      { thinkingBudget: 5000 },
-      'user',
-      false,
-    ) as { thinking?: unknown; max_tokens: number };
-    expect(body.thinking).toBeUndefined();
-    expect(body.max_tokens).toBe(8192);
-  });
-
-  it('omits thinking when no thinking budget is set', () => {
-    const body = buildAnthropicRequestBody('claude-sonnet-4-6', [], [{ text: 'hi' }], {}, 'user', false) as {
+  it('omits thinking when no thinking budget is set on legacy models', () => {
+    const body = buildAnthropicRequestBody('claude-haiku-4-5', [], [{ text: 'hi' }], {}, 'user', false) as {
       thinking?: unknown;
+      output_config?: unknown;
     };
     expect(body.thinking).toBeUndefined();
+    expect(body.output_config).toBeUndefined();
   });
 });

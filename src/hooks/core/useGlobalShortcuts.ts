@@ -1,15 +1,11 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { CHAT_INPUT_TEXTAREA_SELECTOR, FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { useFullscreen } from '@/hooks/ui/useFullscreen';
-import type { AppSettings, ChatSettings, ModelOption } from '@/types';
+import type { AppSettings, ChatSettings, ModelOption, ThirdPartyProviderId } from '@/types';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
-import { getTabCycleModelIds } from '@/utils/modelCatalog';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import {
-  buildProviderAwareModelList,
-  getThirdPartyProviderConfig,
-  updateActiveThirdPartyProviderConfig,
-} from '@/utils/thirdPartyApiProviders';
+import { getTabCycleModelIds } from '@/utils/model/modelCatalog';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
+import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
 
 interface UseGlobalShortcutsProps {
   appSettings: AppSettings;
@@ -17,7 +13,7 @@ interface UseGlobalShortcutsProps {
   startNewChat: () => void;
   currentChatSettings: ChatSettings;
   availableModels: ModelOption[];
-  handleSelectModelInHeader: (modelId: string) => void;
+  handleSelectModelInHeader: (modelId: string, providerId?: ThirdPartyProviderId) => void;
   setIsLogViewerOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   onTogglePip: () => void;
   isPipSupported: boolean;
@@ -104,13 +100,10 @@ export const useGlobalShortcuts = ({
           activeElement instanceof Element && activeElement.matches(CHAT_INPUT_TEXTAREA_SELECTOR);
         if (isChatTextareaFocused || !isGenerallyInputFocused) {
           event.preventDefault();
-          const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-          const activeThirdPartyProvider = isThirdPartyMode
-            ? getThirdPartyProviderConfig(appSettings)
-            : null;
-          const currentModelId = isThirdPartyMode
-            ? activeThirdPartyProvider?.modelId ?? currentChatSettings.modelId
-            : currentChatSettings.modelId;
+          // Follow the active session's routing decision — the modelId we cycle
+          // is whatever the session is currently routed to, not a global mode.
+          const currentRoute = resolveChatApiRoute(appSettings, currentChatSettings);
+          const currentModelId = currentRoute.modelId || currentChatSettings.modelId;
           const tabCycleModels = buildTabCycleAvailableModels(appSettings, availableModels);
           const cycleModels = getTabCycleModelIds(tabCycleModels, appSettings.tabModelCycleIds);
           if (cycleModels.length === 0) {
@@ -120,25 +113,6 @@ export const useGlobalShortcuts = ({
           const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % cycleModels.length;
           const newModelId = cycleModels[nextIndex];
           if (newModelId) {
-            const targetModel = tabCycleModels.find((model) => model.id === newModelId);
-            if (appSettings.isThirdPartyApiEnabled === true && targetModel?.apiMode === 'third-party') {
-              setAppSettings((prev) => ({
-                ...prev,
-                apiMode: 'third-party',
-                isThirdPartyApiEnabled: true,
-                thirdPartyApi: updateActiveThirdPartyProviderConfig(prev.thirdPartyApi, {
-                  modelId: newModelId,
-                }),
-              }));
-              return;
-            }
-
-            if (isThirdPartyMode) {
-              setAppSettings((prev) => ({
-                ...prev,
-                apiMode: 'gemini-native',
-              }));
-            }
             handleSelectModelInHeader(newModelId);
           }
         }
@@ -160,7 +134,7 @@ export const useGlobalShortcuts = ({
     appSettings,
     setAppSettings,
     startNewChat,
-    currentChatSettings.modelId,
+    currentChatSettings,
     availableModels,
     handleSelectModelInHeader,
     setIsLogViewerOpen,

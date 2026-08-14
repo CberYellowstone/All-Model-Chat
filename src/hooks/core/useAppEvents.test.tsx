@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppSettings, ModelOption } from '@/types';
+import type { ModelOption } from '@/types';
 import { FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/layout';
 import { useAppEvents } from './useAppEvents';
 import { createAppSettings, createChatSettings } from '@/test/data/factories';
@@ -48,10 +48,11 @@ describe('useAppEvents PWA lifecycle', () => {
   });
   const availableModels: ModelOption[] = [
     { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', isPinned: true },
-    { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', isPinned: true },
+    { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', isPinned: true },
+    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isPinned: true },
     { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true },
     { id: 'gemma-4-31b-it', name: 'Gemma 4 31B IT' },
-    { id: 'imagen-4.0-generate-001', name: 'Imagen 4.0' },
+    { id: 'gemini-3.1-flash-image-preview', name: 'Nano Banana 2' },
   ];
 
   beforeEach(() => {
@@ -127,7 +128,7 @@ describe('useAppEvents PWA lifecycle', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     });
 
-    expect(handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.5-flash');
+    expect(handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.7-flash');
 
     textarea.remove();
     unmount();
@@ -178,7 +179,7 @@ describe('useAppEvents PWA lifecycle', () => {
       useAppEvents({
         appSettings: createAppSettings({
           ...appSettings,
-          tabModelCycleIds: ['imagen-4.0-generate-001', 'gemini-3-flash-preview'],
+          tabModelCycleIds: ['gemini-3.1-flash-image-preview', 'gemini-3-flash-preview'],
         }),
         setAppSettings: vi.fn(),
         startNewChat: vi.fn(),
@@ -198,7 +199,7 @@ describe('useAppEvents PWA lifecycle', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     });
 
-    expect(handleSelectModelInHeader).toHaveBeenCalledWith('imagen-4.0-generate-001');
+    expect(handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.1-flash-image-preview');
 
     textarea.remove();
     unmount();
@@ -209,13 +210,14 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const openaiProviderSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'third-party',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
-          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-5.5' },
+          openai: {
+            ...createDefaultThirdPartyApiSettings().providers.openai,
+            modelId: 'gpt-5.5',
+            enabled: true,
+          },
         },
       },
     });
@@ -250,15 +252,11 @@ describe('useAppEvents PWA lifecycle', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     });
 
+    // The apiMode switch is handled inside handleSelectModelInHeader
+    // (useModelSelection resolves the target model's provider); the Tab cycle
+    // itself only delegates the selection.
     expect(handleSelectModelInHeader).toHaveBeenCalledWith('gemini-3.1-pro-preview');
-    expect(setAppSettings).toHaveBeenCalledWith(expect.any(Function));
-
-    const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
-    expect(updateSettings(openaiProviderSettings)).toEqual(
-      expect.objectContaining({
-        apiMode: 'gemini-native',
-      }),
-    );
+    expect(setAppSettings).not.toHaveBeenCalled();
 
     textarea.remove();
     unmount();
@@ -269,13 +267,10 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'gemini-native',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
-          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1' },
+          openai: { ...createDefaultThirdPartyApiSettings().providers.openai, modelId: 'gpt-4.1', enabled: true },
         },
       },
       tabModelCycleIds: ['gpt-5.5'],
@@ -311,16 +306,10 @@ describe('useAppEvents PWA lifecycle', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     });
 
-    expect(handleSelectModelInHeader).not.toHaveBeenCalled();
-    expect(setAppSettings).toHaveBeenCalledWith(expect.any(Function));
-
-    const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
-    expect(updateSettings(geminiSettings)).toEqual(
-      expect.objectContaining({
-        apiMode: 'third-party',
-        modelId: geminiSettings.modelId,
-      }),
-    );
+    // Tab cycle delegates the selection; the apiMode/third-party wiring lives
+    // in handleSelectModelInHeader (useModelSelection), not in the shortcut.
+    expect(handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.5');
+    expect(setAppSettings).not.toHaveBeenCalled();
 
     textarea.remove();
     unmount();
@@ -331,10 +320,7 @@ describe('useAppEvents PWA lifecycle', () => {
     const setAppSettings = vi.fn();
     const geminiSettings = createAppSettings({
       ...appSettings,
-      apiMode: 'gemini-native',
-      isThirdPartyApiEnabled: true,
       thirdPartyApi: {
-        activeProvider: 'openai',
         providers: {
           ...createDefaultThirdPartyApiSettings().providers,
           openai: {
@@ -378,16 +364,12 @@ describe('useAppEvents PWA lifecycle', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
     });
 
-    expect(handleSelectModelInHeader).not.toHaveBeenCalled();
-    expect(setAppSettings).toHaveBeenCalledWith(expect.any(Function));
-
-    const updateSettings = setAppSettings.mock.calls[0][0] as (prev: AppSettings) => AppSettings;
-    expect(updateSettings(geminiSettings)).toEqual(
-      expect.objectContaining({
-        apiMode: 'third-party',
-        modelId: geminiSettings.modelId,
-      }),
-    );
+    // gpt-5.5 is configured in the cycle; buildTabCycleAvailableModels merges
+    // configured third-party models into the list even when they are absent
+    // from availableModels, so the cycle selects it and delegates to
+    // handleSelectModelInHeader (which wires up the third-party routing).
+    expect(handleSelectModelInHeader).toHaveBeenCalledWith('gpt-5.5');
+    expect(setAppSettings).not.toHaveBeenCalled();
 
     textarea.remove();
     unmount();

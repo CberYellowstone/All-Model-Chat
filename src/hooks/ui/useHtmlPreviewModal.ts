@@ -5,14 +5,19 @@ import { createManagedObjectUrl } from '@/services/objectUrlManager';
 import { sanitizeFilename, triggerDownload } from '@/utils/export/core';
 import { useFullscreen } from './useFullscreen';
 import {
-  buildUnrestrictedHtmlPreviewSrcDoc,
   createStaticPreviewSnapshotContainer,
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
+  HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
 } from '@/utils/html-preview/previewDocument';
+import { renderDotToSvgCached, type DotRenderResult } from '@/features/graphviz/vizRuntime';
 import { useI18n } from '@/contexts/I18nContext';
-import { normalizeLiveArtifactFollowupPayload, type LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import {
+  normalizeLiveArtifactFollowupPayload,
+  type LiveArtifactFollowupPayload,
+} from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   createRelayedLiveArtifactSelectionDetail,
   dispatchLiveArtifactSelection,
@@ -39,9 +44,20 @@ type DocumentWithWebkitFullscreen = Document & {
 
 type HtmlPreviewBridgeMessage = {
   channel?: string;
-  event?: 'ready' | 'escape' | 'followup' | 'selection' | 'diagnostic';
+  event?:
+    | 'ready'
+    | 'resize'
+    | 'escape'
+    | 'followup'
+    | 'selection'
+    | 'diagnostic'
+    | 'graphviz-render-request'
+    | 'graphviz-render-response';
   payload?: unknown;
+  height?: number;
 };
+
+const MAX_PREVIEW_CONTENT_HEIGHT = 200_000;
 
 export const useHtmlPreviewModal = ({
   isOpen,
@@ -59,6 +75,10 @@ export const useHtmlPreviewModal = ({
   const [isPreviewReady, setIsPreviewReady] = useState(false);
 
   const [isDirectFullscreenLaunch, setIsDirectFullscreenLaunch] = useState(initialTrueFullscreenRequest);
+  const [contentHeight, setContentHeight] = useState(0);
+  // Bumped by handleRefresh to remount the iframe (via a key), re-running the
+  // preview script from scratch without the hook fighting React's srcDoc prop.
+  const [iframeRefreshKey, setIframeRefreshKey] = useState(0);
 
   const { document: targetDocument, window: targetWindow } = useWindowContext();
   const { enterFullscreen, exitFullscreen } = useFullscreen();
@@ -76,6 +96,7 @@ export const useHtmlPreviewModal = ({
     if (isOpen) {
       setIsActuallyOpen(true);
       setScale(1);
+      setContentHeight(0);
       setIsPreviewReady(false);
       setIsDirectFullscreenLaunch(initialTrueFullscreenRequest);
     } else {
@@ -143,19 +164,27 @@ export const useHtmlPreviewModal = ({
         return;
       }
 
-      // SECURITY: the sandboxed iframe posts from the opaque origin "null".
-      // Reject messages from any other origin to prevent spoofing.
-      if (event.origin !== 'null') {
+      // Accept opaque-origin (no allow-same-origin) or same-origin posts from our iframe.
+      // Unrestricted code-block preview uses allow-same-origin so demos can use storage APIs.
+      const iframeWindow = iframeRef.current?.contentWindow;
+      if (!iframeWindow || event.source !== iframeWindow) {
         return;
       }
 
-      const iframeWindow = iframeRef.current?.contentWindow;
-      if (iframeWindow && event.source !== iframeWindow) {
+      const allowedOrigin = event.origin === 'null' || event.origin === targetWindow.location.origin;
+      if (!allowedOrigin) {
         return;
       }
 
       if (data.event === 'ready') {
+        setContentHeight(0);
         setIsPreviewReady(true);
+        return;
+      }
+
+      if (data.event === 'resize' && typeof data.height === 'number' && Number.isFinite(data.height)) {
+        const nextHeight = Math.min(Math.ceil(data.height), MAX_PREVIEW_CONTENT_HEIGHT);
+        setContentHeight((current) => (current === nextHeight ? current : nextHeight));
         return;
       }
 
@@ -185,6 +214,34 @@ export const useHtmlPreviewModal = ({
 
       if (data.event === HTML_PREVIEW_DIAGNOSTIC_EVENT) {
         logService.warn('Live Artifact preview diagnostic:', data.payload);
+        return;
+      }
+
+      // The unrestricted code-block preview embeds the same bridge, so its
+      // graphviz nodes post render requests here. Without this branch they
+      // would hang "pending" forever.
+      if (data.event === HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT) {
+        const payload = data.payload;
+        if (
+          !payload ||
+          typeof payload !== 'object' ||
+          typeof (payload as { id?: unknown }).id !== 'string' ||
+          typeof (payload as { dot?: unknown }).dot !== 'string'
+        ) {
+          return;
+        }
+        const { id, dot } = payload as { id: string; dot: string };
+        void renderDotToSvgCached(dot).then((result: DotRenderResult) => {
+          iframeWindow?.postMessage(
+            {
+              channel: HTML_PREVIEW_MESSAGE_CHANNEL,
+              event: HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
+              payload: result.ok ? { id, ok: true, svg: result.svg } : { id, ok: false, error: result.error },
+            },
+            '*',
+          );
+        });
+        return;
       }
     };
 
@@ -260,21 +317,23 @@ export const useHtmlPreviewModal = ({
     if (!htmlContent || !isPreviewReady || isScreenshotting) return;
 
     setIsScreenshotting(true);
-    let cleanup = () => {};
+    let snapshotCleanup: (() => void) | null = null;
     try {
       const { exportElementAsPng } = await import('@/utils/export/image');
       const target = getCurrentPreviewScreenshotTarget();
-      const screenshotTarget =
-        target ??
-        (() => {
-          const snapshot = createStaticPreviewSnapshotContainer(htmlContent, targetDocument);
-          cleanup = snapshot.cleanup;
-          return snapshot.container;
-        })();
+      let exportTarget = target;
+      if (!exportTarget) {
+        // The iframe is not readable (sandboxed / not mounted): build a static
+        // snapshot from the source HTML instead. Async so graphviz nodes can be
+        // hydrated before the frame is exported.
+        const snapshot = await createStaticPreviewSnapshotContainer(htmlContent, targetDocument);
+        snapshotCleanup = snapshot.cleanup;
+        exportTarget = snapshot.container;
+      }
       const title = getPreviewTitle();
       const filename = `${sanitizeFilename(title)}-screenshot.png`;
 
-      await exportElementAsPng(screenshotTarget, filename, {
+      await exportElementAsPng(exportTarget, filename, {
         backgroundColor: null,
         scale: 2,
         messages: {
@@ -286,7 +345,7 @@ export const useHtmlPreviewModal = ({
       logService.error('Failed to take screenshot of iframe content:', screenshotError);
       alert(t('htmlPreviewScreenshotFailed'));
     } finally {
-      cleanup();
+      snapshotCleanup?.();
       setIsScreenshotting(false);
     }
   }, [
@@ -302,12 +361,10 @@ export const useHtmlPreviewModal = ({
   const handleRefresh = useCallback(() => {
     if (iframeRef.current && htmlContent) {
       setIsPreviewReady(false);
-      iframeRef.current.srcdoc = ' ';
-      requestAnimationFrame(() => {
-        if (iframeRef.current) {
-          iframeRef.current.srcdoc = buildUnrestrictedHtmlPreviewSrcDoc(htmlContent);
-        }
-      });
+      // Remount the iframe by bumping the key. The old imperative srcdoc write
+      // desynced from React's srcDoc prop (the refresh relied on the prop being
+      // unchanged). A remount restarts the preview script cleanly.
+      setIframeRefreshKey((key) => key + 1);
     }
   }, [htmlContent, iframeRef]);
 
@@ -317,12 +374,14 @@ export const useHtmlPreviewModal = ({
     isDirectFullscreenLaunch,
     scale,
     isPreviewReady,
+    contentHeight,
     isScreenshotting,
     handleZoomIn,
     handleZoomOut,
     handleDownload,
     handleScreenshot,
     handleRefresh,
+    iframeRefreshKey,
     enterTrueFullscreen,
     exitTrueFullscreen,
     getPreviewTitle,

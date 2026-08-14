@@ -34,7 +34,7 @@ vi.mock('@/services/logService', async () => {
   return createLogServiceMockModule();
 });
 
-vi.mock('@/utils/filePreviewUrls', () => ({
+vi.mock('@/utils/file/filePreviewUrls', () => ({
   cleanupFilePreviewUrls: vi.fn(),
 }));
 

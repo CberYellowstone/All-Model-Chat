@@ -1,9 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import type { ChatSettings } from '@/types';
+import { type ChatSettings, GEMINI_PROVIDER_ID } from '@/types';
 import type { ChatToolSettingKey, ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { useChatStore } from '@/stores/chatStore';
-import { useSettingsStore } from '@/stores/settingsStore';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
 
 interface UseChatInputToolStatesParams {
   currentChatSettings: ChatSettings;
@@ -18,9 +16,10 @@ const TOOL_SETTING_KEYS: Record<ToggleableChatToolId, ChatToolSettingKey> = {
   codeExecution: 'isCodeExecutionEnabled',
   localPython: 'isLocalPythonEnabled',
   urlContext: 'isUrlContextEnabled',
+  alwaysKeepThinking: 'alwaysKeepThinkingInContext',
 };
 
-const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: ToggleableChatToolId): ChatSettings => {
+export const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: ToggleableChatToolId): ChatSettings => {
   if (toolId === 'codeExecution') {
     return {
       ...settings,
@@ -55,6 +54,17 @@ const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Toggleable
     };
   }
 
+  // alwaysKeepThinking and hideThinkingInContext are mutually exclusive — keeping
+  // the model's prior thinking in context only makes sense when it isn't being
+  // collapsed out of history. Mirrors the two-way mutex in GenerationSection.
+  if (toolId === 'alwaysKeepThinking') {
+    return {
+      ...settings,
+      alwaysKeepThinkingInContext: !settings.alwaysKeepThinkingInContext,
+      hideThinkingInContext: !settings.alwaysKeepThinkingInContext ? false : settings.hideThinkingInContext,
+    };
+  }
+
   const settingKey = TOOL_SETTING_KEYS[toolId];
   return {
     ...settings,
@@ -69,7 +79,11 @@ export const useChatInputToolStates = ({
 }: UseChatInputToolStatesParams): ChatToolToggleStates => {
   const activeSessionId = useChatStore((state) => state.activeSessionId);
   const setCurrentChatSettings = useChatStore((state) => state.setCurrentChatSettings);
-  const isOpenAICompatibleMode = useSettingsStore((state) => isThirdPartyApiActive(state.appSettings));
+  // The Gemini tools below only work on the Gemini-native API, so the gate must mirror
+  // the active session's routing decision — the session's own providerId, which can
+  // never drift stale the way a global appSettings mode could.
+  const isThirdPartyChat =
+    currentChatSettings.providerId !== undefined && currentChatSettings.providerId !== GEMINI_PROVIDER_ID;
 
   const createToggle = useCallback(
     (toolId: ToggleableChatToolId) => () => {
@@ -84,30 +98,34 @@ export const useChatInputToolStates = ({
   return useMemo(
     () => ({
       deepSearch: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isDeepSearchEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isDeepSearchEnabled,
         onToggle: createToggle('deepSearch'),
       },
       googleSearch: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleSearchEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isGoogleSearchEnabled,
         onToggle: createToggle('googleSearch'),
       },
       googleMaps: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isGoogleMapsEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isGoogleMapsEnabled,
         onToggle: createToggle('googleMaps'),
       },
       codeExecution: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isCodeExecutionEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isCodeExecutionEnabled,
         onToggle: createToggle('codeExecution'),
       },
       localPython: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isLocalPythonEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isLocalPythonEnabled,
         onToggle: createToggle('localPython'),
       },
       urlContext: {
-        isEnabled: !isOpenAICompatibleMode && !!currentChatSettings.isUrlContextEnabled,
+        isEnabled: !isThirdPartyChat && !!currentChatSettings.isUrlContextEnabled,
         onToggle: createToggle('urlContext'),
       },
+      alwaysKeepThinking: {
+        isEnabled: !!currentChatSettings.alwaysKeepThinkingInContext,
+        onToggle: createToggle('alwaysKeepThinking'),
+      },
     }),
-    [createToggle, currentChatSettings, isOpenAICompatibleMode],
+    [createToggle, currentChatSettings, isThirdPartyChat],
   );
 };

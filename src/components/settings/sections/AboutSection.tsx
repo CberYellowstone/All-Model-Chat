@@ -114,13 +114,14 @@ export const AboutSection: React.FC = () => {
 
   return (
     <div
+      data-settings-item="about-root"
       className={`flex min-h-full flex-col items-center px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 ${isCompactViewport ? 'py-2.5' : 'py-3 sm:py-4 md:py-5'}`}
     >
       <div className="relative group">
         <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
         <div className="relative">
           <img
-            src={isDarkThemeId(themeId) ? '/about-logo-dark.png' : '/about-logo.png'}
+            src={isDarkThemeId(themeId) ? '/app-logo-dark.png' : '/app-logo.png'}
             alt={t('aboutLogoAlt')}
             className={`h-auto drop-shadow-2xl ${isCompactViewport ? 'w-40' : 'w-48 sm:w-56 md:w-64'}`}
           />

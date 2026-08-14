@@ -1,10 +1,14 @@
 import type { UsageMetadata } from '@google/genai';
 import { readResponseErrorMessage, toError } from '@/utils/errorMessage';
-import { deduplicateModelsById } from '@/utils/modelSorting';
+import { deduplicateModelsById } from '@/utils/model/modelSorting';
 import type { ModelOption, NonStreamMessageSender, StreamMessageSender } from '@/types';
 import { logService } from '@/services/logService';
 import { buildOpenAICompatibleRequestBody } from './openaiCompatibleMessages';
-import { extractOpenAICompatibleMessageText, extractOpenAICompatibleReasoningText } from './openaiCompatibleResponses';
+import {
+  extractOpenAICompatibleMessageText,
+  extractOpenAICompatibleReasoningDelta,
+  extractOpenAICompatibleReasoningText,
+} from './openaiCompatibleResponses';
 import { readOpenAICompatibleStreamEvents } from './openaiCompatibleStream';
 import {
   asOpenAICompatibleConfig,
@@ -14,20 +18,43 @@ import {
 } from './openaiCompatibleTypes';
 import { buildOpenAICompatibleChatCompletionsUrl, buildOpenAICompatibleModelsUrl } from './openaiCompatibleUrls';
 
-const createRequestInit = (apiKey: string, body: Record<string, unknown>, abortSignal: AbortSignal): RequestInit => ({
+// Tag every request with the provider id so the api container's third-party
+// proxy can look up the correct upstream route. Defaults to "openai".
+const THIRD_PARTY_PROVIDER_HEADER = 'x-third-party-provider';
+// In pure-BYOK mode (no server route table entry), the browser supplies the
+// provider's real baseUrl here so the proxy can forward without a configured
+// THIRD_PARTY_ROUTES entry.
+const THIRD_PARTY_BASE_URL_HEADER = 'x-third-party-base-url';
+
+const createRequestInit = (
+  apiKey: string,
+  body: Record<string, unknown>,
+  abortSignal: AbortSignal,
+  providerId?: string | null,
+  baseUrl?: string | null,
+): RequestInit => ({
   method: 'POST',
   headers: {
     authorization: `Bearer ${apiKey}`,
     'content-type': 'application/json',
+    ...(providerId ? { [THIRD_PARTY_PROVIDER_HEADER]: providerId } : {}),
+    ...(baseUrl ? { [THIRD_PARTY_BASE_URL_HEADER]: baseUrl } : {}),
   },
   body: JSON.stringify(body),
   signal: abortSignal,
 });
 
-const createGetRequestInit = (apiKey: string, abortSignal: AbortSignal): RequestInit => ({
+const createGetRequestInit = (
+  apiKey: string,
+  abortSignal: AbortSignal,
+  providerId?: string | null,
+  baseUrl?: string | null,
+): RequestInit => ({
   method: 'GET',
   headers: {
     authorization: `Bearer ${apiKey}`,
+    ...(providerId ? { [THIRD_PARTY_PROVIDER_HEADER]: providerId } : {}),
+    ...(baseUrl ? { [THIRD_PARTY_BASE_URL_HEADER]: baseUrl } : {}),
   },
   signal: abortSignal,
 });
@@ -36,8 +63,12 @@ export const fetchOpenAICompatibleModels = async (
   apiKey: string,
   baseUrl: string | null | undefined,
   abortSignal: AbortSignal,
+  providerId?: string | null,
 ): Promise<ModelOption[]> => {
-  const response = await fetch(buildOpenAICompatibleModelsUrl(baseUrl), createGetRequestInit(apiKey, abortSignal));
+  const response = await fetch(
+    buildOpenAICompatibleModelsUrl(baseUrl),
+    createGetRequestInit(apiKey, abortSignal, providerId, baseUrl),
+  );
 
   if (!response.ok) {
     throw new Error(await readResponseErrorMessage(response, 'OpenAI-compatible'));
@@ -61,6 +92,7 @@ export const sendOpenAICompatibleMessageNonStream: NonStreamMessageSender = asyn
   onError,
   onComplete,
   role = 'user',
+  providerId,
 ) => {
   const compatibleConfig = asOpenAICompatibleConfig(config);
 
@@ -76,6 +108,8 @@ export const sendOpenAICompatibleMessageNonStream: NonStreamMessageSender = asyn
         apiKey,
         buildOpenAICompatibleRequestBody(modelId, history, parts, compatibleConfig, role, false),
         abortSignal,
+        providerId,
+        compatibleConfig.baseUrl,
       ),
     );
 
@@ -115,6 +149,7 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
   onError,
   onComplete,
   role = 'user',
+  providerId,
 ) => {
   const compatibleConfig = asOpenAICompatibleConfig(config);
   let finalUsage: UsageMetadata | undefined;
@@ -131,6 +166,8 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
         apiKey,
         buildOpenAICompatibleRequestBody(modelId, history, parts, compatibleConfig, role, true),
         abortSignal,
+        providerId,
+        compatibleConfig.baseUrl,
       ),
     );
 
@@ -139,7 +176,7 @@ export const sendOpenAICompatibleMessageStream: StreamMessageSender = async (
     }
 
     await readOpenAICompatibleStreamEvents(response, abortSignal, (payload) => {
-      const reasoningContent = payload.choices?.[0]?.delta?.reasoning_content;
+      const reasoningContent = extractOpenAICompatibleReasoningDelta(payload);
       if (reasoningContent) {
         onThoughtChunk(reasoningContent);
       }

@@ -36,7 +36,10 @@ interface UseChatActionsProps {
     options?: { persist?: boolean },
   ) => void;
   appendMessageToSession: (sessionId: string, message: ChatMessage, options?: { persist?: boolean }) => void;
-  handleStopGenerating: (options?: { silent?: boolean }) => void;
+  handleStopGenerating: (options?: {
+    silent?: boolean;
+    skipLoadingUpdate?: boolean;
+  }) => 'stopped' | 'no_local_job' | 'not_loading' | void;
   startNewChat: () => void;
   handleTogglePinSession: (sessionId: string) => void;
   userScrolledUpRef: MutableRefObject<boolean>;
@@ -74,19 +77,10 @@ export const useChatActions = ({
     userScrolledUpRef,
   });
 
-  const {
-    handleClearCurrentChat,
-    handleTogglePinCurrentSession,
-    toggleGoogleSearch,
-    toggleCodeExecution,
-    toggleLocalPython,
-    toggleUrlContext,
-    toggleDeepSearch,
-  } = useChatSessionActions({
+  const { handleClearCurrentChat, handleTogglePinCurrentSession } = useChatSessionActions({
     activeSessionId,
     isLoading,
     updateAndPersistSessions,
-    setCurrentChatSettings,
     setSelectedFiles,
     handleStopGenerating,
     startNewChat,
@@ -117,11 +111,6 @@ export const useChatActions = ({
     handleSelectModelInHeader,
     handleClearCurrentChat,
     handleTranscribeAudio,
-    toggleGoogleSearch,
-    toggleCodeExecution,
-    toggleLocalPython,
-    toggleUrlContext,
-    toggleDeepSearch,
     handleTogglePinCurrentSession,
     handleUpdateMessageContent,
     handleUpdateMessageFile,

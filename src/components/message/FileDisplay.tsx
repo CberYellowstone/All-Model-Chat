@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { type UploadedFile } from '@/types';
 import { Check, Copy, Download, SlidersHorizontal, Scissors } from 'lucide-react';
 import { triggerDownload } from '@/utils/export/core';
-import { CATEGORY_STYLES, getResolutionColor } from '@/utils/fileDisplayStyles';
-import { formatFileSize } from '@/utils/fileSize';
+import { CATEGORY_STYLES, getResolutionColor } from '@/utils/file/fileDisplayStyles';
+import { formatFileSize } from '@/utils/file/fileSize';
 import { getFileCardMeta } from '@/components/shared/file-preview/fileCardMeta';
 import { useI18n } from '@/contexts/I18nContext';
 import { FileThumbnail } from '@/components/chat/input/files/FileThumbnail';
@@ -210,9 +210,7 @@ export const FileDisplay: React.FC<FileDisplayProps> = ({
             </span>
           )}
           {file.error && (
-            <span className="text-[var(--theme-text-danger)] ml-1 flex-shrink-0">
-              {t('selectedFileErrorFallback')}
-            </span>
+            <span className="text-[var(--theme-text-danger)] ml-1 flex-shrink-0">{t('selectedFileErrorFallback')}</span>
           )}
         </div>
       </div>

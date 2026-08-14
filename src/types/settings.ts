@@ -35,8 +35,28 @@ export enum MediaResolution {
 export type ImageOutputMode = 'IMAGE_TEXT' | 'IMAGE_ONLY';
 export type ImagePersonGeneration = 'ALLOW_ADULT' | 'ALLOW_ALL' | 'DONT_ALLOW';
 /** All valid API modes — used for both type checking and runtime validation. */
-export const API_MODES = ['gemini-native', 'openai-compatible', 'third-party'] as const;
+export const API_MODES = ['gemini-native', 'third-party'] as const;
 export type ApiMode = (typeof API_MODES)[number];
+
+/** The built-in Gemini provider id used in session routing. */
+export const GEMINI_PROVIDER_ID = 'gemini-native';
+
+/**
+ * Normalize the apiMode tag on a persisted ModelOption (the "provider family"
+ * label set by the model list editor). The legacy 'openai-compatible' tag is
+ * folded into 'third-party' so old custom third-party models keep grouping
+ * under the Third-Party section instead of disappearing or dropping to the
+ * OpenAI Compatible segment.
+ */
+export const normalizeModelApiModeTag = (value: unknown): ApiMode | undefined => {
+  if (value === 'gemini-native' || value === 'third-party') {
+    return value;
+  }
+  if (value === 'openai-compatible') {
+    return 'third-party';
+  }
+  return undefined;
+};
 export type { McpServerAuthType, McpServerConfig, McpServerTransport };
 
 /** Wire protocol supported by a third-party API provider. */
@@ -55,6 +75,11 @@ export const THIRD_PARTY_PROVIDER_IDS = [
 ] as const;
 export type ThirdPartyProviderId = (typeof THIRD_PARTY_PROVIDER_IDS)[number];
 
+/** Every provider a session can route to: the built-in Gemini API or one of the
+ * third-party providers. Absent = derive from the modelId (gemini by default). */
+export const CHAT_PROVIDER_IDS = [GEMINI_PROVIDER_ID, ...THIRD_PARTY_PROVIDER_IDS] as const;
+export type ChatProviderId = (typeof CHAT_PROVIDER_IDS)[number];
+
 /** Connection + model configuration for a single third-party provider. */
 export interface ThirdPartyProviderConfig {
   apiKey: string | null;
@@ -65,9 +90,14 @@ export interface ThirdPartyProviderConfig {
   enabled?: boolean;
 }
 
-/** Top-level container for all third-party provider configurations. */
+/**
+ * Top-level container for all third-party provider configurations.
+ *
+ * No global "active provider" field: which provider a chat uses is decided per
+ * session by its stored (providerId, modelId), and the settings panel's
+ * expanded-card memory is local component state, not persisted settings.
+ */
 export interface ThirdPartyApiSettings {
-  activeProvider: ThirdPartyProviderId;
   providers: Record<ThirdPartyProviderId, ThirdPartyProviderConfig>;
 }
 
@@ -110,6 +140,8 @@ export interface FilesApiConfig {
 
 export interface ChatSettings {
   modelId: string;
+  /** Which provider this session's modelId belongs to. Absent = gemini-native. */
+  providerId?: ChatProviderId;
   temperature: number;
   topP: number;
   topK: number;
@@ -127,25 +159,30 @@ export interface ChatSettings {
   isDeepSearchEnabled?: boolean;
   isRawModeEnabled?: boolean;
   hideThinkingInContext?: boolean;
+  alwaysKeepThinkingInContext?: boolean;
   safetySettings?: SafetySetting[];
   mediaResolution?: MediaResolution;
 }
 
 export type ChatSettingsUpdater = (updater: (prevSettings: ChatSettings) => ChatSettings) => void;
 
+/**
+ * Normalize a persisted session providerId read from storage/imports.
+ * Only known provider ids survive; legacy 'openai-compatible' folds to
+ * gemini-native (the routing decision only recognizes real provider ids).
+ */
+export const normalizeProviderId = (value: unknown): ChatProviderId | undefined =>
+  typeof value === 'string' && (CHAT_PROVIDER_IDS as readonly string[]).includes(value)
+    ? (value as ChatProviderId)
+    : undefined;
+
 export interface AppSettings extends ChatSettings {
   themeId: 'system' | 'onyx' | 'graphite' | 'pearl';
   baseFontSize: number;
-  apiMode: ApiMode;
-  isOpenAICompatibleApiEnabled?: boolean;
   useCustomApiConfig: boolean;
   serverManagedApi?: boolean;
   apiKey: string | null;
   apiProxyUrl: string | null;
-  openaiCompatibleApiKey: string | null;
-  openaiCompatibleBaseUrl: string | null;
-  openaiCompatibleModelId: string;
-  openaiCompatibleModels: ModelOption[];
   useApiProxy?: boolean;
   language: AppLanguage;
   translationTargetLanguage: TranslationTargetLanguage;
@@ -162,11 +199,15 @@ export interface AppSettings extends ChatSettings {
   isGraphvizRenderingEnabled?: boolean;
   isCompletionNotificationEnabled: boolean;
   isCompletionSoundEnabled?: boolean;
+  isLoggingEnabled?: boolean;
   isSuggestionsEnabled: boolean;
   isAutoScrollOnSendEnabled?: boolean;
   isAutoSendOnSuggestionClick?: boolean;
   generateQuadImages?: boolean;
   autoFullscreenHtml?: boolean;
+  /** 将语言误标为 css/text/txt/markdown/md、内容却像完整 HTML 文档或含 LA
+   *  标记的代码块自动解包为实时预览。关闭后此类代码块一律按源码显示。 */
+  unwrapMislabeledHtmlBlocks?: boolean;
   showWelcomeSuggestions?: boolean;
   isAudioCompressionEnabled: boolean;
   liveArtifactsPromptMode?: LiveArtifactsPromptMode;
@@ -185,5 +226,4 @@ export interface AppSettings extends ChatSettings {
   liveTranslateTargetLanguageCode: string; // 目标语言 BCP-47 代码（源语言由模型自动检测）
   liveTranslateEchoTargetLanguage: boolean; // 输入已是目标语言时是否回放原声
   thirdPartyApi: ThirdPartyApiSettings;
-  isThirdPartyApiEnabled?: boolean;
 }

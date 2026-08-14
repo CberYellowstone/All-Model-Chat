@@ -93,7 +93,7 @@ describe('openaiCompatibleApi', () => {
 
     await sendOpenAICompatibleMessageNonStream(
       'api-key',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       [],
       [{ fileData: { mimeType: 'image/png', fileUri: 'files/abc' } }],
       {
@@ -302,7 +302,7 @@ describe('openaiCompatibleApi', () => {
 
     await sendOpenAICompatibleMessageStream(
       'api-key',
-      'glm-5.1',
+      'glm-5.2',
       [],
       [{ text: 'think then answer' }],
       { baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },
@@ -316,6 +316,130 @@ describe('openaiCompatibleApi', () => {
     expect(onThoughtChunk).toHaveBeenNthCalledWith(1, 'First, inspect the input. ');
     expect(onThoughtChunk).toHaveBeenNthCalledWith(2, 'Then answer.');
     expect(onPart).toHaveBeenCalledWith({ text: 'Final answer.' });
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('maps non-streaming OpenRouter `reasoning` into thoughts', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async () => {
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { reasoning: 'Compare vendors.', content: 'OpenRouter answer.' } }],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }),
+    );
+
+    const onComplete = vi.fn();
+    const onError = vi.fn();
+
+    await sendOpenAICompatibleMessageNonStream(
+      'api-key',
+      'openrouter-auto',
+      [],
+      [{ text: 'which vendor' }],
+      { baseUrl: 'https://openrouter.ai/api/v1' },
+      new AbortController().signal,
+      onError,
+      onComplete,
+    );
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith(
+      [{ text: 'OpenRouter answer.' }],
+      'Compare vendors.',
+      undefined,
+      undefined,
+      undefined,
+    );
+  });
+
+  it('joins non-streaming reasoning_details segments into thoughts', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>(async () => {
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: 'Answer.',
+                  reasoning_details: [{ text: 'Step 1. ' }, { text: 'Step 2.' }],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }),
+    );
+
+    const onComplete = vi.fn();
+    const onError = vi.fn();
+
+    await sendOpenAICompatibleMessageNonStream(
+      'api-key',
+      'some-reasoning-provider',
+      [],
+      [{ text: 'think' }],
+      { baseUrl: 'https://api.provider.com/v1' },
+      new AbortController().signal,
+      onError,
+      onComplete,
+    );
+
+    expect(onComplete).toHaveBeenCalledWith([{ text: 'Answer.' }], 'Step 1. Step 2.', undefined, undefined, undefined);
+  });
+
+  it('streams OpenRouter `reasoning` delta through the thought handler', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode(
+            [
+              'data: {"choices":[{"delta":{"reasoning":"Assess the options. "}}]}',
+              '',
+              'data: {"choices":[{"delta":{"reasoning":"Pick the best."}}]}',
+              '',
+              'data: {"choices":[{"delta":{"content":"Decision made."}}]}',
+              '',
+              'data: [DONE]',
+              '',
+            ].join('\n'),
+          ),
+        );
+        controller.close();
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } })),
+    );
+
+    const onPart = vi.fn();
+    const onThoughtChunk = vi.fn();
+    const onComplete = vi.fn();
+    const onError = vi.fn();
+
+    await sendOpenAICompatibleMessageStream(
+      'api-key',
+      'openrouter-auto',
+      [],
+      [{ text: 'decide' }],
+      { baseUrl: 'https://openrouter.ai/api/v1' },
+      new AbortController().signal,
+      onPart,
+      onThoughtChunk,
+      onError,
+      onComplete,
+    );
+
+    expect(onThoughtChunk).toHaveBeenNthCalledWith(1, 'Assess the options. ');
+    expect(onThoughtChunk).toHaveBeenNthCalledWith(2, 'Pick the best.');
+    expect(onPart).toHaveBeenCalledWith({ text: 'Decision made.' });
     expect(onError).not.toHaveBeenCalled();
   });
 });

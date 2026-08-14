@@ -71,13 +71,14 @@ describe('chatStoreSync', () => {
           setActiveMessages: vi.fn(),
           setSavedSessions: vi.fn(),
           setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
         }),
       },
       localLoadingSessionIds: new Set(),
       getChannel: () => channel,
       getSession: vi.fn(),
       rehydrateSession: vi.fn((session: SavedChatSession) => session),
-      logger: { info: vi.fn() },
+      logger: { info: vi.fn(), warn: vi.fn() },
       documentRef: documentState.documentRef,
     });
 
@@ -106,13 +107,14 @@ describe('chatStoreSync', () => {
           setActiveMessages: vi.fn(),
           setSavedSessions: vi.fn(),
           setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
         }),
       },
       localLoadingSessionIds: new Set(),
       getChannel: () => channel,
       getSession: vi.fn(),
       rehydrateSession: vi.fn((session: SavedChatSession) => session),
-      logger: { info: vi.fn() },
+      logger: { info: vi.fn(), warn: vi.fn() },
       documentRef: documentState.documentRef,
     });
 
@@ -144,13 +146,14 @@ describe('chatStoreSync', () => {
           setActiveMessages,
           setSavedSessions,
           setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
         }),
       },
       localLoadingSessionIds: new Set(),
       getChannel: () => channel,
       getSession: vi.fn(async () => persistedSession),
       rehydrateSession: vi.fn(() => rehydratedSession),
-      logger: { info: vi.fn() },
+      logger: { info: vi.fn(), warn: vi.fn() },
       documentRef: createDocumentState(false).documentRef,
     });
 
@@ -181,13 +184,14 @@ describe('chatStoreSync', () => {
           setActiveMessages: vi.fn(),
           setSavedSessions: vi.fn(),
           setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
         }),
       },
       localLoadingSessionIds: new Set(['active']),
       getChannel: () => channel,
       getSession,
       rehydrateSession: vi.fn((session: SavedChatSession) => session),
-      logger: { info: vi.fn() },
+      logger: { info: vi.fn(), warn: vi.fn() },
       documentRef: createDocumentState(false).documentRef,
     });
 
@@ -197,6 +201,117 @@ describe('chatStoreSync', () => {
     });
 
     expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it('ignores SESSION_LOADING messages that originated from this tab', async () => {
+    const channel = createChannel();
+    const setLoadingSessionIds = vi.fn();
+    const { TAB_ID } = await import('./tabIdentity');
+
+    setupChatStoreSync({
+      store: {
+        getState: () => ({
+          activeSessionId: null,
+          refreshSessions: vi.fn(),
+          refreshGroups: vi.fn(),
+          setActiveMessages: vi.fn(),
+          setSavedSessions: vi.fn(),
+          setLoadingSessionIds,
+          setCompletedSessions: vi.fn(),
+        }),
+      },
+      localLoadingSessionIds: new Set(),
+      getChannel: () => channel,
+      getSession: vi.fn(),
+      rehydrateSession: vi.fn((session: SavedChatSession) => session),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      documentRef: createDocumentState(false).documentRef,
+    });
+
+    (channel as BroadcastChannel & { emitMessage: (message: SyncMessage) => void }).emitMessage({
+      type: 'SESSION_LOADING',
+      sessionId: 's1',
+      isLoading: true,
+      originId: TAB_ID,
+      ts: Date.now(),
+    });
+
+    expect(setLoadingSessionIds).not.toHaveBeenCalled();
+  });
+
+  it('aborts local generation jobs when ABORT_GENERATION is received from another tab', async () => {
+    const channel = createChannel();
+    const abort = vi.fn();
+    const activeJobs = {
+      current: new Map<string, AbortController>([['gen-1', { abort } as unknown as AbortController]]),
+    };
+    const { startActiveGenerationJob } = await import('@/features/message-sender/activeGenerationJobs');
+    startActiveGenerationJob(activeJobs, 'session-a', 'gen-1', activeJobs.current.get('gen-1')!);
+
+    setupChatStoreSync({
+      store: {
+        getState: () => ({
+          activeSessionId: 'session-a',
+          refreshSessions: vi.fn(),
+          refreshGroups: vi.fn(),
+          setActiveMessages: vi.fn(),
+          setSavedSessions: vi.fn(),
+          setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
+        }),
+      },
+      localLoadingSessionIds: new Set(['session-a']),
+      activeJobs,
+      getChannel: () => channel,
+      getSession: vi.fn(),
+      rehydrateSession: vi.fn((session: SavedChatSession) => session),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      documentRef: createDocumentState(false).documentRef,
+    });
+
+    (channel as BroadcastChannel & { emitMessage: (message: SyncMessage) => void }).emitMessage({
+      type: 'ABORT_GENERATION',
+      sessionId: 'session-a',
+      originId: 'other-tab',
+    });
+
+    expect(abort).toHaveBeenCalled();
+  });
+
+  it('clears remote loading when the generation lease is stale', () => {
+    vi.useFakeTimers();
+    const channel = createChannel();
+    const setLoadingSessionIds = vi.fn();
+
+    setupChatStoreSync({
+      store: {
+        getState: () => ({
+          activeSessionId: null,
+          refreshSessions: vi.fn(),
+          refreshGroups: vi.fn(),
+          setActiveMessages: vi.fn(),
+          setSavedSessions: vi.fn(),
+          setLoadingSessionIds,
+          setCompletedSessions: vi.fn(),
+        }),
+      },
+      localLoadingSessionIds: new Set(),
+      getChannel: () => channel,
+      getSession: vi.fn(),
+      rehydrateSession: vi.fn((session: SavedChatSession) => session),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      documentRef: createDocumentState(false).documentRef,
+      now: () => Date.now(),
+    });
+
+    // No lease in localStorage → stale.
+    vi.advanceTimersByTime(30_000);
+
+    expect(setLoadingSessionIds).toHaveBeenCalled();
+    const updater = setLoadingSessionIds.mock.calls.at(-1)?.[0] as (prev: Set<string>) => Set<string>;
+    expect(updater(new Set(['remote-session']))).toEqual(new Set());
+
+    vi.useRealTimers();
   });
 
   it('cleans up message and visibility listeners', () => {
@@ -212,13 +327,14 @@ describe('chatStoreSync', () => {
           setActiveMessages: vi.fn(),
           setSavedSessions: vi.fn(),
           setLoadingSessionIds: vi.fn(),
+          setCompletedSessions: vi.fn(),
         }),
       },
       localLoadingSessionIds: new Set(),
       getChannel: () => channel,
       getSession: vi.fn(),
       rehydrateSession: vi.fn((session: SavedChatSession) => session),
-      logger: { info: vi.fn() },
+      logger: { info: vi.fn(), warn: vi.fn() },
       documentRef: documentState.documentRef,
     });
 

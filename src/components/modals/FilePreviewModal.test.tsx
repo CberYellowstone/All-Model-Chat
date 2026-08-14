@@ -72,11 +72,11 @@ vi.mock('@/components/shared/file-preview/TextFileViewer', () => ({
   TextFileViewer: mockTextFileViewer,
 }));
 
-vi.mock('@/utils/fileClipboard', () => ({
+vi.mock('@/utils/file/fileClipboard', () => ({
   copyFileToClipboard: mockCopyFileToClipboard,
 }));
 
-vi.mock('@/utils/filePreviewUrls', () => ({
+vi.mock('@/utils/file/filePreviewUrls', () => ({
   cleanupFilePreviewUrl: (file: { dataUrl?: string }) => {
     if (file.dataUrl) mockRevokedObjectUrls.push(file.dataUrl);
   },
@@ -87,7 +87,7 @@ vi.mock('@/utils/filePreviewUrls', () => ({
   },
 }));
 
-vi.mock('@/utils/fileTypeClassification', () => ({
+vi.mock('@/utils/file/fileTypeClassification', () => ({
   getFileKindFlags: (file: { name: string; type: string }) => ({
     isImage: file.type.startsWith('image/'),
     isAudio: file.type.startsWith('audio/'),

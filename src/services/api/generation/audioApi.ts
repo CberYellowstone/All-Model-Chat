@@ -1,12 +1,18 @@
 import type { GenerateContentConfig, Part, ThinkingConfig, ThinkingLevel, UsageMetadata } from '@google/genai';
 import { executeConfiguredApiRequest } from '@/services/api/apiExecutor';
 import { logService } from '@/services/logService';
-import { blobToBase64 } from '@/utils/fileEncoding';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
-import { calculateTokenStats } from '@/utils/modelUsageStats';
+import { blobToBase64 } from '@/utils/file/fileEncoding';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
+import { calculateTokenStats } from '@/utils/model/modelUsageStats';
 import { buildExactPricingFromUsageMetadata } from '@/utils/usagePricingTelemetry';
 import { AVAILABLE_TTS_VOICES } from '@/constants/voiceOptions';
 import { SUPPORTED_AUDIO_MIME_TYPES } from '@/constants/fileTypeSupport';
+
+// TTS responses can hang indefinitely when the upstream proxy/relay stalls, so
+// the request gets a hard wall-clock timeout. The SDK's httpOptions.timeout is
+// retried by default (worst case far longer than the value), so we abort the
+// fetch ourselves and surface a distinct message the UI can show the user.
+const TTS_REQUEST_TIMEOUT_MS = 30_000;
 
 const SUPPORTED_TTS_VOICE_NAMES = new Set(AVAILABLE_TTS_VOICES.map((voice) => voice.id));
 const SPEAKER_VOICES_HEADER_REGEX = /^#{1,6}\s*SPEAKER VOICES(?:\s*\(.*\))?\s*$/i;
@@ -112,54 +118,98 @@ export const generateSpeechApi = async (
     throw new Error('TTS input text cannot be empty.');
   }
 
-  return executeConfiguredApiRequest({
-    apiKey,
-    label: `Generating speech with model ${modelId}`,
-    errorLabel: `Failed to generate speech with model ${modelId}:`,
-    abortSignal,
-    run: async ({ client: ai }) => {
-      logService.debug('TTS request payload details', { textLength: text.length, voice });
-      const multiSpeakerVoiceConfig = extractMultiSpeakerVoiceConfig(text);
-      const response = await ai.models.generateContent({
-        model: modelId,
-        // TTS models do not support chat history roles, just plain content parts
-        contents: [{ parts: [{ text }] }],
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: multiSpeakerVoiceConfig ? { multiSpeakerVoiceConfig } : buildSingleSpeakerSpeechConfig(voice),
-        },
-      });
+  // Hard wall-clock timeout so a stalled upstream cannot leave the selection
+  // toolbar stuck on its loading state forever. The race covers the whole
+  // request — including getConfiguredApiClient, which reads settings from
+  // IndexedDB and can hang independently of the fetch itself — while the
+  // abort signal below cancels the in-flight generateContent fetch.
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    timeoutController.abort();
+  }, TTS_REQUEST_TIMEOUT_MS);
 
-      if (abortSignal.aborted) {
-        const abortError = new Error('Speech generation cancelled by user.');
-        abortError.name = 'AbortError';
-        throw abortError;
-      }
+  const onCallerAbort = () => timeoutController.abort();
+  abortSignal.addEventListener('abort', onCallerAbort, { once: true });
 
-      const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  try {
+    const requestPromise = executeConfiguredApiRequest({
+      apiKey,
+      label: `Generating speech with model ${modelId}`,
+      errorLabel: `Failed to generate speech with model ${modelId}:`,
+      abortSignal: timeoutController.signal,
+      run: async ({ client: ai }) => {
+        logService.debug('TTS request payload details', { textLength: text.length, voice });
+        const multiSpeakerVoiceConfig = extractMultiSpeakerVoiceConfig(text);
+        const response = await ai.models.generateContent({
+          model: modelId,
+          // TTS models do not support chat history roles, just plain content parts
+          contents: [{ parts: [{ text }] }],
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: multiSpeakerVoiceConfig ? { multiSpeakerVoiceConfig } : buildSingleSpeakerSpeechConfig(voice),
+            abortSignal: timeoutController.signal,
+          },
+        });
 
-      if (typeof audioData === 'string' && audioData.length > 0) {
-        if (response.usageMetadata) {
-          recordAudioTokenUsage(modelId, response.usageMetadata, 'tts');
+        if (abortSignal.aborted) {
+          const abortError = new Error('Speech generation cancelled by user.');
+          abortError.name = 'AbortError';
+          throw abortError;
         }
-        return audioData;
-      }
 
-      const candidate = response.candidates?.[0];
-      if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
-        throw new Error(`TTS generation failed with reason: ${candidate.finishReason}`);
-      }
+        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
-      logService.error('TTS response did not contain expected audio data structure:', { response });
+        if (typeof audioData === 'string' && audioData.length > 0) {
+          if (response.usageMetadata) {
+            recordAudioTokenUsage(modelId, response.usageMetadata, 'tts');
+          }
+          return audioData;
+        }
 
-      const textError = response.text;
-      if (textError) {
-        throw new Error(`TTS generation failed: ${textError}`);
-      }
+        const candidate = response.candidates?.[0];
+        if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+          throw new Error(`TTS generation failed with reason: ${candidate.finishReason}`);
+        }
 
-      throw new Error('No audio data found in TTS response.');
-    },
-  });
+        logService.error('TTS response did not contain expected audio data structure:', { response });
+
+        const textError = response.text;
+        if (textError) {
+          throw new Error(`TTS generation failed: ${textError}`);
+        }
+
+        throw new Error('No audio data found in TTS response.');
+      },
+    });
+
+    // Swallow the losing side of the race: when the timeout branch wins, the
+    // underlying requestPromise may still reject (e.g. throwIfAborted after the
+    // fetch), and that rejection must not surface as an unhandled rejection.
+    void requestPromise.catch(() => {});
+
+    return await Promise.race([
+      requestPromise,
+      new Promise<never>((_resolve, reject) => {
+        if (timeoutController.signal.aborted) {
+          reject(new Error('Speech generation timed out. Please check the TTS model/key and try again.'));
+          return;
+        }
+        const onTimeout = () =>
+          reject(new Error('Speech generation timed out. Please check the TTS model/key and try again.'));
+        timeoutController.signal.addEventListener('abort', onTimeout, { once: true });
+        // Once the request settles (success or failure), the timeout branch is
+        // dead — drop its listener so the signal has no lingering side effects.
+        void requestPromise
+          .finally(() => {
+            timeoutController.signal.removeEventListener('abort', onTimeout);
+          })
+          .catch(() => {});
+      }),
+    ]);
+  } finally {
+    window.clearTimeout(timeoutId);
+    abortSignal.removeEventListener('abort', onCallerAbort);
+  }
 };
 
 export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelId: string): Promise<string> => {

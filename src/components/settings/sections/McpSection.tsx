@@ -3,6 +3,8 @@ import { getErrorMessage } from '@/utils/errorMessage';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { AppSettings, McpServerAuthType, McpServerConfig, McpServerTransport } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { SETTINGS_OUTLINE_BUTTON_CLASS, SMALL_ICON_DANGER_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/constants/designTokens';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
 import { fetchMcpServerCapabilities, type McpServerCapabilities } from '@/services/api/mcpApi';
 
@@ -13,9 +15,6 @@ interface McpSectionProps {
 
 const inputBaseClasses =
   'w-full rounded-lg border p-2.5 text-sm transition-all duration-200 focus:ring-2 focus:ring-offset-0';
-const labelClasses = 'text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]';
-const secondaryButtonClass =
-  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--theme-border-secondary)] px-3 py-1.5 text-xs font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]';
 
 type CapabilityTestState =
   | { status: 'loading' }
@@ -99,6 +98,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
       return;
     }
 
+    // http | sse share URL/auth fields
     updateServer(serverIndex, {
       transport,
       url: server.url ?? '',
@@ -132,24 +132,28 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" data-settings-item="mcp-root">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 space-y-1">
           <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('settingsMcpTitle')}</h3>
           <p className="text-sm leading-relaxed text-[var(--theme-text-tertiary)]">{t('settingsMcpDescription')}</p>
         </div>
-        <button type="button" onClick={addServer} className={secondaryButtonClass}>
+        <button
+          type="button"
+          onClick={addServer}
+          className={`${SETTINGS_OUTLINE_BUTTON_CLASS} shrink-0 whitespace-nowrap`}
+        >
           <Plus size={14} strokeWidth={1.7} />
           {t('settingsMcpAddServer')}
         </button>
       </div>
 
       {servers.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--theme-border-secondary)] p-5 text-sm text-[var(--theme-text-tertiary)]">
+        <div className={`${SETTINGS_SECTION_CARD_CLASS} border-dashed text-sm text-[var(--theme-text-tertiary)]`}>
           {t('settingsMcpEmpty')}
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {servers.map((server, index) => {
             const stateKey = getCapabilityStateKey(server, index);
             const capabilityState = capabilityStates[stateKey];
@@ -161,7 +165,8 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
             return (
               <section
                 key={stateKey}
-                className="rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] p-4 shadow-sm"
+                className={SETTINGS_SECTION_CARD_CLASS}
+                data-settings-item={`mcp-server-${index}`}
               >
                 <div
                   data-mcp-server-card-header
@@ -190,7 +195,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                       type="button"
                       onClick={() => testServerCapabilities(server, index)}
                       disabled={capabilityState?.status === 'loading'}
-                      className={secondaryButtonClass}
+                      className={`${SETTINGS_OUTLINE_BUTTON_CLASS} shrink-0 whitespace-nowrap`}
                     >
                       <RefreshCw
                         size={13}
@@ -202,7 +207,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                     <button
                       type="button"
                       onClick={() => removeServer(index)}
-                      className="rounded-md p-1.5 text-[var(--theme-text-tertiary)] transition-colors hover:bg-[var(--theme-bg-danger)]/10 hover:text-[var(--theme-text-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]"
+                      className={SMALL_ICON_DANGER_BUTTON_CLASS}
                       aria-label={t('settingsMcpRemoveServer')}
                     >
                       <Trash2 size={15} strokeWidth={1.7} />
@@ -212,7 +217,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="space-y-2">
-                    <span className={labelClasses}>{t('settingsMcpServerName')}</span>
+                    <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpServerName')}</span>
                     <input
                       value={server.name}
                       onChange={(event) => updateServer(index, { name: event.target.value })}
@@ -221,7 +226,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                   </label>
 
                   <label className="space-y-2">
-                    <span className={labelClasses}>{t('settingsMcpServerId')}</span>
+                    <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpServerId')}</span>
                     <input
                       value={server.id}
                       onChange={(event) => updateServer(index, { id: event.target.value.trim() })}
@@ -230,7 +235,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                   </label>
 
                   <label className="space-y-2">
-                    <span className={labelClasses}>{t('settingsMcpTransport')}</span>
+                    <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpTransport')}</span>
                     <select
                       value={server.transport}
                       onChange={(event) =>
@@ -240,12 +245,13 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                     >
                       <option value="stdio">{t('settingsMcpTransportStdio')}</option>
                       <option value="http">{t('settingsMcpTransportHttp')}</option>
+                      <option value="sse">{t('settingsMcpTransportSse')}</option>
                     </select>
                   </label>
 
                   {server.transport === 'stdio' ? (
                     <label className="space-y-2">
-                      <span className={labelClasses}>{t('settingsMcpCommand')}</span>
+                      <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpCommand')}</span>
                       <input
                         value={server.command ?? ''}
                         onChange={(event) => updateServer(index, { command: event.target.value })}
@@ -255,12 +261,12 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                     </label>
                   ) : (
                     <label className="space-y-2">
-                      <span className={labelClasses}>{t('settingsMcpUrl')}</span>
+                      <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpUrl')}</span>
                       <input
                         value={server.url ?? ''}
                         onChange={(event) => updateServer(index, { url: event.target.value })}
                         className={`${inputBaseClasses} ${SETTINGS_INPUT_CLASS} font-mono`}
-                        placeholder="https://example.com/mcp"
+                        placeholder={server.transport === 'sse' ? 'https://example.com/sse' : 'https://example.com/mcp'}
                       />
                     </label>
                   )}
@@ -269,7 +275,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                 {server.transport === 'stdio' ? (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2">
-                      <span className={labelClasses}>{t('settingsMcpArgs')}</span>
+                      <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpArgs')}</span>
                       <textarea
                         value={formatLines(server.args)}
                         onChange={(event) => updateServer(index, { args: parseLines(event.target.value) })}
@@ -279,7 +285,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                       />
                     </label>
                     <label className="space-y-2">
-                      <span className={labelClasses}>{t('settingsMcpEnv')}</span>
+                      <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpEnv')}</span>
                       <textarea
                         value={formatRecord(server.env)}
                         onChange={(event) => updateServer(index, { env: parseRecord(event.target.value) })}
@@ -293,7 +299,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                   <div className="mt-4 space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="space-y-2">
-                        <span className={labelClasses}>{t('settingsMcpAuth')}</span>
+                        <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpAuth')}</span>
                         <select
                           value={server.auth?.type ?? 'none'}
                           onChange={(event) => handleAuthTypeChange(index, event.target.value as McpServerAuthType)}
@@ -306,7 +312,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                       </label>
                       {server.auth?.type === 'bearer' && (
                         <label className="space-y-2">
-                          <span className={labelClasses}>{t('settingsMcpBearerToken')}</span>
+                          <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpBearerToken')}</span>
                           <input
                             type="password"
                             value={server.auth.token ?? ''}
@@ -320,7 +326,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                       )}
                     </div>
                     <label className="block space-y-2">
-                      <span className={labelClasses}>{t('settingsMcpHeaders')}</span>
+                      <span className={SETTINGS_SECTION_LABEL_CLASS}>{t('settingsMcpHeaders')}</span>
                       <textarea
                         value={formatRecord(server.headers)}
                         onChange={(event) => updateServer(index, { headers: parseRecord(event.target.value) })}
@@ -355,7 +361,7 @@ export const McpSection: React.FC<McpSectionProps> = ({ settings, onUpdate }) =>
                   </div>
                 )}
                 {capabilityState?.status === 'error' && (
-                  <div className="mt-4 rounded-md border border-[var(--theme-border-danger)] bg-[var(--theme-bg-danger)]/10 p-3 text-xs text-[var(--theme-text-danger)]">
+                  <div className="mt-4 rounded-md border border-[var(--theme-text-danger)]/30 bg-[var(--theme-bg-danger)]/10 p-3 text-xs text-[var(--theme-text-danger)]">
                     {capabilityState.error}
                   </div>
                 )}

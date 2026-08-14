@@ -23,31 +23,32 @@ const attachIconSize = 20;
 const menuIconSize = 18;
 
 export const AttachmentMenu: React.FC = () => {
-  const { onAttachmentAction, disabled, isImageGenerationModel, isRealImagenModel, canAddYouTubeVideo } =
-    useChatInputActionsContext();
+  const { onAttachmentAction, disabled, isImageGenerationModel, canAddYouTubeVideo } = useChatInputActionsContext();
   const { t } = useI18n();
   const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
     usePortaledMenu({ constrainHeight: true });
-  const isAttachmentDisabled = disabled || isRealImagenModel;
+  const isAttachmentDisabled = disabled;
 
   const handleAction = (action: AttachmentAction) => {
     closeMenu();
     onAttachmentAction(action);
   };
 
+  // The menu opens upward (bottom anchored to the trigger button), so the most
+  // frequently used items go at the bottom, closest to the input area.
   const menuItems = [
-    { labelKey: 'attachMenuUpload', icon: <IconUpload size={menuIconSize} />, action: 'upload' },
-    { labelKey: 'attachMenuImportFolder', icon: <FolderUp size={menuIconSize} />, action: 'folder' },
-    { labelKey: 'attachMenuImportZip', icon: <IconZip size={menuIconSize} />, action: 'zip' },
-    { labelKey: 'attachMenuGallery', icon: <IconGallery size={menuIconSize} />, action: 'gallery' },
-    { labelKey: 'attachMenuTakePhoto', icon: <IconCamera size={menuIconSize} />, action: 'camera' },
-    { labelKey: 'attachMenuScreenshot', icon: <IconScreenshot size={menuIconSize} />, action: 'screenshot' },
-    { labelKey: 'attachMenuRecordAudio', icon: <IconMicrophone size={menuIconSize} />, action: 'recorder' },
-    { labelKey: 'attachMenuAddById', icon: <IconLink size={menuIconSize} />, action: 'id' },
+    { labelKey: 'attachMenuCreateText', icon: <IconFileEdit size={menuIconSize} />, action: 'text' },
     ...(canAddYouTubeVideo
       ? [{ labelKey: 'attachMenuAddByUrl', icon: <IconYoutube size={menuIconSize} />, action: 'url' } as const]
       : []),
-    { labelKey: 'attachMenuCreateText', icon: <IconFileEdit size={menuIconSize} />, action: 'text' },
+    { labelKey: 'attachMenuAddById', icon: <IconLink size={menuIconSize} />, action: 'id' },
+    { labelKey: 'attachMenuImportFolder', icon: <FolderUp size={menuIconSize} />, action: 'folder' },
+    { labelKey: 'attachMenuImportZip', icon: <IconZip size={menuIconSize} />, action: 'zip' },
+    { labelKey: 'attachMenuRecordAudio', icon: <IconMicrophone size={menuIconSize} />, action: 'recorder' },
+    { labelKey: 'attachMenuScreenshot', icon: <IconScreenshot size={menuIconSize} />, action: 'screenshot' },
+    { labelKey: 'attachMenuTakePhoto', icon: <IconCamera size={menuIconSize} />, action: 'camera' },
+    { labelKey: 'attachMenuGallery', icon: <IconGallery size={menuIconSize} />, action: 'gallery' },
+    { labelKey: 'attachMenuUpload', icon: <IconUpload size={menuIconSize} />, action: 'upload' },
   ] as const;
 
   const filteredMenuItems = isImageGenerationModel

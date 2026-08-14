@@ -8,7 +8,7 @@ describe('ThinkingHeader', () => {
 
   it('renders the loading spinner without accent background chrome', async () => {
     await act(async () => {
-      renderer.root.render(<ThinkingHeader isLoading lastThought={null} isExpanded={false} />);
+      renderer.root.render(<ThinkingHeader isLoading isExpanded={false} />);
     });
 
     const spinnerWrapper = renderer.container.querySelector('svg')?.parentElement;
@@ -16,5 +16,39 @@ describe('ThinkingHeader', () => {
     expect(spinnerWrapper).not.toBeNull();
     expect(spinnerWrapper?.className).not.toContain('rounded-lg');
     expect(spinnerWrapper?.className).not.toContain('bg-[var(--theme-bg-accent)]/10');
+  });
+
+  it('shows the settled thinking time once loading finishes', async () => {
+    await act(async () => {
+      renderer.root.render(<ThinkingHeader isLoading={false} thinkingTimeMs={12000} isExpanded={false} />);
+    });
+
+    expect(renderer.container.querySelector('svg.lucide-check')).toBeNull();
+    expect(renderer.container.textContent).toContain('12s');
+  });
+
+  it('keeps the THINKING label during loading instead of a step title', async () => {
+    await act(async () => {
+      renderer.root.render(<ThinkingHeader isLoading isExpanded={false} />);
+    });
+
+    expect(renderer.container.textContent).toContain('Thinking');
+  });
+
+  it('shows the settled duration once thinkingTimeMs is set, even while the reply is still streaming', async () => {
+    await act(async () => {
+      renderer.root.render(
+        <ThinkingHeader
+          isLoading
+          thinkingTimeMs={4200}
+          generationStartTime={new Date('2026-04-21T00:00:00.000Z')}
+          firstTokenTimeMs={200}
+          isExpanded={false}
+        />,
+      );
+    });
+
+    expect(renderer.container.textContent).toContain('4s');
+    expect(renderer.container.textContent).not.toContain('Thinking');
   });
 });

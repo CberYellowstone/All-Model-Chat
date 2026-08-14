@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useI18n } from '@/contexts/I18nContext';
 import { useWindowContext } from '@/contexts/WindowContext';
 import { IconHistory } from '@/components/icons';
+import { useChatStore } from '@/stores/chatStore';
 import type { SavedChatSession } from '@/types';
 import { SIDEBAR_ICON_BUTTON_CLASS } from './sidebarStyles';
 
@@ -21,6 +22,8 @@ const CLOSE_DELAY_MS = 120;
 
 type PopoverOpenMode = 'hover' | 'focus' | 'click';
 
+const formatCompletedCount = (template: string, count: number) => template.replace('{count}', String(count));
+
 export const CollapsedRecentChatsButton: React.FC<CollapsedRecentChatsButtonProps> = ({
   sessions,
   activeSessionId,
@@ -28,6 +31,7 @@ export const CollapsedRecentChatsButton: React.FC<CollapsedRecentChatsButtonProp
 }) => {
   const { t } = useI18n();
   const { window: targetWindow, document: targetDocument } = useWindowContext();
+  const completedCount = useChatStore((state) => Object.keys(state.completedSessions).length);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -165,52 +169,64 @@ export const CollapsedRecentChatsButton: React.FC<CollapsedRecentChatsButtonProp
 
   return (
     <>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          if (isOpen && openMode === 'click') {
-            closePopover();
-            return;
-          }
-          openPopover('click');
-        }}
-        onMouseEnter={() => {
-          if (openMode === 'click') {
-            clearCloseTimer();
-            return;
-          }
+      <div className="relative">
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (isOpen && openMode === 'click') {
+              closePopover();
+              return;
+            }
+            openPopover('click');
+          }}
+          onMouseEnter={() => {
+            if (openMode === 'click') {
+              clearCloseTimer();
+              return;
+            }
 
-          openPopover('hover');
-        }}
-        onMouseLeave={() => {
-          if (openMode === 'hover') {
-            scheduleClose();
-          }
-        }}
-        onFocus={() => openPopover('focus')}
-        onBlur={(event) => {
-          const nextFocusTarget = event.relatedTarget as Node | null;
-          if (
-            nextFocusTarget &&
-            ((buttonRef.current && buttonRef.current.contains(nextFocusTarget)) ||
-              (panelRef.current && panelRef.current.contains(nextFocusTarget)))
-          ) {
-            return;
-          }
-          if (openMode === 'focus') {
-            scheduleClose();
-          }
-        }}
-        className={SIDEBAR_ICON_BUTTON_CLASS}
-        title={t('historyRecentChats')}
-        aria-label={t('historyRecentChats')}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-      >
-        <IconHistory size={20} strokeWidth={2} />
-      </button>
+            openPopover('hover');
+          }}
+          onMouseLeave={() => {
+            if (openMode === 'hover') {
+              scheduleClose();
+            }
+          }}
+          onFocus={() => openPopover('focus')}
+          onBlur={(event) => {
+            const nextFocusTarget = event.relatedTarget as Node | null;
+            if (
+              nextFocusTarget &&
+              ((buttonRef.current && buttonRef.current.contains(nextFocusTarget)) ||
+                (panelRef.current && panelRef.current.contains(nextFocusTarget)))
+            ) {
+              return;
+            }
+            if (openMode === 'focus') {
+              scheduleClose();
+            }
+          }}
+          className={SIDEBAR_ICON_BUTTON_CLASS}
+          title={t('historyRecentChats')}
+          aria-label={t('historyRecentChats')}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+        >
+          <IconHistory size={20} strokeWidth={2} />
+        </button>
+
+        {completedCount > 0 && (
+          <span
+            className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-bg-accent)] px-1 text-[10px] font-semibold text-[var(--theme-text-accent)]"
+            title={formatCompletedCount(t('sessionCompletedCountTitle'), completedCount)}
+            aria-label={formatCompletedCount(t('sessionCompletedCountTitle'), completedCount)}
+          >
+            {completedCount}
+          </span>
+        )}
+      </div>
 
       {isOpen &&
         createPortal(

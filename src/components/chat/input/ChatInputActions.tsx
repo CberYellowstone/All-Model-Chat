@@ -9,6 +9,7 @@ import { SendControls } from './actions/SendControls';
 import { ComposerMoreMenu } from './actions/ComposerMoreMenu';
 import { useComposerAuxiliaryActions } from './actions/useComposerAuxiliaryActions';
 import { useAuxiliaryActionCollapse } from './actions/useAuxiliaryActionCollapse';
+import { COMPOSER_CLUSTER_GAP_CLASS, COMPOSER_CLUSTER_SEPARATION_CLASS } from '@/constants/designTokens';
 import { useChatInputActionsContext, useChatInputComposerStatusContext } from './ChatInputContext';
 
 const ChatInputActionsComponent: React.FC = () => {
@@ -64,6 +65,12 @@ const ChatInputActionsComponent: React.FC = () => {
           ? () => onToggleToolAndFocus(toolStates.googleMaps!.onToggle!)
           : undefined,
       },
+      alwaysKeepThinking: {
+        isEnabled: !!toolStates.alwaysKeepThinking?.isEnabled,
+        onToggle: toolStates.alwaysKeepThinking?.onToggle
+          ? () => onToggleToolAndFocus(toolStates.alwaysKeepThinking!.onToggle!)
+          : undefined,
+      },
     }),
     [onToggleToolAndFocus, toolStates],
   );
@@ -114,12 +121,12 @@ const ChatInputActionsComponent: React.FC = () => {
     <div
       ref={rootRef}
       data-testid="chat-input-actions-root"
-      className="flex w-full items-center justify-between gap-2 overflow-visible"
+      className={`flex w-full items-center justify-between ${COMPOSER_CLUSTER_SEPARATION_CLASS} overflow-visible`}
     >
       <div
         ref={leftActionsRef}
         data-testid="chat-input-actions-left"
-        className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className={`flex min-w-0 items-center ${COMPOSER_CLUSTER_GAP_CLASS} overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
       >
         <AttachmentMenu />
 
@@ -142,12 +149,12 @@ const ChatInputActionsComponent: React.FC = () => {
       <div
         ref={rightActionsRef}
         data-testid="chat-input-actions-right"
-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 sm:gap-3"
+        className={`flex min-w-0 flex-shrink-0 items-center ${COMPOSER_CLUSTER_GAP_CLASS}`}
       >
         {!isLiveConnected && !isNativeAudioModel && <RecordControls />}
 
         {!showAuxiliaryActionsInMenu && auxiliaryActions.length > 0 && (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`flex items-center ${COMPOSER_CLUSTER_GAP_CLASS}`}>
             <ComposerAuxiliaryButtons actions={auxiliaryActions} />
           </div>
         )}
@@ -163,7 +170,9 @@ const ChatInputActionsComponent: React.FC = () => {
 
         {isNativeAudioModel && <LiveControls />}
 
-        <SendControls />
+        <div className="ml-1 sm:ml-1.5 flex items-center">
+          <SendControls />
+        </div>
       </div>
     </div>
   );

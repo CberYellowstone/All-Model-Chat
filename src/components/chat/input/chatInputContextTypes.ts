@@ -26,7 +26,7 @@ import type { ChatToolToggleStates } from '@/types/chatTools';
 import type { SlashCommand } from '@/types/slashCommands';
 import type { ChatInputBooleanUpdate, ChatInputMachineState } from '@/utils/chat-input/chatInputStateMachine';
 import type { QueuedChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
-import type { ModelCapabilities } from '@/utils/modelCapabilities';
+import type { ModelCapabilities } from '@/utils/model/modelCapabilities';
 
 type ChatEditMode = 'update' | 'resend';
 type ChatInputMode = 'idle' | 'editing' | 'queuing' | 'live' | 'processing';
@@ -242,8 +242,10 @@ export interface ChatInputHandlers {
   ) => void;
   queueCurrentSubmission: () => void;
   cancelPendingUploadSend: () => void;
-  restoreQueuedSubmission: () => void;
-  removeQueuedSubmission: () => void;
+  restoreQueuedSubmission: (id: string) => void;
+  removeQueuedSubmission: (id: string) => void;
+  removeAllQueuedSubmissions: () => void;
+  reorderQueuedSubmissions: (activeId: string, targetIndex: number) => void;
 }
 
 export interface ChatInputContextValue {
@@ -259,7 +261,8 @@ export interface ChatInputContextValue {
   targetDocument: Document;
   canSend: boolean;
   canQueueMessage: boolean;
-  queuedSubmission: QueuedChatInputSubmission | null;
+  queuedCount: number;
+  queuedSubmissions: QueuedChatInputSubmission[];
   chatInputMode: ChatInputMode;
   isAnyModalOpen: boolean;
   handleSmartSendMessage: (text: string, options?: { isFastMode?: boolean; files?: UploadedFile[] }) => Promise<void>;
@@ -267,12 +270,17 @@ export interface ChatInputContextValue {
   initialTextareaHeight: number;
   handleStartLiveCamera: () => Promise<void>;
   handleStartLiveScreenShare: () => Promise<void>;
-  queuedSubmissionView?: {
+  queuedSubmissionsView?: {
     title: string;
-    previewText: string;
-    fileCount: number;
-    onEdit: () => void;
-    onRemove: () => void;
+    items: Array<{
+      id: string;
+      previewText: string;
+      fileCount: number;
+    }>;
+    onEditItem: (id: string) => void;
+    onRemoveItem: (id: string) => void;
+    onReorderItem: (activeId: string, targetIndex: number) => void;
+    onClearAll: () => void;
   };
 }
 
@@ -325,7 +333,6 @@ export interface ChatInputActionsContextValue {
   onToggleToolAndFocus: (toggleFunc: () => void) => void;
   onCountTokens: () => void;
   isImageGenerationModel: boolean;
-  isRealImagenModel: boolean;
   isNativeAudioModel: boolean;
   canAddYouTubeVideo: boolean;
   isLoading: boolean;
@@ -339,6 +346,7 @@ export interface ChatInputComposerStatusContextValue {
   hasTrimmedInput: boolean;
   canSend: boolean;
   canQueueMessage: boolean;
+  queuedCount: number;
   onTranslate: () => void;
   onPasteFromClipboard: () => void;
   onClearInput: () => void;

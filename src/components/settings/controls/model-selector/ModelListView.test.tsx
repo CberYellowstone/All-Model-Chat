@@ -44,7 +44,7 @@ describe('ModelListView', () => {
         <ModelListView
           availableModels={[
             { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', apiMode: 'gemini-native' },
-            { id: 'gpt-5.5', name: 'GPT-5.5', apiMode: 'openai-compatible' },
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', apiMode: 'third-party' },
           ]}
           selectedModelId="gemini-3-flash-preview"
           selectedApiMode="gemini-native"
@@ -54,39 +54,19 @@ describe('ModelListView', () => {
     });
 
     const geminiSection = renderer.container.querySelector('[data-provider-section="gemini-native"]');
-    const openaiSection = renderer.container.querySelector('[data-provider-section="openai-compatible"]');
+    const openaiSection = renderer.container.querySelector('[data-provider-section="third-party"]');
 
     expect(geminiSection?.textContent).toContain('Gemini');
     expect(geminiSection?.textContent).toContain('Gemini 3 Flash Preview');
-    expect(openaiSection?.textContent).toContain('OpenAI Compatible');
-    expect(openaiSection?.textContent).toContain('GPT-5.5');
+    expect(openaiSection?.textContent).toContain('Third-Party');
+    expect(openaiSection?.textContent).toContain('GPT-5.6 Sol');
 
     act(() => {
       renderer.container
-        .querySelector('[data-testid="settings-model-option-gpt-5.5"]')
+        .querySelector('[data-testid="settings-model-option-gemini-native:gpt-5.6-sol"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(onSelectModel).toHaveBeenCalledWith('gpt-5.5', 'openai-compatible');
-  });
-
-  it('renders extra model list content inside the list container', () => {
-    act(() => {
-      renderer.root.render(
-        <ModelListView
-          availableModels={[{ id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', isPinned: true }]}
-          selectedModelId="gemini-3-flash-preview"
-          onSelectModel={vi.fn()}
-          extraContent={<div data-testid="extra-model-list-content">OpenAI-compatible Model IDs</div>}
-        />,
-      );
-    });
-
-    const listContainer = renderer.container.querySelector('[data-testid="settings-model-list-container"]');
-    const extraContent = renderer.container.querySelector('[data-testid="extra-model-list-content"]');
-
-    expect(listContainer).not.toBeNull();
-    expect(extraContent).not.toBeNull();
-    expect(listContainer!.contains(extraContent)).toBe(true);
+    expect(onSelectModel).toHaveBeenCalledWith('gpt-5.6-sol', 'third-party');
   });
 });

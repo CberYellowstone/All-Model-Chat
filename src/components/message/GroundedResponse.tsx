@@ -7,7 +7,7 @@ import { ContextUrls } from './grounded-response/ContextUrls';
 import { SearchSources } from './grounded-response/SearchSources';
 import { MapsWidget } from './grounded-response/MapsWidget';
 import { IconGoogle } from '@/components/icons';
-import type { LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 
 interface GroundedResponseProps {
   messageId?: string;
@@ -25,6 +25,7 @@ interface GroundedResponseProps {
   onOpenSidePanel: (content: SideViewContent) => void;
   files?: UploadedFile[];
   liveArtifactFontSize?: number;
+  liveArtifactsMode?: boolean;
 }
 
 interface SearchQueryMetadata {
@@ -48,6 +49,7 @@ const SEARCH_ENTRY_WIDGET_OVERRIDES = `
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
+    margin: 0 !important;
   }
 
   .container::before,
@@ -66,6 +68,8 @@ const SEARCH_ENTRY_WIDGET_OVERRIDES = `
     align-items: center;
     gap: 0.375rem;
     flex-shrink: 0;
+    margin: 0 !important;
+    line-height: 1.4;
     padding: 0.375rem 0.875rem;
     border-radius: 9999px;
     border: 1px solid var(--theme-border-secondary) !important;
@@ -146,12 +150,12 @@ const SearchEntryPointWidget: React.FC<{ renderedContent: string }> = ({ rendere
 
   return (
     <div className="flex items-center gap-3">
-      <div data-testid="search-entry-google-logo" className="flex-shrink-0">
+      <div data-testid="search-entry-google-logo" className="flex flex-shrink-0 items-center">
         <IconGoogle size={18} />
       </div>
       <div
         ref={hostRef}
-        className="search-entry-surface custom-scrollbar min-w-0 flex-1 overflow-x-auto bg-transparent pb-2"
+        className="search-entry-surface custom-scrollbar flex min-w-0 flex-1 items-center overflow-x-auto bg-transparent"
       />
     </div>
   );
@@ -173,6 +177,7 @@ export const GroundedResponse: React.FC<GroundedResponseProps> = ({
   onOpenSidePanel,
   files,
   liveArtifactFontSize,
+  liveArtifactsMode,
 }) => {
   const content = useMemo(() => insertCitations(text, metadata), [text, metadata]);
   const sources = useMemo(() => extractSources(metadata), [metadata]);
@@ -206,16 +211,13 @@ export const GroundedResponse: React.FC<GroundedResponseProps> = ({
           onOpenSidePanel={onOpenSidePanel}
           files={files}
           liveArtifactFontSize={liveArtifactFontSize}
+          liveArtifactsMode={liveArtifactsMode}
         />
       </div>
 
       <ContextUrls metadata={urlContextMetadata} />
 
-      {mapsPlaces.length > 0 ? (
-        <MapsWidget places={mapsPlaces} />
-      ) : (
-        <SearchSources sources={sources} />
-      )}
+      {mapsPlaces.length > 0 ? <MapsWidget places={mapsPlaces} /> : <SearchSources sources={sources} />}
     </div>
   );
 };

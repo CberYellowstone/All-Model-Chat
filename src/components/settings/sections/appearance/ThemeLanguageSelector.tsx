@@ -1,8 +1,12 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { IconThemeSystem, IconThemeDark, IconThemeGray, IconThemeLight } from '@/components/icons';
 import { type AppSettings } from '@/types';
-import { Select } from '@/components/shared/Select';
+import {
+  SETTINGS_SECTION_CARD_CLASS,
+  SETTINGS_SEGMENTED_ACTIVE_CLASS,
+  SETTINGS_SEGMENTED_IDLE_CLASS,
+  SETTINGS_SEGMENTED_TRACK_CLASS,
+} from '@/constants/designTokens';
 
 interface ThemeLanguageSelectorProps {
   settings: AppSettings;
@@ -12,10 +16,10 @@ interface ThemeLanguageSelectorProps {
 export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ settings, onUpdate }) => {
   const { t } = useI18n();
   const themeOptions = [
-    { id: 'system', labelKey: 'settingsThemeSystem', icon: <IconThemeSystem size={16} strokeWidth={1.5} /> },
-    { id: 'onyx', labelKey: 'settingsThemeDark', icon: <IconThemeDark size={16} strokeWidth={1.5} /> },
-    { id: 'graphite', labelKey: 'settingsThemeGray', icon: <IconThemeGray size={16} strokeWidth={1.5} /> },
-    { id: 'pearl', labelKey: 'settingsThemeLight', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
+    { id: 'system', labelKey: 'settingsThemeSystem' },
+    { id: 'onyx', labelKey: 'settingsThemeDark' },
+    { id: 'graphite', labelKey: 'settingsThemeGray' },
+    { id: 'pearl', labelKey: 'settingsThemeLight' },
   ] as const;
 
   const languageOptions = [
@@ -25,21 +29,22 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ se
   ] as const;
 
   return (
-    <div className="grid grid-cols-1 gap-2">
-      <div className="flex items-center justify-between py-3 transition-colors">
-        <span className="text-sm font-medium text-[var(--theme-text-primary)] flex items-center gap-2">
-          {t('settingsTheme')}
-        </span>
-        <div className="flex p-1 bg-[var(--theme-bg-tertiary)]/50 rounded-lg border border-[var(--theme-border-secondary)]">
+    <div className={`${SETTINGS_SECTION_CARD_CLASS} space-y-1`}>
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-1"
+        data-settings-item="interface-theme"
+      >
+        <span className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsTheme')}</span>
+        <div className={`${SETTINGS_SEGMENTED_TRACK_CLASS} flex-wrap`} role="group" aria-label={t('settingsTheme')}>
           {themeOptions.map((option) => (
             <button
               key={option.id}
+              type="button"
               onClick={() => onUpdate('themeId', option.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] ${
-                settings.themeId === option.id
-                  ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] shadow-sm'
-                  : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
-              }`}
+              className={
+                settings.themeId === option.id ? SETTINGS_SEGMENTED_ACTIVE_CLASS : SETTINGS_SEGMENTED_IDLE_CLASS
+              }
+              title={t(option.labelKey)}
             >
               {t(option.labelKey)}
             </button>
@@ -47,21 +52,26 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({ se
         </div>
       </div>
 
-      <Select
-        id="language-selector"
-        label={t('settingsLanguage')}
-        layout="horizontal"
-        value={settings.language}
-        onChange={(e) => onUpdate('language', e.target.value as AppSettings['language'])}
-        className="py-3"
-        wrapperClassName="relative w-48"
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-[var(--theme-border-secondary)]/50 py-3"
+        data-settings-item="interface-language"
       >
-        {languageOptions.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </Select>
+        <span className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsLanguage')}</span>
+        <div className={SETTINGS_SEGMENTED_TRACK_CLASS} role="group" aria-label={t('settingsLanguage')}>
+          {languageOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => onUpdate('language', option.id as AppSettings['language'])}
+              className={
+                settings.language === option.id ? SETTINGS_SEGMENTED_ACTIVE_CLASS : SETTINGS_SEGMENTED_IDLE_CLASS
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

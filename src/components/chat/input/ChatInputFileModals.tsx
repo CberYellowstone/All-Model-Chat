@@ -6,7 +6,7 @@ import {
   type VideoMetadata,
   type MediaResolution,
 } from '@/types';
-import { isMarkdownFile } from '@/utils/fileTypeClassification';
+import { isMarkdownFile } from '@/utils/file/fileTypeClassification';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 
 const LazyFileConfigModal = lazyNamedComponent(() => import('@/components/modals/FileConfigModal'), 'FileConfigModal');

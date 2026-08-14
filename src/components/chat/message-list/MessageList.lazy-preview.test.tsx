@@ -1,0 +1,136 @@
+import { act } from 'react';
+import { setupTestRenderer } from '@/test/render/renderer';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ChatMessage } from '@/types';
+import { createChatAreaProviderValue } from '@/test/layout/fixtures';
+import { createUploadedFile } from '@/test/data/factories';
+
+const file = createUploadedFile({
+  name: 'demo.png',
+  size: 128,
+  dataUrl: 'blob:demo',
+});
+
+const messages: ChatMessage[] = [
+  {
+    id: 'message-1',
+    role: 'model',
+    content: '',
+    files: [file],
+    timestamp: new Date('2026-04-10T00:00:00.000Z'),
+  },
+];
+
+const createProviderValue = () =>
+  createChatAreaProviderValue({
+    messageList: {
+      messages,
+      sessionTitle: 'Test',
+      currentModelId: 'gemini-2.5-flash',
+    },
+  });
+
+const mockedModuleIds = [
+  'react-virtuoso',
+  '../message/Message',
+  '../modals/FilePreviewModal',
+  '../modals/FileConfigModal',
+  './hooks/useMessageListScroll',
+  './ScrollNavigation',
+  './TextSelectionToolbar',
+  './MessageListFooter',
+  './WelcomeScreen',
+];
+
+const loadMessageList = async (moduleLoadTracker: { count: number }) => {
+  vi.resetModules();
+  const {
+    createFilePreviewModalMock,
+    createMessageListScrollMock,
+    createMessagePreviewButtonMock,
+    createNullComponentMock,
+    createVirtuosoMock,
+  } = await import('@/test/message-list/doubles');
+
+  vi.doMock('react-virtuoso', () => createVirtuosoMock<ChatMessage>());
+
+  vi.doMock('@/components/message/Message', () => createMessagePreviewButtonMock());
+
+  vi.doMock('@/components/modals/FilePreviewModal', () => {
+    return createFilePreviewModalMock({
+      onModuleLoad: () => {
+        moduleLoadTracker.count += 1;
+      },
+    });
+  });
+
+  vi.doMock('@/components/modals/FileConfigModal', () => createNullComponentMock('FileConfigModal'));
+
+  vi.doMock('./hooks/useMessageListScroll', () => createMessageListScrollMock());
+
+  vi.doMock('./ScrollNavigation', () => createNullComponentMock('ScrollNavigation'));
+
+  vi.doMock('./TextSelectionToolbar', () => createNullComponentMock('TextSelectionToolbar'));
+
+  vi.doMock('./MessageListFooter', () => createNullComponentMock('MessageListFooter'));
+
+  vi.doMock('./WelcomeScreen', () => createNullComponentMock('WelcomeScreen'));
+
+  const module = await import('./MessageList');
+  const fixtureModule = await import('@/test/layout/fixtures');
+  const i18nModule = await import('@/contexts/I18nContext');
+
+  return {
+    MessageList: module.MessageList,
+    applyChatAreaProviderValue: fixtureModule.applyChatAreaProviderValue,
+    ChatRuntimeTestProvider: fixtureModule.ChatRuntimeTestProvider,
+    I18nProvider: i18nModule.I18nProvider,
+  };
+};
+
+describe('MessageList preview chunking', () => {
+  const renderer = setupTestRenderer();
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+
+    mockedModuleIds.forEach((moduleId) => {
+      vi.doUnmock(moduleId);
+    });
+  });
+
+  it('does not load the file preview modal module until the user opens a preview', async () => {
+    const moduleLoadTracker = { count: 0 };
+    const { MessageList, applyChatAreaProviderValue, ChatRuntimeTestProvider, I18nProvider } =
+      await loadMessageList(moduleLoadTracker);
+    const providerValue = createProviderValue();
+
+    expect(moduleLoadTracker.count).toBe(0);
+    applyChatAreaProviderValue(providerValue);
+
+    act(() => {
+      renderer.root.render(
+        <I18nProvider>
+          <ChatRuntimeTestProvider value={providerValue}>
+            <MessageList />
+          </ChatRuntimeTestProvider>
+        </I18nProvider>,
+      );
+    });
+
+    expect(moduleLoadTracker.count).toBe(0);
+
+    const trigger = document.querySelector('[data-testid="open-preview-message-1"]');
+    expect(trigger).not.toBeNull();
+
+    await act(async () => {
+      trigger!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(moduleLoadTracker.count).toBe(1);
+    expect(document.querySelector('[data-testid="file-preview-modal"]')).toBeInTheDocument();
+  });
+});

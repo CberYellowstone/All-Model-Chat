@@ -1,6 +1,18 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { SlidersHorizontal, Globe, Check, Terminal, Link, X, Telescope, Calculator, AlertTriangle, MapPin } from 'lucide-react';
+import {
+  SlidersHorizontal,
+  Globe,
+  Check,
+  Terminal,
+  Link,
+  X,
+  Telescope,
+  Calculator,
+  AlertTriangle,
+  MapPin,
+  Brain,
+} from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconPython } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
@@ -48,10 +60,22 @@ const ActiveToolBadge: React.FC<{
   </>
 );
 
-const BUILT_IN_TOOL_IDS = new Set<ChatToolId>(['deepSearch', 'googleSearch', 'googleMaps', 'codeExecution', 'urlContext']);
+const BUILT_IN_TOOL_IDS = new Set<ChatToolId>([
+  'deepSearch',
+  'googleSearch',
+  'googleMaps',
+  'codeExecution',
+  'urlContext',
+]);
 
 const isToggleableToolId = (id: ChatToolId): id is ToggleableChatToolId =>
-  id === 'deepSearch' || id === 'googleSearch' || id === 'googleMaps' || id === 'codeExecution' || id === 'localPython' || id === 'urlContext';
+  id === 'deepSearch' ||
+  id === 'googleSearch' ||
+  id === 'googleMaps' ||
+  id === 'codeExecution' ||
+  id === 'localPython' ||
+  id === 'urlContext' ||
+  id === 'alwaysKeepThinking';
 
 const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
   switch (icon) {
@@ -69,6 +93,8 @@ const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
       return <Link size={size} strokeWidth={2} />;
     case 'calculator':
       return <Calculator size={size} strokeWidth={2} />;
+    case 'brain':
+      return <Brain size={size} strokeWidth={2} />;
   }
 };
 

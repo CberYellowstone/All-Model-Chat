@@ -117,7 +117,7 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ initialScenario,
             <ScrollText size={14} />
             <span>{t('scenariosSystemPromptLabel')}</span>
             {scenario.systemInstruction?.trim() && (
-              <span className="ml-auto flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[var(--theme-text-link)]">
+              <span className="ml-auto flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--theme-text-link)]">
                 <Sparkles size={10} /> {t('scenariosEditorSet')}
               </span>
             )}

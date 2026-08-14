@@ -23,10 +23,12 @@ vi.mock('@/runtime/runtimeConfig', () => ({
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { useSettingsStore } from './settingsStore';
 import { dbService } from '@/services/db/dbService';
+import { logService } from '@/services/logService';
 import { createTheme } from '@/test/data/factories';
 import type { AppSettings } from '@/types';
 
-const createStoredSettingsSnapshot = (overrides: Partial<AppSettings>): AppSettings => overrides as AppSettings;
+const createStoredSettingsSnapshot = (overrides: Record<string, unknown>): AppSettings =>
+  overrides as unknown as AppSettings;
 
 describe('settingsStore', () => {
   beforeEach(() => {
@@ -113,23 +115,49 @@ describe('settingsStore', () => {
       }));
       expect(dbService.setAppSettings).not.toHaveBeenCalled();
     });
+
+    it('mirrors the toggled isLoggingEnabled into the log gate on save', () => {
+      useSettingsStore.setState({ isSettingsLoaded: true });
+      useSettingsStore.getState().setAppSettings((prev) => ({
+        ...prev,
+        isLoggingEnabled: true,
+      }));
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(true);
+    });
   });
 
   describe('loadSettings', () => {
-    it('defaults to Gemini Native API mode with isolated OpenAI-compatible settings', async () => {
+    it('mirrors the loaded isLoggingEnabled value into the log gate', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(createStoredSettingsSnapshot({ isLoggingEnabled: true }));
+
+      await useSettingsStore.getState().loadSettings();
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(true);
+    });
+
+    it('closes the log gate when settings fail to load', async () => {
+      vi.mocked(dbService.getAppSettings).mockRejectedValue(new Error('DB fail'));
+
+      await useSettingsStore.getState().loadSettings();
+
+      expect(logService.setEnabled).toHaveBeenCalledWith(false);
+    });
+
+    it('defaults to Gemini native provider with an isolated third-party provider config', async () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(undefined);
 
       await useSettingsStore.getState().loadSettings();
 
       const { appSettings } = useSettingsStore.getState();
-      expect(appSettings.apiMode).toBe('gemini-native');
-      expect(appSettings.isOpenAICompatibleApiEnabled).toBe(false);
+      expect(appSettings.providerId).toBe('gemini-native');
       expect(appSettings.apiKey).toBeNull();
-      expect(appSettings.openaiCompatibleApiKey).toBeNull();
-      expect(appSettings.openaiCompatibleBaseUrl).toBe('https://api.openai.com/v1');
-      expect(appSettings.modelId).toBe('gemini-3-flash-preview');
-      expect(appSettings.openaiCompatibleModelId).toBe('gpt-5.5');
-      expect(appSettings.openaiCompatibleModels).toEqual([{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }]);
+      expect(appSettings.modelId).toBe('gemini-3.7-flash');
+      expect(appSettings.thirdPartyApi.providers.openai.baseUrl).toBe('https://api.openai.com/v1');
+      expect(appSettings.thirdPartyApi.providers.openai.modelId).toBe('gpt-5.6-sol');
+      expect(appSettings.thirdPartyApi.providers.openai.models).toEqual([
+        { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true },
+      ]);
     });
 
     it('provides English as the default input translation target language', async () => {
@@ -140,7 +168,7 @@ describe('settingsStore', () => {
       expect(useSettingsStore.getState().appSettings.translationTargetLanguage).toBe('English');
     });
 
-    it('migrates the previous speech-to-text default to Gemini 3.5 Flash', async () => {
+    it('migrates the previous speech-to-text default to the current default', async () => {
       vi.mocked(dbService.getAppSettings).mockResolvedValue(
         createStoredSettingsSnapshot({
           transcriptionModelId: 'gemini-3-flash-preview',
@@ -149,7 +177,7 @@ describe('settingsStore', () => {
 
       await useSettingsStore.getState().loadSettings();
 
-      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.5-flash');
+      expect(useSettingsStore.getState().appSettings.transcriptionModelId).toBe('gemini-3.7-flash');
     });
 
     it('preserves user edits made before settings finish loading', async () => {
@@ -211,8 +239,8 @@ describe('settingsStore', () => {
 
       const { appSettings } = useSettingsStore.getState();
       expect(appSettings.modelId).toBe('gemini-3.1-pro-preview');
-      expect(appSettings.openaiCompatibleModelId).toBe('openai/custom-gpt');
-      expect(appSettings.openaiCompatibleModels).toEqual([
+      expect(appSettings.thirdPartyApi.providers.openai.modelId).toBe('openai/custom-gpt');
+      expect(appSettings.thirdPartyApi.providers.openai.models).toEqual([
         { id: 'openai/custom-gpt', name: 'Custom GPT', isPinned: true },
       ]);
     });
@@ -231,9 +259,8 @@ describe('settingsStore', () => {
       await useSettingsStore.getState().loadSettings();
 
       const { appSettings } = useSettingsStore.getState();
-      expect(appSettings.isOpenAICompatibleApiEnabled).toBe(false);
-      expect(appSettings.apiMode).toBe('gemini-native');
-      expect(appSettings.openaiCompatibleModelId).toBe('openai/custom-gpt');
+      expect(appSettings.providerId).toBe('gemini-native');
+      expect(appSettings.thirdPartyApi.providers.openai.modelId).toBe('openai/custom-gpt');
     });
 
     it('sets isSettingsLoaded when no stored settings', async () => {
@@ -296,6 +323,88 @@ describe('settingsStore', () => {
       const state = useSettingsStore.getState();
       expect(state.appSettings.modelId).toBe('gemini-2.5-flash-preview-09-2025');
       expect(state.appSettings.transcriptionModelId).toBe('gemini-2.5-flash-lite-preview-09-2025');
+    });
+
+    it('sanitizes thirdPartyApi: backfills a provider missing from persisted data', async () => {
+      // Persisted record references deepseek as active but the providers map is
+      // missing the deepseek entry entirely (old version / hand-edited data).
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          thirdPartyApi: {
+            providers: {
+              openai: {
+                apiKey: 'sk-openai',
+                baseUrl: 'https://api.openai.com/v1',
+                modelId: 'gpt-5.6-sol',
+                models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' }],
+                protocol: 'openai-compatible',
+                enabled: true,
+              },
+            } as unknown as AppSettings['thirdPartyApi']['providers'],
+          } as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const { thirdPartyApi } = useSettingsStore.getState().appSettings;
+      // deepseek entry is backfilled with defaults instead of disappearing.
+      expect(thirdPartyApi.providers.deepseek).toBeDefined();
+      expect(thirdPartyApi.providers.deepseek.baseUrl).toBe('https://api.deepseek.com');
+      expect(thirdPartyApi.providers.deepseek.protocol).toBe('openai-compatible');
+    });
+
+    it('sanitizes thirdPartyApi: folds legacy openaiCompatible* fields into providers.openai', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          openaiCompatibleApiKey: 'sk-legacy',
+          openaiCompatibleBaseUrl: 'https://legacy.example.com/v1',
+          openaiCompatibleModelId: 'legacy-gpt',
+          openaiCompatibleModels: [{ id: 'legacy-gpt', name: 'Legacy GPT' }],
+          thirdPartyApi: undefined as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const openai = useSettingsStore.getState().appSettings.thirdPartyApi.providers.openai;
+      expect(openai.apiKey).toBe('sk-legacy');
+      expect(openai.baseUrl).toBe('https://legacy.example.com/v1');
+      expect(openai.modelId).toBe('legacy-gpt');
+      expect(openai.models.some((model) => model.id === 'legacy-gpt')).toBe(true);
+    });
+
+    it('sanitizes thirdPartyApi: coerces protocol/enabled and dedupes models', async () => {
+      vi.mocked(dbService.getAppSettings).mockResolvedValue(
+        createStoredSettingsSnapshot({
+          thirdPartyApi: {
+            providers: {
+              anthropic: {
+                apiKey: 'sk-anthropic',
+                baseUrl: 'https://api.anthropic.com',
+                modelId: 'claude-fable-5',
+                models: [
+                  { id: 'claude-fable-5', name: 'Claude Fable 5' },
+                  { id: 'claude-fable-5', name: 'Claude Fable 5' }, // duplicate
+                ],
+                protocol:
+                  'invalid-protocol' as unknown as AppSettings['thirdPartyApi']['providers']['anthropic']['protocol'],
+                enabled: 'yes' as unknown as boolean,
+              },
+            } as unknown as AppSettings['thirdPartyApi']['providers'],
+          } as unknown as AppSettings['thirdPartyApi'],
+        }),
+      );
+
+      await useSettingsStore.getState().loadSettings();
+
+      const anthropic = useSettingsStore.getState().appSettings.thirdPartyApi.providers.anthropic;
+      // Invalid protocol falls back to the provider default (anthropic).
+      expect(anthropic.protocol).toBe('anthropic');
+      // Non-strict-boolean enabled coerces to false (only === true stays true).
+      expect(anthropic.enabled).toBe(false);
+      // Duplicate models deduped.
+      expect(anthropic.models.filter((model) => model.id === 'claude-fable-5')).toHaveLength(1);
     });
   });
 

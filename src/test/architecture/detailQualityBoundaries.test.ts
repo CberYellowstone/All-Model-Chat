@@ -32,6 +32,7 @@ describe('detail quality boundaries', () => {
     expect(useMessageSenderSource).toContain('validateMessageBeforeSend({');
     expect(useMessageSenderSource).not.toContain('const imageReferenceCount = filesToUse.filter');
     expect(useMessageSenderSource).not.toContain('messageSenderImagenTextOnly');
+    expect(useMessageSenderSource).not.toContain('messageSenderAttachmentsNotSupported');
   });
 
   it('keeps API adapters independent of chat-streaming reducer internals', () => {
@@ -214,7 +215,7 @@ describe('detail quality boundaries', () => {
   it('keeps focused test helpers in named subdirectories', () => {
     const expectedHelperFiles = [
       'src/test/browser/environment.ts',
-      'src/test/chat-area/fixtures.tsx',
+      'src/test/layout/fixtures.tsx',
       'src/test/chat-input/contextFixtures.ts',
       'src/test/chat-input/harness.tsx',
       'src/test/chat-tools/fixtures.ts',
@@ -288,10 +289,10 @@ describe('detail quality boundaries', () => {
       readProjectFile(relativePath).includes('@/components/'),
     );
 
-    expect(fs.existsSync(path.join(projectRoot, 'src/features/chat-export/ChatExportRenderer.tsx'))).toBe(true);
+    expect(fs.existsSync(path.join(projectRoot, 'src/hooks/data-management/ChatExportRenderer.tsx'))).toBe(true);
     expect(fs.existsSync(path.join(projectRoot, 'src/utils/export/conversation.ts'))).toBe(false);
     expect(componentImportOffenders).toEqual([]);
-    expect(chatSessionExportSource).toContain("from '@/features/chat-export/ChatExportRenderer'");
+    expect(chatSessionExportSource).toContain("from './ChatExportRenderer'");
   });
 
   it('does not pass the virtualized scroll container into full-session export', () => {

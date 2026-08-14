@@ -72,6 +72,15 @@ export interface ChatMessage {
   generationEndTime?: Date;
   thinkingTimeMs?: number;
   firstTokenTimeMs?: number;
+  // True while the model is actively reasoning (interleaved code-execution
+  // round trips and resumed thinking keep it true); the thinking strip keys
+  // off this so re-entered thinking re-shows instead of staying collapsed.
+  thinkingActive?: boolean;
+  // Source of the thinking text, recorded the first time a thought arrives.
+  // Third-party streams are forced into the flat strip (5-line scroll, no
+  // titles) regardless of content, so a markdown header in third-party
+  // reasoning can never masquerade as a Gemini sectioned stream.
+  thinkingSource?: 'gemini' | 'third-party';
   promptTokens?: number;
   cachedPromptTokens?: number;
   completionTokens?: number;
@@ -111,6 +120,15 @@ export interface SavedChatSession {
   settings: ChatSettings;
   isPinned?: boolean;
   groupId?: string | null;
+  createdTabId?: string; // for tab-isolated empty session reuse
+  /**
+   * Title origin:
+   * - 'default': heuristic title or 'New Chat' (may be overwritten by auto-titling)
+   * - 'auto': AI-generated title (never auto-titled again)
+   * - 'manual': user-renamed / scenario / fork / copy title (never auto-titled again)
+   * - undefined: legacy session — eligibility inferred from the heuristic (see isSessionAutoTitleEligible)
+   */
+  titleSource?: 'default' | 'auto' | 'manual';
 }
 
 export interface PreloadedMessage {

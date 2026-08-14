@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { setupProviderTestRenderer } from '@/test/render/providerRenderer';
 import { describe, expect, it, vi } from 'vitest';
-import { ChatRuntimeTestProvider, createChatAreaProviderValue } from '@/test/chat-area/fixtures';
+import { ChatRuntimeTestProvider, createChatAreaProviderValue } from '@/test/layout/fixtures';
 import {
   createChatInputActionsContextValue,
   createChatInputComposerStatusContextValue,

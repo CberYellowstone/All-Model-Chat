@@ -55,4 +55,78 @@ describe('openaiCompatibleMessages', () => {
       stream_options: { include_usage: true },
     });
   });
+
+  it('maps thinkingLevel to GLM thinking enabled/disabled', () => {
+    expect(
+      buildOpenAICompatibleRequestBody('glm-5.2', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false)
+        .thinking,
+    ).toEqual({ type: 'enabled' });
+    expect(
+      buildOpenAICompatibleRequestBody('glm-5.2', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false)
+        .thinking,
+    ).toEqual({ type: 'disabled' });
+  });
+
+  it('maps thinkingLevel to OpenAI GPT-5 reasoning_effort', () => {
+    expect(
+      buildOpenAICompatibleRequestBody('gpt-5.6-sol', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('high');
+    expect(
+      buildOpenAICompatibleRequestBody(
+        'gpt-5.6-terra',
+        [],
+        [{ text: 'hi' }],
+        { thinkingLevel: 'MEDIUM' },
+        'user',
+        false,
+      ).reasoning_effort,
+    ).toBe('medium');
+    expect(
+      buildOpenAICompatibleRequestBody('gpt-5.6-luna', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('low');
+    expect(
+      buildOpenAICompatibleRequestBody('gpt-5.6-sol', [], [{ text: 'hi' }], { thinkingLevel: 'MINIMAL' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('none');
+  });
+
+  it('defaults GPT-5 reasoning_effort to high when thinkingLevel is omitted', () => {
+    expect(
+      buildOpenAICompatibleRequestBody('gpt-5.6-sol', [], [{ text: 'hi' }], {}, 'user', false).reasoning_effort,
+    ).toBe('high');
+  });
+
+  it('does not attach reasoning_effort for non-GPT-5 OpenAI-compatible models', () => {
+    expect(
+      buildOpenAICompatibleRequestBody('gpt-4o-mini', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false)
+        .reasoning_effort,
+    ).toBeUndefined();
+  });
+
+  it('maps thinkingLevel to Kimi K3 reasoning_effort (low/high/max)', () => {
+    expect(
+      buildOpenAICompatibleRequestBody('kimi-k3', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('max');
+    expect(
+      buildOpenAICompatibleRequestBody('kimi-k3', [], [{ text: 'hi' }], { thinkingLevel: 'MEDIUM' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('high');
+    expect(
+      buildOpenAICompatibleRequestBody('kimi-k3', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('low');
+    expect(
+      buildOpenAICompatibleRequestBody('kimi-k3', [], [{ text: 'hi' }], { thinkingLevel: 'MINIMAL' }, 'user', false)
+        .reasoning_effort,
+    ).toBe('low');
+  });
+
+  it('defaults Kimi K3 reasoning_effort to max when thinkingLevel is omitted', () => {
+    expect(buildOpenAICompatibleRequestBody('kimi-k3', [], [{ text: 'hi' }], {}, 'user', false).reasoning_effort).toBe(
+      'max',
+    );
+  });
 });

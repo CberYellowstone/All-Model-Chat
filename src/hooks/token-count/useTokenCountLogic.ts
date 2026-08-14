@@ -1,12 +1,12 @@
 import { logService } from '@/services/logService';
 import { getErrorMessage } from '@/utils/errorMessage';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type UploadedFile, type AppSettings, MediaResolution } from '@/types';
+import { type UploadedFile, type AppSettings, type ThirdPartyProviderId, MediaResolution } from '@/types';
 import { buildContentParts } from '@/utils/chat/builder';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { createManagedObjectUrl } from '@/services/objectUrlManager';
-import { cleanupFilePreviewUrl, cleanupFilePreviewUrls } from '@/utils/filePreviewUrls';
+import { cleanupFilePreviewUrl, cleanupFilePreviewUrls } from '@/utils/file/filePreviewUrls';
 import { countTokensApi } from '@/services/api/generation/tokenApi';
 import { estimateVideoTokensForFiles } from '@/utils/tokenEstimation';
 import {
@@ -218,7 +218,7 @@ export const useTokenCountLogic = ({
     performCalculation(text, files, selectedModelId);
   };
 
-  const handleModelSelect = (id: string) => {
+  const handleModelSelect = (id: string, _providerId?: ThirdPartyProviderId) => {
     setSelectedModelId(id);
     setTokenCount(null);
   };

@@ -18,21 +18,18 @@ import {
   type Theme,
   type ThinkingLevel,
 } from '@/types';
-import { isThirdPartyApiActive } from '@/utils/thirdPartyApiActive';
-import {
-  buildProviderAwareModelList,
-  getThirdPartyProviderModelId,
-  getThirdPartyProviderModels,
-} from '@/utils/thirdPartyApiProviders';
+import { buildProviderAwareModelList } from '@/utils/thirdPartyApiProviders';
+import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 import { useDataExport } from '@/hooks/data-management/useDataExport';
 import { useDataImport } from '@/hooks/data-management/useDataImport';
 import { useChatSessionExport } from '@/hooks/data-management/useChatSessionExport';
 import { useAppInitialization } from './useAppInitialization';
 import { useAppTitle } from './useAppTitle';
+import { useAppFavicon } from './useAppFavicon';
 import { focusChatInput } from '@/utils/chat-input/focus';
 import { useAppPromptModes } from './useAppPromptModes';
 import { DEFAULT_THINKING_BUDGET } from '@/constants/modelConfiguration';
-import { getModelCapabilities } from '@/utils/modelCapabilities';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
 
 type AppTranslator = ReturnType<typeof getTranslator>;
 type ChatViewModel = ReturnType<typeof useChat>;
@@ -161,6 +158,8 @@ export const useApp = (): AppViewModel => {
     sessionTitle,
   });
 
+  useAppFavicon({ activeSessionId });
+
   const dataExport = useDataExport({
     appSettings,
     savedGroups,
@@ -275,11 +274,9 @@ export const useApp = (): AppViewModel => {
   );
 
   const getCurrentModelDisplayName = useCallback(() => {
-    const isThirdPartyMode = isThirdPartyApiActive(appSettings);
-    const modelIdToDisplay = isThirdPartyMode
-      ? getThirdPartyProviderModelId(appSettings)
-      : currentChatSettings.modelId || appSettings.modelId;
-    const availableModels = isThirdPartyMode ? getThirdPartyProviderModels(appSettings) : apiModels;
+    const apiRoute = resolveChatApiRoute(appSettings, currentChatSettings);
+    const modelIdToDisplay = apiRoute.modelId;
+    const availableModels = apiRoute.provider ? apiRoute.provider.models : apiModels;
 
     if (isSwitchingModel) {
       return t('appSwitchingModel');
@@ -305,7 +302,7 @@ export const useApp = (): AppViewModel => {
     }
 
     return availableModels.length === 0 ? t('appNoModelsAvailable') : t('appNoModelSelected');
-  }, [apiModels, appSettings, currentChatSettings.modelId, isSwitchingModel, t]);
+  }, [apiModels, appSettings, currentChatSettings, isSwitchingModel, t]);
 
   return {
     appSettings,

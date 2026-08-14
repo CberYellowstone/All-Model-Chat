@@ -14,6 +14,14 @@ import {
 import type { LogViewerProps } from '@/components/log-viewer/LogViewer';
 import type { PwaInstallState } from '@/pwa/install';
 import { useAppDataSize } from '@/hooks/data-management/useAppDataSize';
+import { Toggle } from '@/components/shared/Toggle';
+import type { AppSettings } from '@/types';
+import {
+  SETTINGS_DANGER_OUTLINE_BUTTON_CLASS,
+  SETTINGS_DANGER_SURFACE_BUTTON_CLASS,
+  SETTINGS_OUTLINE_BUTTON_CLASS,
+} from '@/constants/buttonClasses';
+import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/constants/designTokens';
 
 interface DataManagementSectionProps {
   onClearHistory: () => void;
@@ -29,6 +37,8 @@ interface DataManagementSectionProps {
   onImportScenarios: (file: File) => void;
   onExportScenarios: () => void;
   onReset: () => void;
+  settings: AppSettings;
+  onUpdate: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 }
 
 const ActionRow: React.FC<{
@@ -39,14 +49,14 @@ const ActionRow: React.FC<{
   labelClassName?: string;
   className?: string;
 }> = ({ label, children, description, icon, labelClassName, className }) => (
-  <div className={`flex items-center justify-between py-3 ${className || ''}`}>
-    <div className="flex items-center gap-3">
+  <div className={`flex items-center justify-between gap-3 py-3 ${className || ''}`}>
+    <div className="flex min-w-0 items-center gap-3">
       {icon && (
         <div className={`flex-shrink-0 ${labelClassName ? 'opacity-90' : 'text-[var(--theme-text-tertiary)]'}`}>
           {icon}
         </div>
       )}
-      <div className="flex flex-col">
+      <div className="flex min-w-0 flex-col">
         <span className={`text-sm font-medium ${labelClassName || 'text-[var(--theme-text-primary)]'}`}>{label}</span>
         {description && (
           <p className={`text-xs mt-0.5 ${labelClassName ? 'opacity-75' : 'text-[var(--theme-text-tertiary)]'}`}>
@@ -55,7 +65,7 @@ const ActionRow: React.FC<{
         )}
       </div>
     </div>
-    <div className="flex items-center gap-2 ml-4 flex-shrink-0">{children}</div>
+    <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">{children}</div>
   </div>
 );
 
@@ -65,12 +75,12 @@ const DataCard: React.FC<{ title: string; icon?: React.ReactNode; children: Reac
   children,
   className,
 }) => (
-  <div className={`py-2 ${className || ''}`}>
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] mb-2 flex items-center gap-2">
+  <div className={`${SETTINGS_SECTION_CARD_CLASS} ${className || ''}`}>
+    <h4 className={`${SETTINGS_SECTION_LABEL_CLASS} mb-1 flex items-center gap-2`}>
       {icon}
       {title}
     </h4>
-    <div className="divide-y divide-[var(--theme-border-primary)]/50">{children}</div>
+    <div className="divide-y divide-[var(--theme-border-secondary)]/40">{children}</div>
   </div>
 );
 
@@ -88,6 +98,8 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
   onImportScenarios,
   onExportScenarios,
   onReset,
+  settings,
+  onUpdate,
 }) => {
   const { t } = useI18n();
   const settingsImportRef = useRef<HTMLInputElement>(null);
@@ -100,10 +112,6 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
     refresh: refreshAppDataSize,
   } = useAppDataSize();
 
-  const btnClass =
-    'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--theme-bg-secondary)] border flex items-center gap-1.5';
-  const outlineBtnClass = `${btnClass} bg-transparent border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]`;
-  const whiteDangerBtnClass = `${btnClass} border-white/30 bg-white/10 text-white hover:bg-white/20 focus:ring-white/50 focus:ring-offset-red-600`;
   const isInstallDisabled = installState === 'installed';
   const installDescription =
     installState === 'installed'
@@ -144,87 +152,119 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
-      <DataCard title={t('settingsDataImportsExports')} icon={<Database size={14} strokeWidth={1.5} />}>
-        {importExportRows.map(({ key, label, icon, importRef, onImport, onExport }) => (
-          <ActionRow key={key} label={label} icon={icon}>
-            <button onClick={onExport} className={outlineBtnClass}>
-              <Download size={12} strokeWidth={1.5} /> {t('export')}
+    <div className="space-y-4">
+      <div data-settings-item="data-import-export">
+        <DataCard title={t('settingsDataImportsExports')} icon={<Database size={14} strokeWidth={1.5} />}>
+          {importExportRows.map(({ key, label, icon, importRef, onImport, onExport }) => (
+            <div key={key} data-settings-item={`data-${key}`}>
+              <ActionRow label={label} icon={icon}>
+                <button type="button" onClick={onExport} className={SETTINGS_OUTLINE_BUTTON_CLASS}>
+                  <Download size={12} strokeWidth={1.5} /> {t('export')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => importRef.current?.click()}
+                  className={SETTINGS_OUTLINE_BUTTON_CLASS}
+                >
+                  <Upload size={12} strokeWidth={1.5} /> {t('import')}
+                </button>
+                <input
+                  type="file"
+                  ref={importRef}
+                  onChange={() => handleFileImport(importRef, onImport)}
+                  accept=".json"
+                  className="hidden"
+                />
+              </ActionRow>
+            </div>
+          ))}
+        </DataCard>
+      </div>
+
+      <div data-settings-item="data-system-tools">
+        <DataCard title={t('settingsSystemTools')} icon={<Settings size={14} strokeWidth={1.5} />}>
+          <ActionRow label={t('settingsLocalAppData')} description={localAppDataDescription}>
+            <button
+              type="button"
+              onClick={() => void refreshAppDataSize()}
+              disabled={isAppDataSizeLoading}
+              className={SETTINGS_OUTLINE_BUTTON_CLASS}
+            >
+              <RefreshCw size={12} strokeWidth={1.5} /> {t('refresh')}
             </button>
-            <button onClick={() => importRef.current?.click()} className={outlineBtnClass}>
-              <Upload size={12} strokeWidth={1.5} /> {t('import')}
-            </button>
-            <input
-              type="file"
-              ref={importRef}
-              onChange={() => handleFileImport(importRef, onImport)}
-              accept=".json"
-              className="hidden"
-            />
           </ActionRow>
-        ))}
-      </DataCard>
+          <div data-settings-item="data-enable-logging">
+            <ActionRow label={t('settingsEnableLogging')} description={t('settingsEnableLoggingDescription')}>
+              <Toggle
+                checked={settings.isLoggingEnabled ?? false}
+                onChange={(enabled) => onUpdate('isLoggingEnabled', enabled)}
+                ariaLabel={t('settingsEnableLogging')}
+              />
+            </ActionRow>
+          </div>
+          <div data-settings-item="data-logs">
+            <ActionRow label={t('settingsViewLogsAndUsage')}>
+              <button
+                type="button"
+                onClick={() => onOpenLogViewer({ initialTab: 'usage', initialUsageTab: 'overview' })}
+                className={SETTINGS_OUTLINE_BUTTON_CLASS}
+              >
+                {t('settingsViewLogs')}
+              </button>
+              <button type="button" onClick={onClearLogs} className={SETTINGS_DANGER_OUTLINE_BUTTON_CLASS}>
+                <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearLogs')}
+              </button>
+            </ActionRow>
+          </div>
+          <div data-settings-item="data-install-app">
+            <ActionRow label={t('settingsInstallApp')} description={installDescription}>
+              <button
+                type="button"
+                onClick={onInstallPwa}
+                disabled={isInstallDisabled}
+                aria-label={t('settingsInstallAppAria')}
+                className={SETTINGS_OUTLINE_BUTTON_CLASS}
+              >
+                {t('settingsInstallApp')}
+              </button>
+            </ActionRow>
+          </div>
+        </DataCard>
+      </div>
 
-      <DataCard title={t('settingsSystemTools')} icon={<Settings size={14} strokeWidth={1.5} />}>
-        <ActionRow label={t('settingsLocalAppData')} description={localAppDataDescription}>
-          <button
-            onClick={() => void refreshAppDataSize()}
-            disabled={isAppDataSizeLoading}
-            className={`${outlineBtnClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <RefreshCw size={12} strokeWidth={1.5} /> {t('refresh')}
-          </button>
-        </ActionRow>
-        <ActionRow label={t('settingsViewLogsAndUsage')}>
-          <button
-            onClick={() => onOpenLogViewer({ initialTab: 'usage', initialUsageTab: 'overview' })}
-            className={outlineBtnClass}
-          >
-            {t('settingsViewLogsAndUsage')}
-          </button>
-          <button
-            onClick={onClearLogs}
-            className={`${outlineBtnClass} text-[var(--theme-text-danger)] hover:bg-[var(--theme-bg-danger)]/10 hover:text-[var(--theme-text-danger)] border-[var(--theme-bg-danger)]/30`}
-          >
-            <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearLogs')}
-          </button>
-        </ActionRow>
-        <ActionRow label={t('settingsInstallApp')} description={installDescription}>
-          <button
-            onClick={onInstallPwa}
-            disabled={isInstallDisabled}
-            aria-label={t('settingsInstallAppAria')}
-            className={`${outlineBtnClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {t('settingsInstallApp')}
-          </button>
-        </ActionRow>
-      </DataCard>
-
-      <div className="p-5 rounded-xl bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg border border-red-800/50">
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
+      <div
+        className="rounded-xl border border-red-800/40 bg-gradient-to-br from-red-600 to-red-700 p-5 text-white shadow-lg"
+        data-settings-item="data-danger"
+      >
+        <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
           <AlertTriangle size={16} strokeWidth={2} className="text-white" />
           <h4 className="text-xs font-bold uppercase tracking-wider text-white">{t('settingsDangerZone')}</h4>
         </div>
 
         <div className="divide-y divide-white/10">
-          <ActionRow label={t('settingsReset')} labelClassName="text-white">
-            <button onClick={onReset} className={whiteDangerBtnClass}>
-              <RefreshCw size={12} strokeWidth={1.5} /> {t('settingsReset')}
-            </button>
-          </ActionRow>
+          <div data-settings-item="data-reset">
+            <ActionRow label={t('settingsReset')} labelClassName="text-white">
+              <button type="button" onClick={onReset} className={SETTINGS_DANGER_SURFACE_BUTTON_CLASS}>
+                <RefreshCw size={12} strokeWidth={1.5} /> {t('settingsReset')}
+              </button>
+            </ActionRow>
+          </div>
 
-          <ActionRow label={t('settingsClearHistory')} labelClassName="text-white">
-            <button onClick={onClearHistory} className={whiteDangerBtnClass}>
-              <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearHistory')}
-            </button>
-          </ActionRow>
+          <div data-settings-item="data-clear-history">
+            <ActionRow label={t('settingsClearHistory')} labelClassName="text-white">
+              <button type="button" onClick={onClearHistory} className={SETTINGS_DANGER_SURFACE_BUTTON_CLASS}>
+                <Trash2 size={12} strokeWidth={1.5} /> {t('settingsClearHistory')}
+              </button>
+            </ActionRow>
+          </div>
 
-          <ActionRow label={t('settingsClearCache')} labelClassName="text-white">
-            <button onClick={onClearCache} className={whiteDangerBtnClass}>
-              <Database size={12} strokeWidth={1.5} /> {t('settingsClearCache')}
-            </button>
-          </ActionRow>
+          <div data-settings-item="data-clear-cache">
+            <ActionRow label={t('settingsClearCache')} labelClassName="text-white">
+              <button type="button" onClick={onClearCache} className={SETTINGS_DANGER_SURFACE_BUTTON_CLASS}>
+                <Database size={12} strokeWidth={1.5} /> {t('settingsClearCache')}
+              </button>
+            </ActionRow>
+          </div>
         </div>
       </div>
     </div>

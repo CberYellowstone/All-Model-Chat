@@ -11,11 +11,20 @@ import { logService } from '@/services/logService';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
 import { syncActiveSessionRoute, type SessionHistoryMode } from './sessionRouteSync';
 import { broadcastSyncMessage } from './chatSyncChannel';
+import { TAB_ID } from './tabIdentity';
 import { sanitizeSessionModel, sortSessionsInPlace } from './sessionModels';
 import {
   updateMessageInSession as updateMessageInSessions,
   updateSessionById as updateSessionByIdInSessions,
 } from '@/utils/chat/sessionMutations';
+import {
+  finishActiveGenerationJob,
+  hasActiveGenerationJobForSession,
+  holdSessionLoadingForGenerationHandoff,
+  unregisterActiveGenerationJob,
+} from '@/features/message-sender/activeGenerationJobs';
+import { abortServerStreamJob } from '@/features/stream-jobs/streamAbort';
+import { clearPendingStreamJob } from '@/features/stream-jobs/amcStreamJobs';
 import { mergeSessionMetadata } from './sessionRefresh';
 import {
   createVirtualFullSessions,
@@ -24,6 +33,7 @@ import {
 } from './sessionPersistence';
 import { persistSessionChanges } from './sessionPersistenceEffects';
 import { setupChatStoreSync } from './chatStoreSync';
+import { setupLastActiveSessionSync } from './lastActiveSessionSync';
 import { createChatUiSlice, type ChatUiSliceActions, type ChatUiSliceState } from './chatStoreSlices';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 
@@ -88,8 +98,18 @@ interface ChatActions extends ChatUiSliceActions {
   refreshSessions: () => Promise<void>;
   refreshGroups: () => Promise<void>;
   setSessionLoading: (sessionId: string, isLoading: boolean) => void;
+  markSessionCompleted: (sessionId: string, outcome: 'success' | 'error') => void;
+  markSessionViewed: (sessionId: string) => void;
   getFileOperationGeneration: () => number;
   invalidateFileOperations: () => void;
+
+  /** 停止当前会话的生成。纯 store action:读 `_activeJobs`/`activeMessages`/`loadingSessionIds`,不再依赖 hook 闭包。 */
+  stopGenerating: (options?: {
+    silent?: boolean;
+    skipLoadingUpdate?: boolean;
+  }) => 'stopped' | 'no_local_job' | 'not_loading';
+  /** 取消消息编辑:清空编辑态与文件选择,重置 editMode。 */
+  cancelEdit: () => void;
 
   setCurrentChatSettings: ChatSettingsUpdater;
 }
@@ -179,19 +199,145 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             )
           : state.savedSessions;
 
+      // 新一轮生成使旧的完成标记失效:本地清除即可(不广播,新一轮完成时会
+      // 重新广播新的完成状态)。若该会话正好没有旧标记则保持原对象避免重渲染。
+      const completedSessions =
+        isLoading && sessionId in state.completedSessions
+          ? Object.fromEntries(Object.entries(state.completedSessions).filter(([key]) => key !== sessionId))
+          : state.completedSessions;
+
       return {
         loadingSessionIds: next,
         savedSessions: nextSavedSessions,
+        completedSessions,
       };
     });
 
-    broadcastSyncMessage({ type: 'SESSION_LOADING', sessionId, isLoading });
+    broadcastSyncMessage({
+      type: 'SESSION_LOADING',
+      sessionId,
+      isLoading,
+      originId: TAB_ID,
+      ts: Date.now(),
+    });
+  },
+
+  markSessionCompleted: (sessionId, outcome) => {
+    // 广播总是发送,让其他标签页各自判断是否需要显示(他们可能不在该会话页)。
+    broadcastSyncMessage({ type: 'SESSION_COMPLETED', sessionId, outcome });
+    // 本标签页正在实时观看该会话的生成完成,不需要提醒,跳过本地写入。
+    if (get().activeSessionId === sessionId) {
+      return;
+    }
+    set((state) => ({
+      completedSessions: { ...state.completedSessions, [sessionId]: outcome },
+    }));
+  },
+
+  markSessionViewed: (sessionId) => {
+    broadcastSyncMessage({ type: 'SESSION_VIEWED', sessionId });
+    set((state) => {
+      if (!(sessionId in state.completedSessions)) {
+        return state;
+      }
+      const next = { ...state.completedSessions };
+      delete next[sessionId];
+      return { completedSessions: next };
+    });
   },
 
   getFileOperationGeneration: () => _fileOperationGeneration,
 
   invalidateFileOperations: () => {
     _fileOperationGeneration += 1;
+  },
+
+  stopGenerating: (options = {}) => {
+    const { silent = false, skipLoadingUpdate = false } = options;
+    const {
+      activeSessionId,
+      activeMessages,
+      _activeJobs: activeJobs,
+      setSessionLoading,
+      updateAndPersistSessions,
+    } = get();
+    const isLoading = activeSessionId ? get().loadingSessionIds.has(activeSessionId) : false;
+
+    if (!activeSessionId || !isLoading) return 'not_loading';
+
+    const loadingMessage = activeMessages.find((message) => message.isLoading);
+    if (loadingMessage) {
+      const generationId = loadingMessage.id;
+      const controller = activeJobs.current.get(generationId);
+
+      if (controller) {
+        logService.warn(
+          `User stopped generation for session ${activeSessionId}, job ${generationId}. Silent: ${silent}`,
+        );
+        controller.abort();
+
+        // Also ask the api container to abort the upstream Gemini
+        // connection (the stream journal keeps the upstream alive across
+        // browser disconnects). Fire-and-forget; the local abort drives UI.
+        void abortServerStreamJob(generationId);
+        clearPendingStreamJob(activeSessionId);
+
+        if (!silent) {
+          updateAndPersistSessions((prev) =>
+            updateMessageInSessions(prev, activeSessionId, generationId, {
+              isLoading: false,
+              generationEndTime: new Date(),
+              stoppedByUser: true,
+            }),
+          );
+        }
+
+        if (!skipLoadingUpdate) {
+          finishActiveGenerationJob({
+            activeJobs,
+            setSessionLoading,
+            sessionId: activeSessionId,
+            generationId,
+          });
+        } else {
+          holdSessionLoadingForGenerationHandoff(activeJobs, activeSessionId);
+          unregisterActiveGenerationJob(activeJobs, generationId);
+        }
+        return 'stopped';
+      }
+
+      logService.error(
+        `Could not find active job to stop for generationId: ${generationId}. Requesting cross-tab abort.`,
+      );
+      broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+      return 'no_local_job';
+    }
+
+    logService.warn(
+      `stopGenerating called for session ${activeSessionId}, but no loading message was found. Leaving other active jobs untouched.`,
+    );
+
+    if (hasActiveGenerationJobForSession(activeJobs, activeSessionId)) {
+      return 'stopped';
+    }
+
+    // Remote tab is loading (synced isLoading) without a local job.
+    // Broadcast the abort request and let the owner tab handle cleanup and
+    // broadcast the resulting SESSION_LOADING=false. The stale-check loop
+    // (clearStaleRemoteLoading, every 30s) will clean up orphaned entries
+    // if the owner tab crashed before it could respond.
+    broadcastSyncMessage({ type: 'ABORT_GENERATION', sessionId: activeSessionId, originId: TAB_ID });
+    return 'no_local_job';
+  },
+
+  cancelEdit: () => {
+    logService.info('User cancelled message edit.');
+    const { setCommandedInput, setSelectedFiles, setEditingMessageId, setEditMode, setAppFileError } = get();
+    setCommandedInput({ text: '', id: Date.now() });
+    setSelectedFiles([]);
+    setEditingMessageId(null);
+    setEditMode('resend'); // Reset to default
+    setAppFileError(null);
   },
 
   updateAndPersistSessions: (updater, options = {}) => {
@@ -203,6 +349,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const newFullSessions = updater(virtualFullSessions);
 
     sortSessionsInPlace(newFullSessions);
+
+    // The streaming hot path calls updateAndPersistSessions idempotently on
+    // every chunk (thinkingSource/resume stamps). When the updater preserved
+    // every reference (no field actually changed), bail out before touching
+    // state, persistence, or any subscriber — the set() below would otherwise
+    // rebuild savedSessions and cascade re-renders through every consumer.
+    if (newFullSessions === virtualFullSessions) {
+      return;
+    }
 
     if (activeSessionId) {
       const newActiveSession = newFullSessions.find((session) => session.id === activeSessionId);
@@ -235,7 +390,20 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const metadataOnly = stripStoredSessionMessages(newFullSessions, activeSessionId, loadingSessionIds);
 
-    set({ savedSessions: metadataOnly });
+    // 会话被删除后不应残留完成标记(删除通过 updater 里的 filter 完成)。
+    // 常见路径(无删除)保持原对象引用,避免无谓重渲染。
+    const completedSessionIds = new Set(
+      virtualFullSessions
+        .map((session) => session.id)
+        .filter((sessionId) => !newFullSessions.some((session) => session.id === sessionId)),
+    );
+    set((state) => ({
+      savedSessions: metadataOnly,
+      completedSessions:
+        completedSessionIds.size > 0
+          ? Object.fromEntries(Object.entries(state.completedSessions).filter(([key]) => !completedSessionIds.has(key)))
+          : state.completedSessions,
+    }));
   },
 
   updateSessionById: (sessionId, updater, options) => {
@@ -308,4 +476,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 setupChatStoreSync({
   store: useChatStore,
   localLoadingSessionIds: _localLoadingSessionIds,
+  activeJobs: _activeJobs,
 });
+setupLastActiveSessionSync(useChatStore);

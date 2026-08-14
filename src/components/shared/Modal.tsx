@@ -30,7 +30,8 @@ const FOCUSABLE_SELECTOR = [
 
 const getFocusableElements = (container: HTMLElement) =>
   Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
-    const style = window.getComputedStyle(element);
+    const win = element.ownerDocument?.defaultView ?? window;
+    const style = win.getComputedStyle(element);
 
     return (
       !element.closest('[inert]') &&

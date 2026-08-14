@@ -1,14 +1,11 @@
 const apiSettings = {
   settingsApiConfig: { en: 'API & Connections', zh: 'API 与连接' },
   settingsApiModeLabel: { en: 'API Provider', zh: 'API 提供方' },
-  settingsApiModeGeminiNative: { en: 'Gemini Official API', zh: 'Gemini 官方接口' },
-  settingsApiModeOpenAICompatible: { en: 'Third-Party API', zh: '第三方接口' },
-  settingsOpenAICompatibleToggleLabel: { en: 'OpenAI-Compatible API', zh: 'OpenAI 兼容 API' },
+  settingsApiModeThirdParty: { en: 'Third-Party API', zh: '第三方接口' },
   settingsOpenAICompatibleToggleHelp: {
     en: 'Turn on to use OpenAI or GPT-compatible providers. When off, Gemini Native remains active.',
     zh: '打开后可使用 OpenAI 或 GPT 兼容服务。关闭时保持 Gemini 原生模式。',
   },
-  settingsOpenAICompatibleBaseUrl: { en: 'OpenAI-Compatible Base URL', zh: 'OpenAI 兼容基础 URL' },
   settingsOpenAICompatibleModelId: { en: 'OpenAI-Compatible Model IDs', zh: 'OpenAI 兼容模型 ID' },
   settingsOpenAICompatibleModelIdShort: { en: 'Model ID', zh: '模型 ID' },
   settingsOpenAICompatibleModelName: { en: 'Model Name', zh: '模型名称' },
@@ -47,32 +44,11 @@ const apiSettings = {
   },
   settingsFetchModelList: { en: 'Fetch Models', zh: '获取模型列表' },
   settingsFetchingModelList: { en: 'Fetching...', zh: '获取中…' },
-  settingsOpenAICompatibleModelFetchSuccess: {
-    en: 'Fetched {count} models.',
-    zh: '已获取 {count} 个模型。',
-  },
-  settingsOpenAICompatibleModelFetchEmpty: {
-    en: 'No models were returned by this endpoint.',
-    zh: '该接口未返回模型。',
-  },
   settingsOpenAICompatibleModelIdHelp: {
     en: 'Set the API model ID and optional display name. The display name appears in the main model picker; blank names fall back to the model ID.',
     zh: '设置 API 模型 ID 和可选显示名称。显示名称会出现在主界面的模型选择器中；名称为空时使用模型 ID。',
   },
-  settingsOpenAICompatibleApiKey: { en: 'OpenAI-Compatible API Keys', zh: 'OpenAI 兼容 API 密钥' },
-  settingsOpenAICompatibleHelp: {
-    en: 'Used only when OpenAI Compatible mode is selected. Gemini Native requests keep using the existing Gemini API settings.',
-    zh: '仅在选择 OpenAI 兼容模式时使用。Gemini 原生请求仍使用现有 Gemini API 设置。',
-  },
   settingsOpenAICompatibleRequestUrlPreview: { en: 'Request URL Preview', zh: '请求 URL 预览' },
-  settingsOpenAICompatibleBaseUrlEndpointWarning: {
-    en: 'AMC appends {path} automatically. Use the API root as the Base URL to avoid duplicating the endpoint path.',
-    zh: 'AMC 会自动追加 {path}。请将 Base URL 填为 API 根路径，避免重复拼接 endpoint。',
-  },
-  settingsOpenAICompatibleApiKeyHelp: {
-    en: 'Stored separately from Gemini API keys. Use this for OpenAI or GPT-compatible providers.',
-    zh: '与 Gemini API 密钥分开保存。用于 OpenAI 或 GPT 兼容服务。',
-  },
   settingsUseCustomApi: { en: 'Use Custom API Settings', zh: '使用自定义 API 设置' },
   settingsApiKey: { en: 'Gemini API Keys', zh: 'Gemini API 密钥' },
   settingsApiKeyHelpText: {
@@ -88,7 +64,6 @@ const apiSettings = {
     en: 'Enter your OpenAI-compatible API keys',
     zh: '输入您的 OpenAI 兼容 API 密钥',
   },
-  apiConfigKeyPlaceholderDisabled: { en: 'Using default', zh: '使用默认值' },
   apiConfigTestConnection: { en: 'Test Connection', zh: '测试连通性' },
   apiConfigTesting: { en: 'Testing...', zh: '测试中…' },
   apiConfigTestSuccess: { en: 'Connection Successful', zh: '连接成功' },
@@ -102,7 +77,6 @@ const apiSettings = {
   },
   settingsApiProxyLabel: { en: 'Use Proxy Endpoint', zh: '使用代理端点' },
   settingsApiProxyReset: { en: 'Reset', zh: '重置' },
-  settingsApiProxyPlaceholderDisabled: { en: 'Turn on proxy to edit this URL', zh: '打开代理后即可编辑此 URL' },
   settingsApiProxyUrlAria: { en: 'Proxy base URL', zh: '代理基础 URL' },
   settingsApiProxyPreview: { en: 'Request URL Preview', zh: '请求 URL 预览' },
   settingsApiTestModel: { en: 'Test Model', zh: '测试模型' },
@@ -122,9 +96,6 @@ const apiSettings = {
   },
 
   // Third-party API provider
-  thirdPartyApiPanelTitle: { en: 'Third-Party API Provider', zh: '第三方 API 服务商' },
-  thirdPartyApiProviderLabel: { en: 'Provider', zh: '服务商' },
-  thirdPartyApiEnableToggle: { en: 'Enable third-party API provider', zh: '启用第三方 API 服务商' },
   thirdPartyApiKey: { en: 'Provider API Key', zh: '服务商 API 密钥' },
   thirdPartyApiKeyHelp: {
     en: 'Stored separately from Gemini API keys. Enter the API key for the selected provider.',
@@ -142,14 +113,5 @@ const apiSettings = {
   thirdPartyApiKeyMissing: { en: 'No key', zh: '未配置' },
   thirdPartyApiReady: { en: 'Ready', zh: '已就绪' },
   enable: { en: 'Enable', zh: '启用' },
-  disable: { en: 'Disable', zh: '禁用' },
-  thirdPartyProviderOpenai: { en: 'OpenAI', zh: 'OpenAI' },
-  thirdPartyProviderDeepseek: { en: 'DeepSeek', zh: 'DeepSeek' },
-  thirdPartyProviderAnthropic: { en: 'Anthropic', zh: 'Anthropic' },
-  thirdPartyProviderOpenrouter: { en: 'OpenRouter', zh: 'OpenRouter' },
-  thirdPartyProviderQwen: { en: 'Qwen', zh: '通义千问' },
-  thirdPartyProviderKimi: { en: 'Kimi', zh: 'Kimi' },
-  thirdPartyProviderGlm: { en: 'GLM', zh: '智谱 GLM' },
-  thirdPartyProviderCustom: { en: 'Custom', zh: '自定义' },
 };
 export default apiSettings;

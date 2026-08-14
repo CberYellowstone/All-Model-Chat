@@ -106,7 +106,7 @@ describe('messagePipeline', () => {
         isCompletionNotificationEnabled: false,
       }),
       currentChatSettings: createChatSettings({
-        modelId: 'imagen-4.0-generate-001',
+        modelId: 'gemini-3.1-flash-image-preview',
       }),
       updateAndPersistSessions,
       setActiveSessionId,
@@ -304,5 +304,61 @@ describe('messagePipeline', () => {
     });
 
     expect(playCompletionSoundMock).not.toHaveBeenCalled();
+  });
+
+  it('resets timing fields and updates generationStartTime when continuing a model message', async () => {
+    const oldStart = new Date('2026-05-04T08:00:00.000Z');
+    const newStart = new Date('2026-05-04T10:00:00.000Z');
+    let sessions: SavedChatSession[] = [
+      {
+        id: 'session-1',
+        title: 'Chat',
+        timestamp: 1,
+        groupId: null,
+        settings: createChatSettings(),
+        messages: [
+          {
+            id: 'target-model',
+            role: 'model',
+            content: 'continue me',
+            timestamp: oldStart,
+            generationStartTime: oldStart,
+            firstTokenTimeMs: 500,
+            thinkingTimeMs: 1200,
+            generationEndTime: new Date('2026-05-04T08:00:02.000Z'),
+          },
+        ],
+      },
+    ];
+    const updateAndPersistSessions = vi.fn((updater: (prev: SavedChatSession[]) => SavedChatSession[]) => {
+      sessions = updater(sessions);
+    });
+
+    await runOptimisticMessagePipeline({
+      activeSessionId: 'session-1',
+      appSettings: createAppSettings(),
+      currentChatSettings: createChatSettings(),
+      updateAndPersistSessions,
+      setActiveSessionId: vi.fn(),
+      text: '',
+      generationId: 'target-model',
+      generationStartTime: newStart,
+      placement: { type: 'continue-model', targetMessageId: 'target-model' },
+      abortController: new AbortController(),
+      errorPrefix: 'Test Error',
+      runMessageLifecycle: vi.fn(async () => undefined),
+      execute: async () => undefined,
+    });
+
+    expect(sessions[0].messages[0]).toEqual(
+      expect.objectContaining({
+        id: 'target-model',
+        isLoading: true,
+        generationStartTime: newStart,
+        generationEndTime: undefined,
+        firstTokenTimeMs: undefined,
+        thinkingTimeMs: undefined,
+      }),
+    );
   });
 });

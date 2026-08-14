@@ -53,15 +53,3 @@ export const buildExactPricingFromUsageMetadata = (
     ...(toolUsePromptTokensDetails?.length ? { toolUsePromptTokensDetails } : {}),
   };
 };
-
-export const buildExactImageGenerationPricing = (generatedImageCount: number): ApiUsageExactPricing | undefined => {
-  if (generatedImageCount <= 0) {
-    return undefined;
-  }
-
-  return {
-    version: 1,
-    requestKind: 'image_generate',
-    generatedImageCount,
-  };
-};

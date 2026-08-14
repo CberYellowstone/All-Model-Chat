@@ -4,19 +4,21 @@ import { Wand2, PictureInPicture, PictureInPicture2 } from 'lucide-react';
 import { IconNewChat, IconSidebarToggle, IconScenarios } from '@/components/icons';
 import { useI18n } from '@/contexts/I18nContext';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
-import { type ModelOption, type ThinkingLevel } from '@/types';
+import { type ModelOption, type ThinkingLevel, type ThirdPartyProviderId } from '@/types';
 
 import { HeaderModelSelector } from './HeaderModelSelector';
 
 interface HeaderProps {
   onNewChat: () => void;
+  /** 新聊天链接（携带 ?from 来源会话）；Cmd/Ctrl+点击以新标签页打开时继承设置。 */
+  newChatHref: string;
   onOpenScenariosModal: () => void;
   onToggleHistorySidebar: () => void;
   isLoading: boolean;
   currentModelName: string;
   availableModels: ModelOption[];
   selectedModelId: string;
-  onSelectModel: (modelId: string) => void;
+  onSelectModel: (modelId: string, providerId?: ThirdPartyProviderId) => void;
   isSwitchingModel: boolean;
   isHistorySidebarOpen: boolean;
   onLoadLiveArtifactsPrompt: () => void;
@@ -36,6 +38,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onNewChat,
+  newChatHref,
   onOpenScenariosModal,
   onToggleHistorySidebar,
   isLoading,
@@ -61,9 +64,9 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { t } = useI18n();
   const headerButtonBase =
-    'w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ease-[cubic-bezier(0.19,1,0.22,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)]';
+    'w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-150 ease-[cubic-bezier(0.19,1,0.22,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)]';
   const headerButtonInactive =
-    'bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] active:bg-[var(--theme-bg-tertiary)] active:text-[var(--theme-text-primary)]';
+    'bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]/70 hover:text-[var(--theme-text-primary)] active:scale-95';
   const headerButtonActive =
     'text-[var(--theme-text-link)] bg-[var(--theme-bg-accent)]/10 hover:bg-[var(--theme-bg-accent)]/20';
 
@@ -84,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'} px-2 py-[0.32rem] sm:px-3 sm:py-[0.48rem] flex items-center justify-between gap-2 sm:gap-3 flex-shrink-0 relative z-20`}
+      className={`${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'} px-2 py-[0.4rem] sm:px-3 sm:py-[0.52rem] flex items-center justify-between gap-2 sm:gap-3 flex-shrink-0 relative z-20`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <button
@@ -148,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <a
-          href="/"
+          href={newChatHref}
           onClick={(e) => {
             if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
               e.preventDefault();

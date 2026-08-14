@@ -1,13 +1,15 @@
 export const MOBILE_BREAKPOINT_PX = 640;
 export const DESKTOP_BREAKPOINT_PX = 768;
 export const CHAT_INPUT_TEXTAREA_SELECTOR = 'textarea[data-chat-input-textarea="true"]';
+/** Sidebar root, used to keep programmatic focus (e.g. after loading a session) out of an in-progress rename. */
+export const HISTORY_SIDEBAR_ROOT_SELECTOR = '[data-history-sidebar-root="true"]';
 /** Interactive elements that should retain focus when the input shell is clicked. */
 export const FOCUS_BLOCKING_SELECTOR =
   'button, a, input, textarea, select, label, summary, audio, video, [role="button"], [role="menuitem"], [contenteditable="true"]';
 export const FOCUS_HISTORY_SEARCH_EVENT = 'amc:focus-history-search';
 
 /** Max content width for the chat input area and its empty-state suggestions. */
-export const CHAT_INPUT_MAX_WIDTH_CLASS = 'max-w-[44.35rem]';
+export const CHAT_INPUT_MAX_WIDTH_CLASS = 'max-w-[44rem]';
 
 /**
  * Z-index layering. Kept as full Tailwind class strings so the JIT compiler can

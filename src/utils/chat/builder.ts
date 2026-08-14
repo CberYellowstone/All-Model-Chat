@@ -1,10 +1,10 @@
 import { type ChatMessage, type ContentPart, type UploadedFile, type ChatHistoryItem, MediaResolution } from '@/types';
 import type { PartMediaResolutionLevel } from '@google/genai';
 import { logService } from '@/services/logService';
-import { isGemini3Model } from '@/utils/modelCapabilities';
-import { normalizeModelId } from '@/utils/modelId';
-import { blobToBase64, fileToString } from '@/utils/fileEncoding';
-import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/fileTypeClassification';
+import { isGemini3Model } from '@/utils/model/modelCapabilities';
+import { normalizeModelId } from '@/utils/model/modelId';
+import { blobToBase64, fileToString } from '@/utils/file/fileEncoding';
+import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/file/fileTypeClassification';
 
 import { usesRemoteFileReference } from './fileTransferStrategy';
 import { stripReasoningMarkup } from './reasoning';
@@ -262,6 +262,7 @@ export const createChatHistoryForApi = async (
   stripThinking: boolean = false,
   modelId?: string,
   preferCodeExecutionFileInputs: boolean = false,
+  alwaysKeepThinkingInContext: boolean = false,
 ): Promise<ChatHistoryItem[]> => {
   const historyItems: ChatHistoryItem[] = [];
 
@@ -367,6 +368,16 @@ export const createChatHistoryForApi = async (
       parts.length > 0
     ) {
       parts[parts.length - 1].thoughtSignature = message.thoughtSignatures[message.thoughtSignatures.length - 1];
+    }
+
+    // "Always keep thinking in context": inject the full reasoning text as a
+    // leading text part on model messages so it is replayed in future context.
+    // Runs after the signature fallback so any thoughtSignature stays last.
+    // Plain text part — downstream converters map it to each protocol's text
+    // content, and since shouldStripThinkingFromContext is forced false when
+    // this switch is on, the pipeline will not strip it back out.
+    if (alwaysKeepThinkingInContext && message.role === 'model' && message.thoughts && message.thoughts.trim()) {
+      parts.unshift({ text: `<thinking>\n${message.thoughts.trim()}\n</thinking>` });
     }
 
     const role = message.role as 'user' | 'model';

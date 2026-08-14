@@ -7,6 +7,7 @@ import {
   getOpenAICompatibleModelName,
   openaiCompatibleModelMatchesSearch,
 } from './openaiCompatibleModelListState';
+import { useOpenAICompatibleModelRowHandlers } from './useOpenAICompatibleModelRowHandlers';
 
 interface OpenAICompatibleCurrentModelsPanelProps {
   rows: EditableOpenAICompatibleModelRow[];
@@ -29,26 +30,8 @@ export const OpenAICompatibleCurrentModelsPanel: React.FC<OpenAICompatibleCurren
       ),
     [modelSearchText, rows],
   );
-
-  const handleUpdateModel = (rowId: string, id: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id } : row)));
-  };
-
-  const handleUpdateModelName = (rowId: string, name: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name } : row)));
-  };
-
-  const handleTrimModel = (rowId: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, id: row.id.trim() } : row)));
-  };
-
-  const handleTrimModelName = (rowId: string) => {
-    onCommitRows(rows.map((row) => (row.rowId === rowId ? { ...row, name: row.name.trim() } : row)));
-  };
-
-  const handleRemoveModel = (rowId: string) => {
-    onCommitRows(rows.filter((row) => row.rowId !== rowId));
-  };
+  const { handleUpdateModel, handleUpdateModelName, handleTrimModel, handleTrimModelName, handleRemoveModel } =
+    useOpenAICompatibleModelRowHandlers(rows, onCommitRows);
 
   return (
     <section className="min-w-0 space-y-3">
@@ -56,7 +39,7 @@ export const OpenAICompatibleCurrentModelsPanel: React.FC<OpenAICompatibleCurren
         <div className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">
           {t('settingsOpenAICompatibleCurrentModels')}
         </div>
-        <span className="rounded-full bg-[var(--theme-bg-tertiary)] px-2 py-0.5 text-[10px] font-medium text-[var(--theme-text-tertiary)]">
+        <span className="rounded-full bg-[var(--theme-bg-tertiary)] px-2 py-0.5 text-xs font-medium text-[var(--theme-text-tertiary)]">
           {rows.length}
         </span>
       </div>
@@ -91,7 +74,7 @@ export const OpenAICompatibleCurrentModelsPanel: React.FC<OpenAICompatibleCurren
                   onBlur={() => handleTrimModel(row.rowId)}
                   data-openai-compatible-manager-model-id-input="true"
                   className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1.5 font-mono text-sm text-[var(--theme-text-primary)] transition-colors placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] focus:bg-[var(--theme-bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)]/15"
-                  placeholder="gpt-5.5"
+                  placeholder="gpt-5.6-sol"
                   aria-label={t('settingsOpenAICompatibleModelIdShort')}
                 />
                 <input

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractAnthropicMessageText } from './anthropicResponses';
+import { extractAnthropicMessageText, extractAnthropicMessageThoughts } from './anthropicResponses';
 import type { AnthropicResponsePayload } from './anthropicTypes';
 import { readResponseErrorMessage } from '@/utils/errorMessage';
 
@@ -14,8 +14,40 @@ describe('anthropicResponses', () => {
     expect(extractAnthropicMessageText(payload)).toBe('Hello world');
   });
 
+  it('excludes thinking blocks from the visible text', () => {
+    const payload: AnthropicResponsePayload = {
+      content: [
+        { type: 'thinking', thinking: 'reasoning here' },
+        { type: 'text', text: 'Answer' },
+      ],
+    };
+    expect(extractAnthropicMessageText(payload)).toBe('Answer');
+  });
+
   it('returns empty string when no content blocks', () => {
     expect(extractAnthropicMessageText({})).toBe('');
+  });
+
+  it('extracts thinking blocks into a joined thoughts string', () => {
+    const payload: AnthropicResponsePayload = {
+      content: [
+        { type: 'thinking', thinking: 'step one' },
+        { type: 'text', text: 'visible' },
+        { type: 'thinking', thinking: 'step two' },
+      ],
+    };
+    expect(extractAnthropicMessageThoughts(payload)).toBe('step one\n\nstep two');
+  });
+
+  it('returns undefined when no thinking blocks are present', () => {
+    const payload: AnthropicResponsePayload = {
+      content: [{ type: 'text', text: 'visible' }],
+    };
+    expect(extractAnthropicMessageThoughts(payload)).toBeUndefined();
+  });
+
+  it('returns undefined when content is absent', () => {
+    expect(extractAnthropicMessageThoughts({})).toBeUndefined();
   });
 
   it('reads error message from JSON body', async () => {

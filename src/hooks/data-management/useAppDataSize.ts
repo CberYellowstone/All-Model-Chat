@@ -1,7 +1,7 @@
 import { logService } from '@/services/logService';
 import { useEffect, useState } from 'react';
 import { dbService, type AppDataSizeEstimate } from '@/services/db/dbService';
-import { formatFileSize } from '@/utils/fileSize';
+import { formatFileSize } from '@/utils/file/fileSize';
 
 interface AppDataSizeState {
   estimate: AppDataSizeEstimate | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { compressAudioToMp3 } from './audioCompression';
+import { compressAudioToMp3, prepareAudioForGeminiTranscription } from './audioCompression';
 
 class FakeWorker {
   onmessage: ((event: MessageEvent) => void) | null = null;
@@ -175,6 +175,67 @@ describe('compressAudioToMp3', () => {
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
     expect(worker.terminate).toHaveBeenCalled();
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:audio-worker');
+
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('falls back to wav instead of webm when the mp3 worker fails on unsupported source', async () => {
+    const worker = new FakeWorker();
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => 'blob:audio-worker');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const pcmData = new Float32Array([0.25, -0.25, 0.5]);
+    vi.stubGlobal('AudioContext', createAudioContextMock({ duration: 2 }));
+    vi.stubGlobal('OfflineAudioContext', createOfflineAudioContextMock(pcmData));
+    vi.stubGlobal(
+      'Worker',
+      vi.fn(function WorkerMock() {
+        return worker;
+      }),
+    );
+    const sourceFile = new File([new Uint8Array(60 * 1024)], 'voice.webm', { type: 'audio/webm' });
+
+    const promise = compressAudioToMp3(sourceFile);
+    await flushAudioCompressionPipeline();
+    worker.emitFailure();
+
+    const result = await promise;
+
+    expect(result.type).toBe('audio/wav');
+    expect(result.name).toBe('voice.wav');
+
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+});
+
+describe('prepareAudioForGeminiTranscription', () => {
+  it('returns supported audio files unchanged', async () => {
+    const file = new File([new Uint8Array(16)], 'clip.mp3', { type: 'audio/mpeg' });
+    await expect(prepareAudioForGeminiTranscription(file)).resolves.toBe(file);
+  });
+
+  it('converts webm recordings into a Gemini-supported type', async () => {
+    const worker = new FakeWorker();
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => 'blob:audio-worker');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const pcmData = new Float32Array([0.25, -0.25, 0.5]);
+    vi.stubGlobal('AudioContext', createAudioContextMock({ duration: 2 }));
+    vi.stubGlobal('OfflineAudioContext', createOfflineAudioContextMock(pcmData));
+    vi.stubGlobal(
+      'Worker',
+      vi.fn(function WorkerMock() {
+        return worker;
+      }),
+    );
+
+    const source = new Blob([new Uint8Array(64)], { type: 'audio/webm;codecs=opus' });
+    const promise = prepareAudioForGeminiTranscription(source);
+    await flushAudioCompressionPipeline();
+    worker.emitSuccess([new Uint8Array([1, 2, 3])]);
+
+    const result = await promise;
+    expect(result.type).toBe('audio/mpeg');
 
     vi.unstubAllGlobals();
     vi.restoreAllMocks();

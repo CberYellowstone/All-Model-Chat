@@ -20,7 +20,7 @@ export const LevelButton: React.FC<LevelButtonProps> = ({ active, onClick, label
       {React.cloneElement(icon, { size: 14, strokeWidth: 2 })}
     </div>
     <span
-      className={`text-[10px] font-bold ${active ? 'text-[var(--theme-text-primary)]' : 'text-[var(--theme-text-secondary)]'}`}
+      className={`text-xs font-bold ${active ? 'text-[var(--theme-text-primary)]' : 'text-[var(--theme-text-secondary)]'}`}
     >
       {label}
     </span>

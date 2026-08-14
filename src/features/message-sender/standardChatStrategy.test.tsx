@@ -4,6 +4,7 @@ import { sendStandardMessage } from './standardChatStrategy';
 import { createStandardChatProps, type StandardChatPropsOverrides } from '@/test/hooks/factories';
 import { MediaResolution } from '@/types';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
+import { createDefaultThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
 import type { PreparedModelRequest } from './useModelRequestRunner';
 
 const {
@@ -70,7 +71,7 @@ vi.mock('@/utils/chat/session', () => ({
   })),
 }));
 
-vi.mock('@/utils/modelCapabilities', () => ({
+vi.mock('@/utils/model/modelCapabilities', () => ({
   isGemini3Model: vi.fn((id: string) => id.includes('gemini-3')),
   isImageGenerationModel: vi.fn((id: string) => id.includes('image')),
   shouldStripThinkingFromContext: vi.fn(() => false),
@@ -269,6 +270,8 @@ describe('standardChatStrategy', () => {
       expect.any(Function),
       expect.any(Function),
       'user',
+      undefined,
+      undefined,
     );
 
     unmount();
@@ -375,24 +378,23 @@ describe('standardChatStrategy', () => {
 
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         apiKey: 'gemini-key',
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: {
               apiKey: 'openai-key',
               baseUrl: 'https://api.openai.com/v1',
-              modelId: 'gpt-5.5',
-              models: [{ id: 'gpt-5.5', name: 'GPT-5.5', isPinned: true }],
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', isPinned: true }],
               protocol: 'openai-compatible',
             },
           },
         },
       },
       currentChatSettings: {
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
         isGoogleSearchEnabled: true,
         isCodeExecutionEnabled: true,
         isLocalPythonEnabled: true,
@@ -407,7 +409,7 @@ describe('standardChatStrategy', () => {
         text: 'hello through compat',
         files: [],
         editingMessageId: null,
-        activeModelId: 'gemini-3-flash-preview',
+        activeModelId: 'gpt-5.6-sol',
         request: createPreparedRequest(),
       });
     });
@@ -418,7 +420,7 @@ describe('standardChatStrategy', () => {
     expect(mockSendMessageStream).not.toHaveBeenCalled();
     expect(mockSendOpenAICompatibleMessageStream).toHaveBeenCalledWith(
       'api-key',
-      'gpt-5.5',
+      'gpt-5.6-sol',
       [],
       [{ text: 'analyze the csv' }],
       expect.objectContaining({
@@ -429,11 +431,83 @@ describe('standardChatStrategy', () => {
         thinkingLevel: 'LOW',
       }),
       expect.any(AbortSignal),
-      streamOnPart,
-      onThoughtChunk,
+      expect.any(Function),
+      expect.any(Function),
       streamOnError,
       streamOnComplete,
       'user',
+      'openai',
+    );
+
+    // The streaming callbacks are wrapped so every chunk stamps thinking
+    // provenance: the first part/thought forces the flat strip for third-party.
+    const [wrappedOnPart, wrappedOnThoughtChunk] = mockSendOpenAICompatibleMessageStream.mock.calls[0].slice(6, 8) as [
+      (part: object) => void,
+      (chunk: string) => void,
+    ];
+    wrappedOnPart({ text: '**Step**\nreasoning' });
+    expect(streamOnPart).toHaveBeenCalledWith({ text: '**Step**\nreasoning' }, { source: 'third-party' });
+    wrappedOnThoughtChunk('reasoning');
+    expect(onThoughtChunk).toHaveBeenCalledWith('reasoning', { source: 'third-party' });
+
+    unmount();
+  });
+
+  it('routes a third-party session through its own provider when the global mode is Gemini', async () => {
+    const providers = DEFAULT_APP_SETTINGS.thirdPartyApi.providers;
+    const getStreamHandlers = vi.fn(() => ({
+      streamOnError: vi.fn(),
+      streamOnComplete: vi.fn(),
+      streamOnPart: vi.fn(),
+      onThoughtChunk: vi.fn(),
+    }));
+    const { result, unmount } = renderStandardChat({
+      appSettings: {
+        thirdPartyApi: {
+          providers: {
+            ...providers,
+            openai: { ...providers.openai, apiKey: 'openai-key', enabled: true },
+            kimi: {
+              ...providers.kimi,
+              apiKey: 'kimi-key',
+              enabled: true,
+              modelId: 'kimi-k3-turbo',
+              models: [{ id: 'kimi-k3-turbo', name: 'Kimi K3 Turbo', isPinned: true }],
+            },
+          },
+        },
+      },
+      currentChatSettings: {
+        modelId: 'kimi-k3-turbo',
+        providerId: 'kimi',
+      },
+      getStreamHandlers,
+    });
+
+    await act(async () => {
+      await result.current.sendStandardMessage({
+        text: 'hello through kimi',
+        files: [],
+        editingMessageId: null,
+        activeModelId: 'kimi-k3-turbo',
+        request: createPreparedRequest(),
+      });
+    });
+
+    expect(mockSendMessageStream).not.toHaveBeenCalled();
+    expect(mockSendOpenAICompatibleMessageStream).toHaveBeenCalledWith(
+      'api-key',
+      'kimi-k3-turbo',
+      [],
+      [{ text: 'analyze the csv' }],
+      expect.objectContaining({ baseUrl: 'https://api.moonshot.ai/v1' }),
+      expect.any(AbortSignal),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      'user',
+      'kimi',
     );
 
     unmount();
@@ -453,12 +527,9 @@ describe('standardChatStrategy', () => {
 
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isThirdPartyApiEnabled: true,
-        apiMode: 'third-party',
         apiKey: 'gemini-key',
         isStreamingEnabled: false,
         thirdPartyApi: {
-          activeProvider: 'openai',
           providers: {
             ...DEFAULT_APP_SETTINGS.thirdPartyApi.providers,
             openai: {
@@ -472,6 +543,8 @@ describe('standardChatStrategy', () => {
         },
       },
       currentChatSettings: {
+        modelId: 'gpt-5.6-sol',
+        providerId: 'openai',
         isGoogleSearchEnabled: true,
         isCodeExecutionEnabled: true,
         isLocalPythonEnabled: true,
@@ -486,7 +559,7 @@ describe('standardChatStrategy', () => {
         text: 'hello through compat',
         files: [],
         editingMessageId: null,
-        activeModelId: 'gemini-3-flash-preview',
+        activeModelId: 'gpt-5.6-sol',
         request: createPreparedRequest(),
       });
     });
@@ -495,7 +568,7 @@ describe('standardChatStrategy', () => {
     expect(mockSendMessageNonStream).not.toHaveBeenCalled();
     expect(mockSendOpenAICompatibleMessageNonStream).toHaveBeenCalledWith(
       'api-key',
-      'gpt-4.1-custom',
+      'gpt-5.6-sol',
       [],
       [{ text: 'analyze the csv' }],
       expect.objectContaining({
@@ -509,6 +582,7 @@ describe('standardChatStrategy', () => {
       streamOnError,
       expect.any(Function),
       'user',
+      'openai',
     );
 
     unmount();
@@ -517,11 +591,20 @@ describe('standardChatStrategy', () => {
   it('uses Gemini chat routing when OpenAI-compatible mode is stored but the provider switch is off', async () => {
     const { result, unmount } = renderStandardChat({
       appSettings: {
-        isOpenAICompatibleApiEnabled: false,
-        apiMode: 'openai-compatible',
         apiKey: 'gemini-key',
-        openaiCompatibleApiKey: 'openai-key',
-        openaiCompatibleModelId: 'gpt-5.5',
+        thirdPartyApi: {
+          providers: {
+            ...createDefaultThirdPartyApiSettings().providers,
+            openai: {
+              apiKey: 'openai-key',
+              baseUrl: 'https://api.openai.com/v1',
+              modelId: 'gpt-5.6-sol',
+              models: [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' }],
+              protocol: 'openai-compatible',
+              enabled: false,
+            },
+          },
+        },
       },
     });
 
@@ -765,6 +848,7 @@ describe('standardChatStrategy', () => {
       ],
       false,
       'gemini-3-flash-preview',
+      false,
       false,
     );
     expect(mockSendMessageNonStream).toHaveBeenCalledWith(

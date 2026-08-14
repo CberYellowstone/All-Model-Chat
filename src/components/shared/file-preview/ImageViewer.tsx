@@ -232,11 +232,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file }) => {
 
           <ToolbarLabel className="min-w-[50px] text-center">{(scale * 100).toFixed(0)}%</ToolbarLabel>
 
-          <ToolbarButton
-            onClick={() => handleZoom('in')}
-            disabled={scale >= MAX_SCALE}
-            title={t('filePreviewZoomIn')}
-          >
+          <ToolbarButton onClick={() => handleZoom('in')} disabled={scale >= MAX_SCALE} title={t('filePreviewZoomIn')}>
             <ZoomIn size={16} strokeWidth={1.5} />
           </ToolbarButton>
 

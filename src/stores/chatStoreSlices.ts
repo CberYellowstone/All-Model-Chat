@@ -17,6 +17,8 @@ export interface ChatUiSliceState {
   imageOutputMode: ImageOutputMode;
   personGeneration: ImagePersonGeneration;
   isSwitchingModel: boolean;
+  /** 会话已完成生成的状态标记(仅内存,不持久化)。key=sessionId, value 为结果。 */
+  completedSessions: Record<string, 'success' | 'error'>;
 }
 
 export interface ChatUiSliceActions {
@@ -33,6 +35,7 @@ export interface ChatUiSliceActions {
   setImageOutputMode: (v: UpdaterOrValue<ImageOutputMode>) => void;
   setPersonGeneration: (v: UpdaterOrValue<ImagePersonGeneration>) => void;
   setIsSwitchingModel: (v: UpdaterOrValue<boolean>) => void;
+  setCompletedSessions: (v: UpdaterOrValue<Record<string, 'success' | 'error'>>) => void;
 }
 
 type ChatUiSlice = ChatUiSliceState & ChatUiSliceActions;
@@ -65,6 +68,7 @@ export const createChatUiSlice = <T extends ChatUiSlice>(set: SliceSet<T>): Chat
   imageOutputMode: 'IMAGE_TEXT',
   personGeneration: 'ALLOW_ADULT',
   isSwitchingModel: false,
+  completedSessions: {},
 
   setEditingMessageId: (value) => setSliceValue(set, 'editingMessageId', value),
   setEditMode: (value) => setSliceValue(set, 'editMode', value),
@@ -79,4 +83,5 @@ export const createChatUiSlice = <T extends ChatUiSlice>(set: SliceSet<T>): Chat
   setImageOutputMode: (value) => setSliceValue(set, 'imageOutputMode', value),
   setPersonGeneration: (value) => setSliceValue(set, 'personGeneration', value),
   setIsSwitchingModel: (value) => setSliceValue(set, 'isSwitchingModel', value),
+  setCompletedSessions: (value) => setSliceValue(set, 'completedSessions', value),
 });

@@ -1,6 +1,6 @@
 import { useMemo, type FC } from 'react';
 import { Zap } from 'lucide-react';
-import { type ModelOption, type ThinkingLevel } from '@/types';
+import { type ModelOption, type ThinkingLevel, type ThirdPartyProviderId } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { ModelPicker } from '@/components/shared/ModelPicker';
@@ -15,7 +15,7 @@ interface HeaderModelSelectorProps {
   currentModelName?: string;
   availableModels: ModelOption[];
   selectedModelId: string;
-  onSelectModel: (modelId: string) => void;
+  onSelectModel: (modelId: string, providerId?: ThirdPartyProviderId) => void;
   isSwitchingModel: boolean;
   isLoading: boolean;
   thinkingLevel?: ThinkingLevel;
@@ -58,7 +58,7 @@ export const HeaderModelSelector: FC<HeaderModelSelectorProps> = ({
 
   // Determine the target "Fast" level based on model capabilities
   // Gemini 3 Flash models support MINIMAL thinking for maximum speed
-  // Gemini Robotics-ER 1.6 matches Flash here; other Gemini 3 models
+  // Gemini Robotics-ER matches Flash here; other Gemini 3 models
   // (like Pro) typically bottom out at LOW.
   const targetFastLevel = isFlashModel || isGeminiRoboticsModel ? 'MINIMAL' : 'LOW';
 

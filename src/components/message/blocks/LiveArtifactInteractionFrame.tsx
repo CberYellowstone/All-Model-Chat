@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { isLiveArtifactFollowupStateWithinLimit, type LiveArtifactFollowupPayload } from '@/utils/liveArtifactFollowup';
+import {
+  isLiveArtifactFollowupStateWithinLimit,
+  type LiveArtifactFollowupPayload,
+} from '@/utils/live-artifacts/liveArtifactFollowup';
 import {
   buildLiveArtifactInteractionPayload,
   getLiveArtifactInteractionDefaultValue,
@@ -12,7 +15,7 @@ import {
   type LiveArtifactInteractionProperty,
   type LiveArtifactInteractionSpec,
   type LiveArtifactInteractionValue,
-} from '@/utils/liveArtifactInteraction';
+} from '@/utils/live-artifacts/liveArtifactInteraction';
 
 const FIELD_ERROR_CLASS = 'mt-1 block text-[0.75em] text-[var(--theme-text-danger)]';
 
@@ -35,11 +38,19 @@ interface ValidationMessages {
   integer: string;
   range: string;
   enum: string;
+  invalidDate: string;
 }
 
 const createInitialState = (fields: LiveArtifactInteractionField[]): FormState => {
   return fields.reduce<FormState>((state, field) => {
-    state[field.key] = getLiveArtifactInteractionDefaultValue(field.property);
+    let value = getLiveArtifactInteractionDefaultValue(field.property);
+    // A `date` input only accepts YYYY-MM-DD. If the spec ships a default that
+    // isn't (e.g. a timestamp or a relative day), show an empty field instead of
+    // handing the browser an invalid value the user can't clear.
+    if (field.property.format === 'date' && typeof value === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      value = '';
+    }
+    state[field.key] = value;
     return state;
   }, {});
 };
@@ -82,6 +93,12 @@ const validateSubmittedValue = (
 
   if (property.type === 'string' && typeof submittedValue === 'string') {
     submittedValue = submittedValue.trim();
+  }
+
+  if (property.format === 'date' && typeof submittedValue === 'string' && submittedValue !== '') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(submittedValue)) {
+      return { value: submittedValue, error: messages.invalidDate };
+    }
   }
 
   if (property.type === 'number' || property.type === 'integer') {
@@ -185,6 +202,7 @@ const LiveArtifactInteractionForm: React.FC<LiveArtifactInteractionFormProps> = 
       integer: t('liveArtifactInteractionInteger'),
       range: t('liveArtifactInteractionRange'),
       enum: t('liveArtifactInteractionEnum'),
+      invalidDate: t('liveArtifactInteractionInvalidDate'),
     });
     if (Object.keys(validationErrors).length > 0) {
       setFormError(null);

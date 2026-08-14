@@ -1,13 +1,16 @@
 import { create } from 'zustand';
-import { type AppSettings } from '@/types';
+import { type AppSettings, normalizeProviderId } from '@/types';
 import type { SyncMessage } from '@/types/sync';
 import { type Theme } from '@/types/theme';
 import { DEFAULT_FILES_API_CONFIG, getDefaultAppSettings } from '@/constants/settingsDefaults';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import { logService } from '@/services/logService';
-import { resolveSupportedModelId, sanitizeModelOptions } from '@/utils/modelSorting';
+import { migrateRemovedModelId } from '@/constants/modelConfiguration';
+import { resolveSupportedModelId } from '@/utils/model/modelSorting';
 import { dbService } from '@/services/db/dbService';
-import { normalizeLiveArtifactsSystemPrompts } from '@/utils/liveArtifactsPromptSettings';
+import { normalizeLiveArtifactsSystemPrompts } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
+import { sanitizeThirdPartyApiSettings } from '@/utils/thirdPartyApiProviders';
+import { migrateLegacyOpenAICompatibleInput } from '@/schemas/appSettingsSchema';
 import { type ConcreteThemeId } from '@/utils/themeMode';
 import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 import { CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';
@@ -54,35 +57,11 @@ function computeTheme(themeId: string): Theme {
 
 function sanitizeAppSettings(settings: AppSettings): AppSettings {
   const defaultSettings = getDefaultAppSettings();
-  const isOpenAICompatibleApiEnabled =
-    settings.isOpenAICompatibleApiEnabled ?? defaultSettings.isOpenAICompatibleApiEnabled;
-  const isThirdPartyApiEnabled = settings.isThirdPartyApiEnabled === true;
-  const sanitizedOpenAICompatibleModels = sanitizeModelOptions(
-    settings.openaiCompatibleModels ?? defaultSettings.openaiCompatibleModels,
-  );
-  const openaiCompatibleModels =
-    sanitizedOpenAICompatibleModels.length > 0
-      ? sanitizedOpenAICompatibleModels
-      : defaultSettings.openaiCompatibleModels;
 
   return {
     ...settings,
-    apiMode: (() => {
-      // Trust the explicitly-written apiMode; only normalize the legacy
-      // 'openai-compatible' value. The per-mode enabling toggles
-      // (isThirdPartyApiEnabled / isOpenAICompatibleApiEnabled) are validated at
-      // read-time by isThirdPartyApiActive, so coupling them here breaks the
-      // two-step writes that handleApiProviderChange performs.
-      return settings.apiMode === 'openai-compatible' ? 'gemini-native' : settings.apiMode;
-    })(),
-    isOpenAICompatibleApiEnabled,
-    isThirdPartyApiEnabled,
+    providerId: normalizeProviderId(settings.providerId),
     modelId: resolveSupportedModelId(settings.modelId, defaultSettings.modelId),
-    openaiCompatibleModelId: resolveSupportedModelId(
-      settings.openaiCompatibleModelId,
-      defaultSettings.openaiCompatibleModelId,
-    ),
-    openaiCompatibleModels,
     transcriptionModelId: resolveSupportedModelId(settings.transcriptionModelId, defaultSettings.transcriptionModelId),
     inputTranslationModelId: resolveSupportedModelId(
       settings.inputTranslationModelId,
@@ -92,9 +71,34 @@ function sanitizeAppSettings(settings: AppSettings): AppSettings {
       settings.thoughtTranslationModelId,
       defaultSettings.thoughtTranslationModelId ?? defaultSettings.modelId,
     ),
+    tabModelCycleIds: (() => {
+      const cycleIds = settings.tabModelCycleIds ?? defaultSettings.tabModelCycleIds;
+      if (!cycleIds?.length) {
+        return cycleIds;
+      }
+      const seen = new Set<string>();
+      return cycleIds
+        .map((id) => migrateRemovedModelId(id) ?? id)
+        .filter((id) => {
+          if (seen.has(id)) {
+            return false;
+          }
+          seen.add(id);
+          return true;
+        });
+    })(),
     liveArtifactsSystemPrompts: normalizeLiveArtifactsSystemPrompts(settings),
-    liveTranslateTargetLanguageCode: settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
-    liveTranslateEchoTargetLanguage: settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
+    liveTranslateTargetLanguageCode:
+      settings.liveTranslateTargetLanguageCode ?? defaultSettings.liveTranslateTargetLanguageCode,
+    liveTranslateEchoTargetLanguage:
+      settings.liveTranslateEchoTargetLanguage ?? defaultSettings.liveTranslateEchoTargetLanguage,
+    // Sanitize the third-party provider map on every load and save path: it is
+    // otherwise spread verbatim, so a persisted record missing a provider entry
+    // (or carrying a non-boolean enabled / wrong protocol) would silently fall
+    // back to defaults and then be permanently overwritten on the next panel
+    // edit. sanitizeThirdPartyApiSettings backfills missing providers, coerces
+    // enabled to a strict boolean, validates protocol, and dedupes models.
+    thirdPartyApi: sanitizeThirdPartyApiSettings(settings.thirdPartyApi),
   };
 }
 
@@ -137,9 +141,13 @@ function buildLoadedAppSettings(
   const shouldMigrateLegacyTranscriptionDefault =
     storedSettings?.transcriptionModelId === LEGACY_DEFAULT_TRANSCRIPTION_MODEL_ID &&
     preloadOverrides?.transcriptionModelId === undefined;
+  // Fold legacy top-level openaiCompatible* fields (pre-thirdPartyApi layout)
+  // into thirdPartyApi.providers.openai before sanitizing. Idempotent: explicit
+  // provider values win, so already-migrated data is untouched.
+  const migratedStoredSettings = migrateLegacyOpenAICompatibleInput(storedSettings ?? {});
   const appSettings = sanitizeAppSettings({
     ...defaultSettings,
-    ...(storedSettings ?? {}),
+    ...migratedStoredSettings,
     ...(shouldMigrateLegacyTranscriptionDefault ? { transcriptionModelId: defaultSettings.transcriptionModelId } : {}),
     ...(preloadOverrides ?? {}),
   });
@@ -181,6 +189,10 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
       const currentTheme = computeTheme(sanitizedNext.themeId);
       const language = resolveLanguage(sanitizedNext.language);
 
+      // Mirror the toggle into the log gate on every save path (loaded and
+      // preload branches both land here).
+      logService.setEnabled(sanitizedNext.isLoggingEnabled ?? false);
+
       if (state.isSettingsLoaded) {
         dbService
           .setAppSettings(sanitizedNext)
@@ -220,9 +232,15 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
         isSettingsLoaded: true,
         pendingPreloadSettingsOverrides: null,
       });
+      // Open/close the logging gate to match the loaded setting. The gate
+      // defaults to off in the service, so a fresh profile or a load that
+      // omitted the field (schema backfills false) stays silent until the
+      // user opts in.
+      logService.setEnabled(newSettings.isLoggingEnabled ?? false);
       persistLoadedPreloadOverrides(newSettings, preloadOverrides);
     } catch (error) {
       logService.error('Failed to load settings from IndexedDB', { error });
+      logService.setEnabled(false);
       set({ isSettingsLoaded: true });
     }
   },

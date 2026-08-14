@@ -41,11 +41,16 @@ describe('AppearanceSection', () => {
     expect(renderer.container.textContent).toContain('Live Artifacts Base Size');
     expect(renderer.container.textContent).toContain('default font size for inline Live Artifacts in chat');
     expect(renderer.container.textContent).toContain('Input Toolbar');
+    expect(renderer.container.textContent).toContain('Chat Behavior');
+    expect(renderer.container.textContent).toContain('Clipboard & Paste');
+    expect(renderer.container.textContent).toContain('Rendering & Preview');
+    expect(renderer.container.textContent).toContain('Notifications & Feedback');
     expect(renderer.container.textContent).toContain('Streaming Responses');
     expect(renderer.container.textContent).toContain('Show Translate Button');
     expect(renderer.container.textContent).toContain('Show Paste Button');
     expect(renderer.container.textContent).toContain('Show Clear Input Button');
     expect(renderer.container.textContent).toContain('Preserve Formatting When Copying Selection');
+    expect(renderer.container.textContent).not.toContain('Interaction & Display');
     expect(renderer.container.textContent).not.toContain('File Transfer Method');
 
     act(() => {
@@ -58,11 +63,16 @@ describe('AppearanceSection', () => {
     expect(renderer.container.textContent).toContain('Live Artifacts 基础字号');
     expect(renderer.container.textContent).toContain('聊天内嵌 Live Artifacts 的默认字号');
     expect(renderer.container.textContent).toContain('输入框工具栏');
+    expect(renderer.container.textContent).toContain('对话行为');
+    expect(renderer.container.textContent).toContain('剪贴板与粘贴');
+    expect(renderer.container.textContent).toContain('渲染与预览');
+    expect(renderer.container.textContent).toContain('通知与反馈');
     expect(renderer.container.textContent).toContain('流式输出');
     expect(renderer.container.textContent).toContain('显示翻译按钮');
     expect(renderer.container.textContent).toContain('显示粘贴按钮');
     expect(renderer.container.textContent).toContain('显示清空输入框按钮');
     expect(renderer.container.textContent).toContain('复制选区时保留格式');
+    expect(renderer.container.textContent).not.toContain('交互与显示');
     expect(renderer.container.textContent).not.toContain('文件传输方式');
   });
 

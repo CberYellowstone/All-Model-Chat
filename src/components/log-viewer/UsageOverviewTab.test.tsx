@@ -84,7 +84,7 @@ describe('UsageOverviewTab', () => {
       {
         id: 3,
         timestamp: Date.now() - 2000,
-        modelId: 'imagen-4.0-generate-001',
+        modelId: 'gemini-3.1-flash-image-preview',
         promptTokens: 10,
         cachedPromptTokens: 0,
         completionTokens: 20,
@@ -113,7 +113,7 @@ describe('UsageOverviewTab', () => {
     expect(renderer.container.textContent).toContain('—');
     expect(renderer.container.textContent).toContain('gemini-3.1-pro-preview');
     expect(renderer.container.textContent).toContain('gemini-3-flash-preview');
-    expect(renderer.container.textContent).toContain('imagen-4.0-generate-001');
+    expect(renderer.container.textContent).toContain('gemini-3.1-flash-image-preview');
     expect(renderer.container.textContent).toContain('Strict official mode');
   });
 });

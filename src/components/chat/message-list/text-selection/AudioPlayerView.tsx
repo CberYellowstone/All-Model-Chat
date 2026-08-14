@@ -139,7 +139,7 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
 
         <div
           data-audio-time-group
-          className="flex w-12 flex-shrink-0 flex-col items-end gap-0.5 pl-1.5 font-mono text-[10px] leading-none tabular-nums"
+          className="flex w-12 flex-shrink-0 flex-col items-end gap-0.5 pl-1.5 font-mono text-xs leading-none tabular-nums"
         >
           <span data-audio-time-readout className="text-[var(--theme-text-primary)]">
             {formatClockTime(currentTime)}

@@ -138,11 +138,11 @@ describe('ThinkingControl image model behavior', () => {
     expect(setShowThoughts).toHaveBeenCalledWith(true);
   });
 
-  it('shows full thinking level options for Gemini Robotics-ER 1.6 in auto mode', async () => {
+  it('shows full thinking level options for Gemini Robotics-ER 2 in auto mode', async () => {
     await act(async () => {
       renderer.root.render(
         <ThinkingControl
-          modelId="gemini-robotics-er-1.6-preview"
+          modelId="gemini-robotics-er-2-preview"
           thinkingBudget={-1}
           setThinkingBudget={vi.fn()}
           thinkingLevel="LOW"
@@ -163,7 +163,7 @@ describe('ThinkingControl image model behavior', () => {
     await act(async () => {
       renderer.root.render(
         <ThinkingControl
-          modelId="gemini-robotics-er-1.6-preview"
+          modelId="gemini-robotics-er-2-preview"
           thinkingBudget={-1}
           setThinkingBudget={vi.fn()}
           thinkingLevel="HIGH"
@@ -178,14 +178,14 @@ describe('ThinkingControl image model behavior', () => {
     expect(renderer.container.textContent).not.toContain('settingsReasoningBadgeEnabled');
   });
 
-  it('hides the off mode for Gemini Robotics-ER 1.6 and normalizes legacy off state to minimal', async () => {
+  it('hides the off mode for Gemini Robotics-ER 2 and normalizes legacy off state to minimal', async () => {
     const setThinkingBudget = vi.fn();
     const setThinkingLevel = vi.fn();
 
     await act(async () => {
       renderer.root.render(
         <ThinkingControl
-          modelId="gemini-robotics-er-1.6-preview"
+          modelId="gemini-robotics-er-2-preview"
           thinkingBudget={0}
           setThinkingBudget={setThinkingBudget}
           thinkingLevel="HIGH"
